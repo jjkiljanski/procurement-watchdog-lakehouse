@@ -1,0 +1,58 @@
+[
+  {
+    "clientType": "1.1.2",
+    "orderType": "Works",
+    "tenderType": "1.1.1",
+    "noticeType": "ContractNotice",
+    "noticeNumber": "2026/BZP 00103105/01",
+    "bzpNumber": "2026/BZP 00103105",
+    "isTenderAmountBelowEU": true,
+    "publicationDate": "2026-02-10T06:23:34.5357616Z",
+    "orderObject": "Modernizacja kotłowni o mocy 90 kW na Stadionie Syrena w Żarach",
+    "cpvCode": "45000000-7 (Roboty budowlane),45100000-8 (Przygotowanie terenu pod budowę),45453000-7 (Roboty remontowe i renowacyjne),45331100-7 (Instalowanie centralnego ogrzewania),45410000-4 (Tynkowanie),45421000-4 (Roboty w zakresie stolarki budowlanej),45442100-8 (Roboty malarskie),45300000-0 (Roboty instalacyjne w budynkach),45310000-3 (Roboty instalacyjne elektryczne),45330000-9 (Roboty instalacyjne wodno-kanalizacyjne i sanitarne),71322000-1 (Usługi inżynierii projektowej w zakresie inżynierii lądowej i wodnej)",
+    "submittingOffersDate": "2026-02-26T07:30:00Z",
+    "procedureResult": null,
+    "organizationName": "GMINA ŻARY O STATUSIE MIEJSKIM",
+    "organizationCity": "Żary",
+    "organizationProvince": "PL08",
+    "organizationCountry": "PL",
+    "organizationNationalId": "9282077626",
+    "organizationId": "6248",
+    "tenderId": "ocds-148610-17e184e2-335e-42b3-967c-3fc04d7462ce",
+    "htmlBody": "<html><head></head><body>sample</body></html>",
+    "contractors": null,
+    "objectId": "08de686c-eb3b-de8a-056e-e50001ab3c5c"
+  },
+  {
+    "clientType": "1.1.2",
+    "orderType": "Services",
+    "tenderType": "1.4.1.11",
+    "noticeType": "AgreementIntentionNotice",
+    "noticeNumber": "2026/BZP 00103515/01",
+    "bzpNumber": "2026/BZP 00103515",
+    "isTenderAmountBelowEU": true,
+    "publicationDate": "2026-02-10T08:42:29.2936046Z",
+    "orderObject": "Zimowe utrzymanie dróg oraz ciągów pieszych w pasie drogowym, wzdłuż zieleńców, alejek na zieleńcach oraz ścieżek pieszo-rowerowych na terenie gminy Międzyrzecz od 25.02.2026 r. do 31.03.2026 r.",
+    "cpvCode": "90620000-9 (Usługi odśnieżania)",
+    "submittingOffersDate": null,
+    "procedureResult": null,
+    "organizationName": "Gmina Międzyrzecz",
+    "organizationCity": "Międzyrzecz",
+    "organizationProvince": "PL08",
+    "organizationCountry": "PL",
+    "organizationNationalId": "5960006553",
+    "organizationId": "3150",
+    "tenderId": "ocds-148610-ed8baf2f-ffef-44ea-b0bb-353d22b31256",
+    "htmlBody": "<html><head></head><body>sample</body></html>",
+    "contractors": [
+      {
+        "contractorName": "Przedsiębiorstwo Gospodarki Komunalnej Sp. z o. o.",
+        "contractorCity": "Międzyrzecz",
+        "contractorProvince": "PL08",
+        "contractorCountry": "PL",
+        "contractorNationalId": "5961753973"
+      }
+    ],
+    "objectId": "08de6880-5322-3899-056e-e50001ab3e94"
+  }
+]
