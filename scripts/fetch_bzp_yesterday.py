@@ -9,10 +9,12 @@ from urllib.parse import urlencode
 
 import requests
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s  %(levelname)-8s  %(message)s",
-)
+# Allow imports from project root / src
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+
+from procurement.logging import setup_logging
+
+setup_logging()
 log = logging.getLogger(__name__)
 
 BASE_URL = "https://ezamowienia.gov.pl/mo-board/api/v1/notice"

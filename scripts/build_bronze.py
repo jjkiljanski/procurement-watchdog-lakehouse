@@ -19,12 +19,10 @@ from procurement.bronze.models import (
     BzpNoticeBronzeOut,
     to_bronze_output,
 )
+from procurement.logging import setup_logging
 from pydantic import ValidationError
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s  %(levelname)-8s  %(message)s",
-)
+setup_logging()
 log = logging.getLogger(__name__)
 
 
