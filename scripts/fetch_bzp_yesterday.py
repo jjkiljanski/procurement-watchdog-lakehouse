@@ -87,11 +87,15 @@ def fetch_notices_for_type(
 
 
 def main() -> None:
-    yesterday = date.today() - timedelta(days=1)
-    date_from = f"{yesterday.isoformat()}T00:00:00"
-    date_to = f"{yesterday.isoformat()}T23:59:59"
+    if len(sys.argv) > 1:
+        target_date = date.fromisoformat(sys.argv[1])
+    else:
+        target_date = date.today() - timedelta(days=1)
 
-    log.info("Fetching BZP notices for %s", yesterday.isoformat())
+    date_from = f"{target_date.isoformat()}T00:00:00"
+    date_to = f"{target_date.isoformat()}T23:59:59"
+
+    log.info("Fetching BZP notices for %s", target_date.isoformat())
 
     session = requests.Session()
     session.headers["Accept"] = "application/json"
@@ -108,7 +112,7 @@ def main() -> None:
 
     output_dir = Path("data/raw")
     output_dir.mkdir(parents=True, exist_ok=True)
-    output_path = output_dir / f"bzp_{yesterday.isoformat()}.json"
+    output_path = output_dir / f"bzp_{target_date.isoformat()}.json"
 
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(all_notices, f, ensure_ascii=False, indent=2)
