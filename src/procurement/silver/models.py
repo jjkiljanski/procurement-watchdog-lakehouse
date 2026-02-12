@@ -38,13 +38,16 @@ class BzpNoticeSilver(BaseModel):
     orderObject: str | None = None
     cpvCodes: list[str]
     clientType: str | None = None
+    clientTypeName: str | None = None
     orderType: str | None = None
     tenderType: str | None = None
     submittingOffersDate: str | None = None
     procedureResult: str | None = None
+    procedureResultParsed: list[str] | None = None
     organizationName: str
     organizationCity: str
     organizationProvince: str | None = None
+    provinceName: str | None = None
     organizationCountry: str
     organizationNationalId: str
     organizationId: str

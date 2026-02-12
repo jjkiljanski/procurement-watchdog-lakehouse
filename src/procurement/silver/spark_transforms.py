@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 
 from pyspark.sql import DataFrame
-from pyspark.sql.functions import col, udf
+from pyspark.sql.functions import col, split, udf
 from pyspark.sql.types import (
     ArrayType,
     DoubleType,
@@ -15,6 +15,7 @@ from pyspark.sql.types import (
     StructType,
 )
 
+from procurement.dictionaries import client_type_names, province_names
 from procurement.silver.html_parser import parse_cpv_codes, parse_html
 
 log = logging.getLogger(__name__)
@@ -59,15 +60,40 @@ parse_html_udf = udf(_parse_html_safe, HTML_EXTRACTED_SCHEMA)
 parse_cpv_udf = udf(_parse_cpv_safe, ArrayType(StringType()))
 
 
+def _make_lookup_udf(mapping: dict[str, str]):
+    """Create a UDF that maps code → description using a dictionary."""
+
+    def _lookup(code: str | None) -> str | None:
+        if code is None:
+            return None
+        return mapping.get(code)
+
+    return udf(_lookup, StringType())
+
+
 def build_silver(df: DataFrame) -> DataFrame:
     """Transform a raw BZP DataFrame into the silver layer.
 
-    Filters out records with truncated HTML, parses HTML via UDF,
-    splits CPV codes, and drops the raw htmlBody column.
+    - Filters out records with truncated HTML
+    - Parses HTML body via UDF → struct of extracted fields
+    - Splits CPV codes string → array
+    - Resolves organizationProvince code → provinceName
+    - Resolves clientType code → clientTypeName
+    - Splits procedureResult semicolon-delimited string → array
+    - Drops raw htmlBody and cpvCode columns
     """
+    province_udf = _make_lookup_udf(province_names())
+    client_type_udf = _make_lookup_udf(client_type_names())
+
     return (
         df.filter(col("htmlBody").endswith("</html>"))
         .withColumn("htmlExtracted", parse_html_udf(col("htmlBody")))
         .withColumn("cpvCodes", parse_cpv_udf(col("cpvCode")))
+        .withColumn("provinceName", province_udf(col("organizationProvince")))
+        .withColumn("clientTypeName", client_type_udf(col("clientType")))
+        .withColumn(
+            "procedureResultParsed",
+            split(col("procedureResult"), ";"),
+        )
         .drop("htmlBody", "cpvCode")
     )
