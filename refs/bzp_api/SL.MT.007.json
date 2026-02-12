@@ -1,0 +1,88 @@
+{
+  "dictionaryId": "SL.MT.007",
+  "validFrom": "2020-10-25T11:10:13+02:00",
+  "version": "Wersja 1.0.0",
+  "language": "PL",
+  "items": [
+    {
+      "key": "dolnośląskie",
+      "Items": null,
+      "identifier": "PL02"
+    },
+    {
+      "key": "kujawsko-pomorskie",
+      "Items": null,
+      "identifier": "PL04"
+    },
+    {
+      "key": "lubelskie",
+      "Items": null,
+      "identifier": "PL06"
+    },
+    {
+      "key": "lubuskie",
+      "Items": null,
+      "identifier": "PL08"
+    },
+    {
+      "key": "łódzkie",
+      "Items": null,
+      "identifier": "PL10"
+    },
+    {
+      "key": "małopolskie",
+      "Items": null,
+      "identifier": "PL12"
+    },
+    {
+      "key": "mazowieckie",
+      "Items": null,
+      "identifier": "PL14"
+    },
+    {
+      "key": "opolskie",
+      "Items": null,
+      "identifier": "PL16"
+    },
+    {
+      "key": "podlaskie",
+      "Items": null,
+      "identifier": "PL20"
+    },
+    {
+      "key": "podkarpackie",
+      "Items": null,
+      "identifier": "PL18"
+    },
+    {
+      "key": "pomorskie",
+      "Items": null,
+      "identifier": "PL22"
+    },
+    {
+      "key": "świętokrzyskie",
+      "Items": null,
+      "identifier": "PL26"
+    },
+    {
+      "key": "śląskie",
+      "Items": null,
+      "identifier": "PL24"
+    },
+    {
+      "key": "warmińsko-mazurskie",
+      "Items": null,
+      "identifier": "PL28"
+    },
+    {
+      "key": "wielkopolskie",
+      "Items": null,
+      "identifier": "PL30"
+    },
+    {
+      "key": "zachodniopomorskie",
+      "Items": null,
+      "identifier": "PL32"
+    }
+  ]
+}

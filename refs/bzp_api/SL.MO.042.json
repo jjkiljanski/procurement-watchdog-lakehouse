@@ -1,0 +1,18 @@
+{
+  "dictionaryId": "SL.MO.042",
+  "validFrom": "2020-01-11T11:10:13+02:00",
+  "version": "Wersja 1.0.0",
+  "language": "PL",
+  "items": [
+    {
+      "key": "Konkurs jednoetapowy",
+      "Items": null,
+      "identifier": "1"
+    },
+    {
+      "key": "Konkurs dwuetapowy",
+      "Items": null,
+      "identifier": "2"
+    }
+  ]
+}

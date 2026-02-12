@@ -1,0 +1,275 @@
+{
+  "dictionaryId": "SL.MO.013",
+  "validFrom": "2020-01-11T11:10:13+02:00",
+  "version": "Wersja 1.0.1",
+  "language": "PL",
+  "items": [
+    {
+      "key": "Zamawiający publiczny",
+      "Items": [
+        {
+          "key": "jednostka sektora finansów publicznych",
+          "Items": [
+            {
+              "key": "organ władzy publicznej",
+              "Items": [
+                {
+                  "key": "organ administracji rządowej (centralnej lub terenowej)",
+                  "Items": null,
+                  "identifier": "1.1.1.1"
+                },
+                {
+                  "key": "organ kontroli państwowej i ochrony prawa oraz sąd i trybunał",
+                  "Items": null,
+                  "identifier": "1.1.1.2"
+                }
+              ],
+              "identifier": "1.1.1"
+            },
+            {
+              "key": "jednostka samorządu terytorialnego",
+              "Items": null,
+              "identifier": "1.1.2"
+            },
+            {
+              "key": "związek jednostek samorządu terytorialnego",
+              "Items": null,
+              "identifier": "1.1.3"
+            },
+            {
+              "key": "związek metropolitalny",
+              "Items": null,
+              "identifier": "1.1.4"
+            },
+            {
+              "key": "jednostka budżetowa",
+              "Items": null,
+              "identifier": "1.1.5"
+            },
+            {
+              "key": "samorządowy zakład budżetowy",
+              "Items": null,
+              "identifier": "1.1.6"
+            },
+            {
+              "key": "agencja wykonawcza",
+              "Items": null,
+              "identifier": "1.1.7"
+            },
+            {
+              "key": "instytucja gospodarki budżetowej",
+              "Items": null,
+              "identifier": "1.1.8"
+            },
+            {
+              "key": "państwowy fundusz celowy",
+              "Items": null,
+              "identifier": "1.1.9"
+            },
+            {
+              "key": "Zakład Ubezpieczeń Społecznych lub Kasa Rolniczego Ubezpieczenia Społecznego oraz zarządzane przez nie fundusze",
+              "Items": null,
+              "identifier": "1.1.10"
+            },
+            {
+              "key": "Narodowy Fundusz Zdrowia",
+              "Items": null,
+              "identifier": "1.1.11"
+            },
+            {
+              "key": "samodzielny publiczny zakład opieki zdrowotnej",
+              "Items": null,
+              "identifier": "1.1.12"
+            },
+            {
+              "key": "uczelnia publiczna",
+              "Items": null,
+              "identifier": "1.1.13"
+            },
+            {
+              "key": "Polska Akademia Nauk i tworzone przez nią jednostki organizacyjne",
+              "Items": null,
+              "identifier": "1.1.14"
+            },
+            {
+              "key": "państwowe i samorządowe instytucje kultury",
+              "Items": null,
+              "identifier": "1.1.15"
+            },
+            {
+              "key": "inne państwowe i samorządowe osoby prawne utworzone na podstawie odrębnych ustaw w celu wykonywania zadań publicznych",
+              "Items": null,
+              "identifier": "1.1.16"
+            }
+          ],
+          "identifier": "1.1"
+        },
+        {
+          "key": "inna państwowa jednostka organizacyjna nieposiadająca osobowości prawnej",
+          "Items": null,
+          "identifier": "1.2"
+        },
+        {
+          "key": "związki podmiotów, o których mowa w art. 1 lub 2 lub podmiotów o których mowa w pkt 3 ustawy",
+          "Items": null,
+          "identifier": "1.3"
+        },
+        {
+          "key": "osoba prawna, o której mowa w art. 4 pkt 3 ustawy (podmiot prawa publicznego)",
+          "Items": null,
+          "identifier": "1.4"
+        },
+        {
+          "key": "inny zamawiający",
+          "Items": null,
+          "identifier": "1.5"
+        }
+      ],
+      "identifier": "1"
+    },
+    {
+      "key": "Zamawiający sektorowy",
+      "Items": [
+        {
+          "key": "art. 5 ust. 1 pkt 1",
+          "Items": [
+            {
+              "key": "gospodarka wodna",
+              "Items": null,
+              "identifier": "2.1.1"
+            },
+            {
+              "key": "energia elektryczna",
+              "Items": null,
+              "identifier": "2.1.2"
+            },
+            {
+              "key": "gaz i energia cieplna",
+              "Items": null,
+              "identifier": "2.1.3"
+            },
+            {
+              "key": "usługi transportowe",
+              "Items": null,
+              "identifier": "2.1.4"
+            },
+            {
+              "key": "porty, przystanie i porty lotnicze",
+              "Items": null,
+              "identifier": "2.1.5"
+            },
+            {
+              "key": "usługi pocztowe",
+              "Items": null,
+              "identifier": "2.1.6"
+            },
+            {
+              "key": "wydobycie paliw",
+              "Items": null,
+              "identifier": "2.1.7"
+            }
+          ],
+          "identifier": "2.1"
+        },
+        {
+          "key": "art. 5 ust. 1 pkt 2",
+          "Items": [
+            {
+              "key": "gospodarka wodna",
+              "Items": null,
+              "identifier": "2.2.1"
+            },
+            {
+              "key": "energia elektryczna",
+              "Items": null,
+              "identifier": "2.2.2"
+            },
+            {
+              "key": "gaz i energia cieplna",
+              "Items": null,
+              "identifier": "2.2.3"
+            },
+            {
+              "key": "usługi transportowe",
+              "Items": null,
+              "identifier": "2.2.4"
+            },
+            {
+              "key": "porty, przystanie i porty lotnicze",
+              "Items": null,
+              "identifier": "2.2.5"
+            },
+            {
+              "key": "usługi pocztowe",
+              "Items": null,
+              "identifier": "2.2.6"
+            },
+            {
+              "key": "wydobycie paliw",
+              "Items": null,
+              "identifier": "2.2.7"
+            }
+          ],
+          "identifier": "2.2"
+        },
+        {
+          "key": "art. 5 ust. 1 pkt 3",
+          "Items": [
+            {
+              "key": "gospodarka wodna",
+              "Items": null,
+              "identifier": "2.3.1"
+            },
+            {
+              "key": "energia elektryczna",
+              "Items": null,
+              "identifier": "2.3.2"
+            },
+            {
+              "key": "gaz i energia cieplna",
+              "Items": null,
+              "identifier": "2.3.3"
+            },
+            {
+              "key": "usługi transportowe",
+              "Items": null,
+              "identifier": "2.3.4"
+            },
+            {
+              "key": "porty, przystanie i porty lotnicze",
+              "Items": null,
+              "identifier": "2.3.5"
+            },
+            {
+              "key": "usługi pocztowe",
+              "Items": null,
+              "identifier": "2.3.6"
+            },
+            {
+              "key": "wydobycie paliw",
+              "Items": null,
+              "identifier": "2.3.7"
+            }
+          ],
+          "identifier": "2.3"
+        }
+      ],
+      "identifier": "2"
+    },
+    {
+      "key": "Zamawiający subsydiowany",
+      "Items": null,
+      "identifier": "3"
+    },
+    {
+      "key": "Zamawiający publiczny udzielający zamówienia w dziedzinach obronności i bezpieczeństwa (art. 7 pkt 36 ustawy Pzp)",
+      "Items": null,
+      "identifier": "4"
+    },
+    {
+      "key": "Zamawiający sektorowy udzielający zamówienia w dziedzinach obronności i bezpieczeństwa (art. 7 pkt 36 ustawy Pzp)",
+      "Items": null,
+      "identifier": "5"
+    }
+  ]
+}

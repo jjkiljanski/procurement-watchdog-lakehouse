@@ -1,0 +1,361 @@
+openapi: 3.0.1
+info:
+  title: Notices Board API
+  version: v1
+paths:
+  /api/v1/notice:
+    get:
+      tags:
+        - Notices
+      summary: Wyszukiwanie ogłoszeń o zamówienie
+      parameters:
+        - name: NoticeType
+          in: query
+          description: Rodzaj ogłoszenia
+          required: true
+          schema:
+            minLength: 1
+            type: string
+        - name: NoticeNumber
+          in: query
+          description: Numer ogłoszenia
+          schema:
+            type: string
+            nullable: true
+        - name: PublicationDateFrom
+          in: query
+          description: Data publikacji od
+          required: true
+          schema:
+            minLength: 1
+            type: string
+            format: date-time
+        - name: PublicationDateTo
+          in: query
+          description: Data publikacji do
+          required: true
+          schema:
+            minLength: 1
+            type: string
+            format: date-time
+        - name: ClientType
+          in: query
+          description: Rodzaj zamawiającego
+          schema:
+            type: string
+            nullable: true
+        - name: OrderType
+          in: query
+          description: Rodzaj zamówienia
+          schema:
+            type: string
+            nullable: true
+        - name: TenderType
+          in: query
+          description: Tryb zamówienia
+          schema:
+            type: string
+            nullable: true
+        - name: OrderObject
+          in: query
+          description: Przedmiot zamówienia
+          schema:
+            type: string
+            nullable: true
+        - name: CpvCode
+          in: query
+          description: Kod CPV
+          schema:
+            type: string
+            nullable: true
+        - name: OrganizationName
+          in: query
+          description: Nazwa zamawiającego
+          schema:
+            type: string
+            nullable: true
+        - name: OrganizationCity
+          in: query
+          description: Miejscowość zamawiającego
+          schema:
+            type: string
+            nullable: true
+        - name: OrganizationProvince
+          in: query
+          description: Województwo zamawiającego
+          schema:
+            type: string
+            nullable: true
+        - name: PageSize
+          in: query
+          description: Rozmiar strony
+          required: true
+          schema:
+            maximum: 500
+            minimum: 0
+            exclusiveMinimum: true
+            type: integer
+            format: int32
+        - name: SearchAfter
+          in: query
+          schema:
+            type: string
+            nullable: true
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NoticeDto'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NoticeDto'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NoticeDto'
+  /api/v1/notice/stats:
+    get:
+      tags:
+        - Notices
+      summary: Pobieranie statystyk o ogłoszeniach
+      parameters:
+        - name: PublicationDateFrom
+          in: query
+          description: Data publikacji od
+          schema:
+            type: string
+            format: date-time
+        - name: PublicationDateTo
+          in: query
+          description: Data publikacji do
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NoticeStats'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NoticeStats'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NoticeStats'
+components:
+  schemas:
+    ContractorDto:
+      type: object
+      properties:
+        contractorName:
+          type: string
+          description: Nazwa wykonawcy
+          nullable: true
+        contractorCity:
+          type: string
+          description: Miejscowość wykonawcy
+          nullable: true
+        contractorProvince:
+          type: string
+          description: Województwo wykonawcy
+          nullable: true
+        contractorCountry:
+          type: string
+          description: Kraj wykonawcy
+          nullable: true
+        contractorNationalId:
+          type: string
+          description: Krajowy numer identyfikacyjny wykonawcy
+          nullable: true
+      additionalProperties: false
+      description: Wykonawca
+    ExternalNoticeSearchQuery:
+      required:
+        - noticeType
+        - pageSize
+        - publicationDateFrom
+        - publicationDateTo
+      type: object
+      properties:
+        noticeType:
+          minLength: 1
+          type: string
+          description: Rodzaj ogłoszenia
+        noticeNumber:
+          type: string
+          description: Numer ogłoszenia
+          nullable: true
+        publicationDateFrom:
+          minLength: 1
+          type: string
+          description: Data publikacji od
+          format: date-time
+        publicationDateTo:
+          minLength: 1
+          type: string
+          description: Data publikacji do
+          format: date-time
+        clientType:
+          type: string
+          description: Rodzaj zamawiającego
+          nullable: true
+        orderType:
+          type: string
+          description: Rodzaj zamówienia
+          nullable: true
+        tenderType:
+          type: string
+          description: Tryb zamówienia
+          nullable: true
+        orderObject:
+          type: string
+          description: Przedmiot zamówienia
+          nullable: true
+        cpvCode:
+          type: string
+          description: Kod CPV
+          nullable: true
+        organizationName:
+          type: string
+          description: Nazwa zamawiającego
+          nullable: true
+        organizationCity:
+          type: string
+          description: Miejscowość zamawiającego
+          nullable: true
+        organizationProvince:
+          type: string
+          description: Województwo zamawiającego
+          nullable: true
+        pageSize:
+          maximum: 500
+          minimum: 0
+          exclusiveMinimum: true
+          type: integer
+          description: Rozmiar strony
+          format: int32
+        searchAfter:
+          type: string
+          nullable: true
+      additionalProperties: false
+      description: Parametrów wyszukiwania (Zapytanie)
+    NoticeDto:
+      type: object
+      properties:
+        clientType:
+          type: string
+          description: Rodzaj zamawiającego
+          nullable: true
+        orderType:
+          type: string
+          description: Rodzaj zamówienia
+          nullable: true
+        tenderType:
+          type: string
+          description: Tryb zamówienia
+          nullable: true
+        noticeType:
+          type: string
+          description: Rodzaj ogłoszenia
+          nullable: true
+        noticeNumber:
+          type: string
+          description: Numer ogłoszenia
+          nullable: true
+        bzpNumber:
+          type: string
+          description: Numer BZP
+          nullable: true
+        isTenderAmountBelowEU:
+          type: boolean
+          description: Tryb/rodzaj procedury (krajowa, unijna)
+          nullable: true
+        publicationDate:
+          type: string
+          description: Data publikacji
+          format: date-time
+        orderObject:
+          type: string
+          description: Przedmiot zamówienia
+          nullable: true
+        cpvCode:
+          type: string
+          description: Kod CPV
+          nullable: true
+        submittingOffersDate:
+          type: string
+          description: Termin składania ofert
+          format: date-time
+          nullable: true
+        procedureResult:
+          type: string
+          description: Wynik postępowania
+          nullable: true
+        organizationName:
+          type: string
+          description: Nazwa zamawiającego
+          nullable: true
+        organizationCity:
+          type: string
+          description: Miejscowość zamawiającego
+          nullable: true
+        organizationProvince:
+          type: string
+          description: Województwo zamawiającego
+          nullable: true
+        organizationCountry:
+          type: string
+          description: Kraj zamawiającego
+          nullable: true
+        organizationNationalId:
+          type: string
+          description: Krajowy numer identyfikacyjny zamawiającego
+          nullable: true
+        organizationId:
+          type: string
+          description: Id organizacji
+          nullable: true
+        tenderId:
+          type: string
+          description: Identyfikator postępowania.
+          nullable: true
+        htmlBody:
+          type: string
+          description: Zawartość ogłoszenia w postaci HTML
+          nullable: true
+        contractors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContractorDto'
+          description: Lista wykonawców
+          nullable: true
+        objectId:
+          type: string
+          description: Identyfikator
+          nullable: true
+      additionalProperties: false
+    NoticeStats:
+      type: object
+      properties:
+        noticeType:
+          type: string
+          nullable: true
+        numberOfNotices:
+          type: integer
+          format: int64
+      additionalProperties: false

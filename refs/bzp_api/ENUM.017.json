@@ -1,0 +1,18 @@
+{
+  "dictionaryId": "ENUM.017",
+  "validFrom": "2020-01-11T11:10:13+02:00",
+  "version": "Wersja 1.0.2",
+  "language": "PL",
+  "items": [
+    {
+      "key": "konkurs nieograniczony",
+      "Items": null,
+      "identifier": "1"
+    },
+    {
+      "key": "konkurs ograniczony",
+      "Items": null,
+      "identifier": "2"
+    }
+  ]
+}

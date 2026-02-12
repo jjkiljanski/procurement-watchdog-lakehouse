@@ -1,0 +1,626 @@
+{
+  "dictionaryId": "ENUM.018",
+  "validFrom": "2020-01-11T11:10:13+02:00",
+  "version": "Wersja 1.0.1",
+  "language": "PL",
+  "items": [
+    {
+      "key": "Zamówienie udzielane jest w trybie podstawowym na podstawie:",
+      "Items": [
+        {
+          "key": "art. 275 pkt 1 ustawy",
+          "Items": null,
+          "identifier": "1.1.1"
+        },
+        {
+          "key": "art. 275 pkt 2 ustawy",
+          "Items": null,
+          "identifier": "1.1.2"
+        },
+        {
+          "key": "art. 275 pkt 3 ustawy",
+          "Items": null,
+          "identifier": "1.1.3"
+        }
+      ],
+      "identifier": "1.1"
+    },
+    {
+      "key": "Zamówienie udzielane jest w trybie partnerstwa innowacyjnego na podstawie: art. 297 ustawy",
+      "Items": null,
+      "identifier": "1.2"
+    },
+    {
+      "key": "Zamówienie udzielane jest w trybie negocjacji bez ogłoszenia na podstawie:",
+      "Items": [
+        {
+          "key": "art. 301 ust. 1 pkt 1 ustawy",
+          "Items": [
+            {
+              "key": "w zw. z art. 209 ust. 1 pkt 2 ustawy",
+              "Items": null,
+              "identifier": "1.3.1.1"
+            },
+            {
+              "key": "w zw. z art. 209 ust. 1 pkt 3 ustawy",
+              "Items": null,
+              "identifier": "1.3.1.2"
+            }
+          ]
+        },
+        {
+          "key": "art. 301 ust. 1 pkt 2 ustawy",
+          "Items": null,
+          "identifier": "1.3.2"
+        },
+        {
+          "key": "art. 301 ust. 1 pkt 3 ustawy",
+          "Items": null,
+          "identifier": "1.3.3"
+        },
+        {
+          "key": "art. 301 ust. 1 pkt 4 ustawy",
+          "Items": null,
+          "identifier": "1.3.4"
+        }
+      ],
+      "identifier": "1.3"
+    },
+    {
+      "key": "Zamówienie udzielane jest w trybie zamówienia z wolnej ręki na podstawie:",
+      "Items": [
+        {
+          "key": "art. 305 pkt 1 ustawy",
+          "Items": [
+            {
+              "key": "w zw. z art. 214 ust. 1 pkt 1 ustawy",
+              "Items": null,
+              "identifier": "1.4.1.1"
+            },
+            {
+              "key": "w zw. z art. 214 ust. 1 pkt 2 ustawy",
+              "Items": null,
+              "identifier": "1.4.1.2"
+            },
+            {
+              "key": "w zw. z art. 214 ust. 1 pkt 3 ustawy",
+              "Items": null,
+              "identifier": "1.4.1.3"
+            },
+            {
+              "key": "w zw. z art. 214 ust. 1 pkt 4 ustawy",
+              "Items": null,
+              "identifier": "1.4.1.4"
+            },
+            {
+              "key": "w zw. z art. 214 ust. 1 pkt 5 ustawy",
+              "Items": null,
+              "identifier": "1.4.1.5"
+            },
+            {
+              "key": "w zw. z art. 214 ust. 1 pkt 7 ustawy",
+              "Items": null,
+              "identifier": "1.4.1.6"
+            },
+            {
+              "key": "w zw. z art. 214 ust. 1 pkt 8 ustawy",
+              "Items": null,
+              "identifier": "1.4.1.7"
+            },
+            {
+              "key": "w zw. z art. 214 ust. 1 pkt 9 ustawy",
+              "Items": null,
+              "identifier": "1.4.1.8"
+            },
+            {
+              "key": "w zw. z art. 214 ust. 1 pkt 10 ustawy",
+              "Items": null,
+              "identifier": "1.4.1.9"
+            },
+            {
+              "key": "w zw. z art. 214 ust. 1 pkt 11 ustawy",
+              "Items": null,
+              "identifier": "1.4.1.10"
+            },
+            {
+              "key": "w zw. z art. 214 ust. 1 pkt 12 ustawy",
+              "Items": null,
+              "identifier": "1.4.1.11"
+            },
+            {
+              "key": "w zw. z art. 214 ust. 1 pkt 13 ustawy",
+              "Items": null,
+              "identifier": "1.4.1.12"
+            },
+            {
+              "key": "w zw. z art. 214 ust. 1 pkt 14 ustawy",
+              "Items": null,
+              "identifier": "1.4.1.13"
+            }
+          ]
+        },
+        {
+          "key": "art. 305 pkt 2 ustawy",
+          "Items": null,
+          "identifier": "1.4.2"
+        },
+        {
+          "key": "art. 305 pkt 3 ustawy",
+          "Items": null,
+          "identifier": "1.4.3"
+        },
+        {
+          "key": "art. 305 pkt 4 ustawy",
+          "Items": null,
+          "identifier": "1.4.4"
+        },
+        {
+          "key": "art. 305 pkt 5 ustawy",
+          "Items": null,
+          "identifier": "1.4.5"
+        }
+      ],
+      "identifier": "1.4"
+    },
+    {
+      "key": "Zamówienie udzielane jest w trybie przetargu nieograniczonego na podstawie: art. 132 ustawy",
+      "Items": null,
+      "identifier": "2.1"
+    },
+    {
+      "key": "Zamówienie udzielane jest w trybie przetargu ograniczonego na podstawie: art. 140 ustawy",
+      "Items": null,
+      "identifier": "2.2"
+    },
+    {
+      "key": "Zamówienie udzielane jest w trybie negocjacji z ogłoszeniem na podstawie:",
+      "Items": [
+        {
+          "key": "art. 153 pkt 1 ustawy",
+          "Items": null,
+          "identifier": "2.3.1"
+        },
+        {
+          "key": "art. 153 pkt 2 ustawy",
+          "Items": null,
+          "identifier": "2.3.2"
+        },
+        {
+          "key": "art. 153 pkt 3 ustawy",
+          "Items": null,
+          "identifier": "2.3.3"
+        },
+        {
+          "key": "art. 153 pkt 4 ustawy",
+          "Items": null,
+          "identifier": "2.3.4"
+        },
+        {
+          "key": "art. 153 pkt 5 ustawy",
+          "Items": null,
+          "identifier": "2.3.5"
+        }
+      ],
+      "identifier": "2.3"
+    },
+    {
+      "key": "Zamówienie udzielane jest w trybie dialogu konkurencyjnego na podstawie:",
+      "Items": [
+        {
+          "key": "art. 169 ustawy w zw. z art. 153 pkt 1 ustawy",
+          "Items": null,
+          "identifier": "2.4.1"
+        },
+        {
+          "key": "art. 169 ustawy w zw. z art. 153 pkt 2 ustawy",
+          "Items": null,
+          "identifier": "2.4.2"
+        },
+        {
+          "key": "art. 169 ustawy w zw. z art. 153 pkt 3 ustawy",
+          "Items": null,
+          "identifier": "2.4.3"
+        },
+        {
+          "key": "art. 169 ustawy w zw. z art. 153 pkt 4 ustawy",
+          "Items": null,
+          "identifier": "2.4.4"
+        },
+        {
+          "key": "art. 169 ustawy w zw. z art. 153 pkt 5 ustawy",
+          "Items": null,
+          "identifier": "2.4.5"
+        }
+      ],
+      "identifier": "2.4"
+    },
+    {
+      "key": "Zamówienie udzielane jest w trybie partnerstwa innowacyjnego na podstawie: art. 189 ustawy",
+      "Items": null,
+      "identifier": "2.5"
+    },
+    {
+      "key": "Zamówienie udzielane jest w trybie negocjacji bez ogłoszenia na podstawie:",
+      "Items": [
+        {
+          "key": "art. 208 ustawy w zw. z art. 209 ust. 1 pkt 1 ustawy",
+          "Items": null,
+          "identifier": "2.6.1"
+        },
+        {
+          "key": "art. 208 ustawy w zw. z art. 209 ust. 1 pkt 2 ustawy",
+          "Items": null,
+          "identifier": "2.6.2"
+        },
+        {
+          "key": "art. 208 ustawy w zw. z art. 209 ust. 1 pkt 3 ustawy",
+          "Items": null,
+          "identifier": "2.6.3"
+        },
+        {
+          "key": "art. 208 ustawy w zw. z art. 209 ust. 1 pkt 4 ustawy",
+          "Items": null,
+          "identifier": "2.6.4"
+        }
+      ],
+      "identifier": "2.6"
+    },
+    {
+      "key": "Zamówienie udzielane jest w trybie zamówienia z wolnej ręki na podstawie:",
+      "Items": [
+        {
+          "key": "art. 214 ust. 1 pkt 1 ustawy",
+          "Items": null,
+          "identifier": "2.7.1"
+        },
+        {
+          "key": "art. 214 ust. 1 pkt 2 ustawy",
+          "Items": null,
+          "identifier": "2.7.2"
+        },
+        {
+          "key": "art. 214 ust. 1 pkt 3 ustawy",
+          "Items": null,
+          "identifier": "2.7.3"
+        },
+        {
+          "key": "art. 214 ust. 1 pkt 4 ustawy",
+          "Items": null,
+          "identifier": "2.7.4"
+        },
+        {
+          "key": "art. 214 ust. 1 pkt 5 ustawy",
+          "Items": null,
+          "identifier": "2.7.5"
+        },
+        {
+          "key": "art. 214 ust. 1 pkt 6 ustawy",
+          "Items": null,
+          "identifier": "2.7.6"
+        },
+        {
+          "key": "art. 214 ust. 1 pkt 7 ustawy",
+          "Items": null,
+          "identifier": "2.7.7"
+        },
+        {
+          "key": "art. 214 ust. 1 pkt 8 ustawy",
+          "Items": null,
+          "identifier": "2.7.8"
+        },
+        {
+          "key": "art. 214 ust. 1 pkt 9 ustawy",
+          "Items": null,
+          "identifier": "2.7.9"
+        },
+        {
+          "key": "art. 214 ust. 1 pkt 10 ustawy",
+          "Items": null,
+          "identifier": "2.7.10"
+        },
+        {
+          "key": "art. 214 ust. 1 pkt 11 ustawy",
+          "Items": null,
+          "identifier": "2.7.11"
+        },
+        {
+          "key": "art. 214 ust. 1 pkt 12 ustawy",
+          "Items": null,
+          "identifier": "2.7.12"
+        },
+        {
+          "key": "art. 214 ust. 1 pkt 13 ustawy",
+          "Items": null,
+          "identifier": "2.7.13"
+        },
+        {
+          "key": "art. 214 ust. 1 pkt 14 ustawy",
+          "Items": null,
+          "identifier": "2.7.14"
+        }
+      ],
+      "identifier": "2.7"
+    },
+    {
+      "key": "Zamówienie sektorowe udzielane jest w trybie",
+      "Items": [
+        {
+          "key": "przetargu nieograniczonego na podstawie: art. 378 ustawy",
+          "Items": null,
+          "identifier": "2.8.1"
+        },
+        {
+          "key": "przetargu ograniczonego na podstawie: art. 379 ustawy",
+          "Items": null,
+          "identifier": "2.8.2"
+        },
+        {
+          "key": "negocjacji z ogłoszeniem na podstawie: art. 380 ustawy",
+          "Items": null,
+          "identifier": "2.8.3"
+        },
+        {
+          "key": "dialogu konkurencyjnego na podstawie: art. 382 ustawy",
+          "Items": null,
+          "identifier": "2.8.4"
+        },
+        {
+          "key": "partnerstwa innowacyjnego na podstawie: art. 383 ustawy",
+          "Items": null,
+          "identifier": "2.8.5"
+        },
+        {
+          "key": "negocjacji bez ogłoszenia na podstawie: art. 386 ustawy",
+          "Items": [
+            {
+              "key": "w zw. z art. 209 ust. 1 pkt 1 ustawy",
+              "Items": null,
+              "identifier": "2.8.6.1"
+            },
+            {
+              "key": "w zw. z art. 209 ust. 1 pkt 2 ustawy",
+              "Items": null,
+              "identifier": "2.8.6.2"
+            },
+            {
+              "key": "w zw. z art. 209 ust. 1 pkt 3 ustawy",
+              "Items": null,
+              "identifier": "2.8.6.3"
+            },
+            {
+              "key": "w zw. z art. 209 ust. 1 pkt 4 ustawy",
+              "Items": null,
+              "identifier": "2.8.6.4"
+            }
+          ],
+          "identifier": "2.8.6"
+        },
+        {
+          "key": "zamówienia z wolnej ręki na podstawie: art. 388 ustawy",
+          "Items": [
+            {
+              "key": "w zw. z art. 214 ust. 1 pkt 1 ustawy",
+              "Items": null,
+              "identifier": "2.8.7.1"
+            },
+            {
+              "key": "w zw. z art. 214 ust. 1 pkt 2 ustawy",
+              "Items": null,
+              "identifier": "2.8.7.2"
+            },
+            {
+              "key": "w zw. z art. 214 ust. 1 pkt 3 ustawy",
+              "Items": null,
+              "identifier": "2.8.7.3"
+            },
+            {
+              "key": "w zw. z art. 214 ust. 1 pkt 4 ustawy",
+              "Items": null,
+              "identifier": "2.8.7.4"
+            },
+            {
+              "key": "w zw. z art. 214 ust. 1 pkt 5 ustawy",
+              "Items": null,
+              "identifier": "2.8.7.5"
+            },
+            {
+              "key": "w zw. z art. 214 ust. 1 pkt 6 ustawy",
+              "Items": null,
+              "identifier": "2.8.7.6"
+            },
+            {
+              "key": "w zw. z art. 214 ust. 1 pkt 9 ustawy",
+              "Items": null,
+              "identifier": "2.8.7.7"
+            },
+            {
+              "key": "w zw. z art. 214 ust. 1 pkt 10 ustawy",
+              "Items": null,
+              "identifier": "2.8.7.8"
+            },
+            {
+              "key": "w zw. z art. 214 ust. 1 pkt 11 ustawy",
+              "Items": null,
+              "identifier": "2.8.7.9"
+            },
+            {
+              "key": "w zw. z art. 214 ust. 1 pkt 12 ustawy",
+              "Items": null,
+              "identifier": "2.8.7.10"
+            },
+            {
+              "key": "w zw. z art. 214 ust. 1 pkt 13 ustawy",
+              "Items": null,
+              "identifier": "2.8.7.11"
+            },
+            {
+              "key": "w zw. z art. 214 ust. 1 pkt 14 ustawy",
+              "Items": null,
+              "identifier": "2.8.7.12"
+            }
+          ],
+          "identifier": "2.8.7"
+        }
+      ],
+      "identifier": "2.8"
+    },
+    {
+      "key": "Zamówienie w dziedzinach obronności i bezpieczeństwa udzielane jest w trybie",
+      "Items": [
+        {
+          "key": "przetargu ograniczonego na podstawie: art. 411 ustawy",
+          "Items": null,
+          "identifier": "2.10.1"
+        },
+        {
+          "key": "negocjacji z ogłoszeniem na podstawie: art. 412 ustawy",
+          "Items": null,
+          "identifier": "2.10.2"
+        },
+        {
+          "key": "dialogu konkurencyjnego na podstawie: art. 413 ustawy",
+          "Items": null,
+          "identifier": "2.10.3"
+        }
+      ],
+      "identifier": "2.10"
+    },
+    {
+      "key": "Zamówienie w dziedzinach obronności i bezpieczeństwa udzielane jest w trybie negocjacji bez ogłoszenia na podstawie:",
+      "Items": [
+        {
+          "key": "art. 414 ust. 2 pkt 1 ustawy",
+          "Items": null,
+          "identifier": "2.10.1"
+        },
+        {
+          "key": "art. 414 ust. 2 pkt 2 ustawy",
+          "Items": null,
+          "identifier": "2.10.2"
+        },
+        {
+          "key": "art. 414 ust. 2 pkt 3 ustawy",
+          "Items": null,
+          "identifier": "2.10.3"
+        },
+        {
+          "key": "art. 414 ust. 2 pkt 4 ustawy",
+          "Items": null,
+          "identifier": "2.10.4"
+        },
+        {
+          "key": "art. 414 ust. 2 pkt 5 ustawy",
+          "Items": null,
+          "identifier": "2.10.5"
+        },
+        {
+          "key": "art. 414 ust. 2 pkt 6 ustawy",
+          "Items": null,
+          "identifier": "2.10.6"
+        },
+        {
+          "key": "art. 414 ust. 2 pkt 7 ustawy",
+          "Items": null,
+          "identifier": "2.10.7"
+        }
+      ],
+      "identifier": "2.11"
+    },
+    {
+      "key": "Zamówienie w dziedzinach obronności i bezpieczeństwa udzielane jest w trybie zamówienia z wolnej ręki na podstawie:",
+      "Items": [
+        {
+          "key": "art. 415 ust. 2 pkt 1 ustawy w zw. z art. 214 ust. 1 pkt 1 ustawy",
+          "Items": null,
+          "identifier": "2.12.1"
+        },
+        {
+          "key": "art. 415 ust. 2 pkt 1 ustawy w zw. z art. 214 ust. 1 pkt 9 ustawy",
+          "Items": null,
+          "identifier": "2.12.2"
+        },
+        {
+          "key": "art. 415 ust. 2 pkt 1 ustawy w zw. z art. 214 ust. 1 pkt 10 ustawy",
+          "Items": null,
+          "identifier": "2.12.3"
+        },
+        {
+          "key": "art. 415 ust. 2 pkt 1 ustawy w zw. z art. 214 ust. 1 pkt 11 ustawy",
+          "Items": null,
+          "identifier": "2.12.4"
+        },
+        {
+          "key": "art. 415 ust. 2 pkt 1 ustawy w zw. z art. 214 ust. 1 pkt 12 ustawy",
+          "Items": null,
+          "identifier": "2.12.5"
+        },
+        {
+          "key": "art. 415 ust. 2 pkt 1 ustawy w zw. z art. 214 ust. 1 pkt 13 ustawy",
+          "Items": null,
+          "identifier": "2.12.6"
+        },
+        {
+          "key": "art. 415 ust. 2 pkt 1 ustawy w zw. z art. 214 ust. 1 pkt 14 ustawy",
+          "Items": null,
+          "identifier": "2.12.7"
+        },
+        {
+          "key": "art. 415 ust. 2 pkt 1 ustawy w zw. z art. 414 ust. 2 pkt 1 ustawy",
+          "Items": null,
+          "identifier": "2.12.8"
+        },
+        {
+          "key": "art. 415 ust. 2 pkt 1 ustawy w zw. z art. 414 ust. 2 pkt 3 ustawy",
+          "Items": null,
+          "identifier": "2.12.9"
+        },
+        {
+          "key": "art. 415 ust. 2 pkt 1 ustawy w zw. z art. 414 ust. 2 pkt 4 ustawy",
+          "Items": null,
+          "identifier": "2.12.10"
+        },
+        {
+          "key": "art. 415 ust. 2 pkt 1 ustawy w zw. z art. 414 ust. 2 pkt 5 ustawy",
+          "Items": null,
+          "identifier": "2.12.11"
+        },
+        {
+          "key": "art. 415 ust. 2 pkt 1 ustawy w zw. z art. 414 ust. 2 pkt 6 ustawy",
+          "Items": null,
+          "identifier": "2.12.12"
+        },
+        {
+          "key": "art. 415 ust. 2 pkt 1 ustawy w zw. z art. 414 ust. 2 pkt 7 ustawy",
+          "Items": null,
+          "identifier": "2.12.13"
+        },
+        {
+          "key": "art. 415 ust. 2 pkt 3 ustawy",
+          "Items": null,
+          "identifier": "2.12.14"
+        },
+        {
+          "key": "art. 415 ust. 2 pkt 4 ustawy",
+          "Items": null,
+          "identifier": "2.12.15"
+        },
+        {
+          "key": "art. 415 ust. 2 pkt 5 ustawy",
+          "Items": null,
+          "identifier": "2.12.16"
+        },
+        {
+          "key": "art. 415 ust. 2 pkt 6 ustawy",
+          "Items": null,
+          "identifier": "2.12.17"
+        },
+        {
+          "key": "art. 415 ust. 2 pkt 7 ustawy",
+          "Items": null,
+          "identifier": "2.12.18"
+        }
+      ],
+      "identifier": "2.12"
+    }
+  ]
+}
