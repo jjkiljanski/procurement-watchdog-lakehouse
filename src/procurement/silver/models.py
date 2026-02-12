@@ -14,6 +14,27 @@ class EvalCriterion(BaseModel):
     weight: int
 
 
+class ExtractedValues(BaseModel):
+    """Monetary values extracted from the notice HTML.
+
+    Different fields are populated depending on the notice type:
+    - ContractPerformingNotice: contract_value, total_paid
+    - TenderResultNotice: contract_value, estimated_value, lowest_bid, highest_bid, winning_bid
+    - ContractNotice: estimated_value
+    - AgreementUpdateNotice: contract_value
+    - AgreementIntentionNotice: estimated_value
+    - SmallContractNotice: contract_value
+    """
+
+    contract_value: float | None = None
+    total_paid: float | None = None
+    estimated_value: float | None = None
+    lowest_bid: float | None = None
+    highest_bid: float | None = None
+    winning_bid: float | None = None
+    currency: str = "PLN"
+
+
 class HtmlExtracted(BaseModel):
     """Structured fields extracted from the notice HTML."""
 
@@ -23,7 +44,7 @@ class HtmlExtracted(BaseModel):
     nuts3_name: str | None = None
     opis: str | None = None
     kryteria_oceny: list[EvalCriterion] | None = None
-    wartosc_umowy_pln: float | None = None
+    values: ExtractedValues | None = None
 
 
 class BzpNoticeSilver(BaseModel):

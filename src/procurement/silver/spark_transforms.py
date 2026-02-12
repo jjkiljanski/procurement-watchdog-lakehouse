@@ -27,6 +27,18 @@ EVAL_CRITERION_SCHEMA = StructType(
     ]
 )
 
+EXTRACTED_VALUES_SCHEMA = StructType(
+    [
+        StructField("contract_value", DoubleType()),
+        StructField("total_paid", DoubleType()),
+        StructField("estimated_value", DoubleType()),
+        StructField("lowest_bid", DoubleType()),
+        StructField("highest_bid", DoubleType()),
+        StructField("winning_bid", DoubleType()),
+        StructField("currency", StringType()),
+    ]
+)
+
 HTML_EXTRACTED_SCHEMA = StructType(
     [
         StructField("ulica", StringType()),
@@ -35,16 +47,16 @@ HTML_EXTRACTED_SCHEMA = StructType(
         StructField("nuts3_name", StringType()),
         StructField("opis", StringType()),
         StructField("kryteria_oceny", ArrayType(EVAL_CRITERION_SCHEMA)),
-        StructField("wartosc_umowy_pln", DoubleType()),
+        StructField("values", EXTRACTED_VALUES_SCHEMA),
     ]
 )
 
 
-def _parse_html_safe(html: str | None) -> dict | None:
+def _parse_html_safe(html: str | None, notice_type: str | None) -> dict | None:
     if not html:
         return None
     try:
-        return parse_html(html).model_dump()
+        return parse_html(html, notice_type=notice_type).model_dump()
     except Exception:
         log.warning("Failed to parse HTML (len=%d)", len(html), exc_info=True)
         return None
@@ -75,7 +87,7 @@ def build_silver(df: DataFrame) -> DataFrame:
     """Transform a raw BZP DataFrame into the silver layer.
 
     - Filters out records with truncated HTML
-    - Parses HTML body via UDF → struct of extracted fields
+    - Parses HTML body via UDF → struct of extracted fields (type-aware)
     - Splits CPV codes string → array
     - Resolves organizationProvince code → provinceName
     - Resolves clientType code → clientTypeName
@@ -87,7 +99,10 @@ def build_silver(df: DataFrame) -> DataFrame:
 
     return (
         df.filter(col("htmlBody").endswith("</html>"))
-        .withColumn("htmlExtracted", parse_html_udf(col("htmlBody")))
+        .withColumn(
+            "htmlExtracted",
+            parse_html_udf(col("htmlBody"), col("noticeType")),
+        )
         .withColumn("cpvCodes", parse_cpv_udf(col("cpvCode")))
         .withColumn("provinceName", province_udf(col("organizationProvince")))
         .withColumn("clientTypeName", client_type_udf(col("clientType")))
