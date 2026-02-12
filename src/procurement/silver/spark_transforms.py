@@ -8,6 +8,7 @@ from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, split, udf
 from pyspark.sql.types import (
     ArrayType,
+    BooleanType,
     DoubleType,
     IntegerType,
     StringType,
@@ -39,6 +40,40 @@ EXTRACTED_VALUES_SCHEMA = StructType(
     ]
 )
 
+TENDER_RESULT_ENRICHMENT_SCHEMA = StructType(
+    [
+        StructField("joint_bidders", BooleanType()),
+        StructField("contractor_size", StringType()),
+    ]
+)
+
+CONTRACT_EXECUTION_SCHEMA = StructType(
+    [
+        StructField("contract_date", StringType()),
+        StructField("execution_period", StringType()),
+        StructField("contract_executed", BooleanType()),
+        StructField("execution_end_date", StringType()),
+        StructField("executed_on_time", BooleanType()),
+        StructField("num_changes", IntegerType()),
+        StructField("executed_properly", BooleanType()),
+    ]
+)
+
+CHANGE_ENTRY_SCHEMA = StructType(
+    [
+        StructField("changed_section", StringType()),
+        StructField("change_description", StringType()),
+    ]
+)
+
+NOTICE_CHANGE_SCHEMA = StructType(
+    [
+        StructField("changed_notice_number", StringType()),
+        StructField("changed_notice_version", StringType()),
+        StructField("changes", ArrayType(CHANGE_ENTRY_SCHEMA)),
+    ]
+)
+
 HTML_EXTRACTED_SCHEMA = StructType(
     [
         StructField("ulica", StringType()),
@@ -48,6 +83,9 @@ HTML_EXTRACTED_SCHEMA = StructType(
         StructField("opis", StringType()),
         StructField("kryteria_oceny", ArrayType(EVAL_CRITERION_SCHEMA)),
         StructField("values", EXTRACTED_VALUES_SCHEMA),
+        StructField("tender_result_enrichment", TENDER_RESULT_ENRICHMENT_SCHEMA),
+        StructField("contract_execution", CONTRACT_EXECUTION_SCHEMA),
+        StructField("notice_change", NOTICE_CHANGE_SCHEMA),
     ]
 )
 

@@ -11,7 +11,15 @@ import re
 
 from bs4 import BeautifulSoup, Tag
 
-from procurement.silver.models import EvalCriterion, ExtractedValues, HtmlExtracted
+from procurement.silver.models import (
+    ChangeEntry,
+    ContractExecution,
+    EvalCriterion,
+    ExtractedValues,
+    HtmlExtracted,
+    NoticeChange,
+    TenderResultEnrichment,
+)
 
 # Regex for parsing "1234,56 PLN" style values from span text
 _PLN_NUM_RE = re.compile(r"([\d\s\xa0,.]+?)\s*(?:\xa0)?\s*(?:PLN|EUR|USD|GBP|CHF)?$")
@@ -84,6 +92,64 @@ def _extract_currency(soup: BeautifulSoup, field_num: str) -> str:
     if raw and raw.strip() in ("PLN", "EUR", "USD", "GBP", "CHF"):
         return raw.strip()
     return "PLN"
+
+
+def _parse_tak_nie(raw: str | None) -> bool | None:
+    """Parse a Polish 'Tak'/'Nie' value into a boolean."""
+    if raw is None:
+        return None
+    cleaned = raw.strip()
+    if cleaned == "Tak":
+        return True
+    if cleaned == "Nie":
+        return False
+    return None
+
+
+def _text_after_h3(h3: Tag | None) -> str | None:
+    """Extract plain text that follows an <h3> as a sibling text node.
+
+    Handles the pattern where the value is NOT inside a <span> but is a
+    bare text node after the h3 (e.g. field 4.2 or 3.4).
+    """
+    if h3 is None:
+        return None
+    from bs4 import NavigableString
+
+    sibling = h3.next_sibling
+    while sibling is not None:
+        if isinstance(sibling, NavigableString):
+            text = sibling.strip()
+            if text:
+                return text
+        elif hasattr(sibling, "name"):
+            if sibling.name in ("h3", "h2"):
+                break
+            if sibling.name == "br":
+                sibling = sibling.next_sibling
+                continue
+            break
+        sibling = sibling.next_sibling
+    return None
+
+
+def _collect_p_text(h3: Tag) -> str | None:
+    """Collect text from sibling <p> tags after an h3 until the next h3/h2.
+
+    Used for change descriptions (3.4.1) that span multiple <p> elements.
+    """
+    parts: list[str] = []
+    sibling = h3.next_sibling
+    while sibling is not None:
+        if hasattr(sibling, "name"):
+            if sibling.name in ("h3", "h2"):
+                break
+            if sibling.name == "p":
+                text = sibling.get_text(separator=" ", strip=True)
+                if text:
+                    parts.append(text)
+        sibling = sibling.next_sibling
+    return "\n".join(parts) if parts else None
 
 
 # --- Address extraction (shared across types) ---
@@ -233,6 +299,110 @@ _VALUE_EXTRACTORS = {
 }
 
 
+# --- Type-specific detail extraction (non-value) ---
+
+
+def _extract_details_tender_result(soup: BeautifulSoup) -> TenderResultEnrichment | None:
+    """TenderResultNotice: fields 7.1 (joint bidders), 7.2 (enterprise size)."""
+    joint_bidders = _parse_tak_nie(_span_value(_find_h3(soup, "7.1.")))
+    contractor_size = _span_value(_find_h3(soup, "7.2."))
+
+    if joint_bidders is None and contractor_size is None:
+        return None
+    return TenderResultEnrichment(
+        joint_bidders=joint_bidders,
+        contractor_size=contractor_size,
+    )
+
+
+def _extract_details_contract_performing(soup: BeautifulSoup) -> ContractExecution | None:
+    """ContractPerformingNotice: fields 4.1-4.2, 5.1-5.6."""
+    contract_date = _span_value(_find_h3(soup, "4.1."))
+    # 4.2 uses plain text after h3 (not in span)
+    h3_42 = _find_h3(soup, "4.2.")
+    execution_period = _span_value(h3_42) or _text_after_h3(h3_42)
+
+    contract_executed = _parse_tak_nie(_span_value(_find_h3(soup, "5.1.")))
+    execution_end_date = _span_value(_find_h3(soup, "5.2."))
+    executed_on_time = _parse_tak_nie(_span_value(_find_h3(soup, "5.3.")))
+
+    raw_changes = _span_value(_find_h3(soup, "5.4.1."))
+    num_changes: int | None = None
+    if raw_changes is not None:
+        try:
+            num_changes = int(raw_changes.strip())
+        except ValueError:
+            pass
+
+    executed_properly = _parse_tak_nie(_span_value(_find_h3(soup, "5.6.")))
+
+    if all(
+        v is None
+        for v in (
+            contract_date,
+            execution_period,
+            contract_executed,
+            execution_end_date,
+            executed_on_time,
+            num_changes,
+            executed_properly,
+        )
+    ):
+        return None
+    return ContractExecution(
+        contract_date=contract_date,
+        execution_period=execution_period,
+        contract_executed=contract_executed,
+        execution_end_date=execution_end_date,
+        executed_on_time=executed_on_time,
+        num_changes=num_changes,
+        executed_properly=executed_properly,
+    )
+
+
+def _extract_details_notice_update(soup: BeautifulSoup) -> NoticeChange | None:
+    """NoticeUpdateNotice: fields 3.2, 3.3, 3.4/3.4.1 (repeating)."""
+    changed_notice_number = _span_value(_find_h3(soup, "3.2."))
+    changed_notice_version = _span_value(_find_h3(soup, "3.3."))
+
+    # Collect 3.4/3.4.1 pairs by walking h3 tags in document order
+    # (mirrors the _extract_criteria pattern for 4.3.5/4.3.6 pairs)
+    changes: list[ChangeEntry] = []
+    all_h3s = soup.find_all("h3")
+    i = 0
+    while i < len(all_h3s):
+        text = all_h3s[i].get_text()
+        if "3.4.)" in text and "3.4.1.)" not in text:
+            changed_section = _span_value(all_h3s[i]) or _text_after_h3(all_h3s[i])
+            change_desc = None
+            if i + 1 < len(all_h3s) and "3.4.1.)" in all_h3s[i + 1].get_text():
+                change_desc = _collect_p_text(all_h3s[i + 1])
+                i += 1  # skip the 3.4.1 we just consumed
+            if changed_section or change_desc:
+                changes.append(
+                    ChangeEntry(
+                        changed_section=changed_section,
+                        change_description=change_desc,
+                    )
+                )
+        i += 1
+
+    if changed_notice_number is None and changed_notice_version is None and not changes:
+        return None
+    return NoticeChange(
+        changed_notice_number=changed_notice_number,
+        changed_notice_version=changed_notice_version,
+        changes=changes or None,
+    )
+
+
+_DETAIL_EXTRACTORS: dict[str, tuple[str, object]] = {
+    "TenderResultNotice": ("tender_result_enrichment", _extract_details_tender_result),
+    "ContractPerformingNotice": ("contract_execution", _extract_details_contract_performing),
+    "NoticeUpdateNotice": ("notice_change", _extract_details_notice_update),
+}
+
+
 # --- CPV code parsing ---
 
 
@@ -275,9 +445,16 @@ def parse_html(html: str, notice_type: str | None = None) -> HtmlExtracted:
         if val is not None:
             values = ExtractedValues(contract_value=val)
 
+    # Type-aware detail extraction (non-value)
+    details: dict[str, object] = {}
+    if notice_type and notice_type in _DETAIL_EXTRACTORS:
+        field_name, extractor = _DETAIL_EXTRACTORS[notice_type]
+        details[field_name] = extractor(soup)
+
     return HtmlExtracted(
         **address,
         opis=opis,
         kryteria_oceny=kryteria,
         values=values,
+        **details,
     )

@@ -91,6 +91,71 @@ SMALL_CONTRACT_HTML = """\
 <h3 class="mb-0">3.5.) Kod waluty: <span class="normal">PLN</span></h3>
 </main></body></html>"""
 
+TENDER_RESULT_ENRICHMENT_HTML = """\
+<html><head></head><body><main>
+<h2 class="bg-light p-3 mt-4">SEKCJA I - ZAMAWIAJĄCY</h2>
+<h3 class="mb-0">1.5.1.) Ulica: <span class="normal">al. Wolności 10</span></h3>
+<h3 class="mb-0">1.5.3.) Kod pocztowy: <span class="normal">30-500</span></h3>
+<h3 class="mb-0">1.5.6.) Lokalizacja NUTS 3: <span class="normal">PL213 - Miasto Kraków</span></h3>
+<h2 class="bg-light p-3 mt-4">SEKCJA VII WYKONAWCA, KTÓREMU UDZIELONO ZAMÓWIENIA</h2>
+<h3 class="mb-0">7.1.) Czy zamówienie zostało udzielone wykonawcom wspólnie ubiegającym się o udzielenie zamówienia: <span class="normal">Nie</span></h3>
+<h3 class="mb-0">7.2.) Wielkość przedsiębiorstwa wykonawcy: <span class="normal">Mały przedsiębiorca</span></h3>
+<h2 class="bg-light p-3 mt-4">SEKCJA VIII UMOWA</h2>
+<h3 class="mb-0">8.2.) Wartość umowy/umowy ramowej: <span class="normal">465163,88 PLN</span></h3>
+</main></body></html>"""
+
+CONTRACT_PERFORMING_DETAILS_HTML = """\
+<html><head></head><body><main>
+<h2 class="bg-light p-3 mt-4">SEKCJA IV – PODSTAWOWE INFORMACJE O ZAWARTEJ UMOWIE</h2>
+<h3 class="mb-0">4.1.) Data zawarcia umowy: <span class="normal">2025-03-15</span></h3>
+<h3 class="mb-0">4.2.) Okres realizacji zamówienia: </h3>
+56 dni
+<h3 class="mb-0">4.4.) Wartość umowy: <span class="normal">24280,56                        PLN</span></h3>
+<h2 class="bg-light p-3 mt-4">SEKCJA V PRZEBIEG REALIZACJI UMOWY</h2>
+<h3 class="mb-0">5.1.) Czy umowa została wykonana: <span class="normal">Tak</span></h3>
+<h3 class="mb-0">5.2.) Termin wykonania umowy: <span class="normal">2025-05-10</span></h3>
+<h3 class="mb-0">5.3.) Czy umowę wykonano w pierwotnie określonym terminie: <span class="normal">Tak</span></h3>
+<h3 class="mb-0">5.4.1.) Liczba zmian: <span class="normal">0</span></h3>
+<h3 class="mb-0">5.4.7.) Kod waluty: <span class="normal">PLN</span></h3>
+<h3 class="mb-0">5.5.) Łączna wartość wynagrodzenia: <span class="normal">20000,00                PLN</span></h3>
+<h3 class="mb-0">5.6.) Czy umowa została wykonana należycie: <span class="normal">Tak</span></h3>
+</main></body></html>"""
+
+NOTICE_UPDATE_SINGLE_HTML = """\
+<html><head></head><body><main>
+<h2 class="bg-light p-3 mt-4">SEKCJA III ZMIANA OGŁOSZENIA</h2>
+<h3 class="mb-0">3.2.) Numer zmienianego ogłoszenia w BZP: <span class="normal">2025/BZP 00512345/01</span></h3>
+<h3 class="mb-0">3.3.) Identyfikator ostatniej wersji zmienianego ogłoszenia: <span class="normal">01</span></h3>
+<h3 class="mb-0">3.4.) Identyfikator sekcji zmienianego ogłoszenia: </h3>
+SEKCJA VIII - PROCEDURA
+<h3 class="mb-0">3.4.1.) Opis zmiany, w tym tekst, który należy dodać lub zmienić w ogłoszeniu: </h3>
+<p class="mb-0">Przed zmianą:</p>
+<p class="mb-0">Termin składania ofert: 2025-11-15 10:00</p>
+<p class="mb-0">Po zmianie:</p>
+<p class="mb-0">Termin składania ofert: 2025-11-22 10:00</p>
+</main></body></html>"""
+
+NOTICE_UPDATE_MULTI_HTML = """\
+<html><head></head><body><main>
+<h2 class="bg-light p-3 mt-4">SEKCJA III ZMIANA OGŁOSZENIA</h2>
+<h3 class="mb-0">3.2.) Numer zmienianego ogłoszenia w BZP: <span class="normal">2025/BZP 00512345/01</span></h3>
+<h3 class="mb-0">3.3.) Identyfikator ostatniej wersji zmienianego ogłoszenia: <span class="normal">02</span></h3>
+<h3 class="mb-0">3.4.) Identyfikator sekcji zmienianego ogłoszenia: </h3>
+SEKCJA IV – PRZEDMIOT ZAMÓWIENIA
+<h3 class="mb-0">3.4.1.) Opis zmiany, w tym tekst, który należy dodać lub zmienić w ogłoszeniu: </h3>
+<p class="mb-0">Przed zmianą:</p>
+<p class="mb-0">Opis A stary</p>
+<p class="mb-0">Po zmianie:</p>
+<p class="mb-0">Opis A nowy</p>
+<h3 class="mb-0">3.4.) Identyfikator sekcji zmienianego ogłoszenia: </h3>
+SEKCJA VIII - PROCEDURA
+<h3 class="mb-0">3.4.1.) Opis zmiany, w tym tekst, który należy dodać lub zmienić w ogłoszeniu: </h3>
+<p class="mb-0">Przed zmianą:</p>
+<p class="mb-0">Termin: 2025-11-15</p>
+<p class="mb-0">Po zmianie:</p>
+<p class="mb-0">Termin: 2025-11-22</p>
+</main></body></html>"""
+
 EMPTY_HTML = "<html><head></head><body></body></html>"
 
 
@@ -326,6 +391,159 @@ class TestParseCpvCodes:
         raw = "45000000-7 (Roboty budowlane),71322000-1 (Usługi inżynierii projektowej w zakresie inżynierii lądowej i wodnej)"
         result = parse_cpv_codes(raw)
         assert len(result) == 2
+
+
+# --- General ---
+
+
+# --- Detail extraction: TenderResultEnrichment ---
+
+
+class TestTenderResultEnrichment:
+    def test_joint_bidders_false(self):
+        r = parse_html(TENDER_RESULT_ENRICHMENT_HTML, notice_type="TenderResultNotice")
+        assert r.tender_result_enrichment is not None
+        assert r.tender_result_enrichment.joint_bidders is False
+
+    def test_contractor_size(self):
+        r = parse_html(TENDER_RESULT_ENRICHMENT_HTML, notice_type="TenderResultNotice")
+        assert r.tender_result_enrichment.contractor_size == "Mały przedsiębiorca"
+
+    def test_values_still_extracted(self):
+        r = parse_html(TENDER_RESULT_ENRICHMENT_HTML, notice_type="TenderResultNotice")
+        assert r.values is not None
+        assert r.values.contract_value == pytest.approx(465163.88)
+
+    def test_no_enrichment_for_other_types(self):
+        r = parse_html(CONTRACT_PERFORMING_HTML, notice_type="ContractPerformingNotice")
+        assert r.tender_result_enrichment is None
+
+    def test_missing_enrichment_returns_none(self):
+        r = parse_html(EMPTY_HTML, notice_type="TenderResultNotice")
+        assert r.tender_result_enrichment is None
+
+
+# --- Detail extraction: ContractExecution ---
+
+
+class TestContractExecution:
+    def test_contract_date(self):
+        r = parse_html(CONTRACT_PERFORMING_DETAILS_HTML, notice_type="ContractPerformingNotice")
+        assert r.contract_execution is not None
+        assert r.contract_execution.contract_date == "2025-03-15"
+
+    def test_execution_period_plain_text(self):
+        r = parse_html(CONTRACT_PERFORMING_DETAILS_HTML, notice_type="ContractPerformingNotice")
+        assert r.contract_execution.execution_period == "56 dni"
+
+    def test_contract_executed_true(self):
+        r = parse_html(CONTRACT_PERFORMING_DETAILS_HTML, notice_type="ContractPerformingNotice")
+        assert r.contract_execution.contract_executed is True
+
+    def test_execution_end_date(self):
+        r = parse_html(CONTRACT_PERFORMING_DETAILS_HTML, notice_type="ContractPerformingNotice")
+        assert r.contract_execution.execution_end_date == "2025-05-10"
+
+    def test_executed_on_time_true(self):
+        r = parse_html(CONTRACT_PERFORMING_DETAILS_HTML, notice_type="ContractPerformingNotice")
+        assert r.contract_execution.executed_on_time is True
+
+    def test_num_changes_zero(self):
+        r = parse_html(CONTRACT_PERFORMING_DETAILS_HTML, notice_type="ContractPerformingNotice")
+        assert r.contract_execution.num_changes == 0
+
+    def test_executed_properly_true(self):
+        r = parse_html(CONTRACT_PERFORMING_DETAILS_HTML, notice_type="ContractPerformingNotice")
+        assert r.contract_execution.executed_properly is True
+
+    def test_values_still_extracted(self):
+        r = parse_html(CONTRACT_PERFORMING_DETAILS_HTML, notice_type="ContractPerformingNotice")
+        assert r.values is not None
+        assert r.values.contract_value == pytest.approx(24280.56)
+
+    def test_no_execution_for_other_types(self):
+        r = parse_html(TENDER_RESULT_HTML, notice_type="TenderResultNotice")
+        assert r.contract_execution is None
+
+    def test_missing_execution_returns_none(self):
+        r = parse_html(EMPTY_HTML, notice_type="ContractPerformingNotice")
+        assert r.contract_execution is None
+
+
+# --- Detail extraction: NoticeChange ---
+
+
+class TestNoticeChange:
+    def test_changed_notice_number(self):
+        r = parse_html(NOTICE_UPDATE_SINGLE_HTML, notice_type="NoticeUpdateNotice")
+        assert r.notice_change is not None
+        assert r.notice_change.changed_notice_number == "2025/BZP 00512345/01"
+
+    def test_changed_notice_version(self):
+        r = parse_html(NOTICE_UPDATE_SINGLE_HTML, notice_type="NoticeUpdateNotice")
+        assert r.notice_change.changed_notice_version == "01"
+
+    def test_single_change_section(self):
+        r = parse_html(NOTICE_UPDATE_SINGLE_HTML, notice_type="NoticeUpdateNotice")
+        assert r.notice_change.changes is not None
+        assert len(r.notice_change.changes) == 1
+        assert "SEKCJA VIII" in r.notice_change.changes[0].changed_section
+
+    def test_single_change_description(self):
+        r = parse_html(NOTICE_UPDATE_SINGLE_HTML, notice_type="NoticeUpdateNotice")
+        desc = r.notice_change.changes[0].change_description
+        assert "Przed zmianą:" in desc
+        assert "Po zmianie:" in desc
+        assert "2025-11-22" in desc
+
+    def test_multiple_changes(self):
+        r = parse_html(NOTICE_UPDATE_MULTI_HTML, notice_type="NoticeUpdateNotice")
+        assert r.notice_change.changes is not None
+        assert len(r.notice_change.changes) == 2
+
+    def test_multiple_changes_sections(self):
+        r = parse_html(NOTICE_UPDATE_MULTI_HTML, notice_type="NoticeUpdateNotice")
+        sections = [c.changed_section for c in r.notice_change.changes]
+        assert any("SEKCJA IV" in s for s in sections)
+        assert any("SEKCJA VIII" in s for s in sections)
+
+    def test_no_change_for_other_types(self):
+        r = parse_html(TENDER_RESULT_HTML, notice_type="TenderResultNotice")
+        assert r.notice_change is None
+
+    def test_missing_change_returns_none(self):
+        r = parse_html(EMPTY_HTML, notice_type="NoticeUpdateNotice")
+        assert r.notice_change is None
+
+
+# --- Helper: _parse_tak_nie ---
+
+
+class TestParseTakNie:
+    def test_tak(self):
+        from procurement.silver.html_parser import _parse_tak_nie
+
+        assert _parse_tak_nie("Tak") is True
+
+    def test_nie(self):
+        from procurement.silver.html_parser import _parse_tak_nie
+
+        assert _parse_tak_nie("Nie") is False
+
+    def test_none(self):
+        from procurement.silver.html_parser import _parse_tak_nie
+
+        assert _parse_tak_nie(None) is None
+
+    def test_whitespace(self):
+        from procurement.silver.html_parser import _parse_tak_nie
+
+        assert _parse_tak_nie("  Tak  ") is True
+
+    def test_unexpected_value(self):
+        from procurement.silver.html_parser import _parse_tak_nie
+
+        assert _parse_tak_nie("Maybe") is None
 
 
 # --- General ---
