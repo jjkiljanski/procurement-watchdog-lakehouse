@@ -187,6 +187,10 @@ Official BZP dictionary files are stored in `refs/bzp_api/`.
 
 ## HTML structure
 
+> **Detailed reference:** See [`docs/html_structure.md`](html_structure.md) for
+> a comprehensive analysis of value fields, number formats, multi-lot patterns,
+> and an extraction improvement roadmap.
+
 ### Sections by notice type
 
 Each notice type has a fundamentally different HTML template:
