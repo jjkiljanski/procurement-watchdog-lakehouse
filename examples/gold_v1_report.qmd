@@ -1,0 +1,601 @@
+---
+title: "Procurement Watchdog - Gold v1 Comprehensive Report"
+subtitle: "Case, Buyer, Market and Daily Signals Diagnostics"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-fold: true
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+## Scope
+
+This report summarizes the **Gold v1** layer produced from daily Silver parquet snapshots.
+It combines:
+
+- global statistical diagnostics,
+- trend views over all available dates,
+- benchmark slices (case, buyer, market),
+- concrete example datapoints behind the aggregates.
+
+```{python}
+import os
+import math
+import statistics
+from collections import Counter, defaultdict
+from datetime import date
+
+import pyarrow as pa
+import pyarrow.dataset as ds
+from IPython.display import Markdown, HTML, display
+
+GOLD_ROOT = os.environ.get(
+    "GOLD_ROOT",
+    r"E:\git_projects\procurement-watchdog-api-exploration\data\gold",
+)
+
+DATASETS = {
+    "case_mart": "case_mart",
+    "buyer_mart": "buyer_mart",
+    "market_mart": "market_mart",
+    "signals_buyer_daily": "signals_buyer_daily",
+}
+
+SCHEMAS = {
+    "case_mart": pa.schema(
+        [
+            ("caseId", pa.string()),
+            ("buyer_id", pa.string()),
+            ("first_publicationDate", pa.date32()),
+            ("last_publicationDate", pa.date32()),
+            ("num_notices", pa.int64()),
+            ("num_updates", pa.int64()),
+            ("has_init", pa.bool_()),
+            ("has_result", pa.bool_()),
+            ("has_execution", pa.bool_()),
+            ("deadline_changed_count", pa.int64()),
+            ("criteria_changed_count", pa.int64()),
+            ("scope_changed_count", pa.int64()),
+            ("execution_delayed_any", pa.bool_()),
+            ("execution_risk_any", pa.bool_()),
+            ("paid_ratio_max", pa.float64()),
+            ("paid_ratio_median", pa.float64()),
+            ("time_to_award_days", pa.float64()),
+            ("award_to_completion_days", pa.float64()),
+            ("target_date", pa.string()),
+            ("date", pa.string()),
+        ]
+    ),
+    "buyer_mart": pa.schema(
+        [
+            ("organizationId", pa.string()),
+            ("provinceName", pa.string()),
+            ("nuts3_code", pa.string()),
+            ("notices_total", pa.int64()),
+            ("cases_total", pa.int64()),
+            ("results_total", pa.int64()),
+            ("executions_total", pa.int64()),
+            ("single_bid_rate", pa.float64()),
+            ("biddingWindowDays_median", pa.float64()),
+            ("priceWeight_median", pa.float64()),
+            ("priceWeight_detected_pct", pa.float64()),
+            ("delayed_pct", pa.float64()),
+            ("paidRatio_median", pa.float64()),
+            ("updates_total", pa.int64()),
+            ("concentration_top1_share", pa.float64()),
+            ("hhi", pa.float64()),
+            ("value_total", pa.float64()),
+            ("target_date", pa.string()),
+            ("date", pa.string()),
+        ]
+    ),
+    "market_mart": pa.schema(
+        [
+            ("cpv_2digit", pa.string()),
+            ("cases_total", pa.int64()),
+            ("results_total", pa.int64()),
+            ("value_total", pa.float64()),
+            ("winning_bid_median", pa.float64()),
+            ("contract_value_median", pa.float64()),
+            ("top1_share", pa.float64()),
+            ("hhi", pa.float64()),
+            ("target_date", pa.string()),
+            ("date", pa.string()),
+        ]
+    ),
+    "signals_buyer_daily": pa.schema(
+        [
+            ("target_date", pa.string()),
+            ("buyer_id", pa.string()),
+            ("notices_total", pa.int64()),
+            ("cases_total", pa.int64()),
+            ("results_total", pa.int64()),
+            ("updates_total", pa.int64()),
+            ("single_bid_rate_today", pa.float64()),
+            ("value_today", pa.float64()),
+            ("hhi_today", pa.float64()),
+            ("update_intensity_today", pa.float64()),
+            ("date", pa.string()),
+        ]
+    ),
+}
+
+def load_rows(dataset_name):
+    path = os.path.join(GOLD_ROOT, dataset_name)
+    schema = SCHEMAS[dataset_name]
+    return ds.dataset(path, format="parquet", partitioning="hive", schema=schema).to_table().to_pylist()
+
+def q(values, p):
+    vals = sorted(v for v in values if v is not None)
+    if not vals:
+        return None
+    if len(vals) == 1:
+        return vals[0]
+    idx = (len(vals) - 1) * p
+    lo = math.floor(idx)
+    hi = math.ceil(idx)
+    if lo == hi:
+        return vals[lo]
+    frac = idx - lo
+    return vals[lo] * (1 - frac) + vals[hi] * frac
+
+def fmt(x):
+    if x is None:
+        return "-"
+    if isinstance(x, float):
+        return f"{x:,.4f}"
+    return str(x)
+
+def md_table(rows, columns):
+    header = "| " + " | ".join(columns) + " |"
+    sep = "| " + " | ".join(["---"] * len(columns)) + " |"
+    lines = [header, sep]
+    for r in rows:
+        lines.append("| " + " | ".join(fmt(r.get(c)) for c in columns) + " |")
+    return "\n".join(lines)
+
+def render_table(rows, columns, title=None, max_rows=20):
+    if title:
+        display(Markdown(f"**{title}**"))
+    if not rows:
+        display(Markdown("_No rows_"))
+        return
+    display(Markdown(md_table(rows[:max_rows], columns)))
+    if len(rows) > max_rows:
+        display(Markdown(f"_Showing first {max_rows} of {len(rows)} rows._"))
+
+def svg_bar(items, title="", width=900, height=320):
+    if not items:
+        return "<p>No data</p>"
+    vals = [v for _, v in items]
+    max_v = max(vals) if vals else 1
+    max_v = max(max_v, 1e-9)
+    left, right, top, bottom = 50, 20, 30, 70
+    plot_w = width - left - right
+    plot_h = height - top - bottom
+    bar_w = plot_w / max(len(items), 1)
+    out = [f"<svg viewBox='0 0 {width} {height}' width='100%' xmlns='http://www.w3.org/2000/svg'>"]
+    out.append(f"<text x='{left}' y='18' font-size='14' font-weight='700'>{title}</text>")
+    out.append(f"<line x1='{left}' y1='{top+plot_h}' x2='{left+plot_w}' y2='{top+plot_h}' stroke='#333'/>")
+    out.append(f"<line x1='{left}' y1='{top}' x2='{left}' y2='{top+plot_h}' stroke='#333'/>")
+    for i, (label, val) in enumerate(items):
+        h = 0 if val is None else (val / max_v) * plot_h
+        x = left + i * bar_w + 2
+        y = top + plot_h - h
+        out.append(f"<rect x='{x:.1f}' y='{y:.1f}' width='{max(bar_w-4,1):.1f}' height='{h:.1f}' fill='#2c7fb8'/>")
+        lx = left + i * bar_w + bar_w / 2
+        out.append(f"<text x='{lx:.1f}' y='{top+plot_h+14}' font-size='9' text-anchor='middle' transform='rotate(35 {lx:.1f},{top+plot_h+14})'>{label}</text>")
+    out.append("</svg>")
+    return "".join(out)
+
+def svg_line(series, title="", width=900, height=320):
+    if not series:
+        return "<p>No data</p>"
+    vals = [v for _, v in series if v is not None]
+    if not vals:
+        return "<p>No numeric data</p>"
+    min_v, max_v = min(vals), max(vals)
+    if min_v == max_v:
+        min_v -= 1
+        max_v += 1
+    left, right, top, bottom = 50, 20, 30, 60
+    plot_w = width - left - right
+    plot_h = height - top - bottom
+    n = len(series)
+    points = []
+    for i, (_, v) in enumerate(series):
+        if v is None:
+            continue
+        x = left + (i / max(n - 1, 1)) * plot_w
+        y = top + (1 - (v - min_v) / (max_v - min_v)) * plot_h
+        points.append((x, y, v))
+    path = " ".join(f"{x:.2f},{y:.2f}" for x, y, _ in points)
+    out = [f"<svg viewBox='0 0 {width} {height}' width='100%' xmlns='http://www.w3.org/2000/svg'>"]
+    out.append(f"<text x='{left}' y='18' font-size='14' font-weight='700'>{title}</text>")
+    out.append(f"<line x1='{left}' y1='{top+plot_h}' x2='{left+plot_w}' y2='{top+plot_h}' stroke='#333'/>")
+    out.append(f"<line x1='{left}' y1='{top}' x2='{left}' y2='{top+plot_h}' stroke='#333'/>")
+    out.append(f"<polyline fill='none' stroke='#d95f0e' stroke-width='2' points='{path}'/>")
+    for i, (label, _) in enumerate(series):
+        if i % max(1, len(series) // 12) == 0:
+            x = left + (i / max(n - 1, 1)) * plot_w
+            out.append(f"<text x='{x:.1f}' y='{top+plot_h+14}' font-size='9' text-anchor='middle'>{label}</text>")
+    out.append("</svg>")
+    return "".join(out)
+
+case_rows = load_rows("case_mart")
+buyer_rows = load_rows("buyer_mart")
+market_rows = load_rows("market_mart")
+signals_rows = load_rows("signals_buyer_daily")
+```
+
+## Data Inventory
+
+```{python}
+inventory = []
+for name, rows in [
+    ("case_mart", case_rows),
+    ("buyer_mart", buyer_rows),
+    ("market_mart", market_rows),
+    ("signals_buyer_daily", signals_rows),
+]:
+    dates = sorted({r.get("target_date") for r in rows if r.get("target_date")})
+    inventory.append(
+        {
+            "dataset": name,
+            "rows_total": len(rows),
+            "distinct_dates": len(dates),
+            "first_date": dates[0] if dates else None,
+            "last_date": dates[-1] if dates else None,
+        }
+    )
+render_table(inventory, ["dataset", "rows_total", "distinct_dates", "first_date", "last_date"], "Gold Coverage")
+display(Markdown(f"_Gold root used_: `{GOLD_ROOT}`"))
+```
+
+## Daily Throughput Overview
+
+```{python}
+daily_counts = defaultdict(lambda: {"cases": 0, "buyers": 0, "markets": 0, "signals": 0})
+for r in case_rows:
+    daily_counts[r["target_date"]]["cases"] += 1
+for r in buyer_rows:
+    daily_counts[r["target_date"]]["buyers"] += 1
+for r in market_rows:
+    daily_counts[r["target_date"]]["markets"] += 1
+for r in signals_rows:
+    daily_counts[r["target_date"]]["signals"] += 1
+
+days = sorted(daily_counts.keys())
+case_series = [(d, daily_counts[d]["cases"]) for d in days]
+buyer_series = [(d, daily_counts[d]["buyers"]) for d in days]
+market_series = [(d, daily_counts[d]["markets"]) for d in days]
+
+display(HTML(svg_line(case_series, "Daily Case Mart Rows")))
+display(HTML(svg_line(buyer_series, "Daily Buyer Mart Rows")))
+display(HTML(svg_line(market_series, "Daily Market Mart Rows")))
+
+render_table(
+    [{"date": d, **daily_counts[d]} for d in days],
+    ["date", "cases", "buyers", "markets", "signals"],
+    "Daily Row Counts",
+    max_rows=40,
+)
+```
+
+## Case Mart Diagnostics
+
+### Lifecycle Coverage and Complexity
+
+```{python}
+n_cases = len(case_rows)
+coverage = {
+    "has_init_rate": sum(1 for r in case_rows if r.get("has_init")) / n_cases if n_cases else None,
+    "has_result_rate": sum(1 for r in case_rows if r.get("has_result")) / n_cases if n_cases else None,
+    "has_execution_rate": sum(1 for r in case_rows if r.get("has_execution")) / n_cases if n_cases else None,
+}
+
+notices = [r.get("num_notices") for r in case_rows if r.get("num_notices") is not None]
+updates = [r.get("num_updates") for r in case_rows if r.get("num_updates") is not None]
+time_to_award = [r.get("time_to_award_days") for r in case_rows if r.get("time_to_award_days") is not None]
+award_to_completion = [r.get("award_to_completion_days") for r in case_rows if r.get("award_to_completion_days") is not None]
+
+case_stats = [
+    {"metric": "cases_total", "value": n_cases},
+    {"metric": "has_init_rate", "value": coverage["has_init_rate"]},
+    {"metric": "has_result_rate", "value": coverage["has_result_rate"]},
+    {"metric": "has_execution_rate", "value": coverage["has_execution_rate"]},
+    {"metric": "num_notices_median", "value": q(notices, 0.5)},
+    {"metric": "num_notices_p90", "value": q(notices, 0.9)},
+    {"metric": "num_updates_median", "value": q(updates, 0.5)},
+    {"metric": "time_to_award_days_median", "value": q(time_to_award, 0.5)},
+    {"metric": "time_to_award_days_p90", "value": q(time_to_award, 0.9)},
+    {"metric": "award_to_completion_days_median", "value": q(award_to_completion, 0.5)},
+]
+render_table(case_stats, ["metric", "value"], "Case-Level Summary", max_rows=20)
+
+bins = Counter()
+for n in notices:
+    if n <= 1:
+        bins["1"] += 1
+    elif n <= 3:
+        bins["2-3"] += 1
+    elif n <= 5:
+        bins["4-5"] += 1
+    elif n <= 10:
+        bins["6-10"] += 1
+    else:
+        bins["11+"] += 1
+display(HTML(svg_bar(list(bins.items()), "Distribution of num_notices per case")))
+```
+
+### Datapoints Behind Case Statistics
+
+```{python}
+long_award = sorted(
+    [r for r in case_rows if r.get("time_to_award_days") is not None],
+    key=lambda r: r["time_to_award_days"],
+    reverse=True,
+)[:15]
+
+high_updates = sorted(
+    [r for r in case_rows if (r.get("num_updates") or 0) > 0],
+    key=lambda r: r.get("num_updates") or 0,
+    reverse=True,
+)[:15]
+
+render_table(
+    long_award,
+    ["target_date", "caseId", "buyer_id", "num_notices", "num_updates", "time_to_award_days", "award_to_completion_days"],
+    "Top 15 Longest time_to_award_days cases",
+    max_rows=15,
+)
+render_table(
+    high_updates,
+    ["target_date", "caseId", "buyer_id", "num_notices", "num_updates", "deadline_changed_count", "criteria_changed_count", "scope_changed_count"],
+    "Top 15 Highest-Update cases",
+    max_rows=15,
+)
+```
+
+## Buyer Mart Benchmarking
+
+### Aggregate Buyer Statistics
+
+```{python}
+n_buyer_days = len(buyer_rows)
+sb = [r.get("single_bid_rate") for r in buyer_rows if r.get("single_bid_rate") is not None]
+hhi_vals = [r.get("hhi") for r in buyer_rows if r.get("hhi") is not None]
+conc = [r.get("concentration_top1_share") for r in buyer_rows if r.get("concentration_top1_share") is not None]
+price_detect = [r.get("priceWeight_detected_pct") for r in buyer_rows if r.get("priceWeight_detected_pct") is not None]
+
+buyer_stats = [
+    {"metric": "buyer_day_rows", "value": n_buyer_days},
+    {"metric": "single_bid_rate_median", "value": q(sb, 0.5)},
+    {"metric": "single_bid_rate_p90", "value": q(sb, 0.9)},
+    {"metric": "hhi_median", "value": q(hhi_vals, 0.5)},
+    {"metric": "hhi_p90", "value": q(hhi_vals, 0.9)},
+    {"metric": "top1_share_median", "value": q(conc, 0.5)},
+    {"metric": "top1_share_p90", "value": q(conc, 0.9)},
+    {"metric": "price_weight_detected_pct_median", "value": q(price_detect, 0.5)},
+]
+render_table(buyer_stats, ["metric", "value"], "Buyer Benchmark Summary")
+```
+
+### Top Buyers by Workload and Concentration
+
+```{python}
+agg = defaultdict(lambda: {"notices_total": 0, "cases_total": 0, "results_total": 0, "buyer_days": 0, "avg_single_bid_rate": [], "avg_hhi": []})
+for r in buyer_rows:
+    bid = r.get("organizationId")
+    if not bid:
+        continue
+    a = agg[bid]
+    a["notices_total"] += r.get("notices_total") or 0
+    a["cases_total"] += r.get("cases_total") or 0
+    a["results_total"] += r.get("results_total") or 0
+    a["buyer_days"] += 1
+    if r.get("single_bid_rate") is not None:
+        a["avg_single_bid_rate"].append(r["single_bid_rate"])
+    if r.get("hhi") is not None:
+        a["avg_hhi"].append(r["hhi"])
+
+buyer_rank = []
+for bid, a in agg.items():
+    buyer_rank.append(
+        {
+            "organizationId": bid,
+            "buyer_days": a["buyer_days"],
+            "notices_total": a["notices_total"],
+            "cases_total": a["cases_total"],
+            "results_total": a["results_total"],
+            "avg_single_bid_rate": statistics.mean(a["avg_single_bid_rate"]) if a["avg_single_bid_rate"] else None,
+            "avg_hhi": statistics.mean(a["avg_hhi"]) if a["avg_hhi"] else None,
+        }
+    )
+
+top_workload = sorted(buyer_rank, key=lambda r: r["notices_total"], reverse=True)[:20]
+top_hhi = sorted([r for r in buyer_rank if r.get("avg_hhi") is not None], key=lambda r: r["avg_hhi"], reverse=True)[:20]
+render_table(top_workload, ["organizationId", "buyer_days", "notices_total", "cases_total", "results_total", "avg_single_bid_rate", "avg_hhi"], "Top 20 Buyers by Total Notice Volume", max_rows=20)
+render_table(top_hhi, ["organizationId", "buyer_days", "notices_total", "avg_hhi", "avg_single_bid_rate"], "Top 20 Buyers by Average HHI", max_rows=20)
+```
+
+### Datapoint Examples: High-Risk Buyer-Days
+
+```{python}
+def risk_score(r):
+    sbr = r.get("single_bid_rate") or 0.0
+    hhi = r.get("hhi") or 0.0
+    upd = (r.get("updates_total") or 0) / max((r.get("cases_total") or 1), 1)
+    vol = math.log1p(r.get("results_total") or 0)
+    return 0.45 * sbr + 0.35 * hhi + 0.15 * upd + 0.05 * vol
+
+latest_date = max(r["target_date"] for r in signals_rows if r.get("target_date"))
+buyer_latest = [r for r in buyer_rows if r.get("target_date") == latest_date]
+high_risk_examples = sorted(
+    [{**r, "risk_score": risk_score(r)} for r in buyer_latest],
+    key=lambda r: r["risk_score"],
+    reverse=True,
+)[:25]
+render_table(
+    high_risk_examples,
+    ["target_date", "organizationId", "notices_total", "cases_total", "results_total", "single_bid_rate", "concentration_top1_share", "hhi", "updates_total", "risk_score"],
+    f"Top 25 Buyer-Day Risk Examples (latest date: {latest_date})",
+    max_rows=25,
+)
+```
+
+## Market (CPV) Benchmarking
+
+### Market-Wide Sector Statistics
+
+```{python}
+market_stats = []
+for cpv in sorted({r.get("cpv_2digit") for r in market_rows if r.get("cpv_2digit")}):
+    rows = [r for r in market_rows if r.get("cpv_2digit") == cpv]
+    market_stats.append(
+        {
+            "cpv_2digit": cpv,
+            "days": len(rows),
+            "cases_total_sum": sum(r.get("cases_total") or 0 for r in rows),
+            "results_total_sum": sum(r.get("results_total") or 0 for r in rows),
+            "value_total_sum": sum(r.get("value_total") or 0 for r in rows),
+            "median_hhi": q([r.get("hhi") for r in rows if r.get("hhi") is not None], 0.5),
+            "median_top1_share": q([r.get("top1_share") for r in rows if r.get("top1_share") is not None], 0.5),
+        }
+    )
+
+top_market_value = sorted(market_stats, key=lambda r: r["value_total_sum"], reverse=True)[:20]
+render_table(top_market_value, ["cpv_2digit", "days", "cases_total_sum", "results_total_sum", "value_total_sum", "median_hhi", "median_top1_share"], "Top 20 CPV 2-digit Sectors by Total Value", max_rows=20)
+
+bar_items = [(r["cpv_2digit"], r["value_total_sum"]) for r in top_market_value[:12]]
+display(HTML(svg_bar(bar_items, "Top CPV 2-digit sectors by aggregated value (top 12)")))
+```
+
+### Datapoint Examples: Concentrated Market-Days
+
+```{python}
+concentrated_market_days = sorted(
+    [r for r in market_rows if r.get("hhi") is not None],
+    key=lambda r: r["hhi"],
+    reverse=True,
+)[:25]
+render_table(
+    concentrated_market_days,
+    ["target_date", "cpv_2digit", "cases_total", "results_total", "value_total", "top1_share", "hhi"],
+    "Top 25 Most Concentrated CPV Market-Days (HHI)",
+    max_rows=25,
+)
+```
+
+## Daily Signals Layer
+
+### Latest-Day Signal Distribution
+
+```{python}
+signals_latest = [r for r in signals_rows if r.get("target_date") == latest_date]
+
+sbr_latest = [r.get("single_bid_rate_today") for r in signals_latest if r.get("single_bid_rate_today") is not None]
+hhi_latest = [r.get("hhi_today") for r in signals_latest if r.get("hhi_today") is not None]
+upd_latest = [r.get("update_intensity_today") for r in signals_latest if r.get("update_intensity_today") is not None]
+value_latest = [r.get("value_today") for r in signals_latest if r.get("value_today") is not None]
+
+signal_stats = [
+    {"metric": "latest_date", "value": latest_date},
+    {"metric": "buyers_count", "value": len(signals_latest)},
+    {"metric": "single_bid_rate_today_median", "value": q(sbr_latest, 0.5)},
+    {"metric": "single_bid_rate_today_p90", "value": q(sbr_latest, 0.9)},
+    {"metric": "hhi_today_median", "value": q(hhi_latest, 0.5)},
+    {"metric": "hhi_today_p90", "value": q(hhi_latest, 0.9)},
+    {"metric": "update_intensity_today_median", "value": q(upd_latest, 0.5)},
+    {"metric": "value_today_p90", "value": q(value_latest, 0.9)},
+]
+render_table(signal_stats, ["metric", "value"], "Signals Snapshot")
+
+top_signals = sorted(
+    signals_latest,
+    key=lambda r: ((r.get("single_bid_rate_today") or 0) * 0.45 + (r.get("hhi_today") or 0) * 0.35 + (r.get("update_intensity_today") or 0) * 0.20),
+    reverse=True,
+)[:30]
+render_table(
+    top_signals,
+    ["buyer_id", "notices_total", "cases_total", "results_total", "single_bid_rate_today", "hhi_today", "update_intensity_today", "value_today"],
+    "Top 30 Buyers by Composite Daily Signal Score",
+    max_rows=30,
+)
+```
+
+### Single-Buyer Time Series Example
+
+```{python}
+candidate = top_signals[0]["buyer_id"] if top_signals else None
+buyer_history = []
+if candidate:
+    buyer_history = sorted(
+        [r for r in signals_rows if r.get("buyer_id") == candidate],
+        key=lambda r: r["target_date"],
+    )
+
+display(Markdown(f"**Selected buyer example**: `{candidate}`"))
+if buyer_history:
+    line1 = [(r["target_date"][5:], r.get("single_bid_rate_today") or 0.0) for r in buyer_history]
+    line2 = [(r["target_date"][5:], r.get("hhi_today") or 0.0) for r in buyer_history]
+    line3 = [(r["target_date"][5:], r.get("update_intensity_today") or 0.0) for r in buyer_history]
+    display(HTML(svg_line(line1, f"{candidate} - single_bid_rate_today over time")))
+    display(HTML(svg_line(line2, f"{candidate} - hhi_today over time")))
+    display(HTML(svg_line(line3, f"{candidate} - update_intensity_today over time")))
+    render_table(
+        buyer_history,
+        ["target_date", "notices_total", "cases_total", "results_total", "single_bid_rate_today", "hhi_today", "update_intensity_today", "value_today"],
+        f"{candidate} Daily Signal Rows",
+        max_rows=40,
+    )
+else:
+    display(Markdown("_No buyer history available for the selected candidate._"))
+```
+
+## Quality and Contract Checks
+
+```{python}
+def non_null_rate(rows, field):
+    if not rows:
+        return None
+    return sum(1 for r in rows if r.get(field) is not None) / len(rows)
+
+quality = [
+    {"dataset": "case_mart", "field": "caseId", "non_null_rate": non_null_rate(case_rows, "caseId")},
+    {"dataset": "case_mart", "field": "buyer_id", "non_null_rate": non_null_rate(case_rows, "buyer_id")},
+    {"dataset": "buyer_mart", "field": "organizationId", "non_null_rate": non_null_rate(buyer_rows, "organizationId")},
+    {"dataset": "buyer_mart", "field": "single_bid_rate", "non_null_rate": non_null_rate(buyer_rows, "single_bid_rate")},
+    {"dataset": "market_mart", "field": "cpv_2digit", "non_null_rate": non_null_rate(market_rows, "cpv_2digit")},
+    {"dataset": "signals_buyer_daily", "field": "buyer_id", "non_null_rate": non_null_rate(signals_rows, "buyer_id")},
+]
+render_table(quality, ["dataset", "field", "non_null_rate"], "Basic Non-Null Checks", max_rows=20)
+
+neg_duration = [r for r in case_rows if (r.get("time_to_award_days") is not None and r["time_to_award_days"] < 0) or (r.get("award_to_completion_days") is not None and r["award_to_completion_days"] < 0)]
+display(Markdown(f"**Negative duration rows in case_mart**: `{len(neg_duration)}`"))
+if neg_duration:
+    render_table(
+        neg_duration,
+        ["target_date", "caseId", "time_to_award_days", "award_to_completion_days", "first_publicationDate", "last_publicationDate"],
+        "Negative Duration Examples",
+        max_rows=20,
+    )
+```
+
+## Interpretation Notes
+
+- `single_bid_rate` / `single_bid_rate_today` is based on available Gold logic and can be sparse for low-result buyer-days.
+- concentration metrics (`top1_share`, `hhi`) are volume-sensitive; interpret together with `results_total` and `value_total` / `value_today`.
+- `update_intensity_today` is operationally meaningful only when `cases_total > 0`.
+- small-day partitions (holidays/weekends) are expected to show higher statistical volatility.
+
+## Suggested Follow-Ups
+
+1. Add rolling baselines (7/30/90-day) to convert today-level signals into robust z-score style anomalies.
+2. Add region-level cuts (`provinceName`, `nuts3_code`) as explicit sections in Gold v2 reporting.
+3. Add contractor-level longitudinal concentration tracking for top buyers and top CPV sectors.

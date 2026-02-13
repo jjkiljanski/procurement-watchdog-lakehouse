@@ -25,6 +25,7 @@ STEPS = [
     ("bronze", SCRIPTS_DIR / "build_bronze.py"),
     ("silver", SCRIPTS_DIR / "build_silver.py"),
     ("gold", SCRIPTS_DIR / "build_gold.py"),
+    ("run-stats", SCRIPTS_DIR / "build_run_stats.py"),
 ]
 
 
