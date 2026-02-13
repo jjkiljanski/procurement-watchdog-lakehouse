@@ -339,28 +339,25 @@ def build_silver(df: DataFrame) -> DataFrame:
             coalesce(
                 when(
                     col("htmlExtracted.contract_execution.execution_period").isNotNull(),
-                    regexp_extract(
-                        lower(col("htmlExtracted.contract_execution.execution_period")),
-                        r"(\d+)\s*(?:dni|dzien|days?)",
-                        1,
-                    ).cast(IntegerType()),
+                    expr(
+                        "try_cast(regexp_extract(lower(htmlExtracted.contract_execution.execution_period), "
+                        "'(\\d+)\\s*(?:dni|dzien|days?)', 1) as int)"
+                    ),
                 ),
                 when(
                     col("htmlExtracted.contract_execution.execution_period").isNotNull(),
-                    regexp_extract(
-                        lower(col("htmlExtracted.contract_execution.execution_period")),
-                        r"(\d+)\s*(?:tygodni|tygodnie|tydzień|weeks?)",
-                        1,
-                    ).cast(IntegerType())
+                    expr(
+                        "try_cast(regexp_extract(lower(htmlExtracted.contract_execution.execution_period), "
+                        "'(\\d+)\\s*(?:tygod\\w*|weeks?)', 1) as int)"
+                    )
                     * lit(7),
                 ),
                 when(
                     col("htmlExtracted.contract_execution.execution_period").isNotNull(),
-                    regexp_extract(
-                        lower(col("htmlExtracted.contract_execution.execution_period")),
-                        r"(\d+)\s*(?:miesi[aą]c(?:y|e)?|months?)",
-                        1,
-                    ).cast(IntegerType())
+                    expr(
+                        "try_cast(regexp_extract(lower(htmlExtracted.contract_execution.execution_period), "
+                        "'(\\d+)\\s*(?:miesi\\w*|months?)', 1) as int)"
+                    )
                     * lit(30),
                 ),
                 when(
