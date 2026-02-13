@@ -54,6 +54,16 @@ def _span_value(h3: Tag | None) -> str | None:
     return text or None
 
 
+def _find_h3_by_label(soup: BeautifulSoup, patterns: list[str]) -> Tag | None:
+    """Find h3 by case-insensitive label fragments in text content."""
+    lowered_patterns = [p.lower() for p in patterns]
+    for h3 in soup.find_all("h3"):
+        text = h3.get_text(separator=" ", strip=True).lower()
+        if all(pattern in text for pattern in lowered_patterns):
+            return h3
+    return None
+
+
 def _field_num(h3: Tag | None) -> str | None:
     """Extract a field number prefix from an h3 (e.g. 6.2.)."""
     if h3 is None:
@@ -356,6 +366,25 @@ def _extract_tender_result_lots(soup: BeautifulSoup) -> list[TenderResultLot] | 
     return lots or None
 
 
+def _extract_status_lots_from_procedure_result(procedure_result: str | None) -> list[TenderResultLot] | None:
+    """Create synthetic lot rows for cancelled/unresolved outcomes."""
+    if not procedure_result:
+        return None
+    tokens = [token.strip() for token in procedure_result.split(";") if token.strip()]
+    if not tokens:
+        return None
+    normalized = [token.lower() for token in tokens]
+    if not any(token in {"uniewaznienie", "nierozstrzygnieto"} for token in normalized):
+        return None
+    return [
+        TenderResultLot(
+            lot_id=str(i),
+            winner=status,
+        )
+        for i, status in enumerate(tokens, start=1)
+    ]
+
+
 def _extract_values_contract_notice(soup: BeautifulSoup) -> ExtractedValues | None:
     """ContractNotice: fields 4.1.5 (total value), 4.1.6 (net of VAT)."""
     estimated_value = _parse_pln_value(_span_value(_find_h3(soup, "4.1.5.")))
@@ -418,17 +447,26 @@ def _extract_details_tender_result(soup: BeautifulSoup) -> TenderResultEnrichmen
 
 
 def _extract_details_contract_performing(soup: BeautifulSoup) -> ContractExecution | None:
-    """ContractPerformingNotice: fields 4.1-4.2, 5.1-5.6."""
-    contract_date = _span_value(_find_h3(soup, "4.1."))
-    # 4.2 uses plain text after h3 (not in span)
-    h3_42 = _find_h3(soup, "4.2.")
-    execution_period = _span_value(h3_42) or _text_after_h3(h3_42)
+    """ContractPerformingNotice: execution details resolved by label + numeric fallback."""
+    h3_contract_date = _find_h3_by_label(soup, ["data zawarcia umowy"]) or _find_h3(soup, "4.1.")
+    contract_date = _span_value(h3_contract_date) or _text_after_h3(h3_contract_date)
 
-    contract_executed = _parse_tak_nie(_span_value(_find_h3(soup, "5.1.")))
-    execution_end_date = _span_value(_find_h3(soup, "5.2."))
-    executed_on_time = _parse_tak_nie(_span_value(_find_h3(soup, "5.3.")))
+    h3_execution_period = _find_h3_by_label(soup, ["okres realizacji"]) or _find_h3(soup, "4.2.")
+    execution_period = _span_value(h3_execution_period) or _text_after_h3(h3_execution_period)
 
-    raw_changes = _span_value(_find_h3(soup, "5.4.1."))
+    h3_contract_executed = _find_h3_by_label(soup, ["czy umowa", "wykonana"]) or _find_h3(soup, "5.1.")
+    contract_executed = _parse_tak_nie(_span_value(h3_contract_executed) or _text_after_h3(h3_contract_executed))
+
+    h3_execution_end = _find_h3_by_label(soup, ["termin wykonania umowy"]) or _find_h3(soup, "5.2.")
+    execution_end_date = _span_value(h3_execution_end) or _text_after_h3(h3_execution_end)
+
+    h3_on_time = _find_h3_by_label(soup, ["pierwotnie określonym terminie"]) or _find_h3_by_label(
+        soup, ["w terminie"]
+    ) or _find_h3(soup, "5.3.")
+    executed_on_time = _parse_tak_nie(_span_value(h3_on_time) or _text_after_h3(h3_on_time))
+
+    h3_changes = _find_h3_by_label(soup, ["liczba zmian"]) or _find_h3(soup, "5.4.1.")
+    raw_changes = _span_value(h3_changes) or _text_after_h3(h3_changes)
     num_changes: int | None = None
     if raw_changes is not None:
         try:
@@ -436,7 +474,8 @@ def _extract_details_contract_performing(soup: BeautifulSoup) -> ContractExecuti
         except ValueError:
             pass
 
-    executed_properly = _parse_tak_nie(_span_value(_find_h3(soup, "5.6.")))
+    h3_proper = _find_h3_by_label(soup, ["wykonana należycie"]) or _find_h3(soup, "5.6.")
+    executed_properly = _parse_tak_nie(_span_value(h3_proper) or _text_after_h3(h3_proper))
 
     if all(
         v is None
@@ -521,7 +560,11 @@ def parse_cpv_codes(cpv_raw: str) -> list[str]:
 # --- Main parse entry point ---
 
 
-def parse_html(html: str, notice_type: str | None = None) -> HtmlExtracted:
+def parse_html(
+    html: str,
+    notice_type: str | None = None,
+    procedure_result: str | None = None,
+) -> HtmlExtracted:
     """Parse a single BZP notice HTML into extracted fields.
 
     Args:
@@ -537,6 +580,8 @@ def parse_html(html: str, notice_type: str | None = None) -> HtmlExtracted:
     opis = _extract_description(soup)
     kryteria = _extract_criteria(soup)
     lots = _extract_tender_result_lots(soup) if notice_type == "TenderResultNotice" else None
+    if notice_type == "TenderResultNotice" and not lots:
+        lots = _extract_status_lots_from_procedure_result(procedure_result)
 
     # Type-aware value extraction
     values = None

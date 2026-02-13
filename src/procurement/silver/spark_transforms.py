@@ -17,6 +17,7 @@ from pyspark.sql.functions import (
     regexp_extract,
     size,
     split,
+    to_date,
     to_timestamp,
     udf,
     when,
@@ -119,11 +120,19 @@ HTML_EXTRACTED_SCHEMA = StructType(
 )
 
 
-def _parse_html_safe(html: str | None, notice_type: str | None) -> dict | None:
+def _parse_html_safe(
+    html: str | None,
+    notice_type: str | None,
+    procedure_result: str | None,
+) -> dict | None:
     if not html:
         return None
     try:
-        return parse_html(html, notice_type=notice_type).model_dump()
+        return parse_html(
+            html,
+            notice_type=notice_type,
+            procedure_result=procedure_result,
+        ).model_dump()
     except Exception:
         log.warning("Failed to parse HTML (len=%d)", len(html), exc_info=True)
         return None
@@ -174,8 +183,15 @@ def _normalize_contractor_names(contractors: list[dict] | None) -> list[str] | N
 def _extract_execution_duration_days(execution_period: str | None) -> int | None:
     if not execution_period:
         return None
-    match = re.search(r"(\d+)\s*(?:dni|dzien|days?)", execution_period.lower())
+    text = execution_period.lower()
+    match = re.search(r"(\d+)\s*(?:dni|dzien|days?)", text)
     if match is None:
+        week_match = re.search(r"(\d+)\s*(?:tygodni|tygodnie|tydzień|weeks?)", text)
+        if week_match is not None:
+            return int(week_match.group(1)) * 7
+        month_match = re.search(r"(\d+)\s*(?:miesi[aą]c(?:y|e)?|months?)", text)
+        if month_match is not None:
+            return int(month_match.group(1)) * 30
         return None
     return int(match.group(1))
 
@@ -250,7 +266,7 @@ def build_silver(df: DataFrame) -> DataFrame:
         df.filter(col("htmlBody").endswith("</html>"))
         .withColumn(
             "htmlExtracted",
-            parse_html_udf(col("htmlBody"), col("noticeType")),
+            parse_html_udf(col("htmlBody"), col("noticeType"), col("procedureResult")),
         )
         .withColumn("cpvCodes", parse_cpv_udf(col("cpvCode")))
         .withColumn("provinceName", province_udf(col("organizationProvince")))
@@ -320,13 +336,41 @@ def build_silver(df: DataFrame) -> DataFrame:
         )
         .withColumn(
             "executionDurationDays",
-            when(
-                col("htmlExtracted.contract_execution.execution_period").isNotNull(),
-                regexp_extract(
-                    lower(col("htmlExtracted.contract_execution.execution_period")),
-                    r"(\d+)\s*(?:dni|dzien|days?)",
-                    1,
-                ).cast(IntegerType()),
+            coalesce(
+                when(
+                    col("htmlExtracted.contract_execution.execution_period").isNotNull(),
+                    regexp_extract(
+                        lower(col("htmlExtracted.contract_execution.execution_period")),
+                        r"(\d+)\s*(?:dni|dzien|days?)",
+                        1,
+                    ).cast(IntegerType()),
+                ),
+                when(
+                    col("htmlExtracted.contract_execution.execution_period").isNotNull(),
+                    regexp_extract(
+                        lower(col("htmlExtracted.contract_execution.execution_period")),
+                        r"(\d+)\s*(?:tygodni|tygodnie|tydzień|weeks?)",
+                        1,
+                    ).cast(IntegerType())
+                    * lit(7),
+                ),
+                when(
+                    col("htmlExtracted.contract_execution.execution_period").isNotNull(),
+                    regexp_extract(
+                        lower(col("htmlExtracted.contract_execution.execution_period")),
+                        r"(\d+)\s*(?:miesi[aą]c(?:y|e)?|months?)",
+                        1,
+                    ).cast(IntegerType())
+                    * lit(30),
+                ),
+                when(
+                    col("htmlExtracted.contract_execution.contract_date").isNotNull()
+                    & col("htmlExtracted.contract_execution.execution_end_date").isNotNull(),
+                    datediff(
+                        to_date(col("htmlExtracted.contract_execution.execution_end_date")),
+                        to_date(col("htmlExtracted.contract_execution.contract_date")),
+                    ),
+                ),
             ),
         )
         .withColumn(

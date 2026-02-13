@@ -121,6 +121,19 @@ CONTRACT_PERFORMING_DETAILS_HTML = """\
 <h3 class="mb-0">5.6.) Czy umowa została wykonana należycie: <span class="normal">Tak</span></h3>
 </main></body></html>"""
 
+CONTRACT_PERFORMING_LABEL_BASED_HTML = """\
+<html><head></head><body><main>
+<h3 class="mb-0">4.1.) Ulica: <span class="normal">ul. Kwiatowa 1</span></h3>
+<h3 class="mb-0">4.2.) Miejscowość: <span class="normal">Warszawa</span></h3>
+<h3 class="mb-0">Data zawarcia umowy: <span class="normal">2025-01-01</span></h3>
+<h3 class="mb-0">Okres realizacji umowy: <span class="normal">12 tygodni</span></h3>
+<h3 class="mb-0">Czy umowa została wykonana: <span class="normal">Tak</span></h3>
+<h3 class="mb-0">Termin wykonania umowy: <span class="normal">2025-04-01</span></h3>
+<h3 class="mb-0">Czy umowę wykonano w pierwotnie określonym terminie: <span class="normal">Nie</span></h3>
+<h3 class="mb-0">Liczba zmian: <span class="normal">2</span></h3>
+<h3 class="mb-0">Czy umowa została wykonana należycie: <span class="normal">Tak</span></h3>
+</main></body></html>"""
+
 NOTICE_UPDATE_SINGLE_HTML = """\
 <html><head></head><body><main>
 <h2 class="bg-light p-3 mt-4">SEKCJA III ZMIANA OGŁOSZENIA</h2>
@@ -307,6 +320,13 @@ class TestTenderResultValues:
         assert r.lots[0].winning_bid == pytest.approx(95000.0)
         assert r.lots[1].winning_bid == pytest.approx(190000.0)
         assert r.values is None
+
+    def test_cancellation_creates_status_lots(self):
+        r = parse_html(EMPTY_HTML, notice_type="TenderResultNotice", procedure_result="uniewaznienie;nieRozstrzygnieto")
+        assert r.lots is not None
+        assert len(r.lots) == 2
+        assert r.lots[0].winner == "uniewaznienie"
+        assert r.lots[1].winner == "nieRozstrzygnieto"
 
 
 # --- Value extraction: ContractPerformingNotice ---
@@ -496,6 +516,14 @@ class TestContractExecution:
         r = parse_html(EMPTY_HTML, notice_type="ContractPerformingNotice")
         assert r.contract_execution is None
 
+    def test_label_based_execution_extraction(self):
+        r = parse_html(CONTRACT_PERFORMING_LABEL_BASED_HTML, notice_type="ContractPerformingNotice")
+        assert r.contract_execution is not None
+        assert r.contract_execution.contract_date == "2025-01-01"
+        assert r.contract_execution.execution_period == "12 tygodni"
+        assert r.contract_execution.executed_on_time is False
+        assert r.contract_execution.num_changes == 2
+
 
 # --- Detail extraction: NoticeChange ---
 
@@ -592,6 +620,8 @@ class TestSilverDerivedHelpers:
         from procurement.silver.spark_transforms import _extract_execution_duration_days
 
         assert _extract_execution_duration_days("56 dni") == 56
+        assert _extract_execution_duration_days("12 tygodni") == 84
+        assert _extract_execution_duration_days("2 miesiące") == 60
 
     def test_criteria_weight_extraction(self):
         from procurement.silver.spark_transforms import _criteria_summary
