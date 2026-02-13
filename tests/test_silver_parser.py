@@ -156,6 +156,23 @@ SEKCJA VIII - PROCEDURA
 <p class="mb-0">Termin: 2025-11-22</p>
 </main></body></html>"""
 
+TENDER_RESULT_MULTI_LOT_HTML = """\
+<html><head></head><body><main>
+<h2>SEKCJA IV</h2>
+<h3 class="mb-0">Część nr 1</h3>
+<h3 class="mb-0">4.3.) Wartość zamówienia: <span class="normal">100000,00 PLN</span></h3>
+<h3 class="mb-0">6.2.) Cena oferty najniższej: <span class="normal">90000,00 PLN</span></h3>
+<h3 class="mb-0">6.3.) Cena oferty najwyższej: <span class="normal">120000,00 PLN</span></h3>
+<h3 class="mb-0">6.4.) Cena oferty wykonawcy: <span class="normal">95000,00 PLN</span></h3>
+<h3 class="mb-0">8.2.) Wartość umowy: <span class="normal">95000,00 PLN</span></h3>
+<h3 class="mb-0">Część nr 2</h3>
+<h3 class="mb-0">4.3.) Wartość zamówienia: <span class="normal">200000,00 PLN</span></h3>
+<h3 class="mb-0">6.2.) Cena oferty najniższej: <span class="normal">180000,00 PLN</span></h3>
+<h3 class="mb-0">6.3.) Cena oferty najwyższej: <span class="normal">230000,00 PLN</span></h3>
+<h3 class="mb-0">6.4.) Cena oferty wykonawcy: <span class="normal">190000,00 PLN</span></h3>
+<h3 class="mb-0">8.2.) Wartość umowy: <span class="normal">190000,00 PLN</span></h3>
+</main></body></html>"""
+
 EMPTY_HTML = "<html><head></head><body></body></html>"
 
 
@@ -280,6 +297,16 @@ class TestTenderResultValues:
         r = parse_html(TENDER_RESULT_HTML)
         assert r.values is not None
         assert r.values.contract_value == pytest.approx(465163.88)
+
+    def test_multi_lot_extraction(self):
+        r = parse_html(TENDER_RESULT_MULTI_LOT_HTML, notice_type="TenderResultNotice")
+        assert r.lots is not None
+        assert len(r.lots) == 2
+        assert r.lots[0].lot_id == "1"
+        assert r.lots[1].lot_id == "2"
+        assert r.lots[0].winning_bid == pytest.approx(95000.0)
+        assert r.lots[1].winning_bid == pytest.approx(190000.0)
+        assert r.values is None
 
 
 # --- Value extraction: ContractPerformingNotice ---
@@ -558,3 +585,38 @@ class TestParseHtml:
         r = parse_html(EMPTY_HTML)
         assert isinstance(r, HtmlExtracted)
         assert r.ulica is None
+
+
+class TestSilverDerivedHelpers:
+    def test_execution_duration_parsing(self):
+        from procurement.silver.spark_transforms import _extract_execution_duration_days
+
+        assert _extract_execution_duration_days("56 dni") == 56
+
+    def test_criteria_weight_extraction(self):
+        from procurement.silver.spark_transforms import _criteria_summary
+
+        num, price, non_price = _criteria_summary(
+            [
+                {"name": "Cena", "weight": 60},
+                {"name": "Gwarancja", "weight": 40},
+            ]
+        )
+        assert num == 2
+        assert price == 60
+        assert non_price == 40
+
+    def test_update_delta_heuristics(self):
+        from procurement.silver.spark_transforms import _classify_notice_change
+
+        deadline_changed, criteria_changed, scope_changed = _classify_notice_change(
+            [
+                {
+                    "changed_section": "SEKCJA VIII - PROCEDURA",
+                    "change_description": "Termin skladania ofert przesunieto na 2025-11-22",
+                }
+            ]
+        )
+        assert deadline_changed is True
+        assert criteria_changed is False
+        assert scope_changed is False

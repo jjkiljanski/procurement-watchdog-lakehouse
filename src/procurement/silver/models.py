@@ -35,6 +35,18 @@ class ExtractedValues(BaseModel):
     currency: str = "PLN"
 
 
+class TenderResultLot(BaseModel):
+    """Per-lot values from TenderResultNotice."""
+
+    lot_id: str | None = None
+    contract_value: float | None = None
+    lowest_bid: float | None = None
+    highest_bid: float | None = None
+    winning_bid: float | None = None
+    estimated_value: float | None = None
+    winner: str | None = None
+
+
 class TenderResultEnrichment(BaseModel):
     """Contractor enrichment fields from TenderResultNotice SEKCJA VII.
 
@@ -82,6 +94,7 @@ class HtmlExtracted(BaseModel):
     opis: str | None = None
     kryteria_oceny: list[EvalCriterion] | None = None
     values: ExtractedValues | None = None
+    lots: list[TenderResultLot] | None = None
     tender_result_enrichment: TenderResultEnrichment | None = None
     contract_execution: ContractExecution | None = None
     notice_change: NoticeChange | None = None
@@ -114,6 +127,27 @@ class BzpNoticeSilver(BaseModel):
     organizationId: str
     tenderId: str | None = None
     contractors: list[ContractorDto] | None = None
+    caseId: str | None = None
+    noticeStage: str | None = None
+    hasTenderResult: bool | None = None
+    hasContractExecution: bool | None = None
+
+    biddingWindowDays: int | None = None
+    numCriteria: int | None = None
+    priceWeight: int | None = None
+    nonPriceWeightSum: int | None = None
+
+    deadlineChanged: bool | None = None
+    criteriaChanged: bool | None = None
+    scopeChanged: bool | None = None
+
+    executionDurationDays: int | None = None
+    paidRatio: float | None = None
+    executionDelayed: bool | None = None
+    executionRiskFlag: bool | None = None
+
+    organizationNameNormalized: str | None = None
+    contractorNameNormalized: list[str] | None = None
 
     # Replaces htmlBody
     htmlExtracted: HtmlExtracted

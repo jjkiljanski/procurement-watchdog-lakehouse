@@ -3,9 +3,24 @@
 from __future__ import annotations
 
 import logging
+import re
 
 from pyspark.sql import DataFrame
-from pyspark.sql.functions import col, split, udf
+from pyspark.sql.functions import (
+    coalesce,
+    col,
+    datediff,
+    expr,
+    lit,
+    lower,
+    max as spark_max,
+    regexp_extract,
+    size,
+    split,
+    to_timestamp,
+    udf,
+    when,
+)
 from pyspark.sql.types import (
     ArrayType,
     BooleanType,
@@ -15,6 +30,7 @@ from pyspark.sql.types import (
     StructField,
     StructType,
 )
+from pyspark.sql.window import Window
 
 from procurement.dictionaries import client_type_names, province_names
 from procurement.silver.html_parser import parse_cpv_codes, parse_html
@@ -44,6 +60,18 @@ TENDER_RESULT_ENRICHMENT_SCHEMA = StructType(
     [
         StructField("joint_bidders", BooleanType()),
         StructField("contractor_size", StringType()),
+    ]
+)
+
+TENDER_RESULT_LOT_SCHEMA = StructType(
+    [
+        StructField("lot_id", StringType()),
+        StructField("contract_value", DoubleType()),
+        StructField("lowest_bid", DoubleType()),
+        StructField("highest_bid", DoubleType()),
+        StructField("winning_bid", DoubleType()),
+        StructField("estimated_value", DoubleType()),
+        StructField("winner", StringType()),
     ]
 )
 
@@ -83,6 +111,7 @@ HTML_EXTRACTED_SCHEMA = StructType(
         StructField("opis", StringType()),
         StructField("kryteria_oceny", ArrayType(EVAL_CRITERION_SCHEMA)),
         StructField("values", EXTRACTED_VALUES_SCHEMA),
+        StructField("lots", ArrayType(TENDER_RESULT_LOT_SCHEMA)),
         StructField("tender_result_enrichment", TENDER_RESULT_ENRICHMENT_SCHEMA),
         StructField("contract_execution", CONTRACT_EXECUTION_SCHEMA),
         StructField("notice_change", NOTICE_CHANGE_SCHEMA),
@@ -106,8 +135,90 @@ def _parse_cpv_safe(cpv_raw: str | None) -> list[str]:
     return parse_cpv_codes(cpv_raw)
 
 
+_PUNCT_RE = re.compile(r"[^\w\s]", flags=re.UNICODE)
+_SPACE_RE = re.compile(r"\s+")
+_LEGAL_SUFFIX_RE = re.compile(
+    r"\b("
+    r"sp\s*z\s*o\.?\s*o\.?|spolka\s*z\s*ograniczona\s*odpowiedzialnoscia|"
+    r"s\.?\s*a\.?|s\.?\s*p\.?\s*j\.?|sp\.?\s*k\.?|"
+    r"spolka\s*jawna|spolka\s*komandytowa|spolka\s*akcyjna|"
+    r"sa|spzoo"
+    r")\b",
+    flags=re.IGNORECASE,
+)
+
+
+def _normalize_entity_name(name: str | None) -> str | None:
+    if not name:
+        return None
+    cleaned = name.lower()
+    cleaned = _LEGAL_SUFFIX_RE.sub(" ", cleaned)
+    cleaned = _PUNCT_RE.sub(" ", cleaned)
+    cleaned = _SPACE_RE.sub(" ", cleaned).strip()
+    return cleaned or None
+
+
+def _normalize_contractor_names(contractors: list[dict] | None) -> list[str] | None:
+    if not contractors:
+        return None
+    out: list[str] = []
+    for contractor in contractors:
+        if not isinstance(contractor, dict):
+            continue
+        normalized = _normalize_entity_name(contractor.get("contractorName"))
+        if normalized:
+            out.append(normalized)
+    return out or None
+
+
+def _extract_execution_duration_days(execution_period: str | None) -> int | None:
+    if not execution_period:
+        return None
+    match = re.search(r"(\d+)\s*(?:dni|dzien|days?)", execution_period.lower())
+    if match is None:
+        return None
+    return int(match.group(1))
+
+
+def _criteria_summary(criteria: list[dict] | None) -> tuple[int | None, int | None, int | None]:
+    if not criteria:
+        return None, None, None
+    num_criteria = len(criteria)
+    price_weight = 0
+    total_weight = 0
+    for criterion in criteria:
+        if not isinstance(criterion, dict):
+            continue
+        name = (criterion.get("name") or "").lower()
+        weight = criterion.get("weight")
+        if isinstance(weight, int):
+            total_weight += weight
+            if "cena" in name:
+                price_weight += weight
+    non_price_weight_sum = total_weight - price_weight
+    return num_criteria, price_weight, non_price_weight_sum
+
+
+def _classify_notice_change(changes: list[dict] | None) -> tuple[bool, bool, bool]:
+    if not changes:
+        return False, False, False
+    parts: list[str] = []
+    for change in changes:
+        if not isinstance(change, dict):
+            continue
+        parts.append(change.get("changed_section") or "")
+        parts.append(change.get("change_description") or "")
+    text = " ".join(parts).lower()
+    deadline_changed = bool(re.search(r"termin|deadline|skladania ofert|otwarcia ofert", text))
+    criteria_changed = bool(re.search(r"kryter|cena|waga", text))
+    scope_changed = bool(re.search(r"zakres|przedmiot|opis", text))
+    return deadline_changed, criteria_changed, scope_changed
+
+
 parse_html_udf = udf(_parse_html_safe, HTML_EXTRACTED_SCHEMA)
 parse_cpv_udf = udf(_parse_cpv_safe, ArrayType(StringType()))
+normalize_name_udf = udf(_normalize_entity_name, StringType())
+normalize_contractors_udf = udf(_normalize_contractor_names, ArrayType(StringType()))
 
 
 def _make_lookup_udf(mapping: dict[str, str]):
@@ -135,7 +246,7 @@ def build_silver(df: DataFrame) -> DataFrame:
     province_udf = _make_lookup_udf(province_names())
     client_type_udf = _make_lookup_udf(client_type_names())
 
-    return (
+    silver_df = (
         df.filter(col("htmlBody").endswith("</html>"))
         .withColumn(
             "htmlExtracted",
@@ -148,5 +259,120 @@ def build_silver(df: DataFrame) -> DataFrame:
             "procedureResultParsed",
             split(col("procedureResult"), ";"),
         )
+        .withColumn("caseId", coalesce(col("tenderId"), col("noticeNumber")))
+        .withColumn(
+            "noticeStage",
+            when(col("noticeType") == lit("TenderResultNotice"), lit("RESULT"))
+            .when(col("noticeType") == lit("ContractPerformingNotice"), lit("EXECUTION"))
+            .when(col("noticeType").isin("NoticeUpdateNotice", "AgreementUpdateNotice"), lit("UPDATE"))
+            .otherwise(lit("INIT")),
+        )
+        .withColumn("organizationNameNormalized", normalize_name_udf(col("organizationName")))
+        .withColumn("contractorNameNormalized", normalize_contractors_udf(col("contractors")))
+        .withColumn(
+            "biddingWindowDays",
+            datediff(
+                to_timestamp(col("submittingOffersDate")),
+                to_timestamp(col("publicationDate")),
+            ),
+        )
+        .withColumn("numCriteria", size(col("htmlExtracted.kryteria_oceny")))
+        .withColumn(
+            "priceWeight",
+            expr(
+                "aggregate("
+                "filter(htmlExtracted.kryteria_oceny, x -> lower(x.name) like '%cena%'),"
+                "0,"
+                "(acc, x) -> acc + coalesce(x.weight, 0)"
+                ")"
+            ),
+        )
+        .withColumn(
+            "nonPriceWeightSum",
+            when(
+                col("htmlExtracted.kryteria_oceny").isNotNull(),
+                expr(
+                    "aggregate(htmlExtracted.kryteria_oceny, 0, (acc, x) -> acc + coalesce(x.weight, 0))"
+                )
+                - coalesce(col("priceWeight"), lit(0)),
+            ),
+        )
+        .withColumn(
+            "updateDeltaText",
+            lower(
+                expr(
+                    "concat_ws(' ', transform(coalesce(htmlExtracted.notice_change.changes, array()),"
+                    "x -> concat_ws(' ', coalesce(x.changed_section, ''), coalesce(x.change_description, ''))))"
+                )
+            ),
+        )
+        .withColumn(
+            "deadlineChanged",
+            col("updateDeltaText").rlike("termin|deadline|skladania ofert|otwarcia ofert"),
+        )
+        .withColumn(
+            "criteriaChanged",
+            col("updateDeltaText").rlike("kryter|cena|waga"),
+        )
+        .withColumn(
+            "scopeChanged",
+            col("updateDeltaText").rlike("zakres|przedmiot|opis"),
+        )
+        .withColumn(
+            "executionDurationDays",
+            when(
+                col("htmlExtracted.contract_execution.execution_period").isNotNull(),
+                regexp_extract(
+                    lower(col("htmlExtracted.contract_execution.execution_period")),
+                    r"(\d+)\s*(?:dni|dzien|days?)",
+                    1,
+                ).cast(IntegerType()),
+            ),
+        )
+        .withColumn(
+            "paidRatio",
+            when(
+                col("htmlExtracted.values.contract_value").isNotNull()
+                & (col("htmlExtracted.values.contract_value") != 0)
+                & col("htmlExtracted.values.total_paid").isNotNull(),
+                col("htmlExtracted.values.total_paid") / col("htmlExtracted.values.contract_value"),
+            ),
+        )
+        .withColumn(
+            "executionDelayed",
+            when(
+                col("htmlExtracted.contract_execution.executed_on_time").isNotNull(),
+                ~col("htmlExtracted.contract_execution.executed_on_time"),
+            ),
+        )
+        .withColumn(
+            "executionRiskFlag",
+            when(
+                col("noticeType") == lit("ContractPerformingNotice"),
+                coalesce(col("executionDelayed"), lit(False))
+                | (coalesce(col("paidRatio"), lit(0.0)) > lit(1.05))
+                | (coalesce(col("htmlExtracted.contract_execution.num_changes"), lit(0)) > lit(0))
+                | (col("htmlExtracted.contract_execution.executed_properly") == lit(False)),
+            ),
+        )
         .drop("htmlBody", "cpvCode")
     )
+
+    case_window = Window.partitionBy("caseId")
+    silver_df = (
+        silver_df.withColumn(
+            "hasTenderResult",
+            spark_max(when(col("noticeType") == lit("TenderResultNotice"), lit(1)).otherwise(lit(0))).over(case_window)
+            == lit(1),
+        )
+        .withColumn(
+            "hasContractExecution",
+            spark_max(
+                when(col("noticeType") == lit("ContractPerformingNotice"), lit(1)).otherwise(lit(0))
+            ).over(case_window)
+            == lit(1),
+        )
+        .drop("updateDeltaText")
+    )
+
+    return silver_df

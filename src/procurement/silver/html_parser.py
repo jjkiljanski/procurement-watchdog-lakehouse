@@ -18,6 +18,7 @@ from procurement.silver.models import (
     ExtractedValues,
     HtmlExtracted,
     NoticeChange,
+    TenderResultLot,
     TenderResultEnrichment,
 )
 
@@ -51,6 +52,17 @@ def _span_value(h3: Tag | None) -> str | None:
         return None
     text = span.get_text().strip()
     return text or None
+
+
+def _field_num(h3: Tag | None) -> str | None:
+    """Extract a field number prefix from an h3 (e.g. 6.2.)."""
+    if h3 is None:
+        return None
+    text = h3.get_text(separator=" ", strip=True)
+    m = re.search(r"(\d+\.\d+(?:\.\d+)?\.)\)", text)
+    if m is None:
+        return None
+    return m.group(1)
 
 
 def _parse_pln_value(raw: str | None) -> float | None:
@@ -237,11 +249,24 @@ def _extract_values_contract_performing(soup: BeautifulSoup) -> ExtractedValues 
 
 def _extract_values_tender_result(soup: BeautifulSoup) -> ExtractedValues | None:
     """TenderResultNotice: fields 8.2, 6.2, 6.3, 6.4, 4.3 (first lot)."""
-    contract_value = _parse_pln_value(_span_value(_find_h3(soup, "8.2.")))
-    estimated_value = _parse_pln_value(_span_value(_find_h3(soup, "4.3.")))
-    lowest_bid = _parse_pln_value(_span_value(_find_h3(soup, "6.2.")))
-    highest_bid = _parse_pln_value(_span_value(_find_h3(soup, "6.3.")))
-    winning_bid = _parse_pln_value(_span_value(_find_h3(soup, "6.4.")))
+    lots = _extract_tender_result_lots(soup)
+    if lots:
+        if len(lots) > 1:
+            # Multi-lot notices are represented in htmlExtracted.lots.
+            # Keep notice-level values null to avoid flattening ambiguity.
+            return None
+        lot = lots[0]
+        contract_value = lot.contract_value
+        estimated_value = lot.estimated_value
+        lowest_bid = lot.lowest_bid
+        highest_bid = lot.highest_bid
+        winning_bid = lot.winning_bid
+    else:
+        contract_value = _parse_pln_value(_span_value(_find_h3(soup, "8.2.")))
+        estimated_value = _parse_pln_value(_span_value(_find_h3(soup, "4.3.")))
+        lowest_bid = _parse_pln_value(_span_value(_find_h3(soup, "6.2.")))
+        highest_bid = _parse_pln_value(_span_value(_find_h3(soup, "6.3.")))
+        winning_bid = _parse_pln_value(_span_value(_find_h3(soup, "6.4.")))
 
     if all(v is None for v in (contract_value, estimated_value, lowest_bid, highest_bid, winning_bid)):
         return None
@@ -252,6 +277,83 @@ def _extract_values_tender_result(soup: BeautifulSoup) -> ExtractedValues | None
         highest_bid=highest_bid,
         winning_bid=winning_bid,
     )
+
+
+def _extract_lot_id_from_text(text: str) -> str | None:
+    """Extract human lot label from header text where possible."""
+    patterns = [
+        r"(?:Część|Czesc)\s*(?:nr)?\s*([A-Za-z0-9._/-]+)",
+        r"Lot\s*(?:nr)?\s*([A-Za-z0-9._/-]+)",
+    ]
+    for pattern in patterns:
+        m = re.search(pattern, text, re.IGNORECASE)
+        if m:
+            return m.group(1).strip()
+    return None
+
+
+def _extract_winner_from_chunk(chunk: list[Tag]) -> str | None:
+    for h3 in chunk:
+        text = h3.get_text(separator=" ", strip=True)
+        if "nazwa" in text.lower() and ("wykonaw" in text.lower() or "udzielono" in text.lower()):
+            val = _span_value(h3) or _text_after_h3(h3)
+            if val:
+                return val
+    return None
+
+
+def _extract_tender_result_lots(soup: BeautifulSoup) -> list[TenderResultLot] | None:
+    """Extract per-lot TenderResult values from repeated 4.3/6.2/6.3/6.4/8.2 sections."""
+    h3s = soup.find_all("h3")
+    chunks: list[list[Tag]] = []
+    current: list[Tag] = []
+
+    for h3 in h3s:
+        current.append(h3)
+        if _field_num(h3) == "8.2.":
+            chunks.append(current)
+            current = []
+
+    # If there were no 8.2 delimiters, fall back to a single chunk.
+    if not chunks and current:
+        chunks = [current]
+
+    lots: list[TenderResultLot] = []
+    for idx, chunk in enumerate(chunks, start=1):
+        by_field: dict[str, Tag] = {}
+        for h3 in chunk:
+            field = _field_num(h3)
+            if field in {"4.3.", "6.2.", "6.3.", "6.4.", "8.2."}:
+                by_field[field] = h3
+
+        contract_value = _parse_pln_value(_span_value(by_field.get("8.2.")))
+        estimated_value = _parse_pln_value(_span_value(by_field.get("4.3.")))
+        lowest_bid = _parse_pln_value(_span_value(by_field.get("6.2.")))
+        highest_bid = _parse_pln_value(_span_value(by_field.get("6.3.")))
+        winning_bid = _parse_pln_value(_span_value(by_field.get("6.4.")))
+
+        if all(v is None for v in (contract_value, estimated_value, lowest_bid, highest_bid, winning_bid)):
+            continue
+
+        lot_id = None
+        for h3 in chunk:
+            lot_id = _extract_lot_id_from_text(h3.get_text(separator=" ", strip=True))
+            if lot_id:
+                break
+
+        lots.append(
+            TenderResultLot(
+                lot_id=lot_id or str(idx),
+                contract_value=contract_value,
+                estimated_value=estimated_value,
+                lowest_bid=lowest_bid,
+                highest_bid=highest_bid,
+                winning_bid=winning_bid,
+                winner=_extract_winner_from_chunk(chunk),
+            )
+        )
+
+    return lots or None
 
 
 def _extract_values_contract_notice(soup: BeautifulSoup) -> ExtractedValues | None:
@@ -434,6 +536,7 @@ def parse_html(html: str, notice_type: str | None = None) -> HtmlExtracted:
     address = _extract_address(soup)
     opis = _extract_description(soup)
     kryteria = _extract_criteria(soup)
+    lots = _extract_tender_result_lots(soup) if notice_type == "TenderResultNotice" else None
 
     # Type-aware value extraction
     values = None
@@ -456,5 +559,6 @@ def parse_html(html: str, notice_type: str | None = None) -> HtmlExtracted:
         opis=opis,
         kryteria_oceny=kryteria,
         values=values,
+        lots=lots,
         **details,
     )
