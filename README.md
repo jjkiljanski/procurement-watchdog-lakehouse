@@ -222,6 +222,17 @@ state/
 
 ---
 
+## Gold v1 Outputs
+
+Daily Gold builds write four Parquet datasets (single-day scope, idempotent overwrite per date):
+
+* `data/gold/case_mart/date=YYYY-MM-DD/` — one row per `caseId`, lifecycle flags/durations and update/execution aggregates.
+* `data/gold/buyer_mart/date=YYYY-MM-DD/` — one row per buyer (`organizationId`), volume, competition, procedure, and execution benchmarks.
+* `data/gold/market_mart/date=YYYY-MM-DD/` — one row per `cpv_2digit`, market size/concentration and value dispersion metrics.
+* `data/gold/signals_buyer_daily/date=YYYY-MM-DD/` — lightweight anomaly-ready buyer daily signals (`single_bid_rate_today`, `value_today`, `hhi_today`, update intensity, and counts).
+
+---
+
 ## 🧪 Local Execution
 
 ```bash
