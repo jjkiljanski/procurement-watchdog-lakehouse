@@ -10,6 +10,7 @@ Writes:
 """
 
 import logging
+import os
 import shutil
 import sys
 from datetime import date, timedelta
@@ -71,8 +72,8 @@ def _log_schema_probe(df: DataFrame) -> None:
         df.select(*sample_cols).show(5, truncate=False)
 
 
-def _write_partition(df: DataFrame, dataset_name: str, target_date: str) -> int:
-    out_path = Path("data/gold") / dataset_name / f"date={target_date}"
+def _write_partition(df: DataFrame, dataset_name: str, target_date: str, gold_dir: Path) -> int:
+    out_path = gold_dir / dataset_name / f"date={target_date}"
     if out_path.exists():
         shutil.rmtree(out_path)
     df.write.mode("overwrite").parquet(str(out_path))
@@ -102,12 +103,25 @@ def _log_basic_quality(case_mart: DataFrame, buyer_mart: DataFrame, market_mart:
 
 
 def main() -> None:
-    if len(sys.argv) > 1:
+    if len(sys.argv) > 1 and not sys.argv[1].startswith("--"):
         target_date = sys.argv[1]
+        extra_args = sys.argv[2:]
     else:
         target_date = (date.today() - timedelta(days=1)).isoformat()
+        extra_args = sys.argv[1:]
 
-    silver_path = Path("data/silver") / f"bzp_{target_date}.parquet"
+    silver_dir = Path("data/silver")
+    gold_dir = Path("data/gold")
+    spark_master = os.environ.get("SPARK_MASTER", "local[*]")
+    for i, token in enumerate(extra_args):
+        if token == "--silver-dir" and i + 1 < len(extra_args):
+            silver_dir = Path(extra_args[i + 1])
+        if token == "--gold-dir" and i + 1 < len(extra_args):
+            gold_dir = Path(extra_args[i + 1])
+        if token == "--spark-master" and i + 1 < len(extra_args):
+            spark_master = extra_args[i + 1]
+
+    silver_path = silver_dir / f"bzp_{target_date}.parquet"
     if not silver_path.exists():
         log.error("Silver data not found: %s", silver_path)
         sys.exit(1)
@@ -118,7 +132,7 @@ def main() -> None:
 
     spark = (
         SparkSession.builder.appName("bzp-gold")
-        .master("local[*]")
+        .master(spark_master)
         .getOrCreate()
     )
 
@@ -137,10 +151,10 @@ def main() -> None:
         market_mart = build_gold_market_mart(df_silver, target_date)
         signals_buyer_daily = build_gold_signals_buyer_daily(df_silver, target_date)
 
-        case_rows = _write_partition(case_mart, "case_mart", target_date)
-        buyer_rows = _write_partition(buyer_mart, "buyer_mart", target_date)
-        market_rows = _write_partition(market_mart, "market_mart", target_date)
-        signals_rows = _write_partition(signals_buyer_daily, "signals_buyer_daily", target_date)
+        case_rows = _write_partition(case_mart, "case_mart", target_date, gold_dir)
+        buyer_rows = _write_partition(buyer_mart, "buyer_mart", target_date, gold_dir)
+        market_rows = _write_partition(market_mart, "market_mart", target_date, gold_dir)
+        signals_rows = _write_partition(signals_buyer_daily, "signals_buyer_daily", target_date, gold_dir)
 
         log.info("Wrote case_mart rows=%d", case_rows)
         log.info("Wrote buyer_mart rows=%d", buyer_rows)
