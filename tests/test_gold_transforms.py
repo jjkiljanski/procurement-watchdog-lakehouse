@@ -61,6 +61,17 @@ def silver_df(spark):
             StructField("contract_value", DoubleType(), True),
             StructField("winning_bid", DoubleType(), True),
             StructField("total_paid", DoubleType(), True),
+            StructField("lowest_bid", DoubleType(), True),
+            StructField("highest_bid", DoubleType(), True),
+        ]
+    )
+    contractor_schema = StructType(
+        [
+            StructField("contractorCity", StringType(), True),
+            StructField("contractorCountry", StringType(), True),
+            StructField("contractorName", StringType(), True),
+            StructField("contractorNationalId", StringType(), True),
+            StructField("contractorProvince", StringType(), True),
         ]
     )
     contract_execution_schema = StructType([StructField("execution_end_date", StringType(), True)])
@@ -69,14 +80,18 @@ def silver_df(spark):
             StructField("caseId", StringType(), True),
             StructField("objectId", StringType(), True),
             StructField("organizationId", StringType(), True),
+            StructField("organizationNationalId", StringType(), True),
+            StructField("clientTypeName", StringType(), True),
             StructField("provinceName", StringType(), True),
             StructField("noticeType", StringType(), True),
             StructField("noticeStage", StringType(), True),
             StructField("publicationDate", StringType(), True),
             StructField("cpvCodes", ArrayType(StringType()), True),
             StructField("procedureResultParsed", ArrayType(StringType()), True),
+            StructField("contractors", ArrayType(contractor_schema), True),
             StructField("biddingWindowDays", LongType(), True),
             StructField("priceWeight", LongType(), True),
+            StructField("nonPriceWeightSum", LongType(), True),
             StructField("paidRatio", DoubleType(), True),
             StructField("executionDelayed", BooleanType(), True),
             StructField("executionRiskFlag", BooleanType(), True),
@@ -104,14 +119,18 @@ def silver_df(spark):
             "caseId": "case-1",
             "objectId": "obj-1-cn",
             "organizationId": "buyer-1",
+            "organizationNationalId": "nid-1",
+            "clientTypeName": "gmina",
             "provinceName": "mazowieckie",
             "noticeType": "ContractNotice",
             "noticeStage": "INIT",
             "publicationDate": "2025-01-01T00:00:00Z",
             "cpvCodes": ["45000000-7 (Roboty budowlane)"],
             "procedureResultParsed": None,
+            "contractors": None,
             "biddingWindowDays": 10,
             "priceWeight": 60,
+            "nonPriceWeightSum": 40,
             "paidRatio": None,
             "executionDelayed": None,
             "executionRiskFlag": None,
@@ -130,14 +149,18 @@ def silver_df(spark):
             "caseId": "case-1",
             "objectId": "obj-1-upd",
             "organizationId": "buyer-1",
+            "organizationNationalId": "nid-1",
+            "clientTypeName": "gmina",
             "provinceName": "mazowieckie",
             "noticeType": "NoticeUpdateNotice",
             "noticeStage": "UPDATE",
             "publicationDate": "2025-01-03T00:00:00Z",
             "cpvCodes": ["45000000-7 (Roboty budowlane)"],
             "procedureResultParsed": None,
+            "contractors": None,
             "biddingWindowDays": None,
             "priceWeight": None,
+            "nonPriceWeightSum": None,
             "paidRatio": None,
             "executionDelayed": None,
             "executionRiskFlag": None,
@@ -156,14 +179,26 @@ def silver_df(spark):
             "caseId": "case-1",
             "objectId": "obj-1-trn",
             "organizationId": "buyer-1",
+            "organizationNationalId": "nid-1",
+            "clientTypeName": "gmina",
             "provinceName": "mazowieckie",
             "noticeType": "TenderResultNotice",
             "noticeStage": "RESULT",
             "publicationDate": "2025-01-10T00:00:00Z",
             "cpvCodes": ["45000000-7 (Roboty budowlane)"],
-            "procedureResultParsed": ["Otrzymano jedną ofertę"],
+            "procedureResultParsed": ["one offer"],
+            "contractors": [
+                {
+                    "contractorCity": "Warszawa",
+                    "contractorCountry": "PL",
+                    "contractorName": "Firma A",
+                    "contractorNationalId": "111",
+                    "contractorProvince": "mazowieckie",
+                }
+            ],
             "biddingWindowDays": None,
             "priceWeight": None,
+            "nonPriceWeightSum": None,
             "paidRatio": None,
             "executionDelayed": None,
             "executionRiskFlag": None,
@@ -193,7 +228,13 @@ def silver_df(spark):
                         "winner": "firma b",
                     },
                 ],
-                "values": {"contract_value": 150.0, "winning_bid": 150.0, "total_paid": None},
+                "values": {
+                    "contract_value": 150.0,
+                    "winning_bid": 150.0,
+                    "total_paid": None,
+                    "lowest_bid": 95.0,
+                    "highest_bid": 130.0,
+                },
                 "contract_execution": None,
             },
         },
@@ -201,14 +242,18 @@ def silver_df(spark):
             "caseId": "case-1",
             "objectId": "obj-1-cpn",
             "organizationId": "buyer-1",
+            "organizationNationalId": "nid-1",
+            "clientTypeName": "gmina",
             "provinceName": "mazowieckie",
             "noticeType": "ContractPerformingNotice",
             "noticeStage": "EXECUTION",
             "publicationDate": "2025-01-20T00:00:00Z",
             "cpvCodes": ["45000000-7 (Roboty budowlane)"],
             "procedureResultParsed": None,
+            "contractors": None,
             "biddingWindowDays": None,
             "priceWeight": None,
+            "nonPriceWeightSum": None,
             "paidRatio": 1.2,
             "executionDelayed": True,
             "executionRiskFlag": True,
@@ -219,7 +264,13 @@ def silver_df(spark):
             "htmlExtracted": {
                 "nuts3_code": "PL911",
                 "lots": None,
-                "values": {"contract_value": 100.0, "winning_bid": 100.0, "total_paid": 120.0},
+                "values": {
+                    "contract_value": 100.0,
+                    "winning_bid": 100.0,
+                    "total_paid": 120.0,
+                    "lowest_bid": None,
+                    "highest_bid": None,
+                },
                 "contract_execution": {"execution_end_date": "2025-01-20"},
             },
         },
@@ -227,14 +278,26 @@ def silver_df(spark):
             "caseId": "case-2",
             "objectId": "obj-2-trn",
             "organizationId": "buyer-1",
+            "organizationNationalId": "nid-1",
+            "clientTypeName": "gmina",
             "provinceName": "mazowieckie",
             "noticeType": "TenderResultNotice",
             "noticeStage": "RESULT",
             "publicationDate": "2025-01-11T00:00:00Z",
             "cpvCodes": ["45000000-7 (Roboty budowlane)"],
-            "procedureResultParsed": ["Wiele ofert"],
+            "procedureResultParsed": ["many offers"],
+            "contractors": [
+                {
+                    "contractorCity": "Krakow",
+                    "contractorCountry": "PL",
+                    "contractorName": "Firma A",
+                    "contractorNationalId": "111",
+                    "contractorProvince": "malopolskie",
+                }
+            ],
             "biddingWindowDays": None,
             "priceWeight": None,
+            "nonPriceWeightSum": None,
             "paidRatio": None,
             "executionDelayed": None,
             "executionRiskFlag": None,
@@ -255,7 +318,13 @@ def silver_df(spark):
                         "winner": "firma a",
                     }
                 ],
-                "values": {"contract_value": 200.0, "winning_bid": 200.0, "total_paid": None},
+                "values": {
+                    "contract_value": 200.0,
+                    "winning_bid": 200.0,
+                    "total_paid": None,
+                    "lowest_bid": 190.0,
+                    "highest_bid": 260.0,
+                },
                 "contract_execution": None,
             },
         },
@@ -263,14 +332,26 @@ def silver_df(spark):
             "caseId": "case-3",
             "objectId": "obj-3-trn",
             "organizationId": "buyer-2",
+            "organizationNationalId": "nid-2",
+            "clientTypeName": "powiat",
             "provinceName": "malopolskie",
             "noticeType": "TenderResultNotice",
             "noticeStage": "RESULT",
             "publicationDate": "2025-01-09T00:00:00Z",
-            "cpvCodes": ["72000000-5 (Usługi IT)"],
-            "procedureResultParsed": ["Postępowanie unieważnione"],
+            "cpvCodes": ["72000000-5 (IT services)"],
+            "procedureResultParsed": ["cancelled"],
+            "contractors": [
+                {
+                    "contractorCity": "Berlin",
+                    "contractorCountry": "DE",
+                    "contractorName": "Firma C",
+                    "contractorNationalId": "999",
+                    "contractorProvince": None,
+                }
+            ],
             "biddingWindowDays": None,
             "priceWeight": None,
+            "nonPriceWeightSum": None,
             "paidRatio": None,
             "executionDelayed": None,
             "executionRiskFlag": None,
@@ -291,7 +372,13 @@ def silver_df(spark):
                         "winner": None,
                     }
                 ],
-                "values": {"contract_value": None, "winning_bid": None, "total_paid": None},
+                "values": {
+                    "contract_value": None,
+                    "winning_bid": None,
+                    "total_paid": None,
+                    "lowest_bid": None,
+                    "highest_bid": None,
+                },
                 "contract_execution": None,
             },
         },
@@ -318,12 +405,16 @@ def test_case_mart_basic_metrics(silver_df):
 def test_buyer_mart_aggregates(silver_df):
     out = build_gold_buyer_mart(silver_df, "2025-01-31")
     buyer1 = out.where("organizationId = 'buyer-1'").collect()[0]
+    assert buyer1.clientTypeName == "gmina"
+    assert buyer1.organizationNationalId == "nid-1"
     assert buyer1.notices_total == 5
     assert buyer1.cases_total == 2
     assert buyer1.results_total == 2
     assert buyer1.executions_total == 1
     assert buyer1.updates_total == 1
     assert buyer1.single_bid_rate == pytest.approx(0.5, abs=1e-6)
+    assert buyer1.priceWeight_median == pytest.approx(60.0, abs=1e-6)
+    assert buyer1.contracts_domestic_share == pytest.approx(1.0, abs=1e-6)
     assert buyer1.concentration_top1_share == pytest.approx(300.0 / 350.0, abs=1e-6)
     assert buyer1.hhi == pytest.approx((300.0 / 350.0) ** 2 + (50.0 / 350.0) ** 2, abs=1e-6)
 

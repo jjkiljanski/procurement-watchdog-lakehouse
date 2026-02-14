@@ -42,9 +42,49 @@ def _with_cpv_groups(df: DataFrame) -> DataFrame:
 
 def _base_notice_facts(df: DataFrame, target_date: str) -> DataFrame:
     cpv_df = _with_cpv_groups(df)
+    contract_value = safe_col(cpv_df, "htmlExtracted.values.contract_value", "double")
+    total_paid = safe_col(cpv_df, "htmlExtracted.values.total_paid", "double")
+    lowest_bid = safe_col(cpv_df, "htmlExtracted.values.lowest_bid", "double")
+    highest_bid = safe_col(cpv_df, "htmlExtracted.values.highest_bid", "double")
+    price_weight = safe_col(cpv_df, "priceWeight", "double")
+    non_price_weight = safe_col(cpv_df, "nonPriceWeightSum", "double")
+    country_expr = (
+        "filter(transform(contractors_struct, x -> lower(trim(x.contractorCountry))), "
+        "x -> x is not null and x <> '')"
+    )
+    domestic_country_expr = (
+        "size(filter(contractor_countries_norm, x -> x not in ('pl','polska','poland'))) = 0"
+    )
+    single_bid_text_expr = (
+        "jedn.{0,20}ofert|one\\s+offer|1\\s*ofert|pojedyncz.{0,12}ofert"
+    )
+
     return (
         cpv_df.withColumn("target_date", lit(target_date))
+        .withColumn(
+            "contractors_struct",
+            safe_col(cpv_df, "contractors", "array<struct<contractorCountry:string>>"),
+        )
+        .withColumn("contractor_countries_norm", expr(country_expr))
         .withColumn("publication_date", to_date(safe_col(cpv_df, "publicationDate", "string")))
+        .withColumn("contract_value", contract_value)
+        .withColumn("winning_bid_value", safe_col(cpv_df, "htmlExtracted.values.winning_bid", "double"))
+        .withColumn("estimated_value", safe_col(cpv_df, "htmlExtracted.values.estimated_value", "double"))
+        .withColumn("total_paid_value", total_paid)
+        .withColumn(
+            "paid_ratio_effective",
+            coalesce(
+                safe_col(cpv_df, "paidRatio", "double"),
+                when(contract_value.isNotNull() & (contract_value != 0) & total_paid.isNotNull(), total_paid / contract_value),
+            ),
+        )
+        .withColumn(
+            "price_weight_ratio",
+            when(
+                (price_weight + coalesce(non_price_weight, lit(0.0))) > 0,
+                price_weight * lit(100.0) / (price_weight + coalesce(non_price_weight, lit(0.0))),
+            ),
+        )
         .withColumn(
             "result_date",
             when(
@@ -77,14 +117,27 @@ def _base_notice_facts(df: DataFrame, target_date: str) -> DataFrame:
             "single_bid_proxy",
             when(
                 safe_col(cpv_df, "noticeType", "string") == lit("TenderResultNotice"),
-                lower(concat_ws(" ", safe_col(cpv_df, "procedureResultParsed", "array<string>"))).rlike(
-                    "jedn[ąa]\\s+ofert|one\\s+offer|1\\s+ofert"
+                (
+                    lower(concat_ws(" ", safe_col(cpv_df, "procedureResultParsed", "array<string>"))).rlike(
+                        single_bid_text_expr
+                    )
+                    | (
+                        lowest_bid.isNotNull()
+                        & highest_bid.isNotNull()
+                        & (lowest_bid == highest_bid)
+                    )
                 ),
             ),
+        )
+        .withColumn("result_country_known", size(col("contractor_countries_norm")) > 0)
+        .withColumn(
+            "result_domestic_flag",
+            when(col("result_country_known"), expr(domestic_country_expr)).otherwise(lit(None).cast("boolean")),
         )
         .withColumn("result_flag", safe_col(cpv_df, "noticeType", "string") == lit("TenderResultNotice"))
         .withColumn("execution_flag", safe_col(cpv_df, "noticeType", "string") == lit("ContractPerformingNotice"))
         .withColumn("update_flag", safe_col(cpv_df, "noticeType", "string") == lit("NoticeUpdateNotice"))
+        .drop("contractors_struct")
     )
 
 
@@ -188,8 +241,12 @@ def build_gold_case_mart(df_silver: DataFrame, target_date: str) -> DataFrame:
             spark_max(when(safe_col(facts, "executionRiskFlag", "boolean"), lit(1)).otherwise(lit(0)))
             .cast("boolean")
             .alias("execution_risk_any"),
-            spark_max(safe_col(facts, "paidRatio", "double")).alias("paid_ratio_max"),
-            percentile_approx(safe_col(facts, "paidRatio", "double"), 0.5, 1000).alias("paid_ratio_median"),
+            spark_max(col("paid_ratio_effective")).alias("paid_ratio_max"),
+            percentile_approx(col("paid_ratio_effective"), 0.5, 1000).alias("paid_ratio_median"),
+            spark_sum(col("contract_value")).alias("contract_value_sum"),
+            spark_sum(col("winning_bid_value")).alias("winning_bid_sum"),
+            spark_sum(col("estimated_value")).alias("estimated_value_sum"),
+            spark_sum(col("total_paid_value")).alias("total_paid_sum"),
         )
         .withColumn(
             "time_to_award_days",
@@ -240,8 +297,12 @@ def build_gold_buyer_mart(df_silver: DataFrame, target_date: str) -> DataFrame:
     )
 
     buyer = (
-        facts.groupBy("organizationId", "provinceName", "nuts3_code")
+        facts.groupBy("organizationId")
         .agg(
+            first("provinceName", ignorenulls=True).alias("provinceName"),
+            first("nuts3_code", ignorenulls=True).alias("nuts3_code"),
+            first(safe_col(facts, "clientTypeName", "string"), ignorenulls=True).alias("clientTypeName"),
+            first(safe_col(facts, "organizationNationalId", "string"), ignorenulls=True).alias("organizationNationalId"),
             count(lit(1)).alias("notices_total"),
             countDistinct("caseId").alias("cases_total"),
             spark_sum(when(col("result_flag"), lit(1)).otherwise(lit(0))).cast("long").alias("results_total"),
@@ -256,6 +317,11 @@ def build_gold_buyer_mart(df_silver: DataFrame, target_date: str) -> DataFrame:
                 when(col("noticeType").isin("ContractNotice", "ContractOrOrderNotice", "SmallContractNotice"), col("priceWeight")),
                 0.5,
                 1000,
+            ).alias("priceWeight_raw_median"),
+            percentile_approx(
+                when(col("noticeType").isin("ContractNotice", "ContractOrOrderNotice", "SmallContractNotice"), col("price_weight_ratio")),
+                0.5,
+                1000,
             ).alias("priceWeight_median"),
             avg(
                 when(
@@ -265,10 +331,30 @@ def build_gold_buyer_mart(df_silver: DataFrame, target_date: str) -> DataFrame:
                 ).otherwise(lit(0.0))
             ).alias("priceWeight_detected_pct"),
             avg(when(col("execution_flag"), col("executionDelayed").cast("double"))).alias("delayed_pct"),
-            percentile_approx(when(col("execution_flag"), col("paidRatio")), 0.5, 1000).alias("paidRatio_median"),
+            percentile_approx(when(col("execution_flag"), col("paid_ratio_effective")), 0.5, 1000).alias("paidRatio_median"),
             spark_sum(when(col("update_flag"), lit(1)).otherwise(lit(0))).cast("long").alias("updates_total"),
+            spark_sum(when(col("result_flag") & col("result_country_known"), lit(1)).otherwise(lit(0)))
+            .cast("long")
+            .alias("results_country_known_total"),
+            spark_sum(when(col("result_flag") & col("result_domestic_flag"), lit(1)).otherwise(lit(0)))
+            .cast("long")
+            .alias("results_domestic_total"),
+            spark_sum(when(col("result_flag") & col("result_country_known"), col("contract_value"))).alias(
+                "result_value_country_known"
+            ),
+            spark_sum(when(col("result_flag") & col("result_domestic_flag"), col("contract_value"))).alias(
+                "result_value_domestic"
+            ),
         )
         .join(concentration, on="organizationId", how="left")
+        .withColumn(
+            "contracts_domestic_share",
+            when(col("results_country_known_total") > 0, col("results_domestic_total") / col("results_country_known_total")),
+        )
+        .withColumn(
+            "value_domestic_share",
+            when(col("result_value_country_known") > 0, col("result_value_domestic") / col("result_value_country_known")),
+        )
         .withColumn("target_date", lit(target_date))
     )
     return buyer
@@ -283,6 +369,8 @@ def build_gold_market_mart(df_silver: DataFrame, target_date: str) -> DataFrame:
     )
     market_values = lots.groupBy("cpv_2digit").agg(
         spark_sum("lot_contract_value").alias("value_total"),
+        spark_sum("lot_winning_bid").alias("winning_bid_total"),
+        spark_sum("lot_estimated_value").alias("estimated_value_total"),
         percentile_approx("lot_winning_bid", 0.5, 1000).alias("winning_bid_median"),
         percentile_approx("lot_contract_value", 0.5, 1000).alias("contract_value_median"),
     )

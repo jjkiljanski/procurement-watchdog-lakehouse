@@ -14,10 +14,11 @@ import os
 import shutil
 import sys
 from datetime import date, timedelta
+from functools import reduce
 from pathlib import Path
 
 from pyspark.sql import DataFrame
-from pyspark.sql.functions import avg, col, lit, when
+from pyspark.sql.functions import avg, col, lit, struct, when
 
 # Allow imports from project root / src
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
@@ -28,7 +29,7 @@ from procurement.gold.spark_transforms import (  # noqa: E402
     build_gold_market_mart,
     build_gold_signals_buyer_daily,
 )
-from procurement.gold.utils import has_field  # noqa: E402
+from procurement.gold.utils import has_field, safe_col  # noqa: E402
 from procurement.logging import setup_logging  # noqa: E402
 
 setup_logging()
@@ -88,6 +89,73 @@ def _nonnull_rate(df: DataFrame, field_name: str) -> float:
     )
 
 
+def _read_silver_union(spark: "SparkSession", paths: list[str]) -> DataFrame:
+    def _normalize_for_gold(frame: DataFrame) -> DataFrame:
+        normalized_html = struct(
+            safe_col(
+                frame,
+                "htmlExtracted.contract_execution",
+                "struct<contract_date:string,contract_executed:boolean,executed_on_time:boolean,executed_properly:boolean,execution_end_date:string,execution_period:string,num_changes:bigint>",
+            ).alias("contract_execution"),
+            safe_col(
+                frame,
+                "htmlExtracted.lots",
+                "array<struct<contract_value:double,estimated_value:double,highest_bid:double,lot_id:string,lowest_bid:double,winner:string,winning_bid:double>>",
+            ).alias("lots"),
+            safe_col(
+                frame,
+                "htmlExtracted.values",
+                "struct<contract_value:double,currency:string,estimated_value:double,highest_bid:double,lowest_bid:double,total_paid:double,winning_bid:double>",
+            ).alias("values"),
+            safe_col(frame, "htmlExtracted.nuts3_code", "string").alias("nuts3_code"),
+        ).alias("htmlExtracted")
+        return (
+            frame.withColumn("paidRatio", safe_col(frame, "paidRatio", "double").cast("double"))
+            .select(
+                safe_col(frame, "clientType", "string").alias("clientType"),
+                safe_col(frame, "orderType", "string").alias("orderType"),
+                safe_col(frame, "tenderType", "string").alias("tenderType"),
+                safe_col(frame, "noticeType", "string").alias("noticeType"),
+                safe_col(frame, "noticeNumber", "string").alias("noticeNumber"),
+                safe_col(frame, "bzpNumber", "string").alias("bzpNumber"),
+                safe_col(frame, "publicationDate", "string").alias("publicationDate"),
+                safe_col(frame, "organizationId", "string").alias("organizationId"),
+                safe_col(frame, "organizationNationalId", "string").alias("organizationNationalId"),
+                safe_col(frame, "provinceName", "string").alias("provinceName"),
+                safe_col(frame, "clientTypeName", "string").alias("clientTypeName"),
+                safe_col(frame, "caseId", "string").alias("caseId"),
+                safe_col(frame, "objectId", "string").alias("objectId"),
+                safe_col(frame, "noticeStage", "string").alias("noticeStage"),
+                safe_col(frame, "cpvCodes", "array<string>").alias("cpvCodes"),
+                safe_col(frame, "procedureResultParsed", "array<string>").alias("procedureResultParsed"),
+                safe_col(
+                    frame,
+                    "contractors",
+                    "array<struct<contractorCity:string,contractorCountry:string,contractorName:string,contractorNationalId:string,contractorProvince:string>>",
+                ).alias("contractors"),
+                safe_col(frame, "biddingWindowDays", "long").alias("biddingWindowDays"),
+                safe_col(frame, "priceWeight", "double").alias("priceWeight"),
+                safe_col(frame, "nonPriceWeightSum", "double").alias("nonPriceWeightSum"),
+                safe_col(frame, "deadlineChanged", "boolean").alias("deadlineChanged"),
+                safe_col(frame, "criteriaChanged", "boolean").alias("criteriaChanged"),
+                safe_col(frame, "scopeChanged", "boolean").alias("scopeChanged"),
+                safe_col(frame, "paidRatio", "double").alias("paidRatio"),
+                safe_col(frame, "executionDelayed", "boolean").alias("executionDelayed"),
+                safe_col(frame, "executionRiskFlag", "boolean").alias("executionRiskFlag"),
+                safe_col(frame, "contractorNameNormalized", "array<string>").alias("contractorNameNormalized"),
+                normalized_html,
+            )
+        )
+
+    frames = []
+    for path in paths:
+        frame = spark.read.parquet(path)
+        frames.append(_normalize_for_gold(frame))
+    if not frames:
+        raise ValueError("No silver paths to read")
+    return reduce(lambda left, right: left.unionByName(right, allowMissingColumns=True), frames)
+
+
 def _log_basic_quality(case_mart: DataFrame, buyer_mart: DataFrame, market_mart: DataFrame) -> None:
     case_null_rate = _nonnull_rate(case_mart, "caseId")
     buyer_null_rate = _nonnull_rate(buyer_mart, "organizationId")
@@ -113,6 +181,7 @@ def main() -> None:
     silver_dir = Path("data/silver")
     gold_dir = Path("data/gold")
     spark_master = os.environ.get("SPARK_MASTER", "local[*]")
+    scope = "daily"
     for i, token in enumerate(extra_args):
         if token == "--silver-dir" and i + 1 < len(extra_args):
             silver_dir = Path(extra_args[i + 1])
@@ -120,11 +189,36 @@ def main() -> None:
             gold_dir = Path(extra_args[i + 1])
         if token == "--spark-master" and i + 1 < len(extra_args):
             spark_master = extra_args[i + 1]
+        if token == "--scope" and i + 1 < len(extra_args):
+            scope = extra_args[i + 1]
+
+    if scope not in {"daily", "asof"}:
+        log.error("Unsupported --scope=%s (expected daily|asof)", scope)
+        sys.exit(1)
 
     silver_path = silver_dir / f"bzp_{target_date}.parquet"
-    if not silver_path.exists():
-        log.error("Silver data not found: %s", silver_path)
-        sys.exit(1)
+    silver_paths: list[str]
+    if scope == "daily":
+        if not silver_path.exists():
+            log.error("Silver data not found: %s", silver_path)
+            sys.exit(1)
+        silver_paths = [str(silver_path)]
+    else:
+        if str(gold_dir) == "data/gold":
+            gold_dir = Path("data/gold_asof")
+        all_paths = sorted(silver_dir.glob("bzp_*.parquet"))
+        silver_paths = []
+        for p in all_paths:
+            day = p.stem.replace("bzp_", "")
+            if day <= target_date:
+                silver_paths.append(str(p))
+        if not silver_paths:
+            log.error("No silver files found in %s up to date=%s", silver_dir, target_date)
+            sys.exit(1)
+        if not silver_path.exists():
+            log.error("Daily silver file required for signals not found: %s", silver_path)
+            sys.exit(1)
+        log.info("Using asof scope with %d silver files", len(silver_paths))
 
     required_cols = ["caseId", "organizationId", "noticeType", "publicationDate", "cpvCodes"]
 
@@ -133,23 +227,26 @@ def main() -> None:
     spark = (
         SparkSession.builder.appName("bzp-gold")
         .master(spark_master)
+        .config("spark.sql.parquet.enableVectorizedReader", "false")
         .getOrCreate()
     )
 
     try:
-        df_silver = spark.read.parquet(str(silver_path))
-        log.info("Loaded %d silver records", df_silver.count())
-        _log_schema_probe(df_silver)
+        df_silver_for_marts = _read_silver_union(spark, silver_paths)
+        df_silver_daily = _read_silver_union(spark, [str(silver_path)])
+        log.info("Loaded marts scope records=%d", df_silver_for_marts.count())
+        log.info("Loaded daily scope records=%d", df_silver_daily.count())
+        _log_schema_probe(df_silver_for_marts)
 
-        missing = [c for c in required_cols if c not in df_silver.columns]
+        missing = [c for c in required_cols if c not in df_silver_for_marts.columns]
         if missing:
             log.error("Missing required Silver columns: %s", missing)
             sys.exit(1)
 
-        case_mart = build_gold_case_mart(df_silver, target_date)
-        buyer_mart = build_gold_buyer_mart(df_silver, target_date)
-        market_mart = build_gold_market_mart(df_silver, target_date)
-        signals_buyer_daily = build_gold_signals_buyer_daily(df_silver, target_date)
+        case_mart = build_gold_case_mart(df_silver_for_marts, target_date)
+        buyer_mart = build_gold_buyer_mart(df_silver_for_marts, target_date)
+        market_mart = build_gold_market_mart(df_silver_for_marts, target_date)
+        signals_buyer_daily = build_gold_signals_buyer_daily(df_silver_daily, target_date)
 
         case_rows = _write_partition(case_mart, "case_mart", target_date, gold_dir)
         buyer_rows = _write_partition(buyer_mart, "buyer_mart", target_date, gold_dir)
