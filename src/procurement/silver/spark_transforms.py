@@ -45,6 +45,15 @@ EVAL_CRITERION_SCHEMA = StructType(
     ]
 )
 
+CONTRACT_NOTICE_PART_SCHEMA = StructType(
+    [
+        StructField("part_id", StringType()),
+        StructField("kryteria_oceny", ArrayType(EVAL_CRITERION_SCHEMA)),
+        StructField("criteria_aspects_4310", StringType()),
+        StructField("criteria_aspects_4310_flag", BooleanType()),
+    ]
+)
+
 EXTRACTED_VALUES_SCHEMA = StructType(
     [
         StructField("contract_value", DoubleType()),
@@ -111,6 +120,9 @@ HTML_EXTRACTED_SCHEMA = StructType(
         StructField("nuts3_name", StringType()),
         StructField("opis", StringType()),
         StructField("kryteria_oceny", ArrayType(EVAL_CRITERION_SCHEMA)),
+        StructField("criteria_aspects_4310", StringType()),
+        StructField("criteria_aspects_4310_flag", BooleanType()),
+        StructField("contract_notice_parts", ArrayType(CONTRACT_NOTICE_PART_SCHEMA)),
         StructField("values", EXTRACTED_VALUES_SCHEMA),
         StructField("lots", ArrayType(TENDER_RESULT_LOT_SCHEMA)),
         StructField("tender_result_enrichment", TENDER_RESULT_ENRICHMENT_SCHEMA),
@@ -264,6 +276,12 @@ def build_silver(df: DataFrame) -> DataFrame:
 
     silver_df = (
         df.filter(col("htmlBody").endswith("</html>"))
+        .withColumn(
+            "contractors",
+            expr(
+                "filter(contractors, x -> x is not null)"
+            ),
+        )
         .withColumn(
             "htmlExtracted",
             parse_html_udf(col("htmlBody"), col("noticeType"), col("procedureResult")),

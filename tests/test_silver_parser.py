@@ -85,6 +85,23 @@ CONTRACT_NOTICE_VAT_HTML = """\
 <h3 class="mb-0">4.1.6.) Wartość zamówienia (bez VAT): <span class="normal">570513,92                PLN</span></h3>
 </main></body></html>"""
 
+CONTRACT_NOTICE_PARTS_HTML = """\
+<html><head></head><body><main>
+<h2 class="bg-light p-3 mt-4">SEKCJA IV - PRZEDMIOT ZAMOWIENIA</h2>
+<h3 class="mb-0">Czesc nr 1</h3>
+<h3 class="mb-0">4.3.5.) Nazwa kryterium: <span class="normal">Cena</span></h3>
+<h3 class="mb-0">4.3.6.) Waga: <span class="normal">60</span></h3>
+<h3 class="mb-0">4.3.5.) Nazwa kryterium: <span class="normal">Termin realizacji</span></h3>
+<h3 class="mb-0">4.3.6.) Waga: <span class="normal">40</span></h3>
+<h3 class="mb-0">4.3.10.) Zamawiajacy okresla aspekty spoleczne, srodowiskowe lub innowacyjne, zada etykiet lub stosuje rachunek kosztow cyklu zycia w odniesieniu do kryterium oceny ofert: <span class="normal">Tak</span></h3>
+<h3 class="mb-0">Czesc nr 2</h3>
+<h3 class="mb-0">4.3.5.) Nazwa kryterium: <span class="normal">Cena</span></h3>
+<h3 class="mb-0">4.3.6.) Waga: <span class="normal">80</span></h3>
+<h3 class="mb-0">4.3.5.) Nazwa kryterium: <span class="normal">Jakosc</span></h3>
+<h3 class="mb-0">4.3.6.) Waga: <span class="normal">20</span></h3>
+<h3 class="mb-0">4.3.10.) Zamawiajacy okresla aspekty spoleczne, srodowiskowe lub innowacyjne, zada etykiet lub stosuje rachunek kosztow cyklu zycia w odniesieniu do kryterium oceny ofert: <span class="normal">Nie</span></h3>
+</main></body></html>"""
+
 SMALL_CONTRACT_HTML = """\
 <html><head></head><body><main>
 <h3 class="mb-0">3.4.) Wartość: <span class="normal">25399,50</span></h3>
@@ -369,6 +386,32 @@ class TestContractNoticeValues:
     def test_no_value_returns_none(self):
         r = parse_html(MINIMAL_HTML, notice_type="ContractNotice")
         assert r.values is None
+
+    def test_extracts_4310_top_level(self):
+        r = parse_html(CONTRACT_NOTICE_PARTS_HTML, notice_type="ContractNotice")
+        assert r.criteria_aspects_4310 in {"Tak", "Nie"}
+        assert r.criteria_aspects_4310_flag in {True, False}
+
+    def test_extracts_contract_notice_parts(self):
+        r = parse_html(CONTRACT_NOTICE_PARTS_HTML, notice_type="ContractNotice")
+        assert r.contract_notice_parts is not None
+        assert len(r.contract_notice_parts) == 2
+
+        part1 = r.contract_notice_parts[0]
+        part2 = r.contract_notice_parts[1]
+        assert part1.part_id == "1"
+        assert part2.part_id == "2"
+        assert part1.criteria_aspects_4310 == "Tak"
+        assert part1.criteria_aspects_4310_flag is True
+        assert part2.criteria_aspects_4310 == "Nie"
+        assert part2.criteria_aspects_4310_flag is False
+
+        p1_weights = {c.name: c.weight for c in (part1.kryteria_oceny or [])}
+        p2_weights = {c.name: c.weight for c in (part2.kryteria_oceny or [])}
+        assert p1_weights["Cena"] == 60
+        assert p1_weights["Termin realizacji"] == 40
+        assert p2_weights["Cena"] == 80
+        assert p2_weights["Jakosc"] == 20
 
 
 # --- Value extraction: AgreementUpdateNotice ---

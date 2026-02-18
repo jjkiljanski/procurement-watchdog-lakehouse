@@ -14,6 +14,15 @@ class EvalCriterion(BaseModel):
     weight: int
 
 
+class ContractNoticePart(BaseModel):
+    """Per-part criteria block for ContractNotice SEKCJA IV."""
+
+    part_id: str | None = None
+    kryteria_oceny: list[EvalCriterion] | None = None
+    criteria_aspects_4310: str | None = None
+    criteria_aspects_4310_flag: bool | None = None
+
+
 class ExtractedValues(BaseModel):
     """Monetary values extracted from the notice HTML.
 
@@ -93,6 +102,9 @@ class HtmlExtracted(BaseModel):
     nuts3_name: str | None = None
     opis: str | None = None
     kryteria_oceny: list[EvalCriterion] | None = None
+    criteria_aspects_4310: str | None = None
+    criteria_aspects_4310_flag: bool | None = None
+    contract_notice_parts: list[ContractNoticePart] | None = None
     values: ExtractedValues | None = None
     lots: list[TenderResultLot] | None = None
     tender_result_enrichment: TenderResultEnrichment | None = None

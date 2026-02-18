@@ -14,6 +14,7 @@ from bs4 import BeautifulSoup, Tag
 from procurement.silver.models import (
     ChangeEntry,
     ContractExecution,
+    ContractNoticePart,
     EvalCriterion,
     ExtractedValues,
     HtmlExtracted,
@@ -237,6 +238,88 @@ def _extract_criteria(soup: BeautifulSoup) -> list[EvalCriterion] | None:
         i += 1
 
     return criteria or None
+
+
+def _extract_criteria_aspects_4310(soup: BeautifulSoup) -> tuple[str | None, bool | None]:
+    """Extract ContractNotice field 4.3.10 text + Tak/Nie flag."""
+    h3 = _find_h3(soup, "4.3.10.")
+    raw = _span_value(h3) or _text_after_h3(h3)
+    return raw, _parse_tak_nie(raw)
+
+
+def _extract_part_id_from_header(text: str) -> str | None:
+    """Extract part identifier from headers like 'Czesc/Czesc nr/Czesc 1'."""
+    lowered = text.lower()
+    if "4.3." in lowered:
+        return None
+    if len(lowered) > 64:
+        return None
+    if not lowered.strip().startswith("cz"):
+        return None
+
+    match = re.search(r"(?:nr\s*)?([a-z0-9._/-]+)\s*$", lowered, re.IGNORECASE)
+    if match:
+        return match.group(1).strip()
+    return None
+
+
+def _extract_contract_notice_parts(soup: BeautifulSoup) -> list[ContractNoticePart] | None:
+    """Extract per-part criteria blocks from ContractNotice SEKCJA IV."""
+    h3s = soup.find_all("h3")
+    if not h3s:
+        return None
+
+    part_headers: list[tuple[int, str]] = []
+    for idx, h3 in enumerate(h3s):
+        text = h3.get_text(separator=" ", strip=True)
+        part_id = _extract_part_id_from_header(text)
+        if part_id:
+            part_headers.append((idx, part_id))
+
+    if not part_headers:
+        return None
+
+    parts: list[ContractNoticePart] = []
+    for i, (start_idx, part_id) in enumerate(part_headers):
+        end_idx = part_headers[i + 1][0] if i + 1 < len(part_headers) else len(h3s)
+        chunk = h3s[start_idx:end_idx]
+
+        criteria: list[EvalCriterion] = []
+        j = 0
+        while j < len(chunk):
+            text = chunk[j].get_text()
+            if "4.3.5.)" in text:
+                name = _span_value(chunk[j])
+                weight = None
+                if j + 1 < len(chunk) and "4.3.6.)" in chunk[j + 1].get_text():
+                    raw_weight = _span_value(chunk[j + 1])
+                    if raw_weight is not None:
+                        try:
+                            weight = int(raw_weight)
+                        except ValueError:
+                            pass
+                if name and weight is not None:
+                    criteria.append(EvalCriterion(name=name, weight=weight))
+            j += 1
+
+        aspects_raw = None
+        aspects_flag = None
+        for h3 in chunk:
+            if "4.3.10.)" in h3.get_text():
+                aspects_raw = _span_value(h3) or _text_after_h3(h3)
+                aspects_flag = _parse_tak_nie(aspects_raw)
+                break
+
+        parts.append(
+            ContractNoticePart(
+                part_id=part_id,
+                kryteria_oceny=criteria or None,
+                criteria_aspects_4310=aspects_raw,
+                criteria_aspects_4310_flag=aspects_flag,
+            )
+        )
+
+    return parts or None
 
 
 # --- Type-specific value extraction ---
@@ -579,6 +662,10 @@ def parse_html(
     address = _extract_address(soup)
     opis = _extract_description(soup)
     kryteria = _extract_criteria(soup)
+    criteria_aspects_4310, criteria_aspects_4310_flag = _extract_criteria_aspects_4310(soup)
+    contract_notice_parts = (
+        _extract_contract_notice_parts(soup) if notice_type == "ContractNotice" else None
+    )
     lots = _extract_tender_result_lots(soup) if notice_type == "TenderResultNotice" else None
     if notice_type == "TenderResultNotice" and not lots:
         lots = _extract_status_lots_from_procedure_result(procedure_result)
@@ -603,6 +690,9 @@ def parse_html(
         **address,
         opis=opis,
         kryteria_oceny=kryteria,
+        criteria_aspects_4310=criteria_aspects_4310,
+        criteria_aspects_4310_flag=criteria_aspects_4310_flag,
+        contract_notice_parts=contract_notice_parts,
         values=values,
         lots=lots,
         **details,

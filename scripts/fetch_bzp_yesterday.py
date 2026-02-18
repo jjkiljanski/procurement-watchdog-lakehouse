@@ -86,6 +86,34 @@ def fetch_notices_for_type(
     return all_notices
 
 
+def _same_day(publication_date: str | None, target_day: str) -> bool:
+    if not publication_date or not isinstance(publication_date, str):
+        return False
+    return publication_date[:10] == target_day
+
+
+def _filter_and_dedup_daily(notices: list[dict], target_day: str) -> tuple[list[dict], int, int]:
+    """Keep only notices with publicationDate on target day, then dedup by objectId."""
+    filtered = [n for n in notices if _same_day(n.get("publicationDate"), target_day)]
+    dropped_by_day = len(notices) - len(filtered)
+
+    deduped: list[dict] = []
+    seen: set[str] = set()
+    dropped_duplicates = 0
+    for notice in filtered:
+        object_id = notice.get("objectId")
+        key = object_id if isinstance(object_id, str) and object_id else None
+        if key is None:
+            deduped.append(notice)
+            continue
+        if key in seen:
+            dropped_duplicates += 1
+            continue
+        seen.add(key)
+        deduped.append(notice)
+    return deduped, dropped_by_day, dropped_duplicates
+
+
 def main() -> None:
     if len(sys.argv) > 1:
         target_date = date.fromisoformat(sys.argv[1])
@@ -108,14 +136,22 @@ def main() -> None:
         all_notices.extend(notices)
         log.info("  %s — %d notices", notice_type, len(notices))
 
-    log.info("Total notices fetched: %d", len(all_notices))
+    log.info("Total notices fetched (raw): %d", len(all_notices))
+
+    filtered_notices, dropped_by_day, dropped_duplicates = _filter_and_dedup_daily(
+        all_notices,
+        target_date.isoformat(),
+    )
+    log.info("Dropped notices with mismatched publicationDate day: %d", dropped_by_day)
+    log.info("Dropped duplicate notices by objectId: %d", dropped_duplicates)
+    log.info("Total notices kept for %s: %d", target_date.isoformat(), len(filtered_notices))
 
     output_dir = Path("data/raw")
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / f"bzp_{target_date.isoformat()}.json"
 
     with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(all_notices, f, ensure_ascii=False, indent=2)
+        json.dump(filtered_notices, f, ensure_ascii=False, indent=2)
 
     log.info("Saved to %s", output_path)
 
