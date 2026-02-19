@@ -49,6 +49,7 @@ EVAL_CRITERION_SCHEMA = StructType(
 CONTRACT_NOTICE_PART_SCHEMA = StructType(
     [
         StructField("part_id", StringType()),
+        StructField("opis", StringType()),
         StructField("kryteria_oceny", ArrayType(EVAL_CRITERION_SCHEMA)),
         StructField("criteria_aspects_4310", StringType()),
         StructField("criteria_aspects_4310_flag", BooleanType()),
@@ -323,6 +324,57 @@ def build_silver(df: DataFrame) -> DataFrame:
             "ai_prior_market_consultation_31",
             col("htmlExtracted.ai_prior_market_consultation_31"),
         )
+        .withColumn(
+            "cn_parts_normalized",
+            expr(
+                "CASE WHEN noticeType = 'ContractNotice' THEN "
+                "CASE WHEN htmlExtracted.contract_notice_parts IS NOT NULL AND size(htmlExtracted.contract_notice_parts) > 0 "
+                "THEN htmlExtracted.contract_notice_parts "
+                "ELSE array(named_struct("
+                "'part_id', cast(null as string),"
+                "'opis', htmlExtracted.opis,"
+                "'kryteria_oceny', htmlExtracted.kryteria_oceny,"
+                "'criteria_aspects_4310', htmlExtracted.criteria_aspects_4310,"
+                "'criteria_aspects_4310_flag', htmlExtracted.criteria_aspects_4310_flag"
+                ")) END END"
+            ),
+        )
+        .withColumn(
+            "cn_ogloszenie_dotyczy",
+            when(col("noticeType") == lit("ContractNotice"), col("htmlExtracted.ogloszenie_dotyczy")),
+        )
+        .withColumn(
+            "cn_kryteria_oceny_by_part",
+            when(
+                col("noticeType") == lit("ContractNotice"),
+                expr(
+                    "transform(cn_parts_normalized, p -> "
+                    "map_from_entries(transform(coalesce(p.kryteria_oceny, array()), "
+                    "x -> named_struct('key', x.name, 'value', x.weight))))"
+                ),
+            ),
+        )
+        .withColumn(
+            "cn_criteria_aspects_4310",
+            when(
+                col("noticeType") == lit("ContractNotice"),
+                expr("transform(cn_parts_normalized, p -> p.criteria_aspects_4310)"),
+            ),
+        )
+        .withColumn(
+            "cn_criteria_aspects_4310_flag",
+            when(
+                col("noticeType") == lit("ContractNotice"),
+                expr("transform(cn_parts_normalized, p -> p.criteria_aspects_4310_flag)"),
+            ),
+        )
+        .withColumn(
+            "cn_opis_by_part",
+            when(
+                col("noticeType") == lit("ContractNotice"),
+                expr("transform(cn_parts_normalized, p -> p.opis)"),
+            ),
+        )
         .withColumn("cpvCodes", parse_cpv_udf(col("cpvCode")))
         .withColumn("provinceName", province_udf(col("organizationProvince")))
         .withColumn("clientTypeName", client_type_udf(col("clientType")))
@@ -451,7 +503,7 @@ def build_silver(df: DataFrame) -> DataFrame:
                 | (col("htmlExtracted.contract_execution.executed_properly") == lit(False)),
             ),
         )
-        .drop("htmlBody", "cpvCode")
+        .drop("htmlBody", "cpvCode", "cn_parts_normalized")
     )
 
     case_window = Window.partitionBy("caseId")

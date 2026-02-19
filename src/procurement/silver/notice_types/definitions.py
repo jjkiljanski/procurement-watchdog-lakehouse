@@ -46,6 +46,18 @@ AGREEMENT_UPDATE_SPECIFIC_COLUMNS = [
     }
 ]
 
+CONTRACT_NOTICE_SPECIFIC_COLUMNS = [
+    c
+    for c in BASE_SPECIFIC_COLUMNS
+    if c not in {"contractors", "contractorNameNormalized", "htmlExtracted"}
+] + [
+    "cn_ogloszenie_dotyczy",
+    "cn_kryteria_oceny_by_part",
+    "cn_criteria_aspects_4310",
+    "cn_criteria_aspects_4310_flag",
+    "cn_opis_by_part",
+]
+
 
 @dataclass(frozen=True)
 class NoticeTypeDefinition:
@@ -114,8 +126,8 @@ _NOTICE_TYPE_DEFINITIONS: dict[str | None, NoticeTypeDefinition] = {
     ),
     "ContractNotice": NoticeTypeDefinition(
         notice_type="ContractNotice",
-        specific_columns=tuple(BASE_SPECIFIC_COLUMNS),
-        html_extracted_fields=HTML_FIELDS_CONTRACT_NOTICE,
+        specific_columns=tuple(CONTRACT_NOTICE_SPECIFIC_COLUMNS),
+        html_extracted_fields=tuple(),
     ),
     "TenderResultNotice": NoticeTypeDefinition(
         notice_type="TenderResultNotice",

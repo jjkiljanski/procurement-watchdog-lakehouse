@@ -396,9 +396,16 @@ def _extract_contract_notice_parts(soup: BeautifulSoup) -> list[ContractNoticePa
         chunk = h3s[start_idx:end_idx]
 
         criteria: list[EvalCriterion] = []
+        opis: str | None = None
         j = 0
         while j < len(chunk):
             text = chunk[j].get_text()
+            if "4.2.2.)" in text:
+                p = chunk[j].find_next_sibling("p")
+                if p is not None:
+                    opis_text = p.get_text(separator=" ", strip=True)
+                    if opis_text:
+                        opis = opis_text
             if "4.3.5.)" in text:
                 name = _span_value(chunk[j])
                 weight = None
@@ -424,6 +431,7 @@ def _extract_contract_notice_parts(soup: BeautifulSoup) -> list[ContractNoticePa
         parts.append(
             ContractNoticePart(
                 part_id=part_id,
+                opis=opis,
                 kryteria_oceny=criteria or None,
                 criteria_aspects_4310=aspects_raw,
                 criteria_aspects_4310_flag=aspects_flag,

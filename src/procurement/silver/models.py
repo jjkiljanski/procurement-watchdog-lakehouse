@@ -18,6 +18,7 @@ class ContractNoticePart(BaseModel):
     """Per-part criteria block for ContractNotice SEKCJA IV."""
 
     part_id: str | None = None
+    opis: str | None = None
     kryteria_oceny: list[EvalCriterion] | None = None
     criteria_aspects_4310: str | None = None
     criteria_aspects_4310_flag: bool | None = None

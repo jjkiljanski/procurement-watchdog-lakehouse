@@ -109,6 +109,23 @@ CONTRACT_NOTICE_PARTS_HTML = """\
 <h3 class="mb-0">4.3.10.) Zamawiajacy okresla aspekty spoleczne, srodowiskowe lub innowacyjne, zada etykiet lub stosuje rachunek kosztow cyklu zycia w odniesieniu do kryterium oceny ofert: <span class="normal">Nie</span></h3>
 </main></body></html>"""
 
+CONTRACT_NOTICE_PARTS_WITH_OPIS_HTML = """\
+<html><head></head><body><main>
+<h2 class="bg-light p-3 mt-4">SEKCJA IV - PRZEDMIOT ZAMOWIENIA</h2>
+<h3 class="mb-0">Czesc nr 1</h3>
+<h3 class="mb-0">4.2.2.) KrĂłtki opis przedmiotu zamĂłwienia</h3>
+<p class="mb-0">Opis czesci pierwszej.</p>
+<h3 class="mb-0">4.3.5.) Nazwa kryterium: <span class="normal">Cena</span></h3>
+<h3 class="mb-0">4.3.6.) Waga: <span class="normal">60</span></h3>
+<h3 class="mb-0">4.3.10.) ... <span class="normal">Tak</span></h3>
+<h3 class="mb-0">Czesc nr 2</h3>
+<h3 class="mb-0">4.2.2.) KrĂłtki opis przedmiotu zamĂłwienia</h3>
+<p class="mb-0">Opis czesci drugiej.</p>
+<h3 class="mb-0">4.3.5.) Nazwa kryterium: <span class="normal">Cena</span></h3>
+<h3 class="mb-0">4.3.6.) Waga: <span class="normal">80</span></h3>
+<h3 class="mb-0">4.3.10.) ... <span class="normal">Nie</span></h3>
+</main></body></html>"""
+
 OGLOSZENIE_DOTYCZY_HTML = """\
 <html><head></head><body><main>
 <h2 class="bg-light p-3 mt-4">SEKCJA II - INFORMACJE PODSTAWOWE</h2>
@@ -469,6 +486,12 @@ class TestContractNoticeValues:
         assert p1_weights["Termin realizacji"] == 40
         assert p2_weights["Cena"] == 80
         assert p2_weights["Jakosc"] == 20
+
+    def test_extracts_part_descriptions(self):
+        r = parse_html(CONTRACT_NOTICE_PARTS_WITH_OPIS_HTML, notice_type="ContractNotice")
+        assert r.contract_notice_parts is not None
+        assert r.contract_notice_parts[0].opis == "Opis czesci pierwszej."
+        assert r.contract_notice_parts[1].opis == "Opis czesci drugiej."
 
 
 # --- Value extraction: AgreementUpdateNotice ---
