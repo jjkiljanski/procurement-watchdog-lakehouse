@@ -1,7 +1,7 @@
 """Build lightweight run statistics for Silver and Gold outputs.
 
 Reads:
-  data/silver/bzp_YYYY-MM-DD.parquet
+  data/silver/noticeType=*/publicationDateDay=YYYY-MM-DD/
   data/gold/*/date=YYYY-MM-DD/
 
 Writes:
@@ -55,15 +55,36 @@ def _load_parquet_rows(path: Path) -> list[dict]:
     return ds.dataset(str(path), format="parquet", partitioning="hive").to_table().to_pylist()
 
 
-def _silver_stats(target_date: str) -> dict:
-    silver_path = Path("data/silver") / f"bzp_{target_date}.parquet"
-    if not silver_path.exists():
-        return {"path": str(silver_path), "exists": False}
+def _silver_daily_paths(target_date: str) -> tuple[str, list[Path]]:
+    silver_dir = Path("data/silver")
+    partitioned = sorted(
+        p for p in silver_dir.glob(f"noticeType=*/publicationDateDay={target_date}") if p.is_dir()
+    )
+    if partitioned:
+        return f"{silver_dir}/noticeType=*/publicationDateDay={target_date}", partitioned
+    legacy = silver_dir / f"bzp_{target_date}.parquet"
+    if legacy.exists():
+        return str(legacy), [legacy]
+    return f"{silver_dir}/noticeType=*/publicationDateDay={target_date}", []
 
-    rows = _load_parquet_rows(silver_path)
+
+def _silver_stats(target_date: str) -> dict:
+    silver_dir = Path("data/silver")
+    path_label, paths = _silver_daily_paths(target_date)
+    rows: list[dict]
+    if paths and any("publicationDateDay=" in str(p) for p in paths):
+        table = ds.dataset(str(silver_dir), format="parquet", partitioning="hive").to_table(
+            filter=(ds.field("publicationDateDay") == target_date)
+        )
+        rows = table.to_pylist()
+    elif paths:
+        rows = _load_parquet_rows(paths[0])
+    else:
+        return {"path": path_label, "exists": False}
+
     total = len(rows)
     return {
-        "path": str(silver_path),
+        "path": path_label,
         "exists": True,
         "rows": total,
         "field_non_null_rate": {

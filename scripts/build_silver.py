@@ -3,7 +3,7 @@
 Reads:
   <raw-dir>/bzp_YYYY-MM-DD.json
 Writes:
-  <silver-dir>/bzp_YYYY-MM-DD.parquet
+  <silver-dir>/noticeType=<TYPE>/publicationDateDay=YYYY-MM-DD/
 """
 
 import argparse
@@ -85,6 +85,8 @@ def main() -> None:
         log.info("Set spark.sql.shuffle.partitions=%d", args.shuffle_partitions)
 
     try:
+        from pyspark.sql.functions import col, to_date
+
         df_raw = spark.read.json(str(raw_path), multiLine=True)
         log.info("Loaded %d raw records", df_raw.count())
         current_parts = df_raw.rdd.getNumPartitions()
@@ -105,11 +107,26 @@ def main() -> None:
             )
 
         df_silver = build_silver(df_raw)
+        df_silver = df_silver.withColumn(
+            "publicationDateDay",
+            to_date(col("publicationDate")).cast("string"),
+        )
 
-        out_path = str(Path(args.silver_dir) / f"bzp_{target_date}.parquet")
-        df_silver.coalesce(1).write.mode("overwrite").parquet(out_path)
+        # Overwrite only touched (noticeType, publicationDateDay) partitions.
+        spark.conf.set("spark.sql.sources.partitionOverwriteMode", "dynamic")
+        out_path = str(Path(args.silver_dir))
+        (
+            df_silver.repartition("noticeType", "publicationDateDay")
+            .write.mode("overwrite")
+            .partitionBy("noticeType", "publicationDateDay")
+            .parquet(out_path)
+        )
 
-        log.info("Wrote %d silver records to %s", df_silver.count(), out_path)
+        log.info(
+            "Wrote %d silver records to %s (partitioned by noticeType/publicationDateDay)",
+            df_silver.count(),
+            out_path,
+        )
     finally:
         spark.stop()
 

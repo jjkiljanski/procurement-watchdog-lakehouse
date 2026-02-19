@@ -1,7 +1,7 @@
 """Build gold marts from silver Parquet using PySpark.
 
 Reads:
-  data/silver/bzp_YYYY-MM-DD.parquet
+  data/silver/noticeType=*/publicationDateDay=YYYY-MM-DD/
 Writes:
   data/gold/case_mart/date=YYYY-MM-DD/
   data/gold/buyer_mart/date=YYYY-MM-DD/
@@ -34,6 +34,25 @@ from procurement.logging import setup_logging  # noqa: E402
 
 setup_logging()
 log = logging.getLogger(__name__)
+
+
+def _silver_partition_daily_paths(silver_dir: Path, target_date: str) -> list[str]:
+    return sorted(
+        str(p)
+        for p in silver_dir.glob(f"noticeType=*/publicationDateDay={target_date}")
+        if p.is_dir()
+    )
+
+
+def _silver_partition_asof_paths(silver_dir: Path, target_date: str) -> list[str]:
+    out: list[str] = []
+    for p in sorted(silver_dir.glob("noticeType=*/publicationDateDay=*")):
+        if not p.is_dir():
+            continue
+        token = p.name.replace("publicationDateDay=", "")
+        if token <= target_date:
+            out.append(str(p))
+    return out
 
 
 def _log_schema_probe(df: DataFrame) -> None:
@@ -89,7 +108,9 @@ def _nonnull_rate(df: DataFrame, field_name: str) -> float:
     )
 
 
-def _read_silver_union(spark: "SparkSession", paths: list[str]) -> DataFrame:
+def _read_silver_union(
+    spark: "SparkSession", paths: list[str], base_path: str | None = None
+) -> DataFrame:
     def _normalize_for_gold(frame: DataFrame) -> DataFrame:
         normalized_html = struct(
             safe_col(
@@ -149,7 +170,10 @@ def _read_silver_union(spark: "SparkSession", paths: list[str]) -> DataFrame:
 
     frames = []
     for path in paths:
-        frame = spark.read.parquet(path)
+        reader = spark.read
+        if base_path is not None:
+            reader = reader.option("basePath", base_path)
+        frame = reader.parquet(path)
         frames.append(_normalize_for_gold(frame))
     if not frames:
         raise ValueError("No silver paths to read")
@@ -196,27 +220,48 @@ def main() -> None:
         log.error("Unsupported --scope=%s (expected daily|asof)", scope)
         sys.exit(1)
 
-    silver_path = silver_dir / f"bzp_{target_date}.parquet"
+    legacy_silver_path = silver_dir / f"bzp_{target_date}.parquet"
     silver_paths: list[str]
+    daily_silver_paths: list[str]
     if scope == "daily":
-        if not silver_path.exists():
-            log.error("Silver data not found: %s", silver_path)
+        daily_silver_paths = _silver_partition_daily_paths(silver_dir, target_date)
+        if daily_silver_paths:
+            silver_paths = daily_silver_paths
+        elif legacy_silver_path.exists():
+            # Compatibility with pre-partitioned Silver layout.
+            silver_paths = [str(legacy_silver_path)]
+            daily_silver_paths = [str(legacy_silver_path)]
+        else:
+            log.error(
+                "Silver data not found for date=%s in partitioned or legacy layout under %s",
+                target_date,
+                silver_dir,
+            )
             sys.exit(1)
-        silver_paths = [str(silver_path)]
     else:
         if str(gold_dir) == "data/gold":
             gold_dir = Path("data/gold_asof")
-        all_paths = sorted(silver_dir.glob("bzp_*.parquet"))
-        silver_paths = []
-        for p in all_paths:
-            day = p.stem.replace("bzp_", "")
-            if day <= target_date:
-                silver_paths.append(str(p))
+        silver_paths = _silver_partition_asof_paths(silver_dir, target_date)
+        daily_silver_paths = _silver_partition_daily_paths(silver_dir, target_date)
+        if not silver_paths:
+            # Compatibility with pre-partitioned Silver layout.
+            all_paths = sorted(silver_dir.glob("bzp_*.parquet"))
+            silver_paths = []
+            for p in all_paths:
+                day = p.stem.replace("bzp_", "")
+                if day <= target_date:
+                    silver_paths.append(str(p))
+            if legacy_silver_path.exists():
+                daily_silver_paths = [str(legacy_silver_path)]
         if not silver_paths:
             log.error("No silver files found in %s up to date=%s", silver_dir, target_date)
             sys.exit(1)
-        if not silver_path.exists():
-            log.error("Daily silver file required for signals not found: %s", silver_path)
+        if not daily_silver_paths:
+            log.error(
+                "Daily silver input for signals not found for date=%s under %s",
+                target_date,
+                silver_dir,
+            )
             sys.exit(1)
         log.info("Using asof scope with %d silver files", len(silver_paths))
 
@@ -232,8 +277,13 @@ def main() -> None:
     )
 
     try:
-        df_silver_for_marts = _read_silver_union(spark, silver_paths)
-        df_silver_daily = _read_silver_union(spark, [str(silver_path)])
+        silver_base = str(silver_dir) if any("publicationDateDay=" in p for p in silver_paths) else None
+        daily_base = (
+            str(silver_dir) if any("publicationDateDay=" in p for p in daily_silver_paths) else None
+        )
+
+        df_silver_for_marts = _read_silver_union(spark, silver_paths, base_path=silver_base)
+        df_silver_daily = _read_silver_union(spark, daily_silver_paths, base_path=daily_base)
         log.info("Loaded marts scope records=%d", df_silver_for_marts.count())
         log.info("Loaded daily scope records=%d", df_silver_daily.count())
         _log_schema_probe(df_silver_for_marts)
