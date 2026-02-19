@@ -280,8 +280,42 @@ Plus three type-specific detail sub-structs:
 
 ## Other extractable fields (non-value)
 
-Currently extracted: address (1.5.x), description (4.2.2), criteria (4.3.5/6),
+Currently extracted: `ogloszenie_dotyczy` (2.1), address (1.5.x), description (4.2.2), criteria (4.3.5/6),
 monetary values (type-aware), and the detail enrichment fields listed below.
+
+### ContractNotice part-level extraction (new)
+
+For `ContractNotice`, Silver now emits additional fields to avoid flattening
+multi-part criteria into one notice-level list:
+
+| Field | Type | Scope | Description |
+|---|---|---|---|
+| `criteria_aspects_4310` | string | notice | Raw value of field `4.3.10.)` ("Tak"/"Nie"/other text). |
+| `criteria_aspects_4310_flag` | bool | notice | Parsed boolean from `4.3.10.)` when value is exactly `Tak`/`Nie`. |
+| `contract_notice_parts[]` | list | per part | Per-part extraction for multi-part notices (`Część ...`). |
+| `contract_notice_parts[].part_id` | string | per part | Parsed part identifier from part header. |
+| `contract_notice_parts[].kryteria_oceny[]` | list | per part | Criteria name/weight pairs (`4.3.5`/`4.3.6`) scoped to the part. |
+| `contract_notice_parts[].criteria_aspects_4310` | string | per part | Part-level value of field `4.3.10.)` when present in part block. |
+| `contract_notice_parts[].criteria_aspects_4310_flag` | bool | per part | Parsed boolean (`Tak`/`Nie`) for part-level `4.3.10.)`. |
+
+Notes:
+- Notice-level `kryteria_oceny` remains for backward compatibility.
+- For multi-part notices, consumers should prefer `contract_notice_parts[]`.
+- Gold currently uses Silver outputs only; no HTML re-parse in Gold.
+
+### ContractNotice field 4.3.10 (`criteria_aspects_4310`) snapshot
+
+In the current October 2025 silver snapshot (`31` daily files, `116,075` rows):
+
+- Notice-level `criteria_aspects_4310` has only two observed values: `Nie`, `Tak`.
+- Counts (notice-level): `Nie=30,723`, `Tak=638`.
+- Counts (part-level): `Nie=39,669`, `Tak=847`.
+- `contract_notice_parts[].criteria_aspects_4310` is present for all parsed parts
+  in this snapshot.
+
+Reference outputs generated from silver:
+- `E:\git_projects\procurement-watchdog-api-exploration\data\reports\silver_criteria_aspects_4310_counts.json`
+- `E:\git_projects\procurement-watchdog-api-exploration\data\reports\silver_criteria_names_4310_tak_without_ekol_srodowisk.json`
 
 ### Implemented detail fields
 

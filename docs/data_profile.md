@@ -215,6 +215,25 @@ The parser (`html_parser.py`) performs **type-aware extraction** â€”
 address/description/criteria for all types, monetary values dispatched
 per notice type, and detail enrichment for TRN/CPN/NUN.
 
+#### ContractNotice 4.3.10 and part-level criteria (new)
+
+Silver now emits ContractNotice-specific fields that preserve part-level
+structure in multi-part notices:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `htmlExtracted.criteria_aspects_4310` | string | Raw value of `4.3.10.)` at notice level |
+| `htmlExtracted.criteria_aspects_4310_flag` | bool | Parsed `Tak`/`Nie` flag from `4.3.10.)` |
+| `htmlExtracted.contract_notice_parts[]` | list | Part-level blocks for `Część ...` sections |
+| `htmlExtracted.contract_notice_parts[].kryteria_oceny[]` | list | Criteria name/weight by part |
+| `htmlExtracted.contract_notice_parts[].criteria_aspects_4310` | string | Part-level `4.3.10.)` raw value |
+| `htmlExtracted.contract_notice_parts[].criteria_aspects_4310_flag` | bool | Part-level `Tak`/`Nie` flag |
+
+Recommended usage:
+- For single-part notices, notice-level criteria are usually sufficient.
+- For multi-part notices, prefer `contract_notice_parts[]` to avoid mixing
+  criteria/weights across parts.
+
 #### Common fields (address, description, criteria)
 
 | Field | ContractNotice | TenderResultNotice | Other types |
@@ -247,6 +266,15 @@ extract address fields (100%) despite being minor types.
 | tender_result_enrichment | TenderResultNotice | joint_bidders, contractor_size | 82% / 61% |
 | contract_execution | ContractPerformingNotice | 7 fields (dates, booleans, num_changes) | 97â€“100% |
 | notice_change | NoticeUpdateNotice | changed_notice_number, changes[] | 100% / 99.6% |
+
+## Fetch behavior (current)
+
+Daily fetch now applies two safety steps before writing bronze JSON:
+
+1. Keep only notices whose `publicationDate` falls on the requested day.
+2. Deduplicate remaining notices by `objectId` (first occurrence kept).
+
+This reduces cross-day spillover and duplicate-object rows at ingestion time.
 
 ## TenderResultNotice â€” Contractor enrichment
 

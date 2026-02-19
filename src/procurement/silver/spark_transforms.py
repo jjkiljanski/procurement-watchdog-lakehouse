@@ -1,9 +1,10 @@
-"""PySpark transforms for the BZP silver layer."""
+﻿"""PySpark transforms for the BZP silver layer."""
 
 from __future__ import annotations
 
 import logging
 import re
+import unicodedata
 
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import (
@@ -114,6 +115,7 @@ NOTICE_CHANGE_SCHEMA = StructType(
 
 HTML_EXTRACTED_SCHEMA = StructType(
     [
+        StructField("ogloszenie_dotyczy", StringType()),
         StructField("ulica", StringType()),
         StructField("kod_pocztowy", StringType()),
         StructField("nuts3_code", StringType()),
@@ -195,13 +197,37 @@ def _normalize_contractor_names(contractors: list[dict] | None) -> list[str] | N
 def _extract_execution_duration_days(execution_period: str | None) -> int | None:
     if not execution_period:
         return None
-    text = execution_period.lower()
-    match = re.search(r"(\d+)\s*(?:dni|dzien|days?)", text)
+    text = execution_period.casefold()
+    replacements = {
+        "ą": "a",
+        "ć": "c",
+        "ę": "e",
+        "ł": "l",
+        "ń": "n",
+        "ó": "o",
+        "ś": "s",
+        "ź": "z",
+        "ż": "z",
+        "Ä…": "a",
+        "Ä‡": "c",
+        "Ä™": "e",
+        "Ĺ‚": "l",
+        "Ĺ„": "n",
+        "Ăł": "o",
+        "Ĺ›": "s",
+        "Ĺº": "z",
+        "Ĺ¼": "z",
+    }
+    for src, dst in replacements.items():
+        text = text.replace(src, dst)
+    text = unicodedata.normalize("NFKD", text)
+    text = "".join(ch for ch in text if not unicodedata.combining(ch))
+    match = re.search(r"(\d+)\s*(?:dn\w*|days?)", text)
     if match is None:
-        week_match = re.search(r"(\d+)\s*(?:tygodni|tygodnie|tydzień|weeks?)", text)
+        week_match = re.search(r"(\d+)\s*(?:tyg\w*|weeks?)", text)
         if week_match is not None:
             return int(week_match.group(1)) * 7
-        month_match = re.search(r"(\d+)\s*(?:miesi[aą]c(?:y|e)?|months?)", text)
+        month_match = re.search(r"(\d+)\s*(?:mies\w*|months?)", text)
         if month_match is not None:
             return int(month_match.group(1)) * 30
         return None
@@ -250,7 +276,7 @@ normalize_contractors_udf = udf(_normalize_contractor_names, ArrayType(StringTyp
 
 
 def _make_lookup_udf(mapping: dict[str, str]):
-    """Create a UDF that maps code → description using a dictionary."""
+    """Create a UDF that maps code â†’ description using a dictionary."""
 
     def _lookup(code: str | None) -> str | None:
         if code is None:
@@ -264,11 +290,11 @@ def build_silver(df: DataFrame) -> DataFrame:
     """Transform a raw BZP DataFrame into the silver layer.
 
     - Filters out records with truncated HTML
-    - Parses HTML body via UDF → struct of extracted fields (type-aware)
-    - Splits CPV codes string → array
-    - Resolves organizationProvince code → provinceName
-    - Resolves clientType code → clientTypeName
-    - Splits procedureResult semicolon-delimited string → array
+    - Parses HTML body via UDF â†’ struct of extracted fields (type-aware)
+    - Splits CPV codes string â†’ array
+    - Resolves organizationProvince code â†’ provinceName
+    - Resolves clientType code â†’ clientTypeName
+    - Splits procedureResult semicolon-delimited string â†’ array
     - Drops raw htmlBody and cpvCode columns
     """
     province_udf = _make_lookup_udf(province_names())
@@ -435,3 +461,4 @@ def build_silver(df: DataFrame) -> DataFrame:
     )
 
     return silver_df
+

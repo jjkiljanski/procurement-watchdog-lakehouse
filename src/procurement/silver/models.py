@@ -96,6 +96,7 @@ class NoticeChange(BaseModel):
 class HtmlExtracted(BaseModel):
     """Structured fields extracted from the notice HTML."""
 
+    ogloszenie_dotyczy: str | None = None
     ulica: str | None = None
     kod_pocztowy: str | None = None
     nuts3_code: str | None = None

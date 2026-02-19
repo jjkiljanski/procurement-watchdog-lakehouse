@@ -1,4 +1,4 @@
-"""Extract structured fields from BZP notice HTML.
+﻿"""Extract structured fields from BZP notice HTML.
 
 Each notice type has a different HTML template with different field numbers.
 This parser dispatches value extraction by notice type. See
@@ -8,6 +8,7 @@ docs/html_structure.md for the full field reference.
 from __future__ import annotations
 
 import re
+import unicodedata
 
 from bs4 import BeautifulSoup, Tag
 
@@ -57,12 +58,43 @@ def _span_value(h3: Tag | None) -> str | None:
 
 def _find_h3_by_label(soup: BeautifulSoup, patterns: list[str]) -> Tag | None:
     """Find h3 by case-insensitive label fragments in text content."""
-    lowered_patterns = [p.lower() for p in patterns]
+    lowered_patterns = [_normalize_label_text(p) for p in patterns]
     for h3 in soup.find_all("h3"):
-        text = h3.get_text(separator=" ", strip=True).lower()
+        text = _normalize_label_text(h3.get_text(separator=" ", strip=True))
         if all(pattern in text for pattern in lowered_patterns):
             return h3
     return None
+
+
+def _normalize_label_text(text: str) -> str:
+    """Normalize text for robust label matching across encoding variants."""
+    lowered = text.casefold()
+    # Common mojibake fragments seen in current fixtures/docs.
+    replacements = {
+        "Ä…": "a",
+        "Ä‡": "c",
+        "Ä™": "e",
+        "Ĺ‚": "l",
+        "Ĺ„": "n",
+        "Ăł": "o",
+        "Ĺ›": "s",
+        "Ĺş": "z",
+        "ĹĽ": "z",
+        "Ă„â€¦": "a",
+        "Ă„â€ˇ": "c",
+        "Ă„â„˘": "e",
+        "Äąâ€š": "l",
+        "Äąâ€ž": "n",
+        "Ä‚Ĺ‚": "o",
+        "Äąâ€ş": "s",
+        "ÄąÂş": "z",
+        "ÄąÂĽ": "z",
+    }
+    for src, dst in replacements.items():
+        lowered = lowered.replace(src, dst)
+    lowered = unicodedata.normalize("NFKD", lowered)
+    lowered = "".join(ch for ch in lowered if not unicodedata.combining(ch))
+    return re.sub(r"\s+", " ", lowered).strip()
 
 
 def _field_num(h3: Tag | None) -> str | None:
@@ -197,6 +229,27 @@ def _extract_address(soup: BeautifulSoup) -> dict:
         "nuts3_code": nuts3_code,
         "nuts3_name": nuts3_name,
     }
+
+
+def _extract_ogloszenie_dotyczy(soup: BeautifulSoup) -> str | None:
+    """Extract the 'OgĹ‚oszenie dotyczy' field by label text.
+
+    Field numbers are reused across notice types, so this must be label-based
+    (not just 2.1.) to avoid capturing unrelated identifiers.
+    """
+    h3 = None
+    for candidate in soup.find_all("h3"):
+        raw = candidate.get_text(separator=" ", strip=True).lower()
+        if (
+            raw.strip().startswith("2.1.)")
+            and "dotyczy" in raw
+            and "dotyczy zmiany" not in raw
+        ):
+            h3 = candidate
+            break
+    if h3 is None:
+        return None
+    return _span_value(h3) or _text_after_h3(h3) or _collect_p_text(h3)
 
 
 # --- Description and criteria (ContractNotice-specific) ---
@@ -375,7 +428,7 @@ def _extract_values_tender_result(soup: BeautifulSoup) -> ExtractedValues | None
 def _extract_lot_id_from_text(text: str) -> str | None:
     """Extract human lot label from header text where possible."""
     patterns = [
-        r"(?:Część|Czesc)\s*(?:nr)?\s*([A-Za-z0-9._/-]+)",
+        r"(?:CzÄ™Ĺ›Ä‡|Czesc)\s*(?:nr)?\s*([A-Za-z0-9._/-]+)",
         r"Lot\s*(?:nr)?\s*([A-Za-z0-9._/-]+)",
     ]
     for pattern in patterns:
@@ -543,9 +596,14 @@ def _extract_details_contract_performing(soup: BeautifulSoup) -> ContractExecuti
     h3_execution_end = _find_h3_by_label(soup, ["termin wykonania umowy"]) or _find_h3(soup, "5.2.")
     execution_end_date = _span_value(h3_execution_end) or _text_after_h3(h3_execution_end)
 
-    h3_on_time = _find_h3_by_label(soup, ["pierwotnie określonym terminie"]) or _find_h3_by_label(
-        soup, ["w terminie"]
-    ) or _find_h3(soup, "5.3.")
+    h3_on_time = None
+    for candidate in soup.find_all("h3"):
+        raw = candidate.get_text(separator=" ", strip=True).lower()
+        if "pierwotnie" in raw and "termin" in raw:
+            h3_on_time = candidate
+            break
+    if h3_on_time is None:
+        h3_on_time = _find_h3_by_label(soup, ["w terminie"]) or _find_h3(soup, "5.3.")
     executed_on_time = _parse_tak_nie(_span_value(h3_on_time) or _text_after_h3(h3_on_time))
 
     h3_changes = _find_h3_by_label(soup, ["liczba zmian"]) or _find_h3(soup, "5.4.1.")
@@ -557,7 +615,7 @@ def _extract_details_contract_performing(soup: BeautifulSoup) -> ContractExecuti
         except ValueError:
             pass
 
-    h3_proper = _find_h3_by_label(soup, ["wykonana należycie"]) or _find_h3(soup, "5.6.")
+    h3_proper = _find_h3_by_label(soup, ["wykonana naleĹĽycie"]) or _find_h3(soup, "5.6.")
     executed_properly = _parse_tak_nie(_span_value(h3_proper) or _text_after_h3(h3_proper))
 
     if all(
@@ -633,8 +691,8 @@ _DETAIL_EXTRACTORS: dict[str, tuple[str, object]] = {
 def parse_cpv_codes(cpv_raw: str) -> list[str]:
     """Parse cpvCode string into a list of individual CPV entries.
 
-    Input:  "45000000-7 (Roboty budowlane),90620000-9 (Usługi odśnieżania)"
-    Output: ["45000000-7 (Roboty budowlane)", "90620000-9 (Usługi odśnieżania)"]
+    Input:  "45000000-7 (Roboty budowlane),90620000-9 (UsĹ‚ugi odĹ›nieĹĽania)"
+    Output: ["45000000-7 (Roboty budowlane)", "90620000-9 (UsĹ‚ugi odĹ›nieĹĽania)"]
     """
     # Split on comma followed by a digit (start of next CPV code)
     return [part.strip() for part in re.split(r",(?=\d)", cpv_raw) if part.strip()]
@@ -659,6 +717,7 @@ def parse_html(
     """
     soup = BeautifulSoup(html, "lxml")
 
+    ogloszenie_dotyczy = _extract_ogloszenie_dotyczy(soup)
     address = _extract_address(soup)
     opis = _extract_description(soup)
     kryteria = _extract_criteria(soup)
@@ -687,6 +746,7 @@ def parse_html(
         details[field_name] = extractor(soup)
 
     return HtmlExtracted(
+        ogloszenie_dotyczy=ogloszenie_dotyczy,
         **address,
         opis=opis,
         kryteria_oceny=kryteria,
@@ -697,3 +757,4 @@ def parse_html(
         lots=lots,
         **details,
     )
+

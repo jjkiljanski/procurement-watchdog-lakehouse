@@ -1,4 +1,4 @@
-"""Tests for BZP silver layer HTML parser."""
+﻿"""Tests for BZP silver layer HTML parser."""
 
 import sys
 from pathlib import Path
@@ -18,13 +18,13 @@ from procurement.silver.models import BzpNoticeSilver, EvalCriterion, HtmlExtrac
 
 MINIMAL_HTML = """\
 <html><head></head><body><main>
-<h2 class="bg-light p-3 mt-4">SEKCJA I - ZAMAWIAJĄCY</h2>
+<h2 class="bg-light p-3 mt-4">SEKCJA I - ZAMAWIAJÄ„CY</h2>
 <h3 class="mb-0">1.5.1.) Ulica: <span class="normal">ul. Testowa 42</span></h3>
 <h3 class="mb-0">1.5.3.) Kod pocztowy: <span class="normal">00-001</span></h3>
 <h3 class="mb-0">1.5.6.) Lokalizacja NUTS 3: <span class="normal">PL911 - Miasto Warszawa</span></h3>
-<h2 class="bg-light p-3 mt-4">SEKCJA IV – PRZEDMIOT ZAMÓWIENIA</h2>
-<h3 class="mb-0">4.2.2.) Krótki opis przedmiotu zamówienia</h3>
-<p class="mb-0">Dostawa sprzętu komputerowego dla szkoły.</p>
+<h2 class="bg-light p-3 mt-4">SEKCJA IV â€“ PRZEDMIOT ZAMĂ“WIENIA</h2>
+<h3 class="mb-0">4.2.2.) KrĂłtki opis przedmiotu zamĂłwienia</h3>
+<p class="mb-0">Dostawa sprzÄ™tu komputerowego dla szkoĹ‚y.</p>
 <h3 class="mb-0">Kryterium 1</h3>
 <h3 class="mb-0">4.3.5.) Nazwa kryterium: <span class="normal">Cena</span></h3>
 <h3 class="mb-0">4.3.6.) Waga: <span class="normal">60</span></h3>
@@ -35,54 +35,54 @@ MINIMAL_HTML = """\
 
 TENDER_RESULT_HTML = """\
 <html><head></head><body><main>
-<h2 class="bg-light p-3 mt-4">SEKCJA I - ZAMAWIAJĄCY</h2>
-<h3 class="mb-0">1.5.1.) Ulica: <span class="normal">al. Wolności 10</span></h3>
+<h2 class="bg-light p-3 mt-4">SEKCJA I - ZAMAWIAJÄ„CY</h2>
+<h3 class="mb-0">1.5.1.) Ulica: <span class="normal">al. WolnoĹ›ci 10</span></h3>
 <h3 class="mb-0">1.5.3.) Kod pocztowy: <span class="normal">30-500</span></h3>
-<h3 class="mb-0">1.5.6.) Lokalizacja NUTS 3: <span class="normal">PL213 - Miasto Kraków</span></h3>
-<h2 class="bg-light p-3 mt-4">SEKCJA IV – PRZEDMIOT ZAMÓWIENIA</h2>
-<h3 class="mb-0">4.3.) Wartość zamówienia: <span class="normal">500000,00                PLN</span></h3>
+<h3 class="mb-0">1.5.6.) Lokalizacja NUTS 3: <span class="normal">PL213 - Miasto KrakĂłw</span></h3>
+<h2 class="bg-light p-3 mt-4">SEKCJA IV â€“ PRZEDMIOT ZAMĂ“WIENIA</h2>
+<h3 class="mb-0">4.3.) WartoĹ›Ä‡ zamĂłwienia: <span class="normal">500000,00                PLN</span></h3>
 <h2 class="bg-light p-3 mt-4">SEKCJA VI OFERTY</h2>
-<h3 class="mb-0">6.2.) Cena lub koszt oferty z najniższą ceną: <span class="normal">400000 PLN</span></h3>
-<h3 class="mb-0">6.3.) Cena lub koszt oferty z najwyższą ceną: <span class="normal">550000,00 PLN</span></h3>
+<h3 class="mb-0">6.2.) Cena lub koszt oferty z najniĹĽszÄ… cenÄ…: <span class="normal">400000 PLN</span></h3>
+<h3 class="mb-0">6.3.) Cena lub koszt oferty z najwyĹĽszÄ… cenÄ…: <span class="normal">550000,00 PLN</span></h3>
 <h3 class="mb-0">6.4.) Cena oferty wykonawcy: <span class="normal">465163,88 PLN</span></h3>
-<h2 class="bg-light p-3 mt-4">SEKCJA VIII – UMOWA</h2>
-<h3 class="mb-0">8.2.) Wartość umowy/umowy ramowej: <span class="normal">465163,88 PLN</span></h3>
+<h2 class="bg-light p-3 mt-4">SEKCJA VIII â€“ UMOWA</h2>
+<h3 class="mb-0">8.2.) WartoĹ›Ä‡ umowy/umowy ramowej: <span class="normal">465163,88 PLN</span></h3>
 </main></body></html>"""
 
 CONTRACT_PERFORMING_HTML = """\
 <html><head></head><body><main>
-<h2 class="bg-light p-3 mt-4">SEKCJA IV – PODSTAWOWE INFORMACJE O ZAWARTEJ UMOWIE</h2>
-<h3 class="mb-0">4.4.) Wartość umowy: <span class="normal">24280,56                        PLN</span></h3>
+<h2 class="bg-light p-3 mt-4">SEKCJA IV â€“ PODSTAWOWE INFORMACJE O ZAWARTEJ UMOWIE</h2>
+<h3 class="mb-0">4.4.) WartoĹ›Ä‡ umowy: <span class="normal">24280,56                        PLN</span></h3>
 <h2 class="bg-light p-3 mt-4">SEKCJA V PRZEBIEG REALIZACJI UMOWY</h2>
 <h3 class="mb-0">5.4.7.) Kod waluty: <span class="normal">PLN</span></h3>
-<h3 class="mb-0">5.5.) Łączna wartość wynagrodzenia: <span class="normal">20000,00                PLN</span></h3>
+<h3 class="mb-0">5.5.) ĹÄ…czna wartoĹ›Ä‡ wynagrodzenia: <span class="normal">20000,00                PLN</span></h3>
 </main></body></html>"""
 
 CONTRACT_PERFORMING_EUR_HTML = """\
 <html><head></head><body><main>
-<h3 class="mb-0">4.4.) Wartość umowy: <span class="normal">39127,53                EUR</span></h3>
+<h3 class="mb-0">4.4.) WartoĹ›Ä‡ umowy: <span class="normal">39127,53                EUR</span></h3>
 <h3 class="mb-0">5.4.7.) Kod waluty: <span class="normal">EUR</span></h3>
-<h3 class="mb-0">5.5.) Łączna wartość wynagrodzenia: <span class="normal">39127,53                EUR</span></h3>
+<h3 class="mb-0">5.5.) ĹÄ…czna wartoĹ›Ä‡ wynagrodzenia: <span class="normal">39127,53                EUR</span></h3>
 </main></body></html>"""
 
 AGREEMENT_UPDATE_HTML = """\
 <html><head></head><body><main>
-<h3 class="mb-0">4.4.) Wartość umowy/umowy ramowej: <span class="normal">996945,00                PLN</span></h3>
+<h3 class="mb-0">4.4.) WartoĹ›Ä‡ umowy/umowy ramowej: <span class="normal">996945,00                PLN</span></h3>
 </main></body></html>"""
 
 AGREEMENT_INTENTION_HTML = """\
 <html><head></head><body><main>
-<h3 class="mb-0">3.5.) Wartość zamówienia: <span class="normal">2509756,10                    \xa0PLN</span></h3>
+<h3 class="mb-0">3.5.) WartoĹ›Ä‡ zamĂłwienia: <span class="normal">2509756,10                    \xa0PLN</span></h3>
 </main></body></html>"""
 
 CONTRACT_NOTICE_HTML = """\
 <html><head></head><body><main>
-<h3 class="mb-0">4.1.5.) Łączna wartość: <span class="normal">35946524,88                    PLN</span></h3>
+<h3 class="mb-0">4.1.5.) ĹÄ…czna wartoĹ›Ä‡: <span class="normal">35946524,88                    PLN</span></h3>
 </main></body></html>"""
 
 CONTRACT_NOTICE_VAT_HTML = """\
 <html><head></head><body><main>
-<h3 class="mb-0">4.1.6.) Wartość zamówienia (bez VAT): <span class="normal">570513,92                PLN</span></h3>
+<h3 class="mb-0">4.1.6.) WartoĹ›Ä‡ zamĂłwienia (bez VAT): <span class="normal">570513,92                PLN</span></h3>
 </main></body></html>"""
 
 CONTRACT_NOTICE_PARTS_HTML = """\
@@ -102,85 +102,106 @@ CONTRACT_NOTICE_PARTS_HTML = """\
 <h3 class="mb-0">4.3.10.) Zamawiajacy okresla aspekty spoleczne, srodowiskowe lub innowacyjne, zada etykiet lub stosuje rachunek kosztow cyklu zycia w odniesieniu do kryterium oceny ofert: <span class="normal">Nie</span></h3>
 </main></body></html>"""
 
+OGLOSZENIE_DOTYCZY_HTML = """\
+<html><head></head><body><main>
+<h2 class="bg-light p-3 mt-4">SEKCJA II - INFORMACJE PODSTAWOWE</h2>
+<h3 class="mb-0">2.1.) OgĹ‚oszenie dotyczy:</h3>
+<p class="mb-0">ZamĂłwienia publicznego</p>
+</main></body></html>"""
+
+NON_TARGET_21_HTML = """\
+<html><head></head><body><main>
+<h2 class="bg-light p-3 mt-4">SEKCJA II - INFORMACJE PODSTAWOWE</h2>
+<h3 class="mb-0">2.1.) Numer ogloszenia: <span class="normal">08de00d4-2cc0-5e06-d903-3900014f790f</span></h3>
+<h3 class="mb-0">2.2.) Numer ogloszenia w BZP: <span class="normal">2025/BZP 00123456/01</span></h3>
+</main></body></html>"""
+
+NON_TARGET_21_ZMIANY_HTML = """\
+<html><head></head><body><main>
+<h2 class="bg-light p-3 mt-4">SEKCJA II - INFORMACJE PODSTAWOWE</h2>
+<h3 class="mb-0">2.1.) Ogloszenie dotyczy zmiany:</h3>
+<p class="mb-0">Numeru ogloszenia w BZP</p>
+</main></body></html>"""
+
 SMALL_CONTRACT_HTML = """\
 <html><head></head><body><main>
-<h3 class="mb-0">3.4.) Wartość: <span class="normal">25399,50</span></h3>
+<h3 class="mb-0">3.4.) WartoĹ›Ä‡: <span class="normal">25399,50</span></h3>
 <h3 class="mb-0">3.5.) Kod waluty: <span class="normal">PLN</span></h3>
 </main></body></html>"""
 
 TENDER_RESULT_ENRICHMENT_HTML = """\
 <html><head></head><body><main>
-<h2 class="bg-light p-3 mt-4">SEKCJA I - ZAMAWIAJĄCY</h2>
-<h3 class="mb-0">1.5.1.) Ulica: <span class="normal">al. Wolności 10</span></h3>
+<h2 class="bg-light p-3 mt-4">SEKCJA I - ZAMAWIAJÄ„CY</h2>
+<h3 class="mb-0">1.5.1.) Ulica: <span class="normal">al. WolnoĹ›ci 10</span></h3>
 <h3 class="mb-0">1.5.3.) Kod pocztowy: <span class="normal">30-500</span></h3>
-<h3 class="mb-0">1.5.6.) Lokalizacja NUTS 3: <span class="normal">PL213 - Miasto Kraków</span></h3>
-<h2 class="bg-light p-3 mt-4">SEKCJA VII WYKONAWCA, KTÓREMU UDZIELONO ZAMÓWIENIA</h2>
-<h3 class="mb-0">7.1.) Czy zamówienie zostało udzielone wykonawcom wspólnie ubiegającym się o udzielenie zamówienia: <span class="normal">Nie</span></h3>
-<h3 class="mb-0">7.2.) Wielkość przedsiębiorstwa wykonawcy: <span class="normal">Mały przedsiębiorca</span></h3>
+<h3 class="mb-0">1.5.6.) Lokalizacja NUTS 3: <span class="normal">PL213 - Miasto KrakĂłw</span></h3>
+<h2 class="bg-light p-3 mt-4">SEKCJA VII WYKONAWCA, KTĂ“REMU UDZIELONO ZAMĂ“WIENIA</h2>
+<h3 class="mb-0">7.1.) Czy zamĂłwienie zostaĹ‚o udzielone wykonawcom wspĂłlnie ubiegajÄ…cym siÄ™ o udzielenie zamĂłwienia: <span class="normal">Nie</span></h3>
+<h3 class="mb-0">7.2.) WielkoĹ›Ä‡ przedsiÄ™biorstwa wykonawcy: <span class="normal">MaĹ‚y przedsiÄ™biorca</span></h3>
 <h2 class="bg-light p-3 mt-4">SEKCJA VIII UMOWA</h2>
-<h3 class="mb-0">8.2.) Wartość umowy/umowy ramowej: <span class="normal">465163,88 PLN</span></h3>
+<h3 class="mb-0">8.2.) WartoĹ›Ä‡ umowy/umowy ramowej: <span class="normal">465163,88 PLN</span></h3>
 </main></body></html>"""
 
 CONTRACT_PERFORMING_DETAILS_HTML = """\
 <html><head></head><body><main>
-<h2 class="bg-light p-3 mt-4">SEKCJA IV – PODSTAWOWE INFORMACJE O ZAWARTEJ UMOWIE</h2>
+<h2 class="bg-light p-3 mt-4">SEKCJA IV â€“ PODSTAWOWE INFORMACJE O ZAWARTEJ UMOWIE</h2>
 <h3 class="mb-0">4.1.) Data zawarcia umowy: <span class="normal">2025-03-15</span></h3>
-<h3 class="mb-0">4.2.) Okres realizacji zamówienia: </h3>
+<h3 class="mb-0">4.2.) Okres realizacji zamĂłwienia: </h3>
 56 dni
-<h3 class="mb-0">4.4.) Wartość umowy: <span class="normal">24280,56                        PLN</span></h3>
+<h3 class="mb-0">4.4.) WartoĹ›Ä‡ umowy: <span class="normal">24280,56                        PLN</span></h3>
 <h2 class="bg-light p-3 mt-4">SEKCJA V PRZEBIEG REALIZACJI UMOWY</h2>
-<h3 class="mb-0">5.1.) Czy umowa została wykonana: <span class="normal">Tak</span></h3>
+<h3 class="mb-0">5.1.) Czy umowa zostaĹ‚a wykonana: <span class="normal">Tak</span></h3>
 <h3 class="mb-0">5.2.) Termin wykonania umowy: <span class="normal">2025-05-10</span></h3>
-<h3 class="mb-0">5.3.) Czy umowę wykonano w pierwotnie określonym terminie: <span class="normal">Tak</span></h3>
+<h3 class="mb-0">5.3.) Czy umowÄ™ wykonano w pierwotnie okreĹ›lonym terminie: <span class="normal">Tak</span></h3>
 <h3 class="mb-0">5.4.1.) Liczba zmian: <span class="normal">0</span></h3>
 <h3 class="mb-0">5.4.7.) Kod waluty: <span class="normal">PLN</span></h3>
-<h3 class="mb-0">5.5.) Łączna wartość wynagrodzenia: <span class="normal">20000,00                PLN</span></h3>
-<h3 class="mb-0">5.6.) Czy umowa została wykonana należycie: <span class="normal">Tak</span></h3>
+<h3 class="mb-0">5.5.) ĹÄ…czna wartoĹ›Ä‡ wynagrodzenia: <span class="normal">20000,00                PLN</span></h3>
+<h3 class="mb-0">5.6.) Czy umowa zostaĹ‚a wykonana naleĹĽycie: <span class="normal">Tak</span></h3>
 </main></body></html>"""
 
 CONTRACT_PERFORMING_LABEL_BASED_HTML = """\
 <html><head></head><body><main>
 <h3 class="mb-0">4.1.) Ulica: <span class="normal">ul. Kwiatowa 1</span></h3>
-<h3 class="mb-0">4.2.) Miejscowość: <span class="normal">Warszawa</span></h3>
+<h3 class="mb-0">4.2.) MiejscowoĹ›Ä‡: <span class="normal">Warszawa</span></h3>
 <h3 class="mb-0">Data zawarcia umowy: <span class="normal">2025-01-01</span></h3>
 <h3 class="mb-0">Okres realizacji umowy: <span class="normal">12 tygodni</span></h3>
-<h3 class="mb-0">Czy umowa została wykonana: <span class="normal">Tak</span></h3>
+<h3 class="mb-0">Czy umowa zostaĹ‚a wykonana: <span class="normal">Tak</span></h3>
 <h3 class="mb-0">Termin wykonania umowy: <span class="normal">2025-04-01</span></h3>
-<h3 class="mb-0">Czy umowę wykonano w pierwotnie określonym terminie: <span class="normal">Nie</span></h3>
+<h3 class="mb-0">Czy umowÄ™ wykonano w pierwotnie okreĹ›lonym terminie: <span class="normal">Nie</span></h3>
 <h3 class="mb-0">Liczba zmian: <span class="normal">2</span></h3>
-<h3 class="mb-0">Czy umowa została wykonana należycie: <span class="normal">Tak</span></h3>
+<h3 class="mb-0">Czy umowa zostaĹ‚a wykonana naleĹĽycie: <span class="normal">Tak</span></h3>
 </main></body></html>"""
 
 NOTICE_UPDATE_SINGLE_HTML = """\
 <html><head></head><body><main>
-<h2 class="bg-light p-3 mt-4">SEKCJA III ZMIANA OGŁOSZENIA</h2>
-<h3 class="mb-0">3.2.) Numer zmienianego ogłoszenia w BZP: <span class="normal">2025/BZP 00512345/01</span></h3>
-<h3 class="mb-0">3.3.) Identyfikator ostatniej wersji zmienianego ogłoszenia: <span class="normal">01</span></h3>
-<h3 class="mb-0">3.4.) Identyfikator sekcji zmienianego ogłoszenia: </h3>
+<h2 class="bg-light p-3 mt-4">SEKCJA III ZMIANA OGĹOSZENIA</h2>
+<h3 class="mb-0">3.2.) Numer zmienianego ogĹ‚oszenia w BZP: <span class="normal">2025/BZP 00512345/01</span></h3>
+<h3 class="mb-0">3.3.) Identyfikator ostatniej wersji zmienianego ogĹ‚oszenia: <span class="normal">01</span></h3>
+<h3 class="mb-0">3.4.) Identyfikator sekcji zmienianego ogĹ‚oszenia: </h3>
 SEKCJA VIII - PROCEDURA
-<h3 class="mb-0">3.4.1.) Opis zmiany, w tym tekst, który należy dodać lub zmienić w ogłoszeniu: </h3>
-<p class="mb-0">Przed zmianą:</p>
-<p class="mb-0">Termin składania ofert: 2025-11-15 10:00</p>
+<h3 class="mb-0">3.4.1.) Opis zmiany, w tym tekst, ktĂłry naleĹĽy dodaÄ‡ lub zmieniÄ‡ w ogĹ‚oszeniu: </h3>
+<p class="mb-0">Przed zmianÄ…:</p>
+<p class="mb-0">Termin skĹ‚adania ofert: 2025-11-15 10:00</p>
 <p class="mb-0">Po zmianie:</p>
-<p class="mb-0">Termin składania ofert: 2025-11-22 10:00</p>
+<p class="mb-0">Termin skĹ‚adania ofert: 2025-11-22 10:00</p>
 </main></body></html>"""
 
 NOTICE_UPDATE_MULTI_HTML = """\
 <html><head></head><body><main>
-<h2 class="bg-light p-3 mt-4">SEKCJA III ZMIANA OGŁOSZENIA</h2>
-<h3 class="mb-0">3.2.) Numer zmienianego ogłoszenia w BZP: <span class="normal">2025/BZP 00512345/01</span></h3>
-<h3 class="mb-0">3.3.) Identyfikator ostatniej wersji zmienianego ogłoszenia: <span class="normal">02</span></h3>
-<h3 class="mb-0">3.4.) Identyfikator sekcji zmienianego ogłoszenia: </h3>
-SEKCJA IV – PRZEDMIOT ZAMÓWIENIA
-<h3 class="mb-0">3.4.1.) Opis zmiany, w tym tekst, który należy dodać lub zmienić w ogłoszeniu: </h3>
-<p class="mb-0">Przed zmianą:</p>
+<h2 class="bg-light p-3 mt-4">SEKCJA III ZMIANA OGĹOSZENIA</h2>
+<h3 class="mb-0">3.2.) Numer zmienianego ogĹ‚oszenia w BZP: <span class="normal">2025/BZP 00512345/01</span></h3>
+<h3 class="mb-0">3.3.) Identyfikator ostatniej wersji zmienianego ogĹ‚oszenia: <span class="normal">02</span></h3>
+<h3 class="mb-0">3.4.) Identyfikator sekcji zmienianego ogĹ‚oszenia: </h3>
+SEKCJA IV â€“ PRZEDMIOT ZAMĂ“WIENIA
+<h3 class="mb-0">3.4.1.) Opis zmiany, w tym tekst, ktĂłry naleĹĽy dodaÄ‡ lub zmieniÄ‡ w ogĹ‚oszeniu: </h3>
+<p class="mb-0">Przed zmianÄ…:</p>
 <p class="mb-0">Opis A stary</p>
 <p class="mb-0">Po zmianie:</p>
 <p class="mb-0">Opis A nowy</p>
-<h3 class="mb-0">3.4.) Identyfikator sekcji zmienianego ogłoszenia: </h3>
+<h3 class="mb-0">3.4.) Identyfikator sekcji zmienianego ogĹ‚oszenia: </h3>
 SEKCJA VIII - PROCEDURA
-<h3 class="mb-0">3.4.1.) Opis zmiany, w tym tekst, który należy dodać lub zmienić w ogłoszeniu: </h3>
-<p class="mb-0">Przed zmianą:</p>
+<h3 class="mb-0">3.4.1.) Opis zmiany, w tym tekst, ktĂłry naleĹĽy dodaÄ‡ lub zmieniÄ‡ w ogĹ‚oszeniu: </h3>
+<p class="mb-0">Przed zmianÄ…:</p>
 <p class="mb-0">Termin: 2025-11-15</p>
 <p class="mb-0">Po zmianie:</p>
 <p class="mb-0">Termin: 2025-11-22</p>
@@ -189,18 +210,18 @@ SEKCJA VIII - PROCEDURA
 TENDER_RESULT_MULTI_LOT_HTML = """\
 <html><head></head><body><main>
 <h2>SEKCJA IV</h2>
-<h3 class="mb-0">Część nr 1</h3>
-<h3 class="mb-0">4.3.) Wartość zamówienia: <span class="normal">100000,00 PLN</span></h3>
-<h3 class="mb-0">6.2.) Cena oferty najniższej: <span class="normal">90000,00 PLN</span></h3>
-<h3 class="mb-0">6.3.) Cena oferty najwyższej: <span class="normal">120000,00 PLN</span></h3>
+<h3 class="mb-0">CzÄ™Ĺ›Ä‡ nr 1</h3>
+<h3 class="mb-0">4.3.) WartoĹ›Ä‡ zamĂłwienia: <span class="normal">100000,00 PLN</span></h3>
+<h3 class="mb-0">6.2.) Cena oferty najniĹĽszej: <span class="normal">90000,00 PLN</span></h3>
+<h3 class="mb-0">6.3.) Cena oferty najwyĹĽszej: <span class="normal">120000,00 PLN</span></h3>
 <h3 class="mb-0">6.4.) Cena oferty wykonawcy: <span class="normal">95000,00 PLN</span></h3>
-<h3 class="mb-0">8.2.) Wartość umowy: <span class="normal">95000,00 PLN</span></h3>
-<h3 class="mb-0">Część nr 2</h3>
-<h3 class="mb-0">4.3.) Wartość zamówienia: <span class="normal">200000,00 PLN</span></h3>
-<h3 class="mb-0">6.2.) Cena oferty najniższej: <span class="normal">180000,00 PLN</span></h3>
-<h3 class="mb-0">6.3.) Cena oferty najwyższej: <span class="normal">230000,00 PLN</span></h3>
+<h3 class="mb-0">8.2.) WartoĹ›Ä‡ umowy: <span class="normal">95000,00 PLN</span></h3>
+<h3 class="mb-0">CzÄ™Ĺ›Ä‡ nr 2</h3>
+<h3 class="mb-0">4.3.) WartoĹ›Ä‡ zamĂłwienia: <span class="normal">200000,00 PLN</span></h3>
+<h3 class="mb-0">6.2.) Cena oferty najniĹĽszej: <span class="normal">180000,00 PLN</span></h3>
+<h3 class="mb-0">6.3.) Cena oferty najwyĹĽszej: <span class="normal">230000,00 PLN</span></h3>
 <h3 class="mb-0">6.4.) Cena oferty wykonawcy: <span class="normal">190000,00 PLN</span></h3>
-<h3 class="mb-0">8.2.) Wartość umowy: <span class="normal">190000,00 PLN</span></h3>
+<h3 class="mb-0">8.2.) WartoĹ›Ä‡ umowy: <span class="normal">190000,00 PLN</span></h3>
 </main></body></html>"""
 
 EMPTY_HTML = "<html><head></head><body></body></html>"
@@ -271,11 +292,32 @@ class TestAddressExtraction:
 class TestDescriptionExtraction:
     def test_description_extracted(self):
         r = parse_html(MINIMAL_HTML)
-        assert "Dostawa sprzętu komputerowego" in r.opis
+        assert "Dostawa sprzÄ™tu komputerowego" in r.opis
 
     def test_missing_description(self):
         r = parse_html(EMPTY_HTML)
         assert r.opis is None
+
+
+# --- Field 2.1 extraction ---
+
+
+class TestOgloszenieDotyczyExtraction:
+    def test_extracts_ogloszenie_dotyczy(self):
+        r = parse_html(OGLOSZENIE_DOTYCZY_HTML)
+        assert r.ogloszenie_dotyczy == "ZamĂłwienia publicznego"
+
+    def test_missing_ogloszenie_dotyczy_returns_none(self):
+        r = parse_html(EMPTY_HTML)
+        assert r.ogloszenie_dotyczy is None
+
+    def test_non_target_field_21_does_not_match(self):
+        r = parse_html(NON_TARGET_21_HTML)
+        assert r.ogloszenie_dotyczy is None
+
+    def test_non_target_dotyczy_zmiany_does_not_match(self):
+        r = parse_html(NON_TARGET_21_ZMIANY_HTML)
+        assert r.ogloszenie_dotyczy is None
 
 
 # --- Bid criteria extraction ---
@@ -466,19 +508,19 @@ class TestUnsupportedTypeValues:
 
 class TestParseCpvCodes:
     def test_single_code(self):
-        result = parse_cpv_codes("79710000-4 (Usługi ochroniarskie)")
-        assert result == ["79710000-4 (Usługi ochroniarskie)"]
+        result = parse_cpv_codes("79710000-4 (UsĹ‚ugi ochroniarskie)")
+        assert result == ["79710000-4 (UsĹ‚ugi ochroniarskie)"]
 
     def test_multiple_codes(self):
-        raw = "45000000-7 (Roboty budowlane),90620000-9 (Usługi odśnieżania)"
+        raw = "45000000-7 (Roboty budowlane),90620000-9 (UsĹ‚ugi odĹ›nieĹĽania)"
         result = parse_cpv_codes(raw)
         assert len(result) == 2
         assert result[0] == "45000000-7 (Roboty budowlane)"
-        assert result[1] == "90620000-9 (Usługi odśnieżania)"
+        assert result[1] == "90620000-9 (UsĹ‚ugi odĹ›nieĹĽania)"
 
     def test_codes_with_commas_in_description(self):
         # Comma inside parenthetical description should NOT split
-        raw = "45000000-7 (Roboty budowlane),71322000-1 (Usługi inżynierii projektowej w zakresie inżynierii lądowej i wodnej)"
+        raw = "45000000-7 (Roboty budowlane),71322000-1 (UsĹ‚ugi inĹĽynierii projektowej w zakresie inĹĽynierii lÄ…dowej i wodnej)"
         result = parse_cpv_codes(raw)
         assert len(result) == 2
 
@@ -497,7 +539,7 @@ class TestTenderResultEnrichment:
 
     def test_contractor_size(self):
         r = parse_html(TENDER_RESULT_ENRICHMENT_HTML, notice_type="TenderResultNotice")
-        assert r.tender_result_enrichment.contractor_size == "Mały przedsiębiorca"
+        assert r.tender_result_enrichment.contractor_size == "MaĹ‚y przedsiÄ™biorca"
 
     def test_values_still_extracted(self):
         r = parse_html(TENDER_RESULT_ENRICHMENT_HTML, notice_type="TenderResultNotice")
@@ -590,7 +632,7 @@ class TestNoticeChange:
     def test_single_change_description(self):
         r = parse_html(NOTICE_UPDATE_SINGLE_HTML, notice_type="NoticeUpdateNotice")
         desc = r.notice_change.changes[0].change_description
-        assert "Przed zmianą:" in desc
+        assert "Przed zmianÄ…:" in desc
         assert "Po zmianie:" in desc
         assert "2025-11-22" in desc
 
@@ -664,7 +706,7 @@ class TestSilverDerivedHelpers:
 
         assert _extract_execution_duration_days("56 dni") == 56
         assert _extract_execution_duration_days("12 tygodni") == 84
-        assert _extract_execution_duration_days("2 miesiące") == 60
+        assert _extract_execution_duration_days("2 miesiÄ…ce") == 60
 
     def test_criteria_weight_extraction(self):
         from procurement.silver.spark_transforms import _criteria_summary
@@ -693,3 +735,4 @@ class TestSilverDerivedHelpers:
         assert deadline_changed is True
         assert criteria_changed is False
         assert scope_changed is False
+
