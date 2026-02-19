@@ -46,6 +46,66 @@ AGREEMENT_UPDATE_SPECIFIC_COLUMNS = [
     }
 ]
 
+CIRCUMSTANCES_FULFILLMENT_SPECIFIC_COLUMNS = [
+    c
+    for c in BASE_SPECIFIC_COLUMNS
+    if c
+    not in {
+        "numCriteria",
+        "priceWeight",
+        "nonPriceWeightSum",
+        "contractorNameNormalized",
+        "htmlExtracted",
+    }
+]
+
+SMALL_CONTRACT_SPECIFIC_COLUMNS = [
+    c
+    for c in BASE_SPECIFIC_COLUMNS
+    if c
+    not in {
+        "contractors",
+        "numCriteria",
+        "priceWeight",
+        "nonPriceWeightSum",
+        "contractorNameNormalized",
+        "htmlExtracted",
+    }
+]
+
+COMPETITION_NOTICE_SPECIFIC_COLUMNS = [
+    c
+    for c in BASE_SPECIFIC_COLUMNS
+    if c
+    not in {
+        "contractors",
+        "numCriteria",
+        "priceWeight",
+        "nonPriceWeightSum",
+        "contractorNameNormalized",
+        "htmlExtracted",
+    }
+] + [
+    "comp_num_awarded_63",
+    "comp_prizes_value_64",
+    "comp_order_value_651",
+    "comp_requirements_72",
+]
+
+CONCESSION_NOTICE_SPECIFIC_COLUMNS = [
+    c
+    for c in BASE_SPECIFIC_COLUMNS
+    if c
+    not in {
+        "contractors",
+        "numCriteria",
+        "priceWeight",
+        "nonPriceWeightSum",
+        "contractorNameNormalized",
+        "htmlExtracted",
+    }
+]
+
 CONTRACT_NOTICE_SPECIFIC_COLUMNS = [
     c
     for c in BASE_SPECIFIC_COLUMNS
@@ -211,7 +271,22 @@ _NOTICE_TYPE_DEFINITIONS: dict[str | None, NoticeTypeDefinition] = {
     ),
     "CircumstancesFulfillmentNotice": NoticeTypeDefinition(
         notice_type="CircumstancesFulfillmentNotice",
-        specific_columns=tuple(BASE_SPECIFIC_COLUMNS),
+        specific_columns=tuple(CIRCUMSTANCES_FULFILLMENT_SPECIFIC_COLUMNS),
+        html_extracted_fields=tuple(),
+    ),
+    "CompetitionNotice": NoticeTypeDefinition(
+        notice_type="CompetitionNotice",
+        specific_columns=tuple(COMPETITION_NOTICE_SPECIFIC_COLUMNS),
+        html_extracted_fields=tuple(),
+    ),
+    "ConcessionNotice": NoticeTypeDefinition(
+        notice_type="ConcessionNotice",
+        specific_columns=tuple(CONCESSION_NOTICE_SPECIFIC_COLUMNS),
+        html_extracted_fields=tuple(),
+    ),
+    "SmallContractNotice": NoticeTypeDefinition(
+        notice_type="SmallContractNotice",
+        specific_columns=tuple(SMALL_CONTRACT_SPECIFIC_COLUMNS),
         html_extracted_fields=tuple(),
     ),
 }

@@ -149,6 +149,10 @@ HTML_EXTRACTED_SCHEMA = StructType(
         StructField("cpn_contractor_cities_434", ArrayType(StringType())),
         StructField("cpn_contractor_provinces_436", ArrayType(StringType())),
         StructField("cpn_contract_value_44", DoubleType()),
+        StructField("comp_num_awarded_63", IntegerType()),
+        StructField("comp_prizes_value_64", DoubleType()),
+        StructField("comp_order_value_651", DoubleType()),
+        StructField("comp_requirements_72", StringType()),
     ]
 )
 
@@ -352,6 +356,10 @@ def build_silver(df: DataFrame) -> DataFrame:
             col("htmlExtracted.cpn_contractor_provinces_436"),
         )
         .withColumn("cpn_contract_value_44", col("htmlExtracted.cpn_contract_value_44"))
+        .withColumn("comp_num_awarded_63", col("htmlExtracted.comp_num_awarded_63"))
+        .withColumn("comp_prizes_value_64", col("htmlExtracted.comp_prizes_value_64"))
+        .withColumn("comp_order_value_651", col("htmlExtracted.comp_order_value_651"))
+        .withColumn("comp_requirements_72", col("htmlExtracted.comp_requirements_72"))
         .withColumn(
             "changed_notice_number",
             col("htmlExtracted.notice_change.changed_notice_number"),

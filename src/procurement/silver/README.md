@@ -59,6 +59,15 @@ Key semantics:
 - `TenderResultNotice` specific table drops `numCriteria`, `priceWeight`, `nonPriceWeightSum`,
 - `contractorNameNormalized`, and `htmlExtracted`, and emits:
 - `trn_ogloszenie_dotyczy`, `trn_parts` (part-level `opis`, `mainCPV`, `secondaryCPV`, `expected_value`).
+- `CircumstancesFulfillmentNotice` specific table drops `numCriteria`, `priceWeight`,
+- `nonPriceWeightSum`, `contractorNameNormalized`, and `htmlExtracted`.
+- `SmallContractNotice` specific table drops `contractors`, `numCriteria`, `priceWeight`,
+- `nonPriceWeightSum`, `contractorNameNormalized`, and `htmlExtracted`.
+- `CompetitionNotice` specific table drops `contractors`, `numCriteria`, `priceWeight`,
+- `nonPriceWeightSum`, `contractorNameNormalized`, and `htmlExtracted`, and emits:
+- `comp_num_awarded_63`, `comp_prizes_value_64`, `comp_order_value_651`, `comp_requirements_72`.
+- `ConcessionNotice` specific table drops `contractors`, `numCriteria`, `priceWeight`,
+- `nonPriceWeightSum`, `contractorNameNormalized`, and `htmlExtracted`.
 - `case_derived_facts` is case-grain lifecycle state with two modes:
 - `full`: rebuild from all Silver notices up to `asOfDate`.
 - `incremental`: recompute only cases touched by latest daily notices and merge with prior snapshot.

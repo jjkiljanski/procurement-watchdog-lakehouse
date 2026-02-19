@@ -737,6 +737,31 @@ def _extract_values_small_contract(soup: BeautifulSoup) -> ExtractedValues | Non
     return ExtractedValues(contract_value=contract_value, currency=currency)
 
 
+def _extract_competition_notice_fields(
+    soup: BeautifulSoup,
+) -> tuple[int | None, float | None, float | None, str | None]:
+    """CompetitionNotice: 6.3 count, 6.4 prizes value, 6.5.1 order value, 7.2 requirements."""
+    comp_num_awarded_63 = None
+    raw_num_awarded = _span_value(_find_h3(soup, "6.3.")) or _text_after_h3(_find_h3(soup, "6.3."))
+    if raw_num_awarded is not None:
+        match = re.search(r"\d+", raw_num_awarded)
+        if match is not None:
+            try:
+                comp_num_awarded_63 = int(match.group(0))
+            except ValueError:
+                comp_num_awarded_63 = None
+
+    comp_prizes_value_64 = _parse_pln_value(
+        _span_value(_find_h3(soup, "6.4.")) or _text_after_h3(_find_h3(soup, "6.4."))
+    )
+    comp_order_value_651 = _parse_pln_value(
+        _span_value(_find_h3(soup, "6.5.1.")) or _text_after_h3(_find_h3(soup, "6.5.1."))
+    )
+    comp_requirements_72 = _span_value(_find_h3(soup, "7.2.")) or _text_after_h3(_find_h3(soup, "7.2."))
+
+    return comp_num_awarded_63, comp_prizes_value_64, comp_order_value_651, comp_requirements_72
+
+
 _VALUE_EXTRACTORS = {
     "ContractPerformingNotice": _extract_values_contract_performing,
     "TenderResultNotice": _extract_values_tender_result,
@@ -919,6 +944,10 @@ def parse_html(
     cpn_contractor_cities_434 = None
     cpn_contractor_provinces_436 = None
     cpn_contract_value_44 = None
+    comp_num_awarded_63 = None
+    comp_prizes_value_64 = None
+    comp_order_value_651 = None
+    comp_requirements_72 = None
     if notice_type == "AgreementIntentionNotice":
         (
             ai_street_512,
@@ -932,6 +961,13 @@ def parse_html(
             cpn_contractor_provinces_436,
             cpn_contract_value_44,
         ) = _extract_contract_performing_party_fields(soup)
+    if notice_type == "CompetitionNotice":
+        (
+            comp_num_awarded_63,
+            comp_prizes_value_64,
+            comp_order_value_651,
+            comp_requirements_72,
+        ) = _extract_competition_notice_fields(soup)
 
     # Type-aware value extraction
     values = None
@@ -967,6 +1003,10 @@ def parse_html(
         cpn_contractor_cities_434=cpn_contractor_cities_434,
         cpn_contractor_provinces_436=cpn_contractor_provinces_436,
         cpn_contract_value_44=cpn_contract_value_44,
+        comp_num_awarded_63=comp_num_awarded_63,
+        comp_prizes_value_64=comp_prizes_value_64,
+        comp_order_value_651=comp_order_value_651,
+        comp_requirements_72=comp_requirements_72,
         **details,
     )
 

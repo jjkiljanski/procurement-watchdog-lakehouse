@@ -130,6 +130,10 @@ class HtmlExtracted(BaseModel):
     cpn_contractor_cities_434: list[str] | None = None
     cpn_contractor_provinces_436: list[str] | None = None
     cpn_contract_value_44: float | None = None
+    comp_num_awarded_63: int | None = None
+    comp_prizes_value_64: float | None = None
+    comp_order_value_651: float | None = None
+    comp_requirements_72: str | None = None
 
 
 class BzpNoticeSilver(BaseModel):

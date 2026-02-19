@@ -153,6 +153,22 @@ SMALL_CONTRACT_HTML = """\
 <h3 class="mb-0">3.5.) Kod waluty: <span class="normal">PLN</span></h3>
 </main></body></html>"""
 
+COMPETITION_NOTICE_HTML = """\
+<html><head></head><body><main>
+<h2 class="bg-light p-3 mt-4">SEKCJA VI - WARUNKI KONKURSU</h2>
+<h3 class="mb-0">6.3.) Liczba prac konkursowych, ktore zostana nagrodzone: <span class="normal">3</span></h3>
+<h3 class="mb-0">6.4.) Wartosc nagrod pienieznych lub rzeczowych: <span class="normal">50000,00 PLN</span></h3>
+<h3 class="mb-0">6.5.1.) Wartosc zamowienia: <span class="normal">120000,00 PLN</span></h3>
+<h3 class="mb-0">7.2.) Czy ustanowiono wymagania srodowiskowe lub spoleczne: <span class="normal">Tak</span></h3>
+</main></body></html>"""
+
+COMPETITION_NOTICE_NO_PRIZES_HTML = """\
+<html><head></head><body><main>
+<h2 class="bg-light p-3 mt-4">SEKCJA VI - WARUNKI KONKURSU</h2>
+<h3 class="mb-0">6.3.) Liczba prac konkursowych, ktore zostana nagrodzone: <span class="normal">1</span></h3>
+<h3 class="mb-0">6.5.1.) Wartosc zamowienia: <span class="normal">80000,00 PLN</span></h3>
+</main></body></html>"""
+
 TENDER_RESULT_ENRICHMENT_HTML = """\
 <html><head></head><body><main>
 <h2 class="bg-light p-3 mt-4">SEKCJA I - ZAMAWIAJÄ„CY</h2>
@@ -572,6 +588,21 @@ class TestSmallContractValues:
     def test_currency_from_separate_field(self):
         r = parse_html(SMALL_CONTRACT_HTML, notice_type="SmallContractNotice")
         assert r.values.currency == "PLN"
+
+
+class TestCompetitionNoticeValues:
+    def test_extracts_competition_specific_fields(self):
+        r = parse_html(COMPETITION_NOTICE_HTML, notice_type="CompetitionNotice")
+        assert r.comp_num_awarded_63 == 3
+        assert r.comp_prizes_value_64 == pytest.approx(50000.0)
+        assert r.comp_order_value_651 == pytest.approx(120000.0)
+        assert r.comp_requirements_72 == "Tak"
+
+    def test_missing_prizes_value_is_none(self):
+        r = parse_html(COMPETITION_NOTICE_NO_PRIZES_HTML, notice_type="CompetitionNotice")
+        assert r.comp_num_awarded_63 == 1
+        assert r.comp_prizes_value_64 is None
+        assert r.comp_order_value_651 == pytest.approx(80000.0)
 
 
 # --- Value extraction: unsupported types ---
