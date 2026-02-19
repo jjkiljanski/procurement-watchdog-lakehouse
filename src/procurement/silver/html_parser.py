@@ -21,6 +21,7 @@ from procurement.silver.models import (
     HtmlExtracted,
     NoticeChange,
     TenderResultLot,
+    TenderResultPart,
     TenderResultEnrichment,
 )
 
@@ -568,6 +569,76 @@ def _extract_tender_result_lots(soup: BeautifulSoup) -> list[TenderResultLot] | 
     return lots or None
 
 
+def _extract_tender_result_parts(soup: BeautifulSoup) -> list[TenderResultPart] | None:
+    """Extract TenderResultNotice part metadata from SEKCJA IV fields."""
+    h3s = soup.find_all("h3")
+    if not h3s:
+        return None
+
+    part_headers: list[tuple[int, str]] = []
+    for idx, h3 in enumerate(h3s):
+        text = h3.get_text(separator=" ", strip=True)
+        part_id = _extract_part_id_from_header(text)
+        if part_id:
+            part_headers.append((idx, part_id))
+
+    chunks: list[tuple[str | None, list[Tag]]] = []
+    if part_headers:
+        for i, (start_idx, part_id) in enumerate(part_headers):
+            end_idx = part_headers[i + 1][0] if i + 1 < len(part_headers) else len(h3s)
+            chunks.append((part_id, h3s[start_idx:end_idx]))
+    else:
+        chunks.append((None, h3s))
+
+    parts: list[TenderResultPart] = []
+    for part_id, chunk in chunks:
+        opis = None
+        main_cpv = None
+        secondary_cpv: list[str] = []
+        expected_value = None
+
+        for h3 in chunk:
+            text = h3.get_text(separator=" ", strip=True)
+            if "4.5.1.)" in text:
+                opis = _span_value(h3) or _text_after_h3(h3)
+                if opis is None:
+                    p = h3.find_next_sibling("p")
+                    if p is not None:
+                        opis = p.get_text(separator=" ", strip=True) or None
+            elif "4.5.3.)" in text:
+                raw = _span_value(h3) or _text_after_h3(h3)
+                if raw:
+                    parsed = parse_cpv_codes(raw)
+                    main_cpv = parsed[0] if parsed else raw
+            elif "4.5.4.)" in text:
+                raw = _span_value(h3) or _text_after_h3(h3)
+                if raw:
+                    parsed = parse_cpv_codes(raw)
+                    if parsed:
+                        secondary_cpv.extend(parsed)
+                    else:
+                        secondary_cpv.append(raw)
+            elif "4.3.)" in text:
+                value = _parse_pln_value(_span_value(h3) or _text_after_h3(h3))
+                if value is not None:
+                    expected_value = value
+
+        if all(v is None for v in (opis, main_cpv, expected_value)) and not secondary_cpv:
+            continue
+
+        parts.append(
+            TenderResultPart(
+                part_id=part_id,
+                opis=opis,
+                mainCPV=main_cpv,
+                secondaryCPV=list(dict.fromkeys(secondary_cpv)) or None,
+                expected_value=expected_value,
+            )
+        )
+
+    return parts or None
+
+
 def _extract_status_lots_from_procedure_result(procedure_result: str | None) -> list[TenderResultLot] | None:
     """Create synthetic lot rows for cancelled/unresolved outcomes."""
     if not procedure_result:
@@ -626,6 +697,35 @@ def _extract_agreement_intention_fields(
         _find_h3(soup, "3.1.")
     )
     return ai_street_512, ai_contract_value_35, ai_prior_market_consultation_31
+
+
+def _extract_contract_performing_party_fields(
+    soup: BeautifulSoup,
+) -> tuple[list[str] | None, list[str] | None, list[str] | None, float | None]:
+    """ContractPerformingNotice: repeated contractor fields + contract value.
+
+    Fields:
+    - 4.3.2.) Krajowy Numer Identyfikacyjny
+    - 4.3.4.) Miejscowość
+    - 4.3.6.) Województwo
+    - 4.4.) Wartość umowy
+    """
+    def _collect(field_num: str) -> list[str] | None:
+        out: list[str] = []
+        for h3 in _find_all_h3(soup, field_num):
+            value = _span_value(h3) or _text_after_h3(h3)
+            if value:
+                out.append(value)
+        if not out:
+            return None
+        # Preserve order, remove duplicates.
+        return list(dict.fromkeys(out))
+
+    national_ids = _collect("4.3.2.")
+    cities = _collect("4.3.4.")
+    provinces = _collect("4.3.6.")
+    contract_value = _parse_pln_value(_span_value(_find_h3(soup, "4.4.")))
+    return national_ids, cities, provinces, contract_value
 
 
 def _extract_values_small_contract(soup: BeautifulSoup) -> ExtractedValues | None:
@@ -807,17 +907,31 @@ def parse_html(
         _extract_contract_notice_parts(soup) if notice_type == "ContractNotice" else None
     )
     lots = _extract_tender_result_lots(soup) if notice_type == "TenderResultNotice" else None
+    tender_result_parts = (
+        _extract_tender_result_parts(soup) if notice_type == "TenderResultNotice" else None
+    )
     if notice_type == "TenderResultNotice" and not lots:
         lots = _extract_status_lots_from_procedure_result(procedure_result)
     ai_street_512 = None
     ai_contract_value_35 = None
     ai_prior_market_consultation_31 = None
+    cpn_contractor_national_ids_432 = None
+    cpn_contractor_cities_434 = None
+    cpn_contractor_provinces_436 = None
+    cpn_contract_value_44 = None
     if notice_type == "AgreementIntentionNotice":
         (
             ai_street_512,
             ai_contract_value_35,
             ai_prior_market_consultation_31,
         ) = _extract_agreement_intention_fields(soup)
+    if notice_type == "ContractPerformingNotice":
+        (
+            cpn_contractor_national_ids_432,
+            cpn_contractor_cities_434,
+            cpn_contractor_provinces_436,
+            cpn_contract_value_44,
+        ) = _extract_contract_performing_party_fields(soup)
 
     # Type-aware value extraction
     values = None
@@ -845,9 +959,14 @@ def parse_html(
         contract_notice_parts=contract_notice_parts,
         values=values,
         lots=lots,
+        tender_result_parts=tender_result_parts,
         ai_street_512=ai_street_512,
         ai_contract_value_35=ai_contract_value_35,
         ai_prior_market_consultation_31=ai_prior_market_consultation_31,
+        cpn_contractor_national_ids_432=cpn_contractor_national_ids_432,
+        cpn_contractor_cities_434=cpn_contractor_cities_434,
+        cpn_contractor_provinces_436=cpn_contractor_provinces_436,
+        cpn_contract_value_44=cpn_contract_value_44,
         **details,
     )
 

@@ -51,6 +51,14 @@ Key semantics:
 - `ContractNotice` specific table drops `contractors`, `contractorNameNormalized`, and `htmlExtracted`, and emits:
 - `cn_ogloszenie_dotyczy`, `cn_kryteria_oceny_by_part`, `cn_criteria_aspects_4310`,
 - `cn_criteria_aspects_4310_flag`, `cn_opis_by_part`.
+- `ContractPerformingNotice` specific table drops `htmlExtracted`, `numCriteria`, `priceWeight`, `nonPriceWeightSum`,
+- and emits contractor HTML fallback fields:
+- `cpn_contractor_national_ids_432`, `cpn_contractor_cities_434`, `cpn_contractor_provinces_436`, `cpn_contract_value_44`.
+- `NoticeUpdateNotice` specific table drops `cpvCodes`, `contractors`, criteria/weight fields and `htmlExtracted`,
+- and emits flattened change columns: `changed_notice_number`, `changed_notice_version`, `changes`.
+- `TenderResultNotice` specific table drops `numCriteria`, `priceWeight`, `nonPriceWeightSum`,
+- `contractorNameNormalized`, and `htmlExtracted`, and emits:
+- `trn_ogloszenie_dotyczy`, `trn_parts` (part-level `opis`, `mainCPV`, `secondaryCPV`, `expected_value`).
 - `case_derived_facts` is case-grain lifecycle state with two modes:
 - `full`: rebuild from all Silver notices up to `asOfDate`.
 - `incremental`: recompute only cases touched by latest daily notices and merge with prior snapshot.

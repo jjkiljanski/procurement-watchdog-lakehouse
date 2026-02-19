@@ -87,6 +87,16 @@ TENDER_RESULT_LOT_SCHEMA = StructType(
     ]
 )
 
+TENDER_RESULT_PART_SCHEMA = StructType(
+    [
+        StructField("part_id", StringType()),
+        StructField("opis", StringType()),
+        StructField("mainCPV", StringType()),
+        StructField("secondaryCPV", ArrayType(StringType())),
+        StructField("expected_value", DoubleType()),
+    ]
+)
+
 CONTRACT_EXECUTION_SCHEMA = StructType(
     [
         StructField("contract_date", StringType()),
@@ -128,12 +138,17 @@ HTML_EXTRACTED_SCHEMA = StructType(
         StructField("contract_notice_parts", ArrayType(CONTRACT_NOTICE_PART_SCHEMA)),
         StructField("values", EXTRACTED_VALUES_SCHEMA),
         StructField("lots", ArrayType(TENDER_RESULT_LOT_SCHEMA)),
+        StructField("tender_result_parts", ArrayType(TENDER_RESULT_PART_SCHEMA)),
         StructField("tender_result_enrichment", TENDER_RESULT_ENRICHMENT_SCHEMA),
         StructField("contract_execution", CONTRACT_EXECUTION_SCHEMA),
         StructField("notice_change", NOTICE_CHANGE_SCHEMA),
         StructField("ai_street_512", StringType()),
         StructField("ai_contract_value_35", DoubleType()),
         StructField("ai_prior_market_consultation_31", StringType()),
+        StructField("cpn_contractor_national_ids_432", ArrayType(StringType())),
+        StructField("cpn_contractor_cities_434", ArrayType(StringType())),
+        StructField("cpn_contractor_provinces_436", ArrayType(StringType())),
+        StructField("cpn_contract_value_44", DoubleType()),
     ]
 )
 
@@ -323,6 +338,36 @@ def build_silver(df: DataFrame) -> DataFrame:
         .withColumn(
             "ai_prior_market_consultation_31",
             col("htmlExtracted.ai_prior_market_consultation_31"),
+        )
+        .withColumn(
+            "cpn_contractor_national_ids_432",
+            col("htmlExtracted.cpn_contractor_national_ids_432"),
+        )
+        .withColumn(
+            "cpn_contractor_cities_434",
+            col("htmlExtracted.cpn_contractor_cities_434"),
+        )
+        .withColumn(
+            "cpn_contractor_provinces_436",
+            col("htmlExtracted.cpn_contractor_provinces_436"),
+        )
+        .withColumn("cpn_contract_value_44", col("htmlExtracted.cpn_contract_value_44"))
+        .withColumn(
+            "changed_notice_number",
+            col("htmlExtracted.notice_change.changed_notice_number"),
+        )
+        .withColumn(
+            "changed_notice_version",
+            col("htmlExtracted.notice_change.changed_notice_version"),
+        )
+        .withColumn("changes", col("htmlExtracted.notice_change.changes"))
+        .withColumn(
+            "trn_ogloszenie_dotyczy",
+            when(col("noticeType") == lit("TenderResultNotice"), col("htmlExtracted.ogloszenie_dotyczy")),
+        )
+        .withColumn(
+            "trn_parts",
+            when(col("noticeType") == lit("TenderResultNotice"), col("htmlExtracted.tender_result_parts")),
         )
         .withColumn(
             "cn_parts_normalized",

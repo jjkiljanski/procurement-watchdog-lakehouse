@@ -57,6 +57,16 @@ class TenderResultLot(BaseModel):
     winner: str | None = None
 
 
+class TenderResultPart(BaseModel):
+    """Per-part metadata from TenderResultNotice SEKCJA IV."""
+
+    part_id: str | None = None
+    opis: str | None = None
+    mainCPV: str | None = None
+    secondaryCPV: list[str] | None = None
+    expected_value: float | None = None
+
+
 class TenderResultEnrichment(BaseModel):
     """Contractor enrichment fields from TenderResultNotice SEKCJA VII.
 
@@ -109,12 +119,17 @@ class HtmlExtracted(BaseModel):
     contract_notice_parts: list[ContractNoticePart] | None = None
     values: ExtractedValues | None = None
     lots: list[TenderResultLot] | None = None
+    tender_result_parts: list[TenderResultPart] | None = None
     tender_result_enrichment: TenderResultEnrichment | None = None
     contract_execution: ContractExecution | None = None
     notice_change: NoticeChange | None = None
     ai_street_512: str | None = None
     ai_contract_value_35: float | None = None
     ai_prior_market_consultation_31: str | None = None
+    cpn_contractor_national_ids_432: list[str] | None = None
+    cpn_contractor_cities_434: list[str] | None = None
+    cpn_contractor_provinces_436: list[str] | None = None
+    cpn_contract_value_44: float | None = None
 
 
 class BzpNoticeSilver(BaseModel):

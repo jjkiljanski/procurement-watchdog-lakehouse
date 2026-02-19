@@ -58,6 +58,56 @@ CONTRACT_NOTICE_SPECIFIC_COLUMNS = [
     "cn_opis_by_part",
 ]
 
+CONTRACT_PERFORMING_SPECIFIC_COLUMNS = [
+    c
+    for c in BASE_SPECIFIC_COLUMNS
+    if c not in {"numCriteria", "priceWeight", "nonPriceWeightSum", "htmlExtracted"}
+] + [
+    "cpn_contractor_national_ids_432",
+    "cpn_contractor_cities_434",
+    "cpn_contractor_provinces_436",
+    "cpn_contract_value_44",
+]
+
+TENDER_RESULT_SPECIFIC_COLUMNS = [
+    c
+    for c in BASE_SPECIFIC_COLUMNS
+    if c
+    not in {
+        "numCriteria",
+        "priceWeight",
+        "nonPriceWeightSum",
+        "contractorNameNormalized",
+        "htmlExtracted",
+    }
+] + [
+    "procedureResult",
+    "procedureResultParsed",
+    "trn_ogloszenie_dotyczy",
+    "trn_parts",
+]
+
+NOTICE_UPDATE_SPECIFIC_COLUMNS = [
+    c
+    for c in BASE_SPECIFIC_COLUMNS
+    if c
+    not in {
+        "cpvCodes",
+        "procedureResult",
+        "procedureResultParsed",
+        "contractors",
+        "numCriteria",
+        "priceWeight",
+        "nonPriceWeightSum",
+        "contractorNameNormalized",
+        "htmlExtracted",
+    }
+] + [
+    "changed_notice_number",
+    "changed_notice_version",
+    "changes",
+]
+
 
 @dataclass(frozen=True)
 class NoticeTypeDefinition:
@@ -131,18 +181,18 @@ _NOTICE_TYPE_DEFINITIONS: dict[str | None, NoticeTypeDefinition] = {
     ),
     "TenderResultNotice": NoticeTypeDefinition(
         notice_type="TenderResultNotice",
-        specific_columns=tuple([*BASE_SPECIFIC_COLUMNS, *TRN_ONLY_COLUMNS]),
-        html_extracted_fields=HTML_FIELDS_TENDER_RESULT,
+        specific_columns=tuple(TENDER_RESULT_SPECIFIC_COLUMNS),
+        html_extracted_fields=tuple(),
     ),
     "ContractPerformingNotice": NoticeTypeDefinition(
         notice_type="ContractPerformingNotice",
-        specific_columns=tuple(BASE_SPECIFIC_COLUMNS),
-        html_extracted_fields=HTML_FIELDS_EXECUTION,
+        specific_columns=tuple(CONTRACT_PERFORMING_SPECIFIC_COLUMNS),
+        html_extracted_fields=tuple(),
     ),
     "NoticeUpdateNotice": NoticeTypeDefinition(
         notice_type="NoticeUpdateNotice",
-        specific_columns=tuple(BASE_SPECIFIC_COLUMNS),
-        html_extracted_fields=HTML_FIELDS_UPDATE,
+        specific_columns=tuple(NOTICE_UPDATE_SPECIFIC_COLUMNS),
+        html_extracted_fields=tuple(),
     ),
     "AgreementIntentionNotice": NoticeTypeDefinition(
         notice_type="AgreementIntentionNotice",

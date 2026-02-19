@@ -196,6 +196,17 @@ CONTRACT_PERFORMING_LABEL_BASED_HTML = """\
 <h3 class="mb-0">Czy umowa zostaĹ‚a wykonana naleĹĽycie: <span class="normal">Tak</span></h3>
 </main></body></html>"""
 
+CONTRACT_PERFORMING_MULTI_CONTRACTOR_HTML = """\
+<html><head></head><body><main>
+<h3 class="mb-0">4.3.2.) Krajowy Numer Identyfikacyjny: <span class="normal">1111111111</span></h3>
+<h3 class="mb-0">4.3.4.) Miejscowość: <span class="normal">Warszawa</span></h3>
+<h3 class="mb-0">4.3.6.) Województwo: <span class="normal">mazowieckie</span></h3>
+<h3 class="mb-0">4.3.2.) Krajowy Numer Identyfikacyjny: <span class="normal">2222222222</span></h3>
+<h3 class="mb-0">4.3.4.) Miejscowość: <span class="normal">Krakow</span></h3>
+<h3 class="mb-0">4.3.6.) Województwo: <span class="normal">malopolskie</span></h3>
+<h3 class="mb-0">4.4.) Wartość umowy: <span class="normal">12345,67 PLN</span></h3>
+</main></body></html>"""
+
 NOTICE_UPDATE_SINGLE_HTML = """\
 <html><head></head><body><main>
 <h2 class="bg-light p-3 mt-4">SEKCJA III ZMIANA OGĹOSZENIA</h2>
@@ -246,6 +257,21 @@ TENDER_RESULT_MULTI_LOT_HTML = """\
 <h3 class="mb-0">6.3.) Cena oferty najwyĹĽszej: <span class="normal">230000,00 PLN</span></h3>
 <h3 class="mb-0">6.4.) Cena oferty wykonawcy: <span class="normal">190000,00 PLN</span></h3>
 <h3 class="mb-0">8.2.) WartoĹ›Ä‡ umowy: <span class="normal">190000,00 PLN</span></h3>
+</main></body></html>"""
+
+TENDER_RESULT_PART_DETAILS_HTML = """\
+<html><head></head><body><main>
+<h2>SEKCJA IV</h2>
+<h3 class="mb-0">Czesc nr 1</h3>
+<h3 class="mb-0">4.5.1.) Krótki opis przedmiotu zamówienia: <span class="normal">Opis 1</span></h3>
+<h3 class="mb-0">4.5.3.) Główny kod CPV: <span class="normal">45000000-7 (Roboty budowlane)</span></h3>
+<h3 class="mb-0">4.5.4.) Dodatkowy kod CPV: <span class="normal">45100000-8 (Przygotowanie terenu)</span></h3>
+<h3 class="mb-0">4.3.) Wartość zamówienia: <span class="normal">100000,00 PLN</span></h3>
+<h3 class="mb-0">Czesc nr 2</h3>
+<h3 class="mb-0">4.5.1.) Krótki opis przedmiotu zamówienia: <span class="normal">Opis 2</span></h3>
+<h3 class="mb-0">4.5.3.) Główny kod CPV: <span class="normal">71000000-8 (Usługi architektoniczne)</span></h3>
+<h3 class="mb-0">4.5.4.) Dodatkowy kod CPV: <span class="normal">71200000-0 (Usługi architektoniczne i podobne)</span></h3>
+<h3 class="mb-0">4.3.) Wartość zamówienia: <span class="normal">200000,00 PLN</span></h3>
 </main></body></html>"""
 
 EMPTY_HTML = "<html><head></head><body></body></html>"
@@ -418,6 +444,20 @@ class TestTenderResultValues:
         assert len(r.lots) == 2
         assert r.lots[0].winner == "uniewaznienie"
         assert r.lots[1].winner == "nieRozstrzygnieto"
+
+    def test_tender_result_parts_extracted(self):
+        r = parse_html(TENDER_RESULT_PART_DETAILS_HTML, notice_type="TenderResultNotice")
+        assert r.tender_result_parts is not None
+        assert len(r.tender_result_parts) == 2
+        p1 = r.tender_result_parts[0]
+        p2 = r.tender_result_parts[1]
+        assert p1.part_id == "1"
+        assert p1.opis == "Opis 1"
+        assert p1.mainCPV.startswith("45000000-7")
+        assert p1.secondaryCPV and p1.secondaryCPV[0].startswith("45100000-8")
+        assert p1.expected_value == pytest.approx(100000.0)
+        assert p2.part_id == "2"
+        assert p2.expected_value == pytest.approx(200000.0)
 
 
 # --- Value extraction: ContractPerformingNotice ---
@@ -652,6 +692,16 @@ class TestContractExecution:
         assert r.contract_execution.execution_period == "12 tygodni"
         assert r.contract_execution.executed_on_time is False
         assert r.contract_execution.num_changes == 2
+
+    def test_extracts_multi_contractor_html_fields(self):
+        r = parse_html(
+            CONTRACT_PERFORMING_MULTI_CONTRACTOR_HTML,
+            notice_type="ContractPerformingNotice",
+        )
+        assert r.cpn_contractor_national_ids_432 == ["1111111111", "2222222222"]
+        assert r.cpn_contractor_cities_434 == ["Warszawa", "Krakow"]
+        assert r.cpn_contractor_provinces_436 == ["mazowieckie", "malopolskie"]
+        assert r.cpn_contract_value_44 == pytest.approx(12345.67)
 
 
 # --- Detail extraction: NoticeChange ---
