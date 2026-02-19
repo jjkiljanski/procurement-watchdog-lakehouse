@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from html import unescape
 
 from bs4 import BeautifulSoup, Tag
 
@@ -27,6 +28,11 @@ from procurement.silver.models import (
 
 # Regex for parsing "1234,56 PLN" style values from span text
 _PLN_NUM_RE = re.compile(r"([\d\s\xa0,.]+?)\s*(?:\xa0)?\s*(?:PLN|EUR|USD|GBP|CHF)?$")
+_SPAN_NORMAL_RE = re.compile(
+    r"<span[^>]*class=['\"]normal['\"][^>]*>(.*?)</span>",
+    re.IGNORECASE | re.DOTALL,
+)
+_TAG_RE = re.compile(r"<[^>]+>")
 
 
 def _find_h3(soup: BeautifulSoup, field_num: str) -> Tag | None:
@@ -1024,4 +1030,100 @@ def parse_html_address(html: str, notice_type: str | None = None) -> dict[str, s
     """
     soup = BeautifulSoup(html, "lxml")
     return _extract_address(soup, notice_type=notice_type)
+
+
+def parse_html_address_light(html: str, notice_type: str | None = None) -> dict[str, str | None]:
+    """Fast targeted extraction of common address fields without BeautifulSoup."""
+    # Primary address fields in most templates.
+    ulica = _extract_h3_field_fast(html, "1.5.1.")
+    kod_pocztowy = _extract_h3_field_fast(html, "1.5.3.")
+    nuts3_raw = _extract_h3_field_fast(html, "1.5.6.")
+
+    # Common fallback variant seen in ContractPerformingNotice templates.
+    if notice_type == "ContractPerformingNotice":
+        if not ulica:
+            ulica = _extract_h3_field_fast(html, "4.1.")
+        if not kod_pocztowy:
+            kod_pocztowy = _extract_h3_field_fast(html, "4.3.")
+        if not nuts3_raw:
+            nuts3_raw = _extract_h3_field_fast(html, "4.6.")
+
+    nuts3_code = None
+    nuts3_name = None
+    if nuts3_raw and " - " in nuts3_raw:
+        nuts3_code, nuts3_name = nuts3_raw.split(" - ", 1)
+        nuts3_code = nuts3_code.strip() or None
+        nuts3_name = nuts3_name.strip() or None
+
+    return {
+        "ulica": ulica,
+        "kod_pocztowy": kod_pocztowy,
+        "nuts3_code": nuts3_code,
+        "nuts3_name": nuts3_name,
+    }
+
+
+def _extract_h3_field_fast(html: str, field_num: str) -> str | None:
+    marker = f"{field_num})"
+    idx = html.find(marker)
+    if idx < 0:
+        return None
+    start = html.rfind("<h3", 0, idx)
+    end = html.find("</h3>", idx)
+    if start < 0 or end < 0:
+        return None
+    snippet = html[start : end + 5]
+
+    span = _SPAN_NORMAL_RE.search(snippet)
+    if span:
+        text = unescape(_TAG_RE.sub(" ", span.group(1)))
+        text = re.sub(r"\s+", " ", text).strip()
+        return text or None
+
+    tail = snippet[idx + len(marker) :]
+    text = unescape(_TAG_RE.sub(" ", tail))
+    text = re.sub(r"\s+", " ", text).strip(" :\u00a0\t\r\n")
+    return text or None
+
+
+def parse_html_agreement_intention_light(html: str) -> dict[str, object]:
+    """Fast targeted extraction for AgreementIntentionNotice."""
+    ulica = _extract_h3_field_fast(html, "1.5.1.") or _extract_h3_field_fast(html, "5.1.2.")
+    kod_pocztowy = _extract_h3_field_fast(html, "1.5.3.")
+    ai_street_512 = _extract_h3_field_fast(html, "5.1.2.")
+    ai_contract_value_35 = _parse_pln_value(_extract_h3_field_fast(html, "3.5."))
+    ai_prior_market_consultation_31 = _extract_h3_field_fast(html, "3.1.")
+    return {
+        "ulica": ulica,
+        "kod_pocztowy": kod_pocztowy,
+        "ai_street_512": ai_street_512,
+        "ai_contract_value_35": ai_contract_value_35,
+        "ai_prior_market_consultation_31": ai_prior_market_consultation_31,
+    }
+
+
+def parse_html_competition_light(html: str) -> dict[str, object]:
+    """Fast targeted extraction for CompetitionNotice."""
+    ulica = _extract_h3_field_fast(html, "1.5.1.")
+    kod_pocztowy = _extract_h3_field_fast(html, "1.5.3.")
+    raw_num_awarded = _extract_h3_field_fast(html, "6.3.")
+    comp_num_awarded_63 = None
+    if raw_num_awarded:
+        match = re.search(r"\d+", raw_num_awarded)
+        if match is not None:
+            try:
+                comp_num_awarded_63 = int(match.group(0))
+            except ValueError:
+                comp_num_awarded_63 = None
+    comp_prizes_value_64 = _parse_pln_value(_extract_h3_field_fast(html, "6.4."))
+    comp_order_value_651 = _parse_pln_value(_extract_h3_field_fast(html, "6.5.1."))
+    comp_requirements_72 = _extract_h3_field_fast(html, "7.2.")
+    return {
+        "ulica": ulica,
+        "kod_pocztowy": kod_pocztowy,
+        "comp_num_awarded_63": comp_num_awarded_63,
+        "comp_prizes_value_64": comp_prizes_value_64,
+        "comp_order_value_651": comp_order_value_651,
+        "comp_requirements_72": comp_requirements_72,
+    }
 

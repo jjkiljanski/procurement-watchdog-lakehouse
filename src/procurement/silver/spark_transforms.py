@@ -30,7 +30,13 @@ from pyspark.sql.types import (
 )
 
 from procurement.dictionaries import client_type_names, province_names
-from procurement.silver.html_parser import parse_cpv_codes, parse_html, parse_html_address
+from procurement.silver.html_parser import (
+    parse_cpv_codes,
+    parse_html,
+    parse_html_address_light,
+    parse_html_agreement_intention_light,
+    parse_html_competition_light,
+)
 
 log = logging.getLogger(__name__)
 
@@ -160,6 +166,27 @@ HTML_ADDRESS_SCHEMA = StructType(
     ]
 )
 
+HTML_AI_LIGHT_SCHEMA = StructType(
+    [
+        StructField("ulica", StringType()),
+        StructField("kod_pocztowy", StringType()),
+        StructField("ai_street_512", StringType()),
+        StructField("ai_contract_value_35", DoubleType()),
+        StructField("ai_prior_market_consultation_31", StringType()),
+    ]
+)
+
+HTML_COMP_LIGHT_SCHEMA = StructType(
+    [
+        StructField("ulica", StringType()),
+        StructField("kod_pocztowy", StringType()),
+        StructField("comp_num_awarded_63", IntegerType()),
+        StructField("comp_prizes_value_64", DoubleType()),
+        StructField("comp_order_value_651", DoubleType()),
+        StructField("comp_requirements_72", StringType()),
+    ]
+)
+
 
 def _parse_html_safe(
     html: str | None,
@@ -189,9 +216,29 @@ def _parse_html_address_safe(html: str | None, notice_type: str | None) -> dict 
     if not html:
         return None
     try:
-        return parse_html_address(html, notice_type=notice_type)
+        return parse_html_address_light(html, notice_type=notice_type)
     except Exception:
         log.warning("Failed to parse HTML address (len=%d)", len(html), exc_info=True)
+        return None
+
+
+def _parse_html_ai_light_safe(html: str | None) -> dict | None:
+    if not html:
+        return None
+    try:
+        return parse_html_agreement_intention_light(html)
+    except Exception:
+        log.warning("Failed to parse AI light HTML (len=%d)", len(html), exc_info=True)
+        return None
+
+
+def _parse_html_comp_light_safe(html: str | None) -> dict | None:
+    if not html:
+        return None
+    try:
+        return parse_html_competition_light(html)
+    except Exception:
+        log.warning("Failed to parse Competition light HTML (len=%d)", len(html), exc_info=True)
         return None
 
 
@@ -308,6 +355,8 @@ def _classify_notice_change(changes: list[dict] | None) -> tuple[bool, bool, boo
 
 parse_html_udf = udf(_parse_html_safe, HTML_EXTRACTED_SCHEMA)
 parse_html_address_udf = udf(_parse_html_address_safe, HTML_ADDRESS_SCHEMA)
+parse_html_ai_light_udf = udf(_parse_html_ai_light_safe, HTML_AI_LIGHT_SCHEMA)
+parse_html_comp_light_udf = udf(_parse_html_comp_light_safe, HTML_COMP_LIGHT_SCHEMA)
 parse_cpv_udf = udf(_parse_cpv_safe, ArrayType(StringType()))
 normalize_name_udf = udf(_normalize_entity_name, StringType())
 normalize_contractors_udf = udf(_normalize_contractor_names, ArrayType(StringType()))
@@ -404,35 +453,64 @@ def build_silver_for_notice_type(
         )
 
     need_html_full = bool(required & HTML_FULL_DERIVED_COLUMNS)
-    need_html_address = ("ulica" in required or "kod_pocztowy" in required) and not need_html_full
+    use_ai_light = notice_type == "AgreementIntentionNotice" and not need_html_full
+    use_comp_light = notice_type == "CompetitionNotice" and not need_html_full
+    need_html_address = (
+        ("ulica" in required or "kod_pocztowy" in required)
+        and not need_html_full
+        and not use_ai_light
+        and not use_comp_light
+    )
 
     if need_html_full:
         out = out.withColumn(
             "htmlExtracted",
             parse_html_udf(col("htmlBody"), col("noticeType"), col("procedureResult")),
         )
+    elif use_ai_light:
+        out = out.withColumn("htmlLight", parse_html_ai_light_udf(col("htmlBody")))
+    elif use_comp_light:
+        out = out.withColumn("htmlLight", parse_html_comp_light_udf(col("htmlBody")))
     elif need_html_address:
         out = out.withColumn("htmlAddress", parse_html_address_udf(col("htmlBody"), col("noticeType")))
 
     if "ulica" in required:
         out = out.withColumn(
             "ulica",
-            col("htmlExtracted.ulica") if need_html_full else col("htmlAddress.ulica"),
+            col("htmlExtracted.ulica")
+            if need_html_full
+            else (col("htmlLight.ulica") if (use_ai_light or use_comp_light) else col("htmlAddress.ulica")),
         )
     if "kod_pocztowy" in required:
         out = out.withColumn(
             "kod_pocztowy",
-            col("htmlExtracted.kod_pocztowy") if need_html_full else col("htmlAddress.kod_pocztowy"),
+            col("htmlExtracted.kod_pocztowy")
+            if need_html_full
+            else (
+                col("htmlLight.kod_pocztowy")
+                if (use_ai_light or use_comp_light)
+                else col("htmlAddress.kod_pocztowy")
+            ),
         )
 
     if "ai_street_512" in required:
-        out = out.withColumn("ai_street_512", col("htmlExtracted.ai_street_512"))
+        out = out.withColumn(
+            "ai_street_512",
+            col("htmlExtracted.ai_street_512") if need_html_full else col("htmlLight.ai_street_512"),
+        )
     if "ai_contract_value_35" in required:
-        out = out.withColumn("ai_contract_value_35", col("htmlExtracted.ai_contract_value_35"))
+        out = out.withColumn(
+            "ai_contract_value_35",
+            col("htmlExtracted.ai_contract_value_35")
+            if need_html_full
+            else col("htmlLight.ai_contract_value_35"),
+        )
     if "ai_prior_market_consultation_31" in required:
         out = out.withColumn(
             "ai_prior_market_consultation_31",
-            col("htmlExtracted.ai_prior_market_consultation_31"),
+            col("htmlExtracted.ai_prior_market_consultation_31")
+            if need_html_full
+            else col("htmlLight.ai_prior_market_consultation_31"),
         )
     if "cpn_contractor_national_ids_432" in required:
         out = out.withColumn(
@@ -449,13 +527,33 @@ def build_silver_for_notice_type(
     if "cpn_contract_value_44" in required:
         out = out.withColumn("cpn_contract_value_44", col("htmlExtracted.cpn_contract_value_44"))
     if "comp_num_awarded_63" in required:
-        out = out.withColumn("comp_num_awarded_63", col("htmlExtracted.comp_num_awarded_63"))
+        out = out.withColumn(
+            "comp_num_awarded_63",
+            col("htmlExtracted.comp_num_awarded_63")
+            if need_html_full
+            else col("htmlLight.comp_num_awarded_63"),
+        )
     if "comp_prizes_value_64" in required:
-        out = out.withColumn("comp_prizes_value_64", col("htmlExtracted.comp_prizes_value_64"))
+        out = out.withColumn(
+            "comp_prizes_value_64",
+            col("htmlExtracted.comp_prizes_value_64")
+            if need_html_full
+            else col("htmlLight.comp_prizes_value_64"),
+        )
     if "comp_order_value_651" in required:
-        out = out.withColumn("comp_order_value_651", col("htmlExtracted.comp_order_value_651"))
+        out = out.withColumn(
+            "comp_order_value_651",
+            col("htmlExtracted.comp_order_value_651")
+            if need_html_full
+            else col("htmlLight.comp_order_value_651"),
+        )
     if "comp_requirements_72" in required:
-        out = out.withColumn("comp_requirements_72", col("htmlExtracted.comp_requirements_72"))
+        out = out.withColumn(
+            "comp_requirements_72",
+            col("htmlExtracted.comp_requirements_72")
+            if need_html_full
+            else col("htmlLight.comp_requirements_72"),
+        )
     if "changed_notice_number" in required:
         out = out.withColumn(
             "changed_notice_number",
@@ -547,6 +645,8 @@ def build_silver_for_notice_type(
     drop_cols = ["htmlBody", "cpvCode"]
     if "htmlAddress" in out.columns:
         drop_cols.append("htmlAddress")
+    if "htmlLight" in out.columns:
+        drop_cols.append("htmlLight")
     if "cn_parts_normalized" in out.columns:
         drop_cols.append("cn_parts_normalized")
     out = out.drop(*drop_cols)
