@@ -24,7 +24,7 @@ Outputs:
 Processing model:
 
 - Input is processed in sorted `noticeType` batches.
-- Each batch is transformed with `build_silver(...)`.
+- Each batch is transformed with `build_silver_for_notice_type(...)`.
 - Shared columns go to `common_envelope`.
 - Notice-specific payload goes to `notice_type_tables`.
 - `noticeType` folder tokens are normalized; null maps to `__NULL__`.
@@ -41,9 +41,11 @@ Key semantics:
 - `htmlExtracted` nested struct for parsed values/lots/execution/change fields.
 - derived operational fields (`biddingWindowDays`, `priceWeight`, `paidRatio`, change flags, execution risk flags).
 - `cpvCodes` is kept in noticeType-specific tables, not in the envelope.
+- `submittingOffersDate` is kept in specific tables (`ContractNotice`, `ConcessionNotice`), not in the envelope.
 - `ulica` and `kod_pocztowy` are promoted to envelope columns for cross-type joins.
 - `organizationId` and `organizationName` are kept in envelope and are not duplicated into specific tables.
 - notice-type tables intentionally avoid process/lifecycle fields that are mostly null outside relevant notice classes.
+- `hasTenderResult` and `hasContractExecution` are not materialized in Silver; use `noticeType` semantics directly.
 - `procedureResult` and `procedureResultParsed` are emitted only for `TenderResultNotice` specific tables.
 - `AgreementIntentionNotice` specific table emits focused columns:
 - `ai_street_512`, `ai_contract_value_35`, `ai_prior_market_consultation_31` (without `htmlExtracted`).

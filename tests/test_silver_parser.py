@@ -82,6 +82,12 @@ AGREEMENT_INTENTION_DETAILS_HTML = """\
 <h3 class="mb-0">5.1.2.) Ulica: <span class="normal">ul. Rynek 5</span></h3>
 </main></body></html>"""
 
+AGREEMENT_INTENTION_ADDRESS_14_HTML = """\
+<html><head></head><body><main>
+<h3 class="mb-0">1.4.1.) Ulica: <span class="normal">ul. Dluga 10</span></h3>
+<h3 class="mb-0">1.4.3.) Kod pocztowy: <span class="normal">12-345</span></h3>
+</main></body></html>"""
+
 CONTRACT_NOTICE_HTML = """\
 <html><head></head><body><main>
 <h3 class="mb-0">4.1.5.) ĹÄ…czna wartoĹ›Ä‡: <span class="normal">35946524,88                    PLN</span></h3>
@@ -358,6 +364,11 @@ class TestAddressExtraction:
     def test_label_based_postal_missing_returns_none(self):
         r = parse_html(CONTRACT_PERFORMING_LABEL_BASED_HTML, notice_type="ContractPerformingNotice")
         assert r.kod_pocztowy is None
+
+    def test_agreement_intention_address_uses_14xx_fields(self):
+        r = parse_html(AGREEMENT_INTENTION_ADDRESS_14_HTML, notice_type="AgreementIntentionNotice")
+        assert r.ulica == "ul. Dluga 10"
+        assert r.kod_pocztowy == "12-345"
 
 
 # --- Description extraction ---

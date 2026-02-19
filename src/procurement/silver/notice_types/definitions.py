@@ -104,6 +104,8 @@ CONCESSION_NOTICE_SPECIFIC_COLUMNS = [
         "contractorNameNormalized",
         "htmlExtracted",
     }
+] + [
+    "submittingOffersDate",
 ]
 
 CONTRACT_NOTICE_SPECIFIC_COLUMNS = [
@@ -116,6 +118,7 @@ CONTRACT_NOTICE_SPECIFIC_COLUMNS = [
     "cn_criteria_aspects_4310",
     "cn_criteria_aspects_4310_flag",
     "cn_opis_by_part",
+    "submittingOffersDate",
 ]
 
 CONTRACT_PERFORMING_SPECIFIC_COLUMNS = [

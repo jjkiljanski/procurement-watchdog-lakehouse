@@ -447,13 +447,6 @@ def build_silver_for_notice_type(
             .when(col("noticeType").isin("NoticeUpdateNotice", "AgreementUpdateNotice"), lit("UPDATE"))
             .otherwise(lit("INIT")),
         )
-    if "hasTenderResult" in required:
-        out = out.withColumn("hasTenderResult", col("noticeType") == lit("TenderResultNotice"))
-    if "hasContractExecution" in required:
-        out = out.withColumn(
-            "hasContractExecution",
-            col("noticeType") == lit("ContractPerformingNotice"),
-        )
     if "organizationNameNormalized" in required:
         out = out.withColumn("organizationNameNormalized", normalize_name_udf(col("organizationName")))
     if "contractorNameNormalized" in required:
@@ -723,8 +716,6 @@ def build_silver(df: DataFrame) -> DataFrame:
         "procedureResultParsed",
         "caseId",
         "noticeStage",
-        "hasTenderResult",
-        "hasContractExecution",
         "organizationNameNormalized",
         "contractorNameNormalized",
         "biddingWindowDays",

@@ -245,9 +245,9 @@ _ADDRESS_FIELD_NUMS_BY_TYPE: dict[str | None, dict[str, tuple[str, ...]]] = {
         "nuts3": ("1.5.6.",),
     },
     "AgreementIntentionNotice": {
-        "ulica": ("1.5.1.",),
-        "kod_pocztowy": ("1.5.3.",),
-        "nuts3": ("1.5.6.",),
+        "ulica": ("1.4.1.",),
+        "kod_pocztowy": ("1.4.3.",),
+        "nuts3": ("1.4.6.",),
     },
     # Seen variants in execution notices with section IV labels.
     "ContractPerformingNotice": {
@@ -1034,19 +1034,18 @@ def parse_html_address(html: str, notice_type: str | None = None) -> dict[str, s
 
 def parse_html_address_light(html: str, notice_type: str | None = None) -> dict[str, str | None]:
     """Fast targeted extraction of common address fields without BeautifulSoup."""
-    # Primary address fields in most templates.
-    ulica = _extract_h3_field_fast(html, "1.5.1.")
-    kod_pocztowy = _extract_h3_field_fast(html, "1.5.3.")
-    nuts3_raw = _extract_h3_field_fast(html, "1.5.6.")
+    mapping = _ADDRESS_FIELD_NUMS_BY_TYPE.get(notice_type) or _ADDRESS_FIELD_NUMS_BY_TYPE[None]
 
-    # Common fallback variant seen in ContractPerformingNotice templates.
-    if notice_type == "ContractPerformingNotice":
-        if not ulica:
-            ulica = _extract_h3_field_fast(html, "4.1.")
-        if not kod_pocztowy:
-            kod_pocztowy = _extract_h3_field_fast(html, "4.3.")
-        if not nuts3_raw:
-            nuts3_raw = _extract_h3_field_fast(html, "4.6.")
+    def _first_value(field_nums: tuple[str, ...]) -> str | None:
+        for field_num in field_nums:
+            value = _extract_h3_field_fast(html, field_num)
+            if value:
+                return value
+        return None
+
+    ulica = _first_value(mapping["ulica"])
+    kod_pocztowy = _first_value(mapping["kod_pocztowy"])
+    nuts3_raw = _first_value(mapping["nuts3"])
 
     nuts3_code = None
     nuts3_name = None
@@ -1088,8 +1087,8 @@ def _extract_h3_field_fast(html: str, field_num: str) -> str | None:
 
 def parse_html_agreement_intention_light(html: str) -> dict[str, object]:
     """Fast targeted extraction for AgreementIntentionNotice."""
-    ulica = _extract_h3_field_fast(html, "1.5.1.") or _extract_h3_field_fast(html, "5.1.2.")
-    kod_pocztowy = _extract_h3_field_fast(html, "1.5.3.")
+    ulica = _extract_h3_field_fast(html, "1.4.1.") or _extract_h3_field_fast(html, "5.1.2.")
+    kod_pocztowy = _extract_h3_field_fast(html, "1.4.3.")
     ai_street_512 = _extract_h3_field_fast(html, "5.1.2.")
     ai_contract_value_35 = _parse_pln_value(_extract_h3_field_fast(html, "3.5."))
     ai_prior_market_consultation_31 = _extract_h3_field_fast(html, "3.1.")

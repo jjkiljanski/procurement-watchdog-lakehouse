@@ -192,7 +192,10 @@ def _read_notices_merged(
             safe_col(specific_raw, "publicationDate", "string"),
             safe_col(envelope_slim, "env_publicationDate", "string"),
         ).alias("publicationDate"),
-        safe_col(envelope_slim, "submittingOffersDate", "string").alias("submittingOffersDate"),
+        coalesce(
+            safe_col(specific_raw, "submittingOffersDate", "string"),
+            safe_col(envelope_slim, "submittingOffersDate", "string"),
+        ).alias("submittingOffersDate"),
         safe_col(specific_raw, "htmlExtracted", "struct<notice_change:struct<changes:array<struct<changed_section:string,change_description:string>>>,contract_execution:struct<contract_date:string,executed_on_time:boolean,executed_properly:boolean,execution_end_date:string,execution_period:string,num_changes:bigint>,values:struct<contract_value:double,total_paid:double>>").alias(
             "htmlExtracted"
         ),
