@@ -48,7 +48,8 @@ Key semantics:
 - `hasTenderResult` and `hasContractExecution` are not materialized in Silver; use `noticeType` semantics directly.
 - `procedureResult` and `procedureResultParsed` are emitted only for `TenderResultNotice` specific tables.
 - `AgreementIntentionNotice` specific table emits focused columns:
-- `ai_street_512`, `ai_contract_value_35`, `ai_prior_market_consultation_31` (without `htmlExtracted`).
+- `ai_street_512`, `ai_contract_value_35`, `ai_prior_market_consultation_31` (without `htmlExtracted`,
+- and without criteria/weight/contractor-normalization fields that are null for this type).
 - `AgreementUpdateNotice` specific table drops `numCriteria`, `priceWeight`, `nonPriceWeightSum`, `contractorNameNormalized`, and `htmlExtracted`.
 - `ContractNotice` specific table drops `contractors`, `contractorNameNormalized`, and `htmlExtracted`, and emits:
 - `cn_ogloszenie_dotyczy`, `cn_kryteria_oceny_by_part`, `cn_criteria_aspects_4310`,

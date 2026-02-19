@@ -26,7 +26,16 @@ BASE_SPECIFIC_COLUMNS = [
 ]
 
 AGREEMENT_INTENTION_SPECIFIC_COLUMNS = [
-    c for c in BASE_SPECIFIC_COLUMNS if c != "htmlExtracted"
+    c
+    for c in BASE_SPECIFIC_COLUMNS
+    if c
+    not in {
+        "numCriteria",
+        "priceWeight",
+        "nonPriceWeightSum",
+        "contractorNameNormalized",
+        "htmlExtracted",
+    }
 ] + [
     "ai_street_512",
     "ai_contract_value_35",
