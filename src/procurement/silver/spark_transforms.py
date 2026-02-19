@@ -13,12 +13,8 @@ from pyspark.sql.functions import (
     datediff,
     expr,
     lit,
-    lower,
-    max as spark_max,
-    regexp_extract,
     size,
     split,
-    to_date,
     to_timestamp,
     udf,
     when,
@@ -32,10 +28,9 @@ from pyspark.sql.types import (
     StructField,
     StructType,
 )
-from pyspark.sql.window import Window
 
 from procurement.dictionaries import client_type_names, province_names
-from procurement.silver.html_parser import parse_cpv_codes, parse_html
+from procurement.silver.html_parser import parse_cpv_codes, parse_html, parse_html_address
 
 log = logging.getLogger(__name__)
 
@@ -156,6 +151,15 @@ HTML_EXTRACTED_SCHEMA = StructType(
     ]
 )
 
+HTML_ADDRESS_SCHEMA = StructType(
+    [
+        StructField("ulica", StringType()),
+        StructField("kod_pocztowy", StringType()),
+        StructField("nuts3_code", StringType()),
+        StructField("nuts3_name", StringType()),
+    ]
+)
+
 
 def _parse_html_safe(
     html: str | None,
@@ -179,6 +183,16 @@ def _parse_cpv_safe(cpv_raw: str | None) -> list[str]:
     if not cpv_raw:
         return []
     return parse_cpv_codes(cpv_raw)
+
+
+def _parse_html_address_safe(html: str | None, notice_type: str | None) -> dict | None:
+    if not html:
+        return None
+    try:
+        return parse_html_address(html, notice_type=notice_type)
+    except Exception:
+        log.warning("Failed to parse HTML address (len=%d)", len(html), exc_info=True)
+        return None
 
 
 _PUNCT_RE = re.compile(r"[^\w\s]", flags=re.UNICODE)
@@ -293,6 +307,7 @@ def _classify_notice_change(changes: list[dict] | None) -> tuple[bool, bool, boo
 
 
 parse_html_udf = udf(_parse_html_safe, HTML_EXTRACTED_SCHEMA)
+parse_html_address_udf = udf(_parse_html_address_safe, HTML_ADDRESS_SCHEMA)
 parse_cpv_udf = udf(_parse_cpv_safe, ArrayType(StringType()))
 normalize_name_udf = udf(_normalize_entity_name, StringType())
 normalize_contractors_udf = udf(_normalize_contractor_names, ArrayType(StringType()))
@@ -309,78 +324,164 @@ def _make_lookup_udf(mapping: dict[str, str]):
     return udf(_lookup, StringType())
 
 
-def build_silver(df: DataFrame) -> DataFrame:
-    """Transform a raw BZP DataFrame into the silver layer.
+HTML_FULL_DERIVED_COLUMNS = {
+    "htmlExtracted",
+    "numCriteria",
+    "priceWeight",
+    "nonPriceWeightSum",
+    "cn_ogloszenie_dotyczy",
+    "cn_kryteria_oceny_by_part",
+    "cn_criteria_aspects_4310",
+    "cn_criteria_aspects_4310_flag",
+    "cn_opis_by_part",
+    "trn_ogloszenie_dotyczy",
+    "trn_parts",
+    "changed_notice_number",
+    "changed_notice_version",
+    "changes",
+    "ai_street_512",
+    "ai_contract_value_35",
+    "ai_prior_market_consultation_31",
+    "cpn_contractor_national_ids_432",
+    "cpn_contractor_cities_434",
+    "cpn_contractor_provinces_436",
+    "cpn_contract_value_44",
+    "comp_num_awarded_63",
+    "comp_prizes_value_64",
+    "comp_order_value_651",
+    "comp_requirements_72",
+}
 
-    - Filters out records with truncated HTML
-    - Parses HTML body via UDF â†’ struct of extracted fields (type-aware)
-    - Splits CPV codes string â†’ array
-    - Resolves organizationProvince code â†’ provinceName
-    - Resolves clientType code â†’ clientTypeName
-    - Splits procedureResult semicolon-delimited string â†’ array
-    - Drops raw htmlBody and cpvCode columns
-    """
+
+def build_silver_for_notice_type(
+    df: DataFrame,
+    notice_type: str | None,
+    required_columns: set[str] | None = None,
+) -> DataFrame:
+    """Build Silver rows for a single noticeType using only required computations."""
+    required = set(required_columns or [])
     province_udf = _make_lookup_udf(province_names())
     client_type_udf = _make_lookup_udf(client_type_names())
+    out = df.filter(col("htmlBody").endswith("</html>"))
 
-    silver_df = (
-        df.filter(col("htmlBody").endswith("</html>"))
-        .withColumn(
-            "contractors",
-            expr(
-                "filter(contractors, x -> x is not null)"
-            ),
+    need_contractors = "contractors" in required or "contractorNameNormalized" in required
+    if need_contractors:
+        out = out.withColumn("contractors", expr("filter(contractors, x -> x is not null)"))
+
+    if "cpvCodes" in required:
+        out = out.withColumn("cpvCodes", parse_cpv_udf(col("cpvCode")))
+    if "provinceName" in required:
+        out = out.withColumn("provinceName", province_udf(col("organizationProvince")))
+    if "clientTypeName" in required:
+        out = out.withColumn("clientTypeName", client_type_udf(col("clientType")))
+    if "procedureResultParsed" in required:
+        out = out.withColumn("procedureResultParsed", split(col("procedureResult"), ";"))
+    if "caseId" in required:
+        out = out.withColumn("caseId", coalesce(col("tenderId"), col("noticeNumber")))
+    if "noticeStage" in required:
+        out = out.withColumn(
+            "noticeStage",
+            when(col("noticeType") == lit("TenderResultNotice"), lit("RESULT"))
+            .when(col("noticeType") == lit("ContractPerformingNotice"), lit("EXECUTION"))
+            .when(col("noticeType").isin("NoticeUpdateNotice", "AgreementUpdateNotice"), lit("UPDATE"))
+            .otherwise(lit("INIT")),
         )
-        .withColumn(
+    if "hasTenderResult" in required:
+        out = out.withColumn("hasTenderResult", col("noticeType") == lit("TenderResultNotice"))
+    if "hasContractExecution" in required:
+        out = out.withColumn(
+            "hasContractExecution",
+            col("noticeType") == lit("ContractPerformingNotice"),
+        )
+    if "organizationNameNormalized" in required:
+        out = out.withColumn("organizationNameNormalized", normalize_name_udf(col("organizationName")))
+    if "contractorNameNormalized" in required:
+        out = out.withColumn("contractorNameNormalized", normalize_contractors_udf(col("contractors")))
+    if "biddingWindowDays" in required:
+        out = out.withColumn(
+            "biddingWindowDays",
+            datediff(to_timestamp(col("submittingOffersDate")), to_timestamp(col("publicationDate"))),
+        )
+
+    need_html_full = bool(required & HTML_FULL_DERIVED_COLUMNS)
+    need_html_address = ("ulica" in required or "kod_pocztowy" in required) and not need_html_full
+
+    if need_html_full:
+        out = out.withColumn(
             "htmlExtracted",
             parse_html_udf(col("htmlBody"), col("noticeType"), col("procedureResult")),
         )
-        .withColumn("ulica", col("htmlExtracted.ulica"))
-        .withColumn("kod_pocztowy", col("htmlExtracted.kod_pocztowy"))
-        .withColumn("ai_street_512", col("htmlExtracted.ai_street_512"))
-        .withColumn("ai_contract_value_35", col("htmlExtracted.ai_contract_value_35"))
-        .withColumn(
+    elif need_html_address:
+        out = out.withColumn("htmlAddress", parse_html_address_udf(col("htmlBody"), col("noticeType")))
+
+    if "ulica" in required:
+        out = out.withColumn(
+            "ulica",
+            col("htmlExtracted.ulica") if need_html_full else col("htmlAddress.ulica"),
+        )
+    if "kod_pocztowy" in required:
+        out = out.withColumn(
+            "kod_pocztowy",
+            col("htmlExtracted.kod_pocztowy") if need_html_full else col("htmlAddress.kod_pocztowy"),
+        )
+
+    if "ai_street_512" in required:
+        out = out.withColumn("ai_street_512", col("htmlExtracted.ai_street_512"))
+    if "ai_contract_value_35" in required:
+        out = out.withColumn("ai_contract_value_35", col("htmlExtracted.ai_contract_value_35"))
+    if "ai_prior_market_consultation_31" in required:
+        out = out.withColumn(
             "ai_prior_market_consultation_31",
             col("htmlExtracted.ai_prior_market_consultation_31"),
         )
-        .withColumn(
+    if "cpn_contractor_national_ids_432" in required:
+        out = out.withColumn(
             "cpn_contractor_national_ids_432",
             col("htmlExtracted.cpn_contractor_national_ids_432"),
         )
-        .withColumn(
-            "cpn_contractor_cities_434",
-            col("htmlExtracted.cpn_contractor_cities_434"),
-        )
-        .withColumn(
+    if "cpn_contractor_cities_434" in required:
+        out = out.withColumn("cpn_contractor_cities_434", col("htmlExtracted.cpn_contractor_cities_434"))
+    if "cpn_contractor_provinces_436" in required:
+        out = out.withColumn(
             "cpn_contractor_provinces_436",
             col("htmlExtracted.cpn_contractor_provinces_436"),
         )
-        .withColumn("cpn_contract_value_44", col("htmlExtracted.cpn_contract_value_44"))
-        .withColumn("comp_num_awarded_63", col("htmlExtracted.comp_num_awarded_63"))
-        .withColumn("comp_prizes_value_64", col("htmlExtracted.comp_prizes_value_64"))
-        .withColumn("comp_order_value_651", col("htmlExtracted.comp_order_value_651"))
-        .withColumn("comp_requirements_72", col("htmlExtracted.comp_requirements_72"))
-        .withColumn(
+    if "cpn_contract_value_44" in required:
+        out = out.withColumn("cpn_contract_value_44", col("htmlExtracted.cpn_contract_value_44"))
+    if "comp_num_awarded_63" in required:
+        out = out.withColumn("comp_num_awarded_63", col("htmlExtracted.comp_num_awarded_63"))
+    if "comp_prizes_value_64" in required:
+        out = out.withColumn("comp_prizes_value_64", col("htmlExtracted.comp_prizes_value_64"))
+    if "comp_order_value_651" in required:
+        out = out.withColumn("comp_order_value_651", col("htmlExtracted.comp_order_value_651"))
+    if "comp_requirements_72" in required:
+        out = out.withColumn("comp_requirements_72", col("htmlExtracted.comp_requirements_72"))
+    if "changed_notice_number" in required:
+        out = out.withColumn(
             "changed_notice_number",
             col("htmlExtracted.notice_change.changed_notice_number"),
         )
-        .withColumn(
+    if "changed_notice_version" in required:
+        out = out.withColumn(
             "changed_notice_version",
             col("htmlExtracted.notice_change.changed_notice_version"),
         )
-        .withColumn("changes", col("htmlExtracted.notice_change.changes"))
-        .withColumn(
-            "trn_ogloszenie_dotyczy",
-            when(col("noticeType") == lit("TenderResultNotice"), col("htmlExtracted.ogloszenie_dotyczy")),
-        )
-        .withColumn(
-            "trn_parts",
-            when(col("noticeType") == lit("TenderResultNotice"), col("htmlExtracted.tender_result_parts")),
-        )
-        .withColumn(
+    if "changes" in required:
+        out = out.withColumn("changes", col("htmlExtracted.notice_change.changes"))
+    if "trn_ogloszenie_dotyczy" in required:
+        out = out.withColumn("trn_ogloszenie_dotyczy", col("htmlExtracted.ogloszenie_dotyczy"))
+    if "trn_parts" in required:
+        out = out.withColumn("trn_parts", col("htmlExtracted.tender_result_parts"))
+    if required & {
+        "cn_ogloszenie_dotyczy",
+        "cn_kryteria_oceny_by_part",
+        "cn_criteria_aspects_4310",
+        "cn_criteria_aspects_4310_flag",
+        "cn_opis_by_part",
+    }:
+        out = out.withColumn(
             "cn_parts_normalized",
             expr(
-                "CASE WHEN noticeType = 'ContractNotice' THEN "
                 "CASE WHEN htmlExtracted.contract_notice_parts IS NOT NULL AND size(htmlExtracted.contract_notice_parts) > 0 "
                 "THEN htmlExtracted.contract_notice_parts "
                 "ELSE array(named_struct("
@@ -389,192 +490,113 @@ def build_silver(df: DataFrame) -> DataFrame:
                 "'kryteria_oceny', htmlExtracted.kryteria_oceny,"
                 "'criteria_aspects_4310', htmlExtracted.criteria_aspects_4310,"
                 "'criteria_aspects_4310_flag', htmlExtracted.criteria_aspects_4310_flag"
-                ")) END END"
+                ")) END"
             ),
         )
-        .withColumn(
-            "cn_ogloszenie_dotyczy",
-            when(col("noticeType") == lit("ContractNotice"), col("htmlExtracted.ogloszenie_dotyczy")),
-        )
-        .withColumn(
+    if "cn_ogloszenie_dotyczy" in required:
+        out = out.withColumn("cn_ogloszenie_dotyczy", col("htmlExtracted.ogloszenie_dotyczy"))
+    if "cn_kryteria_oceny_by_part" in required:
+        out = out.withColumn(
             "cn_kryteria_oceny_by_part",
-            when(
-                col("noticeType") == lit("ContractNotice"),
-                expr(
-                    "transform(cn_parts_normalized, p -> "
-                    "map_from_entries(transform(coalesce(p.kryteria_oceny, array()), "
-                    "x -> named_struct('key', x.name, 'value', x.weight))))"
-                ),
+            expr(
+                "transform(cn_parts_normalized, p -> "
+                "map_from_entries(transform(coalesce(p.kryteria_oceny, array()), "
+                "x -> named_struct('key', x.name, 'value', x.weight))))"
             ),
         )
-        .withColumn(
+    if "cn_criteria_aspects_4310" in required:
+        out = out.withColumn(
             "cn_criteria_aspects_4310",
-            when(
-                col("noticeType") == lit("ContractNotice"),
-                expr("transform(cn_parts_normalized, p -> p.criteria_aspects_4310)"),
-            ),
+            expr("transform(cn_parts_normalized, p -> p.criteria_aspects_4310)"),
         )
-        .withColumn(
+    if "cn_criteria_aspects_4310_flag" in required:
+        out = out.withColumn(
             "cn_criteria_aspects_4310_flag",
-            when(
-                col("noticeType") == lit("ContractNotice"),
-                expr("transform(cn_parts_normalized, p -> p.criteria_aspects_4310_flag)"),
-            ),
+            expr("transform(cn_parts_normalized, p -> p.criteria_aspects_4310_flag)"),
         )
-        .withColumn(
-            "cn_opis_by_part",
-            when(
-                col("noticeType") == lit("ContractNotice"),
-                expr("transform(cn_parts_normalized, p -> p.opis)"),
-            ),
+    if "cn_opis_by_part" in required:
+        out = out.withColumn("cn_opis_by_part", expr("transform(cn_parts_normalized, p -> p.opis)"))
+
+    if "numCriteria" in required:
+        out = out.withColumn(
+            "numCriteria",
+            size(col("htmlExtracted.kryteria_oceny")) if notice_type == "ContractNotice" else lit(None).cast("int"),
         )
-        .withColumn("cpvCodes", parse_cpv_udf(col("cpvCode")))
-        .withColumn("provinceName", province_udf(col("organizationProvince")))
-        .withColumn("clientTypeName", client_type_udf(col("clientType")))
-        .withColumn(
-            "procedureResultParsed",
-            split(col("procedureResult"), ";"),
-        )
-        .withColumn("caseId", coalesce(col("tenderId"), col("noticeNumber")))
-        .withColumn(
-            "noticeStage",
-            when(col("noticeType") == lit("TenderResultNotice"), lit("RESULT"))
-            .when(col("noticeType") == lit("ContractPerformingNotice"), lit("EXECUTION"))
-            .when(col("noticeType").isin("NoticeUpdateNotice", "AgreementUpdateNotice"), lit("UPDATE"))
-            .otherwise(lit("INIT")),
-        )
-        .withColumn("organizationNameNormalized", normalize_name_udf(col("organizationName")))
-        .withColumn("contractorNameNormalized", normalize_contractors_udf(col("contractors")))
-        .withColumn(
-            "biddingWindowDays",
-            datediff(
-                to_timestamp(col("submittingOffersDate")),
-                to_timestamp(col("publicationDate")),
-            ),
-        )
-        .withColumn("numCriteria", size(col("htmlExtracted.kryteria_oceny")))
-        .withColumn(
+    if "priceWeight" in required:
+        out = out.withColumn(
             "priceWeight",
             expr(
-                "aggregate("
-                "filter(htmlExtracted.kryteria_oceny, x -> lower(x.name) like '%cena%'),"
-                "0,"
-                "(acc, x) -> acc + coalesce(x.weight, 0)"
-                ")"
-            ),
+                "aggregate(filter(htmlExtracted.kryteria_oceny, x -> lower(x.name) like '%cena%'),"
+                "0,(acc, x) -> acc + coalesce(x.weight, 0))"
+            )
+            if notice_type == "ContractNotice"
+            else lit(None).cast("int"),
         )
-        .withColumn(
+    if "nonPriceWeightSum" in required:
+        out = out.withColumn(
             "nonPriceWeightSum",
             when(
                 col("htmlExtracted.kryteria_oceny").isNotNull(),
-                expr(
-                    "aggregate(htmlExtracted.kryteria_oceny, 0, (acc, x) -> acc + coalesce(x.weight, 0))"
-                )
+                expr("aggregate(htmlExtracted.kryteria_oceny, 0, (acc, x) -> acc + coalesce(x.weight, 0))")
                 - coalesce(col("priceWeight"), lit(0)),
-            ),
+            )
+            if notice_type == "ContractNotice"
+            else lit(None).cast("int"),
         )
-        .withColumn(
-            "updateDeltaText",
-            lower(
-                expr(
-                    "concat_ws(' ', transform(coalesce(htmlExtracted.notice_change.changes, array()),"
-                    "x -> concat_ws(' ', coalesce(x.changed_section, ''), coalesce(x.change_description, ''))))"
-                )
-            ),
-        )
-        .withColumn(
-            "deadlineChanged",
-            col("updateDeltaText").rlike("termin|deadline|skladania ofert|otwarcia ofert"),
-        )
-        .withColumn(
-            "criteriaChanged",
-            col("updateDeltaText").rlike("kryter|cena|waga"),
-        )
-        .withColumn(
-            "scopeChanged",
-            col("updateDeltaText").rlike("zakres|przedmiot|opis"),
-        )
-        .withColumn(
-            "executionDurationDays",
-            coalesce(
-                when(
-                    col("htmlExtracted.contract_execution.execution_period").isNotNull(),
-                    expr(
-                        "try_cast(regexp_extract(lower(htmlExtracted.contract_execution.execution_period), "
-                        "'(\\d+)\\s*(?:dni|dzien|days?)', 1) as int)"
-                    ),
-                ),
-                when(
-                    col("htmlExtracted.contract_execution.execution_period").isNotNull(),
-                    expr(
-                        "try_cast(regexp_extract(lower(htmlExtracted.contract_execution.execution_period), "
-                        "'(\\d+)\\s*(?:tygod\\w*|weeks?)', 1) as int)"
-                    )
-                    * lit(7),
-                ),
-                when(
-                    col("htmlExtracted.contract_execution.execution_period").isNotNull(),
-                    expr(
-                        "try_cast(regexp_extract(lower(htmlExtracted.contract_execution.execution_period), "
-                        "'(\\d+)\\s*(?:miesi\\w*|months?)', 1) as int)"
-                    )
-                    * lit(30),
-                ),
-                when(
-                    col("htmlExtracted.contract_execution.contract_date").isNotNull()
-                    & col("htmlExtracted.contract_execution.execution_end_date").isNotNull(),
-                    datediff(
-                        to_date(col("htmlExtracted.contract_execution.execution_end_date")),
-                        to_date(col("htmlExtracted.contract_execution.contract_date")),
-                    ),
-                ),
-            ),
-        )
-        .withColumn(
-            "paidRatio",
-            when(
-                col("htmlExtracted.values.contract_value").isNotNull()
-                & (col("htmlExtracted.values.contract_value") != 0)
-                & col("htmlExtracted.values.total_paid").isNotNull(),
-                col("htmlExtracted.values.total_paid") / col("htmlExtracted.values.contract_value"),
-            ),
-        )
-        .withColumn(
-            "executionDelayed",
-            when(
-                col("htmlExtracted.contract_execution.executed_on_time").isNotNull(),
-                ~col("htmlExtracted.contract_execution.executed_on_time"),
-            ),
-        )
-        .withColumn(
-            "executionRiskFlag",
-            when(
-                col("noticeType") == lit("ContractPerformingNotice"),
-                coalesce(col("executionDelayed"), lit(False))
-                | (coalesce(col("paidRatio"), lit(0.0)) > lit(1.05))
-                | (coalesce(col("htmlExtracted.contract_execution.num_changes"), lit(0)) > lit(0))
-                | (col("htmlExtracted.contract_execution.executed_properly") == lit(False)),
-            ),
-        )
-        .drop("htmlBody", "cpvCode", "cn_parts_normalized")
-    )
 
-    case_window = Window.partitionBy("caseId")
-    silver_df = (
-        silver_df.withColumn(
-            "hasTenderResult",
-            spark_max(when(col("noticeType") == lit("TenderResultNotice"), lit(1)).otherwise(lit(0))).over(case_window)
-            == lit(1),
-        )
-        .withColumn(
-            "hasContractExecution",
-            spark_max(
-                when(col("noticeType") == lit("ContractPerformingNotice"), lit(1)).otherwise(lit(0))
-            ).over(case_window)
-            == lit(1),
-        )
-        .drop("updateDeltaText")
-    )
+    drop_cols = ["htmlBody", "cpvCode"]
+    if "htmlAddress" in out.columns:
+        drop_cols.append("htmlAddress")
+    if "cn_parts_normalized" in out.columns:
+        drop_cols.append("cn_parts_normalized")
+    out = out.drop(*drop_cols)
+    if not need_html_full and "htmlExtracted" in out.columns:
+        out = out.drop("htmlExtracted")
+    return out
 
-    return silver_df
+
+def build_silver(df: DataFrame) -> DataFrame:
+    """Backward-compatible broad Silver transform."""
+    legacy_required = {
+        "contractors",
+        "htmlExtracted",
+        "ulica",
+        "kod_pocztowy",
+        "ai_street_512",
+        "ai_contract_value_35",
+        "ai_prior_market_consultation_31",
+        "cpn_contractor_national_ids_432",
+        "cpn_contractor_cities_434",
+        "cpn_contractor_provinces_436",
+        "cpn_contract_value_44",
+        "comp_num_awarded_63",
+        "comp_prizes_value_64",
+        "comp_order_value_651",
+        "comp_requirements_72",
+        "changed_notice_number",
+        "changed_notice_version",
+        "changes",
+        "trn_ogloszenie_dotyczy",
+        "trn_parts",
+        "cn_ogloszenie_dotyczy",
+        "cn_kryteria_oceny_by_part",
+        "cn_criteria_aspects_4310",
+        "cn_criteria_aspects_4310_flag",
+        "cn_opis_by_part",
+        "cpvCodes",
+        "provinceName",
+        "clientTypeName",
+        "procedureResultParsed",
+        "caseId",
+        "noticeStage",
+        "hasTenderResult",
+        "hasContractExecution",
+        "organizationNameNormalized",
+        "contractorNameNormalized",
+        "biddingWindowDays",
+        "numCriteria",
+        "priceWeight",
+        "nonPriceWeightSum",
+    }
+    return build_silver_for_notice_type(df, notice_type=None, required_columns=legacy_required)
 

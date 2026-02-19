@@ -11,6 +11,7 @@ import argparse
 import logging
 import os
 import sys
+import time
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -125,8 +126,9 @@ def main() -> None:
         sys.exit(1)
 
     from pyspark.sql import SparkSession
+    from pyspark.storagelevel import StorageLevel
 
-    from procurement.silver.spark_transforms import build_silver
+    from procurement.silver.spark_transforms import build_silver_for_notice_type
 
     spark = (
         SparkSession.builder.appName("bzp-silver")
@@ -142,14 +144,19 @@ def main() -> None:
 
     try:
         from functools import reduce
-
         from pyspark.sql.functions import col, lit, to_date
 
         df_raw = spark.read.json(str(raw_path), multiLine=True)
-        log.info("Loaded %d raw records", df_raw.count())
+        raw_count = df_raw.count()
+        log.info("Loaded %d raw records", raw_count)
         current_parts = df_raw.rdd.getNumPartitions()
-        auto_target = max(1, spark.sparkContext.defaultParallelism * 2)
+        max_parallel = max(2, spark.sparkContext.defaultParallelism * 2)
+        size_based_target = max(2, raw_count // 2000)
+        auto_target = min(max_parallel, size_based_target)
         target_parts = args.repartition if args.repartition > 0 else auto_target
+        if args.shuffle_partitions <= 0:
+            spark.conf.set("spark.sql.shuffle.partitions", str(target_parts))
+            log.info("Auto-set spark.sql.shuffle.partitions=%d", target_parts)
         if target_parts > current_parts:
             df_raw = df_raw.repartition(target_parts)
             log.info(
@@ -163,6 +170,8 @@ def main() -> None:
                 current_parts,
                 target_parts,
             )
+        df_raw = df_raw.persist(StorageLevel.MEMORY_AND_DISK)
+        log.info("Persisted raw DataFrame for noticeType batch reuse")
 
         # Step 1: process Bronze in noticeType-sorted batches.
         notice_types = [
@@ -174,15 +183,16 @@ def main() -> None:
         )
         log.info("Processing noticeType batches in order: %s", notice_types_sorted)
 
-        envelope_batches = []
         silver_dir = Path(args.silver_dir)
         envelope_root = str(silver_dir / "common_envelope")
         specific_root = silver_dir / "notice_type_tables"
+        envelope_batches = []
 
         # Overwrite only touched publicationDateDay partitions.
         spark.conf.set("spark.sql.sources.partitionOverwriteMode", "dynamic")
 
-        total_rows = 0
+        total_input_rows = raw_count
+        persisted_batches = []
         for notice_type in notice_types_sorted:
             if notice_type is None:
                 batch_raw = df_raw.filter(col("noticeType").isNull())
@@ -191,44 +201,56 @@ def main() -> None:
             notice_type_token = normalized_notice_type_token(notice_type)
             specific_columns = specific_columns_for_notice_type(notice_type)
             html_fields = html_extracted_fields_for_notice_type(notice_type)
-
-            batch_rows = batch_raw.count()
-            if batch_rows == 0:
-                continue
-            log.info("Processing batch noticeType=%s rows=%d", notice_type_token, batch_rows)
-
-            batch_silver = build_silver(batch_raw).withColumn(
+            required_columns = set(ENVELOPE_COLUMNS) | set(specific_columns)
+            batch_start = time.perf_counter()
+            log.info("Processing batch noticeType=%s", notice_type_token)
+            batch_silver = build_silver_for_notice_type(
+                batch_raw,
+                notice_type=notice_type,
+                required_columns=required_columns,
+            ).withColumn(
                 "publicationDateDay",
                 to_date(col("publicationDate")).cast("string"),
             )
-
+            batch_silver = batch_silver.persist(StorageLevel.MEMORY_AND_DISK)
+            persisted_batches.append(batch_silver)
             envelope_batches.append(_select_existing(batch_silver, ENVELOPE_COLUMNS))
 
             specific_df = _select_existing(batch_silver, specific_columns)
             specific_df = _compact_html_extracted(specific_df, html_fields)
             specific_out = str(specific_root / f"noticeType={notice_type_token}")
             (
-                specific_df.repartition("publicationDateDay")
-                .write.mode("overwrite")
+                specific_df.write.mode("overwrite")
                 .partitionBy("publicationDateDay")
                 .parquet(specific_out)
             )
-            log.info("Wrote specific table noticeType=%s to %s", notice_type_token, specific_out)
-            total_rows += batch_rows
+            log.info(
+                "Wrote specific table noticeType=%s to %s (%.2fs)",
+                notice_type_token,
+                specific_out,
+                time.perf_counter() - batch_start,
+            )
 
         if not envelope_batches:
             log.warning("No Silver rows produced for %s", target_date)
             return
 
         envelope_df = reduce(lambda a, b: a.unionByName(b, allowMissingColumns=True), envelope_batches)
+        envelope_write_start = time.perf_counter()
         (
-            envelope_df.repartition("publicationDateDay")
-            .write.mode("overwrite")
+            envelope_df.coalesce(target_parts).write.mode("overwrite")
             .partitionBy("publicationDateDay")
             .parquet(envelope_root)
         )
-        log.info("Wrote common envelope rows=%d to %s", envelope_df.count(), envelope_root)
-        log.info("Completed Silver build total_input_rows=%d", total_rows)
+        log.info(
+            "Wrote common envelope to %s (%.2fs)",
+            envelope_root,
+            time.perf_counter() - envelope_write_start,
+        )
+        log.info("Completed Silver build total_input_rows=%d", total_input_rows)
+        for cached_df in persisted_batches:
+            cached_df.unpersist()
+        df_raw.unpersist()
     finally:
         spark.stop()
 

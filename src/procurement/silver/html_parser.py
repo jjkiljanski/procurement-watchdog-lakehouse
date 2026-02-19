@@ -925,9 +925,14 @@ def parse_html(
 
     ogloszenie_dotyczy = _extract_ogloszenie_dotyczy(soup)
     address = _extract_address(soup, notice_type=notice_type)
-    opis = _extract_description(soup)
-    kryteria = _extract_criteria(soup)
-    criteria_aspects_4310, criteria_aspects_4310_flag = _extract_criteria_aspects_4310(soup)
+    opis = None
+    kryteria = None
+    criteria_aspects_4310 = None
+    criteria_aspects_4310_flag = None
+    if notice_type in (None, "ContractNotice"):
+        opis = _extract_description(soup)
+        kryteria = _extract_criteria(soup)
+        criteria_aspects_4310, criteria_aspects_4310_flag = _extract_criteria_aspects_4310(soup)
     contract_notice_parts = (
         _extract_contract_notice_parts(soup) if notice_type == "ContractNotice" else None
     )
@@ -1009,4 +1014,14 @@ def parse_html(
         comp_requirements_72=comp_requirements_72,
         **details,
     )
+
+
+def parse_html_address(html: str, notice_type: str | None = None) -> dict[str, str | None]:
+    """Parse only common address fields from notice HTML.
+
+    This lightweight parser is used by the Silver envelope path when
+    full type-specific extraction is not needed.
+    """
+    soup = BeautifulSoup(html, "lxml")
+    return _extract_address(soup, notice_type=notice_type)
 
