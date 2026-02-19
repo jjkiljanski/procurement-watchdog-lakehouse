@@ -11,6 +11,7 @@ from procurement.silver.html_parser import (
     _parse_pln_value,
     parse_cpv_codes,
     parse_html,
+    parse_html_contract_performing_light,
 )
 from procurement.silver.models import BzpNoticeSilver, EvalCriterion, HtmlExtracted
 
@@ -132,6 +133,16 @@ CONTRACT_NOTICE_PARTS_WITH_OPIS_HTML = """\
 <h3 class="mb-0">4.3.10.) ... <span class="normal">Nie</span></h3>
 </main></body></html>"""
 
+CONTRACT_NOTICE_PARTS_DECIMAL_WEIGHTS_HTML = """\
+<html><head></head><body><main>
+<h2 class="bg-light p-3 mt-4">SEKCJA IV - PRZEDMIOT ZAMOWIENIA</h2>
+<h3 class="mb-0">Czesc nr 1</h3>
+<h3 class="mb-0">4.3.5.) Nazwa kryterium: <span class="normal">Cena</span></h3>
+<h3 class="mb-0">4.3.6.) Waga: <span class="normal">60,00</span></h3>
+<h3 class="mb-0">4.3.5.) Nazwa kryterium: <span class="normal">Termin realizacji</span></h3>
+<h3 class="mb-0">4.3.6.) Waga: <span class="normal">40,00</span></h3>
+</main></body></html>"""
+
 OGLOSZENIE_DOTYCZY_HTML = """\
 <html><head></head><body><main>
 <h2 class="bg-light p-3 mt-4">SEKCJA II - INFORMACJE PODSTAWOWE</h2>
@@ -227,6 +238,12 @@ CONTRACT_PERFORMING_MULTI_CONTRACTOR_HTML = """\
 <h3 class="mb-0">4.3.4.) Miejscowość: <span class="normal">Krakow</span></h3>
 <h3 class="mb-0">4.3.6.) Województwo: <span class="normal">malopolskie</span></h3>
 <h3 class="mb-0">4.4.) Wartość umowy: <span class="normal">12345,67 PLN</span></h3>
+</main></body></html>"""
+
+CONTRACT_PERFORMING_WITH_144_COLLISION_HTML = """\
+<html><head></head><body><main>
+<h3 class="mb-0">1.4.4.) Wojewodztwo: <span class="normal">wielkopolskie</span></h3>
+<h3 class="mb-0">4.4.) Wartosc umowy: <span class="normal">624212,60 PLN</span></h3>
 </main></body></html>"""
 
 NOTICE_UPDATE_SINGLE_HTML = """\
@@ -426,6 +443,19 @@ class TestCriteriaExtraction:
         r = parse_html(EMPTY_HTML)
         assert r.kryteria_oceny is None
 
+    def test_decimal_weights(self):
+        html = """\
+<html><head></head><body><main>
+<h3 class="mb-0">4.3.5.) Nazwa kryterium: <span class="normal">Cena</span></h3>
+<h3 class="mb-0">4.3.6.) Waga: <span class="normal">60,00</span></h3>
+<h3 class="mb-0">4.3.5.) Nazwa kryterium: <span class="normal">Jakosc</span></h3>
+<h3 class="mb-0">4.3.6.) Waga: <span class="normal">40,00</span></h3>
+</main></body></html>"""
+        r = parse_html(html)
+        weights = {c.name: c.weight for c in (r.kryteria_oceny or [])}
+        assert weights["Cena"] == 60
+        assert weights["Jakosc"] == 40
+
 
 # --- Value extraction: TenderResultNotice ---
 
@@ -559,6 +589,13 @@ class TestContractNoticeValues:
         assert r.contract_notice_parts is not None
         assert r.contract_notice_parts[0].opis == "Opis czesci pierwszej."
         assert r.contract_notice_parts[1].opis == "Opis czesci drugiej."
+
+    def test_extracts_contract_notice_parts_decimal_weights(self):
+        r = parse_html(CONTRACT_NOTICE_PARTS_DECIMAL_WEIGHTS_HTML, notice_type="ContractNotice")
+        assert r.contract_notice_parts is not None
+        weights = {c.name: c.weight for c in (r.contract_notice_parts[0].kryteria_oceny or [])}
+        assert weights["Cena"] == 60
+        assert weights["Termin realizacji"] == 40
 
 
 # --- Value extraction: AgreementUpdateNotice ---
@@ -744,6 +781,17 @@ class TestContractExecution:
         assert r.cpn_contractor_cities_434 == ["Warszawa", "Krakow"]
         assert r.cpn_contractor_provinces_436 == ["mazowieckie", "malopolskie"]
         assert r.cpn_contract_value_44 == pytest.approx(12345.67)
+
+    def test_contract_value_not_confused_with_144(self):
+        r = parse_html(
+            CONTRACT_PERFORMING_WITH_144_COLLISION_HTML,
+            notice_type="ContractPerformingNotice",
+        )
+        assert r.cpn_contract_value_44 == pytest.approx(624212.60)
+
+    def test_contract_value_not_confused_with_144_light(self):
+        r = parse_html_contract_performing_light(CONTRACT_PERFORMING_WITH_144_COLLISION_HTML)
+        assert r["cpn_contract_value_44"] == pytest.approx(624212.60)
 
 
 # --- Detail extraction: NoticeChange ---

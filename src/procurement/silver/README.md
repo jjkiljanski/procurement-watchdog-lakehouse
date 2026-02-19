@@ -55,6 +55,7 @@ Key semantics:
 - `cn_ogloszenie_dotyczy`, `cn_kryteria_oceny_by_part`, `cn_criteria_aspects_4310`,
 - `cn_criteria_aspects_4310_flag`, `cn_opis_by_part`.
 - `ContractPerformingNotice` specific table drops `htmlExtracted`, `numCriteria`, `priceWeight`, `nonPriceWeightSum`,
+- `contractorNameNormalized`,
 - and emits contractor HTML fallback fields:
 - `cpn_contractor_national_ids_432`, `cpn_contractor_cities_434`, `cpn_contractor_provinces_436`, `cpn_contract_value_44`.
 - `NoticeUpdateNotice` specific table drops `cpvCodes`, `contractors`, criteria/weight fields and `htmlExtracted`,

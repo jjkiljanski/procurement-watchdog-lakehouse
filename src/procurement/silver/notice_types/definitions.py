@@ -133,7 +133,14 @@ CONTRACT_NOTICE_SPECIFIC_COLUMNS = [
 CONTRACT_PERFORMING_SPECIFIC_COLUMNS = [
     c
     for c in BASE_SPECIFIC_COLUMNS
-    if c not in {"numCriteria", "priceWeight", "nonPriceWeightSum", "htmlExtracted"}
+    if c
+    not in {
+        "numCriteria",
+        "priceWeight",
+        "nonPriceWeightSum",
+        "contractorNameNormalized",
+        "htmlExtracted",
+    }
 ] + [
     "cpn_contractor_national_ids_432",
     "cpn_contractor_cities_434",

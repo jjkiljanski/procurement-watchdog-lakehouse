@@ -35,10 +35,16 @@ _SPAN_NORMAL_RE = re.compile(
 _TAG_RE = re.compile(r"<[^>]+>")
 
 
+def _field_marker_re(field_num: str) -> re.Pattern[str]:
+    """Regex for exact field markers like '4.4.)' (not matching '1.4.4.)')."""
+    return re.compile(rf"(?<![\d.]){re.escape(field_num)}\)")
+
+
 def _find_h3(soup: BeautifulSoup, field_num: str) -> Tag | None:
     """Find the first <h3> whose text starts with a given field number."""
+    marker_re = _field_marker_re(field_num)
     for h3 in soup.find_all("h3"):
-        if f"{field_num})" in h3.get_text():
+        if marker_re.search(h3.get_text()):
             return h3
     return None
 
@@ -46,8 +52,9 @@ def _find_h3(soup: BeautifulSoup, field_num: str) -> Tag | None:
 def _find_all_h3(soup: BeautifulSoup, field_num: str) -> list[Tag]:
     """Find all <h3> tags matching a given field number."""
     results = []
+    marker_re = _field_marker_re(field_num)
     for h3 in soup.find_all("h3"):
-        if f"{field_num})" in h3.get_text():
+        if marker_re.search(h3.get_text()):
             results.append(h3)
     return results
 
@@ -166,6 +173,30 @@ def _parse_tak_nie(raw: str | None) -> bool | None:
     if cleaned == "Nie":
         return False
     return None
+
+
+def _parse_criterion_weight(raw: str | None) -> int | None:
+    """Parse criterion weight from strings like '60', '60,00', '40.00', '100 %'."""
+    if raw is None:
+        return None
+    cleaned = raw.strip().replace("\xa0", " ")
+    if not cleaned:
+        return None
+
+    # Keep only numeric prefix, allowing local decimal separators.
+    m = re.search(r"([0-9][0-9\s.,]*)", cleaned)
+    if m is None:
+        return None
+
+    num = m.group(1).replace(" ", "")
+    if "." in num and "," in num:
+        num = num.replace(".", "")
+    num = num.replace(",", ".")
+
+    try:
+        return int(round(float(num)))
+    except ValueError:
+        return None
 
 
 def _text_after_h3(h3: Tag | None) -> str | None:
@@ -346,11 +377,7 @@ def _extract_criteria(soup: BeautifulSoup) -> list[EvalCriterion] | None:
             weight = None
             if i + 1 < len(h3s) and "4.3.6.)" in h3s[i + 1].get_text():
                 raw = _span_value(h3s[i + 1])
-                if raw is not None:
-                    try:
-                        weight = int(raw)
-                    except ValueError:
-                        pass
+                weight = _parse_criterion_weight(raw)
             if name and weight is not None:
                 criteria.append(EvalCriterion(name=name, weight=weight))
         i += 1
@@ -418,11 +445,7 @@ def _extract_contract_notice_parts(soup: BeautifulSoup) -> list[ContractNoticePa
                 weight = None
                 if j + 1 < len(chunk) and "4.3.6.)" in chunk[j + 1].get_text():
                     raw_weight = _span_value(chunk[j + 1])
-                    if raw_weight is not None:
-                        try:
-                            weight = int(raw_weight)
-                        except ValueError:
-                            pass
+                    weight = _parse_criterion_weight(raw_weight)
                 if name and weight is not None:
                     criteria.append(EvalCriterion(name=name, weight=weight))
             j += 1
@@ -1063,10 +1086,11 @@ def parse_html_address_light(html: str, notice_type: str | None = None) -> dict[
 
 
 def _extract_h3_field_fast(html: str, field_num: str) -> str | None:
-    marker = f"{field_num})"
-    idx = html.find(marker)
-    if idx < 0:
+    marker_re = _field_marker_re(field_num)
+    match = marker_re.search(html)
+    if match is None:
         return None
+    idx = match.start()
     start = html.rfind("<h3", 0, idx)
     end = html.find("</h3>", idx)
     if start < 0 or end < 0:
@@ -1079,7 +1103,8 @@ def _extract_h3_field_fast(html: str, field_num: str) -> str | None:
         text = re.sub(r"\s+", " ", text).strip()
         return text or None
 
-    tail = snippet[idx + len(marker) :]
+    rel_idx = max(0, idx - start)
+    tail = snippet[rel_idx + len(field_num) + 1 :]
     text = unescape(_TAG_RE.sub(" ", tail))
     text = re.sub(r"\s+", " ", text).strip(" :\u00a0\t\r\n")
     return text or None
@@ -1141,16 +1166,12 @@ def parse_html_contract_performing_light(html: str) -> dict[str, object]:
         ("4.3.4.", cities),
         ("4.3.6.", provinces),
     ):
-        start = 0
-        while True:
-            marker = f"{field_num})"
-            idx = html.find(marker, start)
-            if idx < 0:
-                break
+        marker_re = _field_marker_re(field_num)
+        for match in marker_re.finditer(html):
+            idx = match.start()
             h3_start = html.rfind("<h3", 0, idx)
             h3_end = html.find("</h3>", idx)
             if h3_start < 0 or h3_end < 0:
-                start = idx + len(marker)
                 continue
             snippet = html[h3_start : h3_end + 5]
             span = _SPAN_NORMAL_RE.search(snippet)
@@ -1159,7 +1180,6 @@ def parse_html_contract_performing_light(html: str) -> dict[str, object]:
                 text = re.sub(r"\s+", " ", text).strip()
                 if text:
                     bucket.append(text)
-            start = h3_end + 5
 
     def _uniq(values: list[str]) -> list[str] | None:
         if not values:
