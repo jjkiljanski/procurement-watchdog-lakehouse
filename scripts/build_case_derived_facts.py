@@ -21,7 +21,7 @@ import logging
 import os
 import shutil
 import sys
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from functools import reduce
 from pathlib import Path
 
@@ -394,6 +394,15 @@ def _latest_snapshot_before(output_dir: Path, target_date: str) -> str | None:
     return dates[-1] if dates else None
 
 
+def _earliest_snapshot_after(output_dir: Path, target_date: str) -> str | None:
+    dates = [d for d in _list_snapshot_dates(output_dir) if d > target_date]
+    return dates[0] if dates else None
+
+
+def _parse_iso_day(day: str) -> date:
+    return datetime.strptime(day, "%Y-%m-%d").date()
+
+
 def _write_snapshot(df: DataFrame, output_dir: Path, target_date: str) -> int:
     out_path = output_dir / f"asOfDate={target_date}"
     if out_path.exists():
@@ -410,6 +419,41 @@ def _touched_case_ids(spark: "SparkSession", silver_dir: Path, target_date: str)
     return daily_df.select(safe_col(daily_df, "caseId", "string").alias("caseId")).filter(
         col("caseId").isNotNull()
     ).distinct()
+
+
+def _touched_case_ids_in_range(
+    spark: "SparkSession",
+    silver_dir: Path,
+    start_exclusive: str,
+    end_inclusive: str,
+) -> DataFrame:
+    envelope_root = silver_dir / "common_envelope"
+    if not envelope_root.exists():
+        raise ValueError(f"Missing envelope root: {envelope_root}")
+
+    start_day = _parse_iso_day(start_exclusive)
+    end_day = _parse_iso_day(end_inclusive)
+    if start_day >= end_day:
+        return spark.createDataFrame([], "caseId string")
+
+    paths: list[str] = []
+    for p in sorted(envelope_root.glob("publicationDateDay=*")):
+        if not p.is_dir():
+            continue
+        token = p.name.replace("publicationDateDay=", "")
+        day = _parse_iso_day(token)
+        if start_day < day <= end_day:
+            paths.append(str(p))
+
+    if not paths:
+        return spark.createDataFrame([], "caseId string")
+
+    daily_df = _union_paths(spark, paths, base_path=str(envelope_root))
+    return (
+        daily_df.select(safe_col(daily_df, "caseId", "string").alias("caseId"))
+        .filter(col("caseId").isNotNull())
+        .distinct()
+    )
 
 
 def main() -> None:
@@ -443,37 +487,69 @@ def main() -> None:
             return
 
         prev_date = _latest_snapshot_before(output_dir, target_date)
-        if prev_date is None:
-            log.warning("No previous snapshot found before %s, falling back to full mode", target_date)
+        next_date = _earliest_snapshot_after(output_dir, target_date)
+
+        if prev_date is None and next_date is None:
+            log.warning("No neighboring snapshot found around %s, falling back to full mode", target_date)
             notices = _read_notices_merged(spark, silver_dir, target_date)
             case_df = _build_case_derived(notices).withColumn("asOfDate", lit(target_date))
             rows = _write_snapshot(case_df, output_dir, target_date)
             log.info("Built full (fallback) case_derived_facts snapshot asOfDate=%s rows=%d", target_date, rows)
             return
 
-        touched = _touched_case_ids(spark, silver_dir, target_date)
-        touched_count = touched.count()
-        prev_df = spark.read.parquet(str(output_dir / f"asOfDate={prev_date}"))
+        chosen_direction = "forward"
+        anchor_date = prev_date
+        if prev_date is None:
+            chosen_direction = "backward"
+            anchor_date = next_date
+        elif next_date is not None:
+            # Choose nearer anchor to minimize recomputation window.
+            target_day = _parse_iso_day(target_date)
+            prev_gap = (target_day - _parse_iso_day(prev_date)).days
+            next_gap = (_parse_iso_day(next_date) - target_day).days
+            if next_gap < prev_gap:
+                chosen_direction = "backward"
+                anchor_date = next_date
 
-        if touched_count == 0:
-            log.info("No touched cases on %s; cloning snapshot from %s", target_date, prev_date)
-            out = prev_df.drop("asOfDate").withColumn("asOfDate", lit(target_date))
+        assert anchor_date is not None
+        anchor_df = spark.read.parquet(str(output_dir / f"asOfDate={anchor_date}"))
+
+        if chosen_direction == "forward":
+            affected = _touched_case_ids_in_range(spark, silver_dir, anchor_date, target_date)
+        else:
+            affected = _touched_case_ids_in_range(spark, silver_dir, target_date, anchor_date)
+        affected_count = affected.count()
+
+        if affected_count == 0:
+            log.info(
+                "No affected cases between %s and %s; cloning snapshot",
+                anchor_date,
+                target_date,
+            )
+            out = anchor_df.drop("asOfDate").withColumn("asOfDate", lit(target_date))
             rows = _write_snapshot(out, output_dir, target_date)
-            log.info("Built incremental case_derived_facts asOfDate=%s rows=%d", target_date, rows)
+            log.info(
+                "Built incremental case_derived_facts asOfDate=%s rows=%d direction=%s affected_cases=0",
+                target_date,
+                rows,
+                chosen_direction,
+            )
             return
 
-        notices_touched = _read_notices_merged(spark, silver_dir, target_date, case_ids=touched)
-        recomputed = _build_case_derived(notices_touched)
-        unchanged = prev_df.join(touched, on="caseId", how="left_anti").drop("asOfDate")
+        notices_affected = _read_notices_merged(spark, silver_dir, target_date, case_ids=affected)
+        recomputed = _build_case_derived(notices_affected)
+        unchanged = anchor_df.join(affected, on="caseId", how="left_anti").drop("asOfDate")
         out = unchanged.unionByName(recomputed, allowMissingColumns=True).withColumn(
             "asOfDate", lit(target_date)
         )
         rows = _write_snapshot(out, output_dir, target_date)
         log.info(
-            "Built incremental case_derived_facts asOfDate=%s rows=%d touched_cases=%d",
+            "Built incremental case_derived_facts asOfDate=%s rows=%d direction=%s anchor=%s affected_cases=%d",
             target_date,
             rows,
-            touched_count,
+            chosen_direction,
+            anchor_date,
+            affected_count,
         )
     finally:
         spark.stop()
