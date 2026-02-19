@@ -111,6 +111,9 @@ class HtmlExtracted(BaseModel):
     tender_result_enrichment: TenderResultEnrichment | None = None
     contract_execution: ContractExecution | None = None
     notice_change: NoticeChange | None = None
+    ai_street_512: str | None = None
+    ai_contract_value_35: float | None = None
+    ai_prior_market_consultation_31: str | None = None
 
 
 class BzpNoticeSilver(BaseModel):

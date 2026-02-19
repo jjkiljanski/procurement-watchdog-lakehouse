@@ -75,6 +75,13 @@ AGREEMENT_INTENTION_HTML = """\
 <h3 class="mb-0">3.5.) WartoĹ›Ä‡ zamĂłwienia: <span class="normal">2509756,10                    \xa0PLN</span></h3>
 </main></body></html>"""
 
+AGREEMENT_INTENTION_DETAILS_HTML = """\
+<html><head></head><body><main>
+<h3 class="mb-0">3.1.) Przed wszczeciem postepowania przeprowadzono konsultacje rynkowe: <span class="normal">Tak</span></h3>
+<h3 class="mb-0">3.5.) WartoĹ›Ä‡ zamowienia: <span class="normal">123456,78 PLN</span></h3>
+<h3 class="mb-0">5.1.2.) Ulica: <span class="normal">ul. Rynek 5</span></h3>
+</main></body></html>"""
+
 CONTRACT_NOTICE_HTML = """\
 <html><head></head><body><main>
 <h3 class="mb-0">4.1.5.) ĹÄ…czna wartoĹ›Ä‡: <span class="normal">35946524,88                    PLN</span></h3>
@@ -285,6 +292,14 @@ class TestAddressExtraction:
         assert r.kod_pocztowy is None
         assert r.nuts3_code is None
 
+    def test_label_based_street_for_contract_performing(self):
+        r = parse_html(CONTRACT_PERFORMING_LABEL_BASED_HTML, notice_type="ContractPerformingNotice")
+        assert r.ulica == "ul. Kwiatowa 1"
+
+    def test_label_based_postal_missing_returns_none(self):
+        r = parse_html(CONTRACT_PERFORMING_LABEL_BASED_HTML, notice_type="ContractPerformingNotice")
+        assert r.kod_pocztowy is None
+
 
 # --- Description extraction ---
 
@@ -474,6 +489,12 @@ class TestAgreementIntentionValues:
         r = parse_html(AGREEMENT_INTENTION_HTML, notice_type="AgreementIntentionNotice")
         assert r.values is not None
         assert r.values.estimated_value == pytest.approx(2509756.10)
+
+    def test_ai_details_extracted(self):
+        r = parse_html(AGREEMENT_INTENTION_DETAILS_HTML, notice_type="AgreementIntentionNotice")
+        assert r.ai_street_512 == "ul. Rynek 5"
+        assert r.ai_contract_value_35 == pytest.approx(123456.78)
+        assert r.ai_prior_market_consultation_31 == "Tak"
 
 
 # --- Value extraction: SmallContractNotice ---

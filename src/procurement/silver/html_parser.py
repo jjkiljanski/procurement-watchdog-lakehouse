@@ -210,14 +210,72 @@ def _collect_p_text(h3: Tag) -> str | None:
 # --- Address extraction (shared across types) ---
 
 
-def _extract_address(soup: BeautifulSoup) -> dict:
-    """Extract street, postal code, NUTS3 from SEKCJA I."""
-    ulica = _span_value(_find_h3(soup, "1.5.1."))
-    kod_pocztowy = _span_value(_find_h3(soup, "1.5.3."))
+_ADDRESS_FIELD_NUMS_BY_TYPE: dict[str | None, dict[str, tuple[str, ...]]] = {
+    None: {
+        "ulica": ("1.5.1.",),
+        "kod_pocztowy": ("1.5.3.",),
+        "nuts3": ("1.5.6.",),
+    },
+    # Most templates keep address fields in section I, but some have variants.
+    "ContractNotice": {
+        "ulica": ("1.5.1.",),
+        "kod_pocztowy": ("1.5.3.",),
+        "nuts3": ("1.5.6.",),
+    },
+    "TenderResultNotice": {
+        "ulica": ("1.5.1.",),
+        "kod_pocztowy": ("1.5.3.",),
+        "nuts3": ("1.5.6.",),
+    },
+    "NoticeUpdateNotice": {
+        "ulica": ("1.5.1.",),
+        "kod_pocztowy": ("1.5.3.",),
+        "nuts3": ("1.5.6.",),
+    },
+    "AgreementUpdateNotice": {
+        "ulica": ("1.5.1.",),
+        "kod_pocztowy": ("1.5.3.",),
+        "nuts3": ("1.5.6.",),
+    },
+    "AgreementIntentionNotice": {
+        "ulica": ("1.5.1.",),
+        "kod_pocztowy": ("1.5.3.",),
+        "nuts3": ("1.5.6.",),
+    },
+    # Seen variants in execution notices with section IV labels.
+    "ContractPerformingNotice": {
+        "ulica": ("1.5.1.", "4.1."),
+        "kod_pocztowy": ("1.5.3.", "4.3."),
+        "nuts3": ("1.5.6.", "4.6."),
+    },
+}
+
+
+def _first_span_by_field_nums(soup: BeautifulSoup, field_nums: tuple[str, ...]) -> str | None:
+    for field_num in field_nums:
+        value = _span_value(_find_h3(soup, field_num))
+        if value:
+            return value
+    return None
+
+
+def _extract_address(soup: BeautifulSoup, notice_type: str | None = None) -> dict:
+    """Extract street, postal code, NUTS3 with noticeType-aware + label fallback logic."""
+    mapping = _ADDRESS_FIELD_NUMS_BY_TYPE.get(notice_type) or _ADDRESS_FIELD_NUMS_BY_TYPE[None]
+
+    ulica = _first_span_by_field_nums(soup, mapping["ulica"])
+    if not ulica:
+        ulica = _span_value(_find_h3_by_label(soup, ["ulica"]))
+
+    kod_pocztowy = _first_span_by_field_nums(soup, mapping["kod_pocztowy"])
+    if not kod_pocztowy:
+        kod_pocztowy = _span_value(_find_h3_by_label(soup, ["kod", "poczt"]))
 
     nuts3_code = None
     nuts3_name = None
-    nuts3_raw = _span_value(_find_h3(soup, "1.5.6."))
+    nuts3_raw = _first_span_by_field_nums(soup, mapping["nuts3"])
+    if not nuts3_raw:
+        nuts3_raw = _span_value(_find_h3_by_label(soup, ["nuts", "3"]))
     if nuts3_raw and " - " in nuts3_raw:
         nuts3_code, nuts3_name = nuts3_raw.split(" - ", 1)
         nuts3_code = nuts3_code.strip()
@@ -547,6 +605,21 @@ def _extract_values_agreement_intention(soup: BeautifulSoup) -> ExtractedValues 
     return ExtractedValues(estimated_value=estimated_value)
 
 
+def _extract_agreement_intention_fields(
+    soup: BeautifulSoup,
+) -> tuple[str | None, float | None, str | None]:
+    """AgreementIntentionNotice: 5.1.2 street, 3.5 value, 3.1 consultation info."""
+    ai_street_512 = _span_value(_find_h3(soup, "5.1.2."))
+    if ai_street_512 is None:
+        ai_street_512 = _span_value(_find_h3_by_label(soup, ["ulica"]))
+
+    ai_contract_value_35 = _parse_pln_value(_span_value(_find_h3(soup, "3.5.")))
+    ai_prior_market_consultation_31 = _span_value(_find_h3(soup, "3.1.")) or _text_after_h3(
+        _find_h3(soup, "3.1.")
+    )
+    return ai_street_512, ai_contract_value_35, ai_prior_market_consultation_31
+
+
 def _extract_values_small_contract(soup: BeautifulSoup) -> ExtractedValues | None:
     """SmallContractNotice: field 3.4 (value, no PLN suffix), 3.5 (currency)."""
     contract_value = _parse_pln_value(_span_value(_find_h3(soup, "3.4.")))
@@ -718,7 +791,7 @@ def parse_html(
     soup = BeautifulSoup(html, "lxml")
 
     ogloszenie_dotyczy = _extract_ogloszenie_dotyczy(soup)
-    address = _extract_address(soup)
+    address = _extract_address(soup, notice_type=notice_type)
     opis = _extract_description(soup)
     kryteria = _extract_criteria(soup)
     criteria_aspects_4310, criteria_aspects_4310_flag = _extract_criteria_aspects_4310(soup)
@@ -728,6 +801,15 @@ def parse_html(
     lots = _extract_tender_result_lots(soup) if notice_type == "TenderResultNotice" else None
     if notice_type == "TenderResultNotice" and not lots:
         lots = _extract_status_lots_from_procedure_result(procedure_result)
+    ai_street_512 = None
+    ai_contract_value_35 = None
+    ai_prior_market_consultation_31 = None
+    if notice_type == "AgreementIntentionNotice":
+        (
+            ai_street_512,
+            ai_contract_value_35,
+            ai_prior_market_consultation_31,
+        ) = _extract_agreement_intention_fields(soup)
 
     # Type-aware value extraction
     values = None
@@ -755,6 +837,9 @@ def parse_html(
         contract_notice_parts=contract_notice_parts,
         values=values,
         lots=lots,
+        ai_street_512=ai_street_512,
+        ai_contract_value_35=ai_contract_value_35,
+        ai_prior_market_consultation_31=ai_prior_market_consultation_31,
         **details,
     )
 

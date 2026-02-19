@@ -24,6 +24,7 @@ from pyspark.sql.functions import (
     substring,
     sum as spark_sum,
     to_date,
+    to_timestamp,
     when,
 )
 
@@ -58,6 +59,17 @@ def _base_notice_facts(df: DataFrame, target_date: str) -> DataFrame:
     single_bid_text_expr = (
         "jedn.{0,20}ofert|one\\s+offer|1\\s*ofert|pojedyncz.{0,12}ofert"
     )
+    has_notice_change = has_field(cpv_df, "htmlExtracted.notice_change.changes")
+    update_delta_text_col = (
+        lower(
+            expr(
+                "concat_ws(' ', transform(coalesce(htmlExtracted.notice_change.changes, array()), "
+                "x -> concat_ws(' ', coalesce(x.changed_section, ''), coalesce(x.change_description, ''))))"
+            )
+        )
+        if has_notice_change
+        else lit(None).cast("string")
+    )
 
     return (
         cpv_df.withColumn("target_date", lit(target_date))
@@ -67,6 +79,38 @@ def _base_notice_facts(df: DataFrame, target_date: str) -> DataFrame:
         )
         .withColumn("contractor_countries_norm", expr(country_expr))
         .withColumn("publication_date", to_date(safe_col(cpv_df, "publicationDate", "string")))
+        .withColumn(
+            "biddingWindowDays",
+            coalesce(
+                safe_col(cpv_df, "biddingWindowDays", "long"),
+                datediff(
+                    to_timestamp(safe_col(cpv_df, "submittingOffersDate", "string")),
+                    to_timestamp(safe_col(cpv_df, "publicationDate", "string")),
+                ),
+            ),
+        )
+        .withColumn("updateDeltaText", update_delta_text_col)
+        .withColumn(
+            "deadlineChanged",
+            coalesce(
+                safe_col(cpv_df, "deadlineChanged", "boolean"),
+                col("updateDeltaText").rlike("termin|deadline|skladania ofert|otwarcia ofert"),
+            ),
+        )
+        .withColumn(
+            "criteriaChanged",
+            coalesce(
+                safe_col(cpv_df, "criteriaChanged", "boolean"),
+                col("updateDeltaText").rlike("kryter|cena|waga"),
+            ),
+        )
+        .withColumn(
+            "scopeChanged",
+            coalesce(
+                safe_col(cpv_df, "scopeChanged", "boolean"),
+                col("updateDeltaText").rlike("zakres|przedmiot|opis"),
+            ),
+        )
         .withColumn("contract_value", contract_value)
         .withColumn("winning_bid_value", safe_col(cpv_df, "htmlExtracted.values.winning_bid", "double"))
         .withColumn("estimated_value", safe_col(cpv_df, "htmlExtracted.values.estimated_value", "double"))
@@ -114,6 +158,16 @@ def _base_notice_facts(df: DataFrame, target_date: str) -> DataFrame:
             ),
         )
         .withColumn(
+            "executionDelayed",
+            coalesce(
+                safe_col(cpv_df, "executionDelayed", "boolean"),
+                when(
+                    safe_col(cpv_df, "htmlExtracted.contract_execution.executed_on_time", "boolean").isNotNull(),
+                    ~safe_col(cpv_df, "htmlExtracted.contract_execution.executed_on_time", "boolean"),
+                ),
+            ),
+        )
+        .withColumn(
             "single_bid_proxy",
             when(
                 safe_col(cpv_df, "noticeType", "string") == lit("TenderResultNotice"),
@@ -137,6 +191,28 @@ def _base_notice_facts(df: DataFrame, target_date: str) -> DataFrame:
         .withColumn("result_flag", safe_col(cpv_df, "noticeType", "string") == lit("TenderResultNotice"))
         .withColumn("execution_flag", safe_col(cpv_df, "noticeType", "string") == lit("ContractPerformingNotice"))
         .withColumn("update_flag", safe_col(cpv_df, "noticeType", "string") == lit("NoticeUpdateNotice"))
+        .withColumn(
+            "executionRiskFlag",
+            coalesce(
+                safe_col(cpv_df, "executionRiskFlag", "boolean"),
+                when(
+                    safe_col(cpv_df, "noticeType", "string") == lit("ContractPerformingNotice"),
+                    coalesce(col("executionDelayed"), lit(False))
+                    | (coalesce(col("paid_ratio_effective"), lit(0.0)) > lit(1.05))
+                    | (
+                        coalesce(
+                            safe_col(cpv_df, "htmlExtracted.contract_execution.num_changes", "long"),
+                            lit(0),
+                        )
+                        > lit(0)
+                    )
+                    | (
+                        safe_col(cpv_df, "htmlExtracted.contract_execution.executed_properly", "boolean")
+                        == lit(False)
+                    ),
+                ),
+            ),
+        )
         .drop("contractors_struct")
     )
 

@@ -130,6 +130,9 @@ HTML_EXTRACTED_SCHEMA = StructType(
         StructField("tender_result_enrichment", TENDER_RESULT_ENRICHMENT_SCHEMA),
         StructField("contract_execution", CONTRACT_EXECUTION_SCHEMA),
         StructField("notice_change", NOTICE_CHANGE_SCHEMA),
+        StructField("ai_street_512", StringType()),
+        StructField("ai_contract_value_35", DoubleType()),
+        StructField("ai_prior_market_consultation_31", StringType()),
     ]
 )
 
@@ -311,6 +314,14 @@ def build_silver(df: DataFrame) -> DataFrame:
         .withColumn(
             "htmlExtracted",
             parse_html_udf(col("htmlBody"), col("noticeType"), col("procedureResult")),
+        )
+        .withColumn("ulica", col("htmlExtracted.ulica"))
+        .withColumn("kod_pocztowy", col("htmlExtracted.kod_pocztowy"))
+        .withColumn("ai_street_512", col("htmlExtracted.ai_street_512"))
+        .withColumn("ai_contract_value_35", col("htmlExtracted.ai_contract_value_35"))
+        .withColumn(
+            "ai_prior_market_consultation_31",
+            col("htmlExtracted.ai_prior_market_consultation_31"),
         )
         .withColumn("cpvCodes", parse_cpv_udf(col("cpvCode")))
         .withColumn("provinceName", province_udf(col("organizationProvince")))

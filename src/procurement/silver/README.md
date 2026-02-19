@@ -4,7 +4,7 @@ Purpose:
 
 - Convert raw records into a conformed analytical schema.
 - Enrich with parsed HTML-derived fields and normalized identifiers.
-- Provide deterministic, joinable daily parquet for downstream Gold.
+- Provide deterministic, joinable daily parquet for downstream Gold and run-stats.
 
 Inputs:
 
@@ -13,10 +13,22 @@ Inputs:
 Primary build entrypoint:
 
 - `scripts/build_silver.py`
+- `scripts/build_case_derived_facts.py` (separate lifecycle projection job)
 
 Outputs:
 
-- `data/silver/noticeType=<TYPE>/publicationDateDay=YYYY-MM-DD/`
+- `data/silver/common_envelope/publicationDateDay=YYYY-MM-DD/`
+- `data/silver/notice_type_tables/noticeType=<TYPE>/publicationDateDay=YYYY-MM-DD/`
+- `data/silver/case_derived_facts/asOfDate=YYYY-MM-DD/` (built by `build_case_derived_facts.py`)
+
+Processing model:
+
+- Input is processed in sorted `noticeType` batches.
+- Each batch is transformed with `build_silver(...)`.
+- Shared columns go to `common_envelope`.
+- Notice-specific payload goes to `notice_type_tables`.
+- `noticeType` folder tokens are normalized; null maps to `__NULL__`.
+- Process/lifecycle case metrics are built in a second Spark job and written to `case_derived_facts`.
 
 Core transformation module:
 
@@ -28,6 +40,17 @@ Key semantics:
 - `noticeStage` classification (`INIT`, `UPDATE`, `RESULT`, `EXECUTION`).
 - `htmlExtracted` nested struct for parsed values/lots/execution/change fields.
 - derived operational fields (`biddingWindowDays`, `priceWeight`, `paidRatio`, change flags, execution risk flags).
+- `cpvCodes` is kept in noticeType-specific tables, not in the envelope.
+- `ulica` and `kod_pocztowy` are promoted to envelope columns for cross-type joins.
+- `organizationId` and `organizationName` are kept in envelope and are not duplicated into specific tables.
+- notice-type tables intentionally avoid process/lifecycle fields that are mostly null outside relevant notice classes.
+- `procedureResult` and `procedureResultParsed` are emitted only for `TenderResultNotice` specific tables.
+- `AgreementIntentionNotice` specific table emits focused columns:
+- `ai_street_512`, `ai_contract_value_35`, `ai_prior_market_consultation_31` (without `htmlExtracted`).
+- `AgreementUpdateNotice` specific table drops `numCriteria`, `priceWeight`, `nonPriceWeightSum`, `contractorNameNormalized`, and `htmlExtracted`.
+- `case_derived_facts` is case-grain lifecycle state with two modes:
+- `full`: rebuild from all Silver notices up to `asOfDate`.
+- `incremental`: recompute only cases touched by latest daily notices and merge with prior snapshot.
 
 Reporting:
 

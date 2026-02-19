@@ -3,7 +3,8 @@
 Reads:
   <raw-dir>/bzp_YYYY-MM-DD.json
 Writes:
-  <silver-dir>/noticeType=<TYPE>/publicationDateDay=YYYY-MM-DD/
+  <silver-dir>/common_envelope/publicationDateDay=YYYY-MM-DD/
+  <silver-dir>/notice_type_tables/noticeType=<TYPE>/publicationDateDay=YYYY-MM-DD/
 """
 
 import argparse
@@ -25,6 +26,61 @@ from procurement.logging import setup_logging
 
 setup_logging()
 log = logging.getLogger(__name__)
+
+from procurement.silver.notice_types import (
+    html_extracted_fields_for_notice_type,
+    normalized_notice_type_token,
+    specific_columns_for_notice_type,
+)
+
+
+ENVELOPE_COLUMNS = [
+    "objectId",
+    "noticeType",
+    "noticeNumber",
+    "bzpNumber",
+    "publicationDate",
+    "publicationDateDay",
+    "isTenderAmountBelowEU",
+    "orderObject",
+    "clientType",
+    "clientTypeName",
+    "orderType",
+    "tenderType",
+    "submittingOffersDate",
+    "organizationName",
+    "organizationCity",
+    "organizationProvince",
+    "provinceName",
+    "organizationCountry",
+    "organizationNationalId",
+    "organizationId",
+    "tenderId",
+    "caseId",
+    "noticeStage",
+    "hasTenderResult",
+    "hasContractExecution",
+    "organizationNameNormalized",
+    "ulica",
+    "kod_pocztowy",
+]
+
+def _select_existing(df: "DataFrame", columns: list[str]) -> "DataFrame":
+    return df.select(*[c for c in columns if c in df.columns])
+
+
+def _compact_html_extracted(
+    df: "DataFrame",
+    html_fields: list[str],
+) -> "DataFrame":
+    if "htmlExtracted" not in df.columns:
+        return df
+    if not html_fields:
+        return df.drop("htmlExtracted")
+    from pyspark.sql.functions import col, struct
+
+    compact_cols = [col(f"htmlExtracted.{field_name}").alias(field_name) for field_name in html_fields]
+    return df.withColumn("htmlExtracted", struct(*compact_cols))
 
 
 def _parse_args() -> argparse.Namespace:
@@ -85,7 +141,9 @@ def main() -> None:
         log.info("Set spark.sql.shuffle.partitions=%d", args.shuffle_partitions)
 
     try:
-        from pyspark.sql.functions import col, to_date
+        from functools import reduce
+
+        from pyspark.sql.functions import col, lit, to_date
 
         df_raw = spark.read.json(str(raw_path), multiLine=True)
         log.info("Loaded %d raw records", df_raw.count())
@@ -106,27 +164,71 @@ def main() -> None:
                 target_parts,
             )
 
-        df_silver = build_silver(df_raw)
-        df_silver = df_silver.withColumn(
-            "publicationDateDay",
-            to_date(col("publicationDate")).cast("string"),
+        # Step 1: process Bronze in noticeType-sorted batches.
+        notice_types = [
+            row.noticeType for row in df_raw.select("noticeType").distinct().collect()
+        ]
+        notice_types_sorted = sorted(
+            notice_types,
+            key=lambda x: (x is None, "" if x is None else str(x)),
         )
+        log.info("Processing noticeType batches in order: %s", notice_types_sorted)
 
-        # Overwrite only touched (noticeType, publicationDateDay) partitions.
+        envelope_batches = []
+        silver_dir = Path(args.silver_dir)
+        envelope_root = str(silver_dir / "common_envelope")
+        specific_root = silver_dir / "notice_type_tables"
+
+        # Overwrite only touched publicationDateDay partitions.
         spark.conf.set("spark.sql.sources.partitionOverwriteMode", "dynamic")
-        out_path = str(Path(args.silver_dir))
-        (
-            df_silver.repartition("noticeType", "publicationDateDay")
-            .write.mode("overwrite")
-            .partitionBy("noticeType", "publicationDateDay")
-            .parquet(out_path)
-        )
 
-        log.info(
-            "Wrote %d silver records to %s (partitioned by noticeType/publicationDateDay)",
-            df_silver.count(),
-            out_path,
+        total_rows = 0
+        for notice_type in notice_types_sorted:
+            if notice_type is None:
+                batch_raw = df_raw.filter(col("noticeType").isNull())
+            else:
+                batch_raw = df_raw.filter(col("noticeType") == lit(notice_type))
+            notice_type_token = normalized_notice_type_token(notice_type)
+            specific_columns = specific_columns_for_notice_type(notice_type)
+            html_fields = html_extracted_fields_for_notice_type(notice_type)
+
+            batch_rows = batch_raw.count()
+            if batch_rows == 0:
+                continue
+            log.info("Processing batch noticeType=%s rows=%d", notice_type_token, batch_rows)
+
+            batch_silver = build_silver(batch_raw).withColumn(
+                "publicationDateDay",
+                to_date(col("publicationDate")).cast("string"),
+            )
+
+            envelope_batches.append(_select_existing(batch_silver, ENVELOPE_COLUMNS))
+
+            specific_df = _select_existing(batch_silver, specific_columns)
+            specific_df = _compact_html_extracted(specific_df, html_fields)
+            specific_out = str(specific_root / f"noticeType={notice_type_token}")
+            (
+                specific_df.repartition("publicationDateDay")
+                .write.mode("overwrite")
+                .partitionBy("publicationDateDay")
+                .parquet(specific_out)
+            )
+            log.info("Wrote specific table noticeType=%s to %s", notice_type_token, specific_out)
+            total_rows += batch_rows
+
+        if not envelope_batches:
+            log.warning("No Silver rows produced for %s", target_date)
+            return
+
+        envelope_df = reduce(lambda a, b: a.unionByName(b, allowMissingColumns=True), envelope_batches)
+        (
+            envelope_df.repartition("publicationDateDay")
+            .write.mode("overwrite")
+            .partitionBy("publicationDateDay")
+            .parquet(envelope_root)
         )
+        log.info("Wrote common envelope rows=%d to %s", envelope_df.count(), envelope_root)
+        log.info("Completed Silver build total_input_rows=%d", total_rows)
     finally:
         spark.stop()
 
