@@ -36,6 +36,7 @@ from procurement.silver.html_parser import (
     parse_html_address_light,
     parse_html_agreement_intention_light,
     parse_html_competition_light,
+    parse_html_contract_performing_light,
 )
 
 log = logging.getLogger(__name__)
@@ -187,6 +188,17 @@ HTML_COMP_LIGHT_SCHEMA = StructType(
     ]
 )
 
+HTML_CPN_LIGHT_SCHEMA = StructType(
+    [
+        StructField("ulica", StringType()),
+        StructField("kod_pocztowy", StringType()),
+        StructField("cpn_contractor_national_ids_432", ArrayType(StringType())),
+        StructField("cpn_contractor_cities_434", ArrayType(StringType())),
+        StructField("cpn_contractor_provinces_436", ArrayType(StringType())),
+        StructField("cpn_contract_value_44", DoubleType()),
+    ]
+)
+
 
 def _parse_html_safe(
     html: str | None,
@@ -239,6 +251,16 @@ def _parse_html_comp_light_safe(html: str | None) -> dict | None:
         return parse_html_competition_light(html)
     except Exception:
         log.warning("Failed to parse Competition light HTML (len=%d)", len(html), exc_info=True)
+        return None
+
+
+def _parse_html_cpn_light_safe(html: str | None) -> dict | None:
+    if not html:
+        return None
+    try:
+        return parse_html_contract_performing_light(html)
+    except Exception:
+        log.warning("Failed to parse CPN light HTML (len=%d)", len(html), exc_info=True)
         return None
 
 
@@ -357,6 +379,7 @@ parse_html_udf = udf(_parse_html_safe, HTML_EXTRACTED_SCHEMA)
 parse_html_address_udf = udf(_parse_html_address_safe, HTML_ADDRESS_SCHEMA)
 parse_html_ai_light_udf = udf(_parse_html_ai_light_safe, HTML_AI_LIGHT_SCHEMA)
 parse_html_comp_light_udf = udf(_parse_html_comp_light_safe, HTML_COMP_LIGHT_SCHEMA)
+parse_html_cpn_light_udf = udf(_parse_html_cpn_light_safe, HTML_CPN_LIGHT_SCHEMA)
 parse_cpv_udf = udf(_parse_cpv_safe, ArrayType(StringType()))
 normalize_name_udf = udf(_normalize_entity_name, StringType())
 normalize_contractors_udf = udf(_normalize_contractor_names, ArrayType(StringType()))
@@ -388,17 +411,6 @@ HTML_FULL_DERIVED_COLUMNS = {
     "changed_notice_number",
     "changed_notice_version",
     "changes",
-    "ai_street_512",
-    "ai_contract_value_35",
-    "ai_prior_market_consultation_31",
-    "cpn_contractor_national_ids_432",
-    "cpn_contractor_cities_434",
-    "cpn_contractor_provinces_436",
-    "cpn_contract_value_44",
-    "comp_num_awarded_63",
-    "comp_prizes_value_64",
-    "comp_order_value_651",
-    "comp_requirements_72",
 }
 
 
@@ -455,11 +467,13 @@ def build_silver_for_notice_type(
     need_html_full = bool(required & HTML_FULL_DERIVED_COLUMNS)
     use_ai_light = notice_type == "AgreementIntentionNotice" and not need_html_full
     use_comp_light = notice_type == "CompetitionNotice" and not need_html_full
+    use_cpn_light = notice_type == "ContractPerformingNotice" and not need_html_full
     need_html_address = (
         ("ulica" in required or "kod_pocztowy" in required)
         and not need_html_full
         and not use_ai_light
         and not use_comp_light
+        and not use_cpn_light
     )
 
     if need_html_full:
@@ -471,6 +485,8 @@ def build_silver_for_notice_type(
         out = out.withColumn("htmlLight", parse_html_ai_light_udf(col("htmlBody")))
     elif use_comp_light:
         out = out.withColumn("htmlLight", parse_html_comp_light_udf(col("htmlBody")))
+    elif use_cpn_light:
+        out = out.withColumn("htmlLight", parse_html_cpn_light_udf(col("htmlBody")))
     elif need_html_address:
         out = out.withColumn("htmlAddress", parse_html_address_udf(col("htmlBody"), col("noticeType")))
 
@@ -479,7 +495,11 @@ def build_silver_for_notice_type(
             "ulica",
             col("htmlExtracted.ulica")
             if need_html_full
-            else (col("htmlLight.ulica") if (use_ai_light or use_comp_light) else col("htmlAddress.ulica")),
+            else (
+                col("htmlLight.ulica")
+                if (use_ai_light or use_comp_light or use_cpn_light)
+                else col("htmlAddress.ulica")
+            ),
         )
     if "kod_pocztowy" in required:
         out = out.withColumn(
@@ -488,7 +508,7 @@ def build_silver_for_notice_type(
             if need_html_full
             else (
                 col("htmlLight.kod_pocztowy")
-                if (use_ai_light or use_comp_light)
+                if (use_ai_light or use_comp_light or use_cpn_light)
                 else col("htmlAddress.kod_pocztowy")
             ),
         )
@@ -515,17 +535,31 @@ def build_silver_for_notice_type(
     if "cpn_contractor_national_ids_432" in required:
         out = out.withColumn(
             "cpn_contractor_national_ids_432",
-            col("htmlExtracted.cpn_contractor_national_ids_432"),
+            col("htmlExtracted.cpn_contractor_national_ids_432")
+            if need_html_full
+            else col("htmlLight.cpn_contractor_national_ids_432"),
         )
     if "cpn_contractor_cities_434" in required:
-        out = out.withColumn("cpn_contractor_cities_434", col("htmlExtracted.cpn_contractor_cities_434"))
+        out = out.withColumn(
+            "cpn_contractor_cities_434",
+            col("htmlExtracted.cpn_contractor_cities_434")
+            if need_html_full
+            else col("htmlLight.cpn_contractor_cities_434"),
+        )
     if "cpn_contractor_provinces_436" in required:
         out = out.withColumn(
             "cpn_contractor_provinces_436",
-            col("htmlExtracted.cpn_contractor_provinces_436"),
+            col("htmlExtracted.cpn_contractor_provinces_436")
+            if need_html_full
+            else col("htmlLight.cpn_contractor_provinces_436"),
         )
     if "cpn_contract_value_44" in required:
-        out = out.withColumn("cpn_contract_value_44", col("htmlExtracted.cpn_contract_value_44"))
+        out = out.withColumn(
+            "cpn_contract_value_44",
+            col("htmlExtracted.cpn_contract_value_44")
+            if need_html_full
+            else col("htmlLight.cpn_contract_value_44"),
+        )
     if "comp_num_awarded_63" in required:
         out = out.withColumn(
             "comp_num_awarded_63",

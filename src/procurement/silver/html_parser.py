@@ -1127,3 +1127,52 @@ def parse_html_competition_light(html: str) -> dict[str, object]:
         "comp_requirements_72": comp_requirements_72,
     }
 
+
+def parse_html_contract_performing_light(html: str) -> dict[str, object]:
+    """Fast targeted extraction for ContractPerformingNotice."""
+    ulica = _extract_h3_field_fast(html, "1.5.1.") or _extract_h3_field_fast(html, "4.1.")
+    kod_pocztowy = _extract_h3_field_fast(html, "1.5.3.") or _extract_h3_field_fast(html, "4.3.")
+
+    ids: list[str] = []
+    cities: list[str] = []
+    provinces: list[str] = []
+
+    for field_num, bucket in (
+        ("4.3.2.", ids),
+        ("4.3.4.", cities),
+        ("4.3.6.", provinces),
+    ):
+        start = 0
+        while True:
+            marker = f"{field_num})"
+            idx = html.find(marker, start)
+            if idx < 0:
+                break
+            h3_start = html.rfind("<h3", 0, idx)
+            h3_end = html.find("</h3>", idx)
+            if h3_start < 0 or h3_end < 0:
+                start = idx + len(marker)
+                continue
+            snippet = html[h3_start : h3_end + 5]
+            span = _SPAN_NORMAL_RE.search(snippet)
+            if span:
+                text = unescape(_TAG_RE.sub(" ", span.group(1)))
+                text = re.sub(r"\s+", " ", text).strip()
+                if text:
+                    bucket.append(text)
+            start = h3_end + 5
+
+    def _uniq(values: list[str]) -> list[str] | None:
+        if not values:
+            return None
+        return list(dict.fromkeys(values))
+
+    return {
+        "ulica": ulica,
+        "kod_pocztowy": kod_pocztowy,
+        "cpn_contractor_national_ids_432": _uniq(ids),
+        "cpn_contractor_cities_434": _uniq(cities),
+        "cpn_contractor_provinces_436": _uniq(provinces),
+        "cpn_contract_value_44": _parse_pln_value(_extract_h3_field_fast(html, "4.4.")),
+    }
+
