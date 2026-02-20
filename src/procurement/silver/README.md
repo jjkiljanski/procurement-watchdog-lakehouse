@@ -84,7 +84,7 @@ Key semantics:
 
 See also:
 
-- `docs/OPERATING_MODES.md`
+- `docs/deployment/OPERATING_MODES.md`
 
 Reporting:
 

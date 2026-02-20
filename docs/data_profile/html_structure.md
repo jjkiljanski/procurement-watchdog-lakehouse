@@ -4,7 +4,7 @@ Analysis of the HTML body (`htmlBody`) embedded in each BZP notice.
 Primary structure notes were built on ~10,000 records from October 2025,
 with parser status notes updated to current Silver behavior.
 
-See also: `docs/data_profile.md` for overall dataset statistics.
+See also: `docs/data_profile/data_profile.md` for overall dataset statistics.
 
 ## General HTML anatomy
 

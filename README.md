@@ -30,7 +30,7 @@ Core goals:
   - first fetch large date ranges to `bronze_raw`,
   - then run Spark transforms (`bronze -> silver -> case_derived -> gold`) in long-lived jobs.
 
-See `docs/OPERATING_MODES.md` for exact sequencing and retry semantics.
+See `docs/deployment/OPERATING_MODES.md` for exact sequencing and retry semantics.
 
 ## Current Data Layout
 
@@ -84,7 +84,7 @@ Built by `scripts/build_gold.py`:
 - `scripts/build_case_derived_facts.py` - case-grain Silver derived layer (`full` / `incremental`)
 - `scripts/build_gold.py` - Gold marts/signals
 - `scripts/build_run_stats.py` - run-level reporting artifacts
-- `docs/OPERATING_MODES.md` - operational runbook (daily vs backfill + restart semantics)
+- `docs/deployment/OPERATING_MODES.md` - operational runbook (daily vs backfill + restart semantics)
 
 ## Local Execution
 

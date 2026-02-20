@@ -2,7 +2,7 @@
 
 Each notice type has a different HTML template with different field numbers.
 This parser dispatches value extraction by notice type. See
-docs/html_structure.md for the full field reference.
+docs/data_profile/html_structure.md for the full field reference.
 """
 
 from __future__ import annotations
@@ -250,41 +250,93 @@ def _collect_p_text(h3: Tag) -> str | None:
 
 _ADDRESS_FIELD_NUMS_BY_TYPE: dict[str | None, dict[str, tuple[str, ...]]] = {
     None: {
-        "ulica": ("1.5.1.",),
-        "kod_pocztowy": ("1.5.3.",),
-        "nuts3": ("1.5.6.",),
+        # Some templates use section 1.5.x, others 1.4.x.
+        "ulica": ("1.5.1.", "1.4.1."),
+        "kod_pocztowy": ("1.5.3.", "1.4.3."),
+        "nuts3": ("1.5.6.", "1.4.6."),
     },
     # Most templates keep address fields in section I, but some have variants.
     "ContractNotice": {
-        "ulica": ("1.5.1.",),
-        "kod_pocztowy": ("1.5.3.",),
-        "nuts3": ("1.5.6.",),
+        "ulica": ("1.5.1.", "1.4.1."),
+        "kod_pocztowy": ("1.5.3.", "1.4.3."),
+        "nuts3": ("1.5.6.", "1.4.6."),
     },
     "TenderResultNotice": {
-        "ulica": ("1.5.1.",),
-        "kod_pocztowy": ("1.5.3.",),
-        "nuts3": ("1.5.6.",),
+        "ulica": ("1.5.1.", "1.4.1."),
+        "kod_pocztowy": ("1.5.3.", "1.4.3."),
+        "nuts3": ("1.5.6.", "1.4.6."),
     },
     "NoticeUpdateNotice": {
-        "ulica": ("1.5.1.",),
-        "kod_pocztowy": ("1.5.3.",),
-        "nuts3": ("1.5.6.",),
+        "ulica": ("1.5.1.", "1.4.1."),
+        "kod_pocztowy": ("1.5.3.", "1.4.3."),
+        "nuts3": ("1.5.6.", "1.4.6."),
     },
     "AgreementUpdateNotice": {
-        "ulica": ("1.5.1.",),
-        "kod_pocztowy": ("1.5.3.",),
-        "nuts3": ("1.5.6.",),
+        "ulica": ("1.5.1.", "1.4.1."),
+        "kod_pocztowy": ("1.5.3.", "1.4.3."),
+        "nuts3": ("1.5.6.", "1.4.6."),
     },
     "AgreementIntentionNotice": {
-        "ulica": ("1.4.1.",),
-        "kod_pocztowy": ("1.4.3.",),
-        "nuts3": ("1.4.6.",),
+        # Legacy templates use 1.4.x, newer ones use 1.5.x.
+        "ulica": ("1.4.1.", "1.5.1.", "5.1.2."),
+        "kod_pocztowy": ("1.4.3.", "1.5.3.", "5.1.4."),
+        "nuts3": ("1.4.6.", "1.5.6."),
     },
     # Seen variants in execution notices with section IV labels.
     "ContractPerformingNotice": {
-        "ulica": ("1.5.1.", "4.1."),
-        "kod_pocztowy": ("1.5.3.", "4.3."),
-        "nuts3": ("1.5.6.", "4.6."),
+        "ulica": ("1.5.1.", "1.4.1."),
+        "kod_pocztowy": ("1.5.3.", "1.4.3."),
+        "nuts3": ("1.5.6.", "1.4.6."),
+    },
+    "AgreementNotice": {
+        "ulica": ("1.5.1.", "1.4.1."),
+        "kod_pocztowy": ("1.5.3.", "1.4.3."),
+        "nuts3": ("1.5.6.", "1.4.6."),
+    },
+    "CompetitionNotice": {
+        "ulica": ("1.5.1.", "1.4.1."),
+        "kod_pocztowy": ("1.5.3.", "1.4.3."),
+        "nuts3": ("1.5.6.", "1.4.6."),
+    },
+    "CompetitionResultNotice": {
+        "ulica": ("1.5.1.", "1.4.1."),
+        "kod_pocztowy": ("1.5.3.", "1.4.3."),
+        "nuts3": ("1.5.6.", "1.4.6."),
+    },
+    "CircumstancesFulfillmentNotice": {
+        "ulica": ("1.5.1.", "1.4.1."),
+        "kod_pocztowy": ("1.5.3.", "1.4.3."),
+        "nuts3": ("1.5.6.", "1.4.6."),
+    },
+    "SmallContractNotice": {
+        "ulica": ("1.5.1.", "1.4.1."),
+        "kod_pocztowy": ("1.5.3.", "1.4.3."),
+        "nuts3": ("1.5.6.", "1.4.6."),
+    },
+    "ConcessionNotice": {
+        "ulica": ("1.5.1.", "1.4.1."),
+        "kod_pocztowy": ("1.5.3.", "1.4.3."),
+        "nuts3": ("1.5.6.", "1.4.6."),
+    },
+    "ConcessionIntentionAgreementNotice": {
+        "ulica": ("1.5.1.", "1.4.1."),
+        "kod_pocztowy": ("1.5.3.", "1.4.3."),
+        "nuts3": ("1.5.6.", "1.4.6."),
+    },
+    "NoticeUpdateConcession": {
+        "ulica": ("1.5.1.", "1.4.1."),
+        "kod_pocztowy": ("1.5.3.", "1.4.3."),
+        "nuts3": ("1.5.6.", "1.4.6."),
+    },
+    "ConcessionAgreementNotice": {
+        "ulica": ("1.5.1.", "1.4.1."),
+        "kod_pocztowy": ("1.5.3.", "1.4.3."),
+        "nuts3": ("1.5.6.", "1.4.6."),
+    },
+    "ConcessionUpdateAgreementNotice": {
+        "ulica": ("1.5.1.", "1.4.1."),
+        "kod_pocztowy": ("1.5.3.", "1.4.3."),
+        "nuts3": ("1.5.6.", "1.4.6."),
     },
 }
 
@@ -1112,8 +1164,17 @@ def _extract_h3_field_fast(html: str, field_num: str) -> str | None:
 
 def parse_html_agreement_intention_light(html: str) -> dict[str, object]:
     """Fast targeted extraction for AgreementIntentionNotice."""
-    ulica = _extract_h3_field_fast(html, "1.4.1.") or _extract_h3_field_fast(html, "5.1.2.")
-    kod_pocztowy = _extract_h3_field_fast(html, "1.4.3.")
+    # Prefer buyer address from section I (1.4/1.5), then fallback to section V contractor fields.
+    ulica = (
+        _extract_h3_field_fast(html, "1.4.1.")
+        or _extract_h3_field_fast(html, "1.5.1.")
+        or _extract_h3_field_fast(html, "5.1.2.")
+    )
+    kod_pocztowy = (
+        _extract_h3_field_fast(html, "1.4.3.")
+        or _extract_h3_field_fast(html, "1.5.3.")
+        or _extract_h3_field_fast(html, "5.1.4.")
+    )
     ai_street_512 = _extract_h3_field_fast(html, "5.1.2.")
     ai_contract_value_35 = _parse_pln_value(_extract_h3_field_fast(html, "3.5."))
     ai_prior_market_consultation_31 = _extract_h3_field_fast(html, "3.1.")
@@ -1154,8 +1215,9 @@ def parse_html_competition_light(html: str) -> dict[str, object]:
 
 def parse_html_contract_performing_light(html: str) -> dict[str, object]:
     """Fast targeted extraction for ContractPerformingNotice."""
-    ulica = _extract_h3_field_fast(html, "1.5.1.") or _extract_h3_field_fast(html, "4.1.")
-    kod_pocztowy = _extract_h3_field_fast(html, "1.5.3.") or _extract_h3_field_fast(html, "4.3.")
+    # Keep envelope address tied to section I buyer fields only.
+    ulica = _extract_h3_field_fast(html, "1.5.1.") or _extract_h3_field_fast(html, "1.4.1.")
+    kod_pocztowy = _extract_h3_field_fast(html, "1.5.3.") or _extract_h3_field_fast(html, "1.4.3.")
 
     ids: list[str] = []
     cities: list[str] = []
