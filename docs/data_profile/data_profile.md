@@ -238,7 +238,7 @@ Recommended usage:
 
 | Field | ContractNotice | TenderResultNotice | Other types |
 |---|---|---|---|
-| ulica, kod_pocztowy | 100% | 100% | 0% |
+| street, postal_code | 100% | 100% | 0% |
 | nuts3_code, nuts3_name | 100% | 100% | 0% |
 | opis | 100% | 0% | 0% |
 | kryteria_oceny | 86% | 0% | 0% |

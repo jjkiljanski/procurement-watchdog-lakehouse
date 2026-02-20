@@ -37,6 +37,7 @@ from procurement.silver.notice_types import (
     specific_columns_for_notice_type,
 )
 from procurement.silver.spark_transforms import build_silver_for_notice_type
+from procurement.silver.validation import validate_common_envelope
 
 setup_logging()
 log = logging.getLogger(__name__)
@@ -65,8 +66,8 @@ ENVELOPE_COLUMNS = [
     "caseId",
     "noticeStage",
     "organizationNameNormalized",
-    "ulica",
-    "kod_pocztowy",
+    "street",
+    "postal_code",
 ]
 
 HEAVY_HTML_NOTICE_TYPES = {
@@ -227,7 +228,7 @@ def _process_day(
     repartition: int,
     state: dict,
     state_path: Path,
-) -> tuple[int, list[dict], list[str]]:
+) -> tuple[int, list[dict], list[str], dict[str, int | float]]:
     from pyspark.sql.functions import col, to_date
     from pyspark.storagelevel import StorageLevel
 
@@ -339,13 +340,17 @@ def _process_day(
         .partitionBy("publicationDateDay")
         .parquet(str(silver_dir / "common_envelope"))
     )
+    envelope_validation_df = spark.read.parquet(
+        str(silver_dir / "common_envelope" / f"publicationDateDay={day}")
+    )
+    validation_metrics = validate_common_envelope(envelope_validation_df, target_date=day)
 
     day_state["status"] = "completed"
     day_state["completed_at"] = datetime.now(UTC).isoformat().replace("+00:00", "Z")
     day_state["current_notice_type"] = None
     day_state["rows"] = total_rows
     _save_state(state_path, state)
-    return total_rows, batch_profiles, [p for _, p in notice_batches]
+    return total_rows, batch_profiles, [p for _, p in notice_batches], validation_metrics
 
 
 def _parse_args() -> argparse.Namespace:
@@ -435,7 +440,7 @@ def main() -> None:
         for day in pending_days:
             log.info("Backfill day start: %s", day)
             try:
-                rows, batch_profiles, input_paths = _process_day(
+                rows, batch_profiles, input_paths, validation_metrics = _process_day(
                     spark=spark,
                     day=day,
                     bronze_dir=bronze_dir,
@@ -470,6 +475,7 @@ def main() -> None:
                     "performance": {
                         "rows": rows,
                         "batches": batch_profiles,
+                        "validation": {"common_envelope": validation_metrics},
                     },
                     "code": {
                         "git_commit": git_commit_sha(repo_root),

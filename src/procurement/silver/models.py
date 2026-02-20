@@ -165,9 +165,6 @@ class BzpNoticeSilver(BaseModel):
     contractors: list[ContractorDto] | None = None
     caseId: str | None = None
     noticeStage: str | None = None
-    hasTenderResult: bool | None = None
-    hasContractExecution: bool | None = None
-
     biddingWindowDays: int | None = None
     numCriteria: int | None = None
     priceWeight: int | None = None
@@ -184,6 +181,8 @@ class BzpNoticeSilver(BaseModel):
 
     organizationNameNormalized: str | None = None
     contractorNameNormalized: list[str] | None = None
+    street: str | None = None
+    postal_code: str | None = None
 
     # Replaces htmlBody
     htmlExtracted: HtmlExtracted

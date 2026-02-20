@@ -59,17 +59,24 @@ def _base_notice_facts(df: DataFrame, target_date: str) -> DataFrame:
     single_bid_text_expr = (
         "jedn.{0,20}ofert|one\\s+offer|1\\s*ofert|pojedyncz.{0,12}ofert"
     )
-    has_notice_change = has_field(cpv_df, "htmlExtracted.notice_change.changes")
-    update_delta_text_col = (
-        lower(
+    has_notice_change_struct = has_field(cpv_df, "htmlExtracted.notice_change.changes")
+    has_notice_change_flat = has_field(cpv_df, "changes")
+    if has_notice_change_struct:
+        update_delta_text_col = lower(
             expr(
                 "concat_ws(' ', transform(coalesce(htmlExtracted.notice_change.changes, array()), "
                 "x -> concat_ws(' ', coalesce(x.changed_section, ''), coalesce(x.change_description, ''))))"
             )
         )
-        if has_notice_change
-        else lit(None).cast("string")
-    )
+    elif has_notice_change_flat:
+        update_delta_text_col = lower(
+            expr(
+                "concat_ws(' ', transform(coalesce(changes, array()), "
+                "x -> concat_ws(' ', coalesce(x.changed_section, ''), coalesce(x.change_description, ''))))"
+            )
+        )
+    else:
+        update_delta_text_col = lit(None).cast("string")
 
     return (
         cpv_df.withColumn("target_date", lit(target_date))

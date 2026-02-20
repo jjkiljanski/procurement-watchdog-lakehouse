@@ -48,7 +48,7 @@ Key semantics:
 - derived operational fields (`biddingWindowDays`, `priceWeight`, `paidRatio`, change flags, execution risk flags).
 - `cpvCodes` is kept in noticeType-specific tables, not in the envelope.
 - `submittingOffersDate` is kept in specific tables (`ContractNotice`, `ConcessionNotice`), not in the envelope.
-- `ulica` and `kod_pocztowy` are promoted to envelope columns for cross-type joins.
+- `street` and `postal_code` are promoted to envelope columns for cross-type joins.
 - `organizationId` and `organizationName` are kept in envelope and are not duplicated into specific tables.
 - notice-type tables intentionally avoid process/lifecycle fields that are mostly null outside relevant notice classes.
 - `hasTenderResult` and `hasContractExecution` are not materialized in Silver; use `noticeType` semantics directly.
@@ -58,8 +58,8 @@ Key semantics:
 - and without criteria/weight/contractor-normalization fields that are null for this type).
 - `AgreementUpdateNotice` specific table drops `numCriteria`, `priceWeight`, `nonPriceWeightSum`, `contractorNameNormalized`, and `htmlExtracted`.
 - `ContractNotice` specific table drops `contractors`, `contractorNameNormalized`, and `htmlExtracted`, and emits:
-- `cn_ogloszenie_dotyczy`, `cn_kryteria_oceny_by_part`, `cn_criteria_aspects_4310`,
-- `cn_criteria_aspects_4310_flag`, `cn_opis_by_part`.
+- `cn_notice_concerns`, `cn_award_criteria_by_part`, `cn_criteria_aspects_4310`,
+- `cn_criteria_aspects_4310_flag`, `cn_description_by_part`.
 - `ContractPerformingNotice` specific table drops `htmlExtracted`, `numCriteria`, `priceWeight`, `nonPriceWeightSum`,
 - `contractorNameNormalized`,
 - and emits contractor HTML fallback fields:
@@ -68,7 +68,10 @@ Key semantics:
 - and emits flattened change columns: `changed_notice_number`, `changed_notice_version`, `changes`.
 - `TenderResultNotice` specific table drops `numCriteria`, `priceWeight`, `nonPriceWeightSum`,
 - `contractorNameNormalized`, and `htmlExtracted`, and emits:
-- `trn_ogloszenie_dotyczy`, `trn_parts` (part-level `opis`, `mainCPV`, `secondaryCPV`, `expected_value`).
+- `trn_notice_concerns`, `trn_parts` (part-level `opis`, `mainCPV`, `secondaryCPV`, `expected_value`).
+- Spark validation runs after each day write (`build_silver.py`, `build_silver_backfill.py`) and reports:
+- `street` non-null/non-empty coverage,
+- `postal_code` format validity (`XX-XXX`) for present values.
 - `CircumstancesFulfillmentNotice` specific table drops `numCriteria`, `priceWeight`,
 - `nonPriceWeightSum`, `contractorNameNormalized`, and `htmlExtracted`.
 - `SmallContractNotice` specific table drops `contractors`, `numCriteria`, `priceWeight`,

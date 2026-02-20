@@ -122,11 +122,11 @@ CONTRACT_NOTICE_SPECIFIC_COLUMNS = [
     for c in BASE_SPECIFIC_COLUMNS
     if c not in {"contractors", "contractorNameNormalized", "htmlExtracted"}
 ] + [
-    "cn_ogloszenie_dotyczy",
-    "cn_kryteria_oceny_by_part",
+    "cn_notice_concerns",
+    "cn_award_criteria_by_part",
     "cn_criteria_aspects_4310",
     "cn_criteria_aspects_4310_flag",
-    "cn_opis_by_part",
+    "cn_description_by_part",
     "submittingOffersDate",
 ]
 
@@ -162,7 +162,7 @@ TENDER_RESULT_SPECIFIC_COLUMNS = [
 ] + [
     "procedureResult",
     "procedureResultParsed",
-    "trn_ogloszenie_dotyczy",
+    "trn_notice_concerns",
     "trn_parts",
 ]
 

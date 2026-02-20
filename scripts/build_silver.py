@@ -37,6 +37,7 @@ from procurement.silver.notice_types import (
     normalized_notice_type_token,
     specific_columns_for_notice_type,
 )
+from procurement.silver.validation import validate_common_envelope
 
 
 ENVELOPE_COLUMNS = [
@@ -63,8 +64,8 @@ ENVELOPE_COLUMNS = [
     "caseId",
     "noticeStage",
     "organizationNameNormalized",
-    "ulica",
-    "kod_pocztowy",
+    "street",
+    "postal_code",
 ]
 
 def _select_existing(df: "DataFrame", columns: list[str]) -> "DataFrame":
@@ -413,7 +414,14 @@ def main() -> None:
             return
 
         log.info("Completed Silver build total_input_rows=%d", total_input_rows)
+        envelope_validation_df = spark.read.parquet(str(envelope_day_dir))
+        envelope_validation_metrics = validate_common_envelope(
+            envelope_validation_df,
+            target_date=target_date,
+        )
+        log.info("Silver validation metrics day=%s: %s", target_date, envelope_validation_metrics)
         profile["total_input_rows"] = total_input_rows
+        profile["validation"] = {"common_envelope": envelope_validation_metrics}
         profile["run_total_sec"] = round(time.perf_counter() - run_start, 3)
         if args.profile_json:
             profile_path = Path(args.profile_json)

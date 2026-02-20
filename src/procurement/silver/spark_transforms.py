@@ -401,12 +401,12 @@ HTML_FULL_DERIVED_COLUMNS = {
     "numCriteria",
     "priceWeight",
     "nonPriceWeightSum",
-    "cn_ogloszenie_dotyczy",
-    "cn_kryteria_oceny_by_part",
+    "cn_notice_concerns",
+    "cn_award_criteria_by_part",
     "cn_criteria_aspects_4310",
     "cn_criteria_aspects_4310_flag",
-    "cn_opis_by_part",
-    "trn_ogloszenie_dotyczy",
+    "cn_description_by_part",
+    "trn_notice_concerns",
     "trn_parts",
     "changed_notice_number",
     "changed_notice_version",
@@ -462,7 +462,7 @@ def build_silver_for_notice_type(
     use_comp_light = notice_type == "CompetitionNotice" and not need_html_full
     use_cpn_light = notice_type == "ContractPerformingNotice" and not need_html_full
     need_html_address = (
-        ("ulica" in required or "kod_pocztowy" in required)
+        ("street" in required or "postal_code" in required)
         and not need_html_full
         and not use_ai_light
         and not use_comp_light
@@ -483,9 +483,9 @@ def build_silver_for_notice_type(
     elif need_html_address:
         out = out.withColumn("htmlAddress", parse_html_address_udf(col("htmlBody"), col("noticeType")))
 
-    if "ulica" in required:
+    if "street" in required:
         out = out.withColumn(
-            "ulica",
+            "street",
             col("htmlExtracted.ulica")
             if need_html_full
             else (
@@ -494,9 +494,9 @@ def build_silver_for_notice_type(
                 else col("htmlAddress.ulica")
             ),
         )
-    if "kod_pocztowy" in required:
+    if "postal_code" in required:
         out = out.withColumn(
-            "kod_pocztowy",
+            "postal_code",
             col("htmlExtracted.kod_pocztowy")
             if need_html_full
             else (
@@ -593,16 +593,16 @@ def build_silver_for_notice_type(
         )
     if "changes" in required:
         out = out.withColumn("changes", col("htmlExtracted.notice_change.changes"))
-    if "trn_ogloszenie_dotyczy" in required:
-        out = out.withColumn("trn_ogloszenie_dotyczy", col("htmlExtracted.ogloszenie_dotyczy"))
+    if "trn_notice_concerns" in required:
+        out = out.withColumn("trn_notice_concerns", col("htmlExtracted.ogloszenie_dotyczy"))
     if "trn_parts" in required:
         out = out.withColumn("trn_parts", col("htmlExtracted.tender_result_parts"))
     if required & {
-        "cn_ogloszenie_dotyczy",
-        "cn_kryteria_oceny_by_part",
+        "cn_notice_concerns",
+        "cn_award_criteria_by_part",
         "cn_criteria_aspects_4310",
         "cn_criteria_aspects_4310_flag",
-        "cn_opis_by_part",
+        "cn_description_by_part",
     }:
         out = out.withColumn(
             "cn_parts_normalized",
@@ -618,11 +618,11 @@ def build_silver_for_notice_type(
                 ")) END"
             ),
         )
-    if "cn_ogloszenie_dotyczy" in required:
-        out = out.withColumn("cn_ogloszenie_dotyczy", col("htmlExtracted.ogloszenie_dotyczy"))
-    if "cn_kryteria_oceny_by_part" in required:
+    if "cn_notice_concerns" in required:
+        out = out.withColumn("cn_notice_concerns", col("htmlExtracted.ogloszenie_dotyczy"))
+    if "cn_award_criteria_by_part" in required:
         out = out.withColumn(
-            "cn_kryteria_oceny_by_part",
+            "cn_award_criteria_by_part",
             expr(
                 "transform(cn_parts_normalized, p -> "
                 "map_from_entries(transform(coalesce(p.kryteria_oceny, array()), "
@@ -639,8 +639,8 @@ def build_silver_for_notice_type(
             "cn_criteria_aspects_4310_flag",
             expr("transform(cn_parts_normalized, p -> p.criteria_aspects_4310_flag)"),
         )
-    if "cn_opis_by_part" in required:
-        out = out.withColumn("cn_opis_by_part", expr("transform(cn_parts_normalized, p -> p.opis)"))
+    if "cn_description_by_part" in required:
+        out = out.withColumn("cn_description_by_part", expr("transform(cn_parts_normalized, p -> p.opis)"))
 
     if "numCriteria" in required:
         out = out.withColumn(
@@ -687,8 +687,8 @@ def build_silver(df: DataFrame) -> DataFrame:
     legacy_required = {
         "contractors",
         "htmlExtracted",
-        "ulica",
-        "kod_pocztowy",
+        "street",
+        "postal_code",
         "ai_street_512",
         "ai_contract_value_35",
         "ai_prior_market_consultation_31",
@@ -703,13 +703,13 @@ def build_silver(df: DataFrame) -> DataFrame:
         "changed_notice_number",
         "changed_notice_version",
         "changes",
-        "trn_ogloszenie_dotyczy",
+        "trn_notice_concerns",
         "trn_parts",
-        "cn_ogloszenie_dotyczy",
-        "cn_kryteria_oceny_by_part",
+        "cn_notice_concerns",
+        "cn_award_criteria_by_part",
         "cn_criteria_aspects_4310",
         "cn_criteria_aspects_4310_flag",
-        "cn_opis_by_part",
+        "cn_description_by_part",
         "cpvCodes",
         "provinceName",
         "clientTypeName",
