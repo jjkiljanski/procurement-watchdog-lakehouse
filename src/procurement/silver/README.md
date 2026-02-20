@@ -72,6 +72,10 @@ Key semantics:
 - Spark validation runs after each day write (`build_silver.py`, `build_silver_backfill.py`) and reports:
 - `street` non-null/non-empty coverage,
 - `postal_code` format validity (`XX-XXX`) for present values.
+- Additional batch-level checks: required key nulls (`objectId`, `organizationId`, `caseId`),
+- publication date parseability + day/partition consistency, duplicate `objectId`,
+- `noticeStage` consistency by `noticeType`, CPV code format, negative `biddingWindowDays`,
+- invalid `submittingOffersDate`, and missing `procedureResultParsed` for `TenderResultNotice`.
 - `CircumstancesFulfillmentNotice` specific table drops `numCriteria`, `priceWeight`,
 - `nonPriceWeightSum`, `contractorNameNormalized`, and `htmlExtracted`.
 - `SmallContractNotice` specific table drops `contractors`, `numCriteria`, `priceWeight`,

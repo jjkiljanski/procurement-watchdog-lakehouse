@@ -37,7 +37,7 @@ from procurement.silver.notice_types import (
     normalized_notice_type_token,
     specific_columns_for_notice_type,
 )
-from procurement.silver.validation import validate_common_envelope
+from procurement.silver.validation import validate_common_envelope, validate_notice_batch
 
 
 ENVELOPE_COLUMNS = [
@@ -378,6 +378,11 @@ def main() -> None:
             batch_silver_rows = batch_silver.count()
             batch_profile["transform_materialize_sec"] = round(time.perf_counter() - t3, 3)
             batch_profile["transformed_rows"] = batch_silver_rows
+            batch_profile["validation"] = validate_notice_batch(
+                batch_silver,
+                target_date=target_date,
+                notice_type=notice_type,
+            )
 
             specific_df = _select_existing(batch_silver, specific_columns)
             specific_df = _compact_html_extracted(specific_df, html_fields)

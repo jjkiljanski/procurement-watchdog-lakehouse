@@ -37,7 +37,7 @@ from procurement.silver.notice_types import (
     specific_columns_for_notice_type,
 )
 from procurement.silver.spark_transforms import build_silver_for_notice_type
-from procurement.silver.validation import validate_common_envelope
+from procurement.silver.validation import validate_common_envelope, validate_notice_batch
 
 setup_logging()
 log = logging.getLogger(__name__)
@@ -302,6 +302,11 @@ def _process_day(
         ).withColumn("publicationDateDay", to_date(col("publicationDate")).cast("string"))
         batch_silver = batch_silver.persist(StorageLevel.MEMORY_AND_DISK)
         _ = batch_silver.count()  # materialize once
+        batch_validation = validate_notice_batch(
+            batch_silver,
+            target_date=day,
+            notice_type=notice_type,
+        )
 
         specific_df = _select_existing(batch_silver, specific_columns)
         specific_df = _compact_html_extracted(specific_df, html_fields)
@@ -328,6 +333,7 @@ def _process_day(
                 "noticeType": notice_token,
                 "rows": batch_count,
                 "shuffle_partitions": per_batch_shuffle,
+                "validation": batch_validation,
                 "batch_total_sec": round(time.perf_counter() - batch_t0, 3),
                 "batch_path": batch_path,
             }
