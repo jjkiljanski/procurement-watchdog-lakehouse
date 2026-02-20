@@ -976,13 +976,17 @@ _DETAIL_EXTRACTORS: dict[str, tuple[str, object]] = {
 
 
 def parse_cpv_codes(cpv_raw: str) -> list[str]:
-    """Parse cpvCode string into a list of individual CPV entries.
+    """Parse cpvCode string into canonical CPV codes only.
 
-    Input:  "45000000-7 (Roboty budowlane),90620000-9 (UsĹ‚ugi odĹ›nieĹĽania)"
-    Output: ["45000000-7 (Roboty budowlane)", "90620000-9 (UsĹ‚ugi odĹ›nieĹĽania)"]
+    Input:  "45000000-7 (Roboty budowlane),90620000-9 (Uslugi odsniezania)"
+    Output: ["45000000-7", "90620000-9"]
     """
-    # Split on comma followed by a digit (start of next CPV code)
-    return [part.strip() for part in re.split(r",(?=\d)", cpv_raw) if part.strip()]
+    # Keep only canonical code tokens; ignore human-readable descriptions.
+    matches = re.findall(r"\b(\d{8}-\d)\b", cpv_raw)
+    if not matches:
+        return []
+    # Preserve order and deduplicate.
+    return list(dict.fromkeys(matches))
 
 
 # --- Main parse entry point ---

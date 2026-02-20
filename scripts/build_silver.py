@@ -37,7 +37,11 @@ from procurement.silver.notice_types import (
     normalized_notice_type_token,
     specific_columns_for_notice_type,
 )
-from procurement.silver.validation import validate_common_envelope, validate_notice_batch
+from procurement.silver.validation import (
+    summarize_notice_validation,
+    validate_common_envelope,
+    with_notice_validation_errors,
+)
 
 
 ENVELOPE_COLUMNS = [
@@ -251,6 +255,7 @@ def main() -> None:
         .config("spark.pyspark.python", sys.executable)
         .config("spark.pyspark.driver.python", sys.executable)
         .config("spark.sql.ansi.enabled", "false")
+        .config("spark.sql.mapKeyDedupPolicy", "LAST_WIN")
         .getOrCreate()
     )
     if args.shuffle_partitions > 0:
@@ -258,7 +263,7 @@ def main() -> None:
         log.info("Set spark.sql.shuffle.partitions=%d", args.shuffle_partitions)
 
     try:
-        from pyspark.sql.functions import col, lit, to_date
+        from pyspark.sql.functions import col, lit, size, to_date
 
         bronze_root = Path(args.bronze_dir) / "notices"
         bronze_paths = sorted(
@@ -307,6 +312,8 @@ def main() -> None:
         envelope_root = str(silver_dir / "common_envelope")
         specific_root = silver_dir / "notice_type_tables"
         envelope_day_dir = silver_dir / "common_envelope" / f"publicationDateDay={target_date}"
+        quarantine_root = str(silver_dir / "_quarantine" / "notice_rows")
+        quarantine_day_dir = silver_dir / "_quarantine" / "notice_rows" / f"publicationDateDay={target_date}"
 
         # Overwrite only touched publicationDateDay partitions.
         spark.conf.set("spark.sql.sources.partitionOverwriteMode", "dynamic")
@@ -314,8 +321,12 @@ def main() -> None:
         if envelope_day_dir.exists():
             shutil.rmtree(envelope_day_dir, ignore_errors=False)
             log.info("Cleared existing envelope day partition: %s", envelope_day_dir)
+        if quarantine_day_dir.exists():
+            shutil.rmtree(quarantine_day_dir, ignore_errors=False)
+            log.info("Cleared existing quarantine day partition: %s", quarantine_day_dir)
 
         total_input_rows = 0
+        total_invalid_rows = 0
         for notice_type, batch_path in notice_batches:
             batch_profile: dict = {"noticeType": normalized_notice_type_token(notice_type)}
             t0 = time.perf_counter()
@@ -378,13 +389,37 @@ def main() -> None:
             batch_silver_rows = batch_silver.count()
             batch_profile["transform_materialize_sec"] = round(time.perf_counter() - t3, 3)
             batch_profile["transformed_rows"] = batch_silver_rows
-            batch_profile["validation"] = validate_notice_batch(
+
+            batch_silver, validation_rules = with_notice_validation_errors(
                 batch_silver,
                 target_date=target_date,
                 notice_type=notice_type,
             )
+            batch_profile["validation"] = summarize_notice_validation(
+                batch_silver,
+                target_date=target_date,
+                notice_type=notice_type,
+                rules=validation_rules,
+            )
+            invalid_batch = batch_silver.filter(size(col("__validation_errors")) > 0)
+            valid_batch = batch_silver.filter(size(col("__validation_errors")) == 0).drop("__validation_errors")
+            batch_invalid_rows = invalid_batch.count()
+            batch_valid_rows = batch_silver_rows - batch_invalid_rows
+            total_invalid_rows += batch_invalid_rows
+            batch_profile["invalid_rows"] = batch_invalid_rows
+            batch_profile["valid_rows"] = batch_valid_rows
+            if batch_invalid_rows > 0:
+                (
+                    invalid_batch.withColumn(
+                        "validation_notice_type",
+                        lit(notice_type_token),
+                    )
+                    .write.mode("append")
+                    .partitionBy("publicationDateDay")
+                    .parquet(quarantine_root)
+                )
 
-            specific_df = _select_existing(batch_silver, specific_columns)
+            specific_df = _select_existing(valid_batch, specific_columns)
             specific_df = _compact_html_extracted(specific_df, html_fields)
             specific_out = str(specific_root / f"noticeType={notice_type_token}")
             t4 = time.perf_counter()
@@ -395,7 +430,7 @@ def main() -> None:
             )
             batch_profile["write_specific_sec"] = round(time.perf_counter() - t4, 3)
 
-            envelope_batch = _select_existing(batch_silver, ENVELOPE_COLUMNS)
+            envelope_batch = _select_existing(valid_batch, ENVELOPE_COLUMNS)
             t5 = time.perf_counter()
             (
                 envelope_batch.write.mode("append")
@@ -426,6 +461,7 @@ def main() -> None:
         )
         log.info("Silver validation metrics day=%s: %s", target_date, envelope_validation_metrics)
         profile["total_input_rows"] = total_input_rows
+        profile["total_quarantined_rows"] = total_invalid_rows
         profile["validation"] = {"common_envelope": envelope_validation_metrics}
         profile["run_total_sec"] = round(time.perf_counter() - run_start, 3)
         if args.profile_json:
@@ -462,6 +498,7 @@ def main() -> None:
             "outputs": {
                 "common_envelope": str(silver_dir / "common_envelope" / f"publicationDateDay={target_date}"),
                 "notice_type_tables_root": str(silver_dir / "notice_type_tables"),
+                "quarantine_partition": str(quarantine_day_dir),
                 "profile_json": str(Path(args.profile_json)) if args.profile_json else None,
             },
             "performance": profile,

@@ -18,6 +18,7 @@ import argparse
 import json
 import logging
 import os
+import shutil
 import sys
 import time
 from datetime import UTC, date, datetime, timedelta
@@ -37,7 +38,11 @@ from procurement.silver.notice_types import (
     specific_columns_for_notice_type,
 )
 from procurement.silver.spark_transforms import build_silver_for_notice_type
-from procurement.silver.validation import validate_common_envelope, validate_notice_batch
+from procurement.silver.validation import (
+    summarize_notice_validation,
+    validate_common_envelope,
+    with_notice_validation_errors,
+)
 
 setup_logging()
 log = logging.getLogger(__name__)
@@ -228,8 +233,8 @@ def _process_day(
     repartition: int,
     state: dict,
     state_path: Path,
-) -> tuple[int, list[dict], list[str], dict[str, int | float]]:
-    from pyspark.sql.functions import col, to_date
+) -> tuple[int, int, list[dict], list[str], dict[str, int | float]]:
+    from pyspark.sql.functions import col, lit, size, to_date
     from pyspark.storagelevel import StorageLevel
 
     bronze_root = bronze_dir / "notices"
@@ -246,6 +251,10 @@ def _process_day(
     _save_state(state_path, state)
 
     spark.conf.set("spark.sql.sources.partitionOverwriteMode", "dynamic")
+    quarantine_root = silver_dir / "_quarantine" / "notice_rows"
+    quarantine_day_dir = quarantine_root / f"publicationDateDay={day}"
+    if quarantine_day_dir.exists():
+        shutil.rmtree(quarantine_day_dir, ignore_errors=False)
     notice_batches: list[tuple[str | None, str]] = []
     for p in bronze_paths:
         token = p.parent.name.replace("noticeType=", "")
@@ -260,8 +269,10 @@ def _process_day(
     )
 
     total_rows = 0
+    total_invalid_rows = 0
     batch_profiles: list[dict] = []
     envelope_tmp = silver_dir / "_tmp" / "silver_backfill_envelope" / f"day={day}" / f"attempt={day_state['attempts']}"
+    quarantine_tmp = silver_dir / "_tmp" / "silver_backfill_quarantine" / f"day={day}" / f"attempt={day_state['attempts']}"
     for notice_type, batch_path in notice_batches:
         batch_t0 = time.perf_counter()
         notice_token = normalized_notice_type_token(notice_type)
@@ -301,14 +312,25 @@ def _process_day(
             required_columns=required_columns,
         ).withColumn("publicationDateDay", to_date(col("publicationDate")).cast("string"))
         batch_silver = batch_silver.persist(StorageLevel.MEMORY_AND_DISK)
-        _ = batch_silver.count()  # materialize once
-        batch_validation = validate_notice_batch(
+        batch_silver_rows = batch_silver.count()  # materialize once
+        batch_silver, validation_rules = with_notice_validation_errors(
             batch_silver,
             target_date=day,
             notice_type=notice_type,
         )
+        batch_validation = summarize_notice_validation(
+            batch_silver,
+            target_date=day,
+            notice_type=notice_type,
+            rules=validation_rules,
+        )
+        invalid_batch = batch_silver.filter(size(col("__validation_errors")) > 0)
+        valid_batch = batch_silver.filter(size(col("__validation_errors")) == 0).drop("__validation_errors")
+        batch_invalid_rows = invalid_batch.count()
+        batch_valid_rows = batch_silver_rows - batch_invalid_rows
+        total_invalid_rows += batch_invalid_rows
 
-        specific_df = _select_existing(batch_silver, specific_columns)
+        specific_df = _select_existing(valid_batch, specific_columns)
         specific_df = _compact_html_extracted(specific_df, html_fields)
         specific_out = str(silver_dir / "notice_type_tables" / f"noticeType={notice_token}")
         (
@@ -317,8 +339,14 @@ def _process_day(
             .parquet(specific_out)
         )
 
-        envelope_df = _select_existing(batch_silver, ENVELOPE_COLUMNS)
+        envelope_df = _select_existing(valid_batch, ENVELOPE_COLUMNS)
         envelope_df.write.mode("append").parquet(str(envelope_tmp))
+        if batch_invalid_rows > 0:
+            (
+                invalid_batch.withColumn("validation_notice_type", lit(notice_token))
+                .write.mode("append")
+                .parquet(str(quarantine_tmp))
+            )
         batch_silver.unpersist()
 
         log.info(
@@ -334,6 +362,8 @@ def _process_day(
                 "rows": batch_count,
                 "shuffle_partitions": per_batch_shuffle,
                 "validation": batch_validation,
+                "invalid_rows": batch_invalid_rows,
+                "valid_rows": batch_valid_rows,
                 "batch_total_sec": round(time.perf_counter() - batch_t0, 3),
                 "batch_path": batch_path,
             }
@@ -346,6 +376,13 @@ def _process_day(
         .partitionBy("publicationDateDay")
         .parquet(str(silver_dir / "common_envelope"))
     )
+    if total_invalid_rows > 0:
+        quarantine_day_df = spark.read.parquet(str(quarantine_tmp))
+        (
+            quarantine_day_df.write.mode("overwrite")
+            .partitionBy("publicationDateDay")
+            .parquet(str(quarantine_root))
+        )
     envelope_validation_df = spark.read.parquet(
         str(silver_dir / "common_envelope" / f"publicationDateDay={day}")
     )
@@ -355,8 +392,9 @@ def _process_day(
     day_state["completed_at"] = datetime.now(UTC).isoformat().replace("+00:00", "Z")
     day_state["current_notice_type"] = None
     day_state["rows"] = total_rows
+    day_state["quarantined_rows"] = total_invalid_rows
     _save_state(state_path, state)
-    return total_rows, batch_profiles, [p for _, p in notice_batches], validation_metrics
+    return total_rows, total_invalid_rows, batch_profiles, [p for _, p in notice_batches], validation_metrics
 
 
 def _parse_args() -> argparse.Namespace:
@@ -429,6 +467,7 @@ def main() -> None:
         .config("spark.pyspark.python", sys.executable)
         .config("spark.pyspark.driver.python", sys.executable)
         .config("spark.sql.ansi.enabled", "false")
+        .config("spark.sql.mapKeyDedupPolicy", "LAST_WIN")
         .getOrCreate()
     )
     try:
@@ -446,7 +485,7 @@ def main() -> None:
         for day in pending_days:
             log.info("Backfill day start: %s", day)
             try:
-                rows, batch_profiles, input_paths, validation_metrics = _process_day(
+                rows, quarantined_rows, batch_profiles, input_paths, validation_metrics = _process_day(
                     spark=spark,
                     day=day,
                     bronze_dir=bronze_dir,
@@ -477,9 +516,11 @@ def main() -> None:
                     "outputs": {
                         "common_envelope_partition": str(silver_dir / "common_envelope" / f"publicationDateDay={day}"),
                         "notice_type_tables_root": str(silver_dir / "notice_type_tables"),
+                        "quarantine_partition": str(silver_dir / "_quarantine" / "notice_rows" / f"publicationDateDay={day}"),
                     },
                     "performance": {
                         "rows": rows,
+                        "quarantined_rows": quarantined_rows,
                         "batches": batch_profiles,
                         "validation": {"common_envelope": validation_metrics},
                     },

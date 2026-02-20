@@ -26,6 +26,7 @@ Outputs:
 - `data/silver/common_envelope/publicationDateDay=YYYY-MM-DD/`
 - `data/silver/notice_type_tables/noticeType=<TYPE>/publicationDateDay=YYYY-MM-DD/`
 - `data/silver/case_derived_facts/asOfDate=YYYY-MM-DD/` (built by `build_case_derived_facts.py`)
+- `data/silver/_quarantine/notice_rows/publicationDateDay=YYYY-MM-DD/` (rows failing Silver row-level validation)
 
 Processing model:
 
@@ -76,6 +77,8 @@ Key semantics:
 - publication date parseability + day/partition consistency, duplicate `objectId`,
 - `noticeStage` consistency by `noticeType`, CPV code format, negative `biddingWindowDays`,
 - invalid `submittingOffersDate`, and missing `procedureResultParsed` for `TenderResultNotice`.
+- Rows failing row-level checks are skipped from main Silver outputs and written to `_quarantine`
+- with `__validation_errors` and `validation_notice_type` for triage.
 - `CircumstancesFulfillmentNotice` specific table drops `numCriteria`, `priceWeight`,
 - `nonPriceWeightSum`, `contractorNameNormalized`, and `htmlExtracted`.
 - `SmallContractNotice` specific table drops `contractors`, `numCriteria`, `priceWeight`,

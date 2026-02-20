@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from procurement.silver.html_parser import (
     _parse_pln_value,
+    parse_html_agreement_intention_light,
     parse_cpv_codes,
     parse_html,
     parse_html_contract_performing_light,
@@ -71,6 +72,13 @@ AGREEMENT_UPDATE_HTML = """\
 <h3 class="mb-0">4.4.) WartoĹ›Ä‡ umowy/umowy ramowej: <span class="normal">996945,00                PLN</span></h3>
 </main></body></html>"""
 
+ADDRESS_14_ONLY_HTML = """\
+<html><head></head><body><main>
+<h3 class="mb-0">1.4.1.) Ulica: <span class="normal">ul. Test 14</span></h3>
+<h3 class="mb-0">1.4.3.) Kod pocztowy: <span class="normal">11-222</span></h3>
+<h3 class="mb-0">1.4.6.) Lokalizacja NUTS 3: <span class="normal">PL111 - Test NUTS</span></h3>
+</main></body></html>"""
+
 AGREEMENT_INTENTION_HTML = """\
 <html><head></head><body><main>
 <h3 class="mb-0">3.5.) WartoĹ›Ä‡ zamĂłwienia: <span class="normal">2509756,10                    \xa0PLN</span></h3>
@@ -87,6 +95,18 @@ AGREEMENT_INTENTION_ADDRESS_14_HTML = """\
 <html><head></head><body><main>
 <h3 class="mb-0">1.4.1.) Ulica: <span class="normal">ul. Dluga 10</span></h3>
 <h3 class="mb-0">1.4.3.) Kod pocztowy: <span class="normal">12-345</span></h3>
+</main></body></html>"""
+
+AGREEMENT_INTENTION_ADDRESS_15_HTML = """\
+<html><head></head><body><main>
+<h3 class="mb-0">1.5.1.) Ulica: <span class="normal">ul. Tysiaclecia 5</span></h3>
+<h3 class="mb-0">1.5.3.) Kod pocztowy: <span class="normal">97-500</span></h3>
+</main></body></html>"""
+
+AGREEMENT_INTENTION_ADDRESS_512_514_ONLY_HTML = """\
+<html><head></head><body><main>
+<h3 class="mb-0">5.1.2.) Ulica: <span class="normal">ul. Malicka 42</span></h3>
+<h3 class="mb-0">5.1.4.) Kod pocztowy: <span class="normal">42-290</span></h3>
 </main></body></html>"""
 
 CONTRACT_NOTICE_HTML = """\
@@ -387,6 +407,36 @@ class TestAddressExtraction:
         assert r.ulica == "ul. Dluga 10"
         assert r.kod_pocztowy == "12-345"
 
+    def test_agreement_intention_address_uses_15xx_fields(self):
+        r = parse_html(AGREEMENT_INTENTION_ADDRESS_15_HTML, notice_type="AgreementIntentionNotice")
+        assert r.ulica == "ul. Tysiaclecia 5"
+        assert r.kod_pocztowy == "97-500"
+
+    def test_agreement_intention_light_address_uses_15xx_fields(self):
+        r = parse_html_agreement_intention_light(AGREEMENT_INTENTION_ADDRESS_15_HTML)
+        assert r["ulica"] == "ul. Tysiaclecia 5"
+        assert r["kod_pocztowy"] == "97-500"
+
+    def test_agreement_intention_light_address_uses_514_fallback(self):
+        r = parse_html_agreement_intention_light(AGREEMENT_INTENTION_ADDRESS_512_514_ONLY_HTML)
+        assert r["ulica"] == "ul. Malicka 42"
+        assert r["kod_pocztowy"] == "42-290"
+
+    def test_agreement_update_address_uses_14xx_fields(self):
+        r = parse_html(ADDRESS_14_ONLY_HTML, notice_type="AgreementUpdateNotice")
+        assert r.ulica == "ul. Test 14"
+        assert r.kod_pocztowy == "11-222"
+
+    def test_concession_address_uses_14xx_fields(self):
+        r = parse_html(ADDRESS_14_ONLY_HTML, notice_type="ConcessionNotice")
+        assert r.ulica == "ul. Test 14"
+        assert r.kod_pocztowy == "11-222"
+
+    def test_small_contract_address_uses_14xx_fields(self):
+        r = parse_html(ADDRESS_14_ONLY_HTML, notice_type="SmallContractNotice")
+        assert r.ulica == "ul. Test 14"
+        assert r.kod_pocztowy == "11-222"
+
 
 # --- Description extraction ---
 
@@ -672,20 +722,21 @@ class TestUnsupportedTypeValues:
 class TestParseCpvCodes:
     def test_single_code(self):
         result = parse_cpv_codes("79710000-4 (UsĹ‚ugi ochroniarskie)")
-        assert result == ["79710000-4 (UsĹ‚ugi ochroniarskie)"]
+        assert result == ["79710000-4"]
 
     def test_multiple_codes(self):
         raw = "45000000-7 (Roboty budowlane),90620000-9 (UsĹ‚ugi odĹ›nieĹĽania)"
         result = parse_cpv_codes(raw)
         assert len(result) == 2
-        assert result[0] == "45000000-7 (Roboty budowlane)"
-        assert result[1] == "90620000-9 (UsĹ‚ugi odĹ›nieĹĽania)"
+        assert result[0] == "45000000-7"
+        assert result[1] == "90620000-9"
 
     def test_codes_with_commas_in_description(self):
         # Comma inside parenthetical description should NOT split
         raw = "45000000-7 (Roboty budowlane),71322000-1 (UsĹ‚ugi inĹĽynierii projektowej w zakresie inĹĽynierii lÄ…dowej i wodnej)"
         result = parse_cpv_codes(raw)
         assert len(result) == 2
+        assert result == ["45000000-7", "71322000-1"]
 
 
 # --- General ---
@@ -792,6 +843,16 @@ class TestContractExecution:
     def test_contract_value_not_confused_with_144_light(self):
         r = parse_html_contract_performing_light(CONTRACT_PERFORMING_WITH_144_COLLISION_HTML)
         assert r["cpn_contract_value_44"] == pytest.approx(624212.60)
+
+    def test_contract_performing_light_does_not_use_41_43_for_address(self):
+        html = """\
+<html><head></head><body><main>
+<h3 class="mb-0">4.1.) Data zawarcia umowy: <span class="normal">2025-01-01</span></h3>
+<h3 class="mb-0">4.3.) Dane wykonawcy, z ktorym zawarto umowe:</h3>
+</main></body></html>"""
+        r = parse_html_contract_performing_light(html)
+        assert r["ulica"] is None
+        assert r["kod_pocztowy"] is None
 
 
 # --- Detail extraction: NoticeChange ---
