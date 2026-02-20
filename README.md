@@ -17,6 +17,20 @@ Core goals:
 - safe daily reruns (date-partition overwrite)
 - stable schemas for downstream analytics/reporting
 
+## Operating Modes
+
+- `Daily Incremental (CRON)`:
+  - fetch yesterday to `bronze_raw`,
+  - build Bronze for that day,
+  - build Silver for that day,
+  - update `case_derived_facts` incrementally,
+  - build Gold daily marts/signals.
+- `Massive Backfill`:
+  - first fetch large date ranges to `bronze_raw`,
+  - then run Spark transforms (`bronze -> silver -> case_derived -> gold`) in long-lived jobs.
+
+See `docs/OPERATING_MODES.md` for exact sequencing and retry semantics.
+
 ## Current Data Layout
 
 ### Bronze
@@ -24,6 +38,7 @@ Core goals:
 - `bronze_raw` input files: `data/bronze_raw/bzp_YYYY-MM-DD.json`
 - `bronze` canonical Parquet: `data/bronze/notices/noticeType=<TYPE>/publicationDateDay=YYYY-MM-DD/`
 - Bronze validation errors: `data/bronze/errors/bzp_YYYY-MM-DD_errors.json`
+- API fetch and Bronze Spark conversion are intentionally separated (`bronze_raw` -> `bronze`) to improve backfill throughput and failure isolation.
 
 ### Silver
 

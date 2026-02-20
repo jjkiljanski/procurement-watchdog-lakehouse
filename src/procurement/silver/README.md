@@ -16,6 +16,11 @@ Primary build entrypoint:
 - `scripts/build_silver.py`
 - `scripts/build_case_derived_facts.py` (separate lifecycle projection job)
 
+Operational modes:
+
+- Daily: build one day from Bronze and run `case_derived_facts` in `incremental` mode.
+- Backfill: process many days from Bronze, then run `case_derived_facts` `full` for initial snapshot.
+
 Outputs:
 
 - `data/silver/common_envelope/publicationDateDay=YYYY-MM-DD/`
@@ -76,6 +81,10 @@ Key semantics:
 - `case_derived_facts` is case-grain lifecycle state with two modes:
 - `full`: rebuild from all Silver notices up to `asOfDate`.
 - `incremental`: recompute only cases touched by latest daily notices and merge with prior snapshot.
+
+See also:
+
+- `docs/OPERATING_MODES.md`
 
 Reporting:
 
