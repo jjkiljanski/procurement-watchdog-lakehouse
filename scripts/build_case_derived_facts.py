@@ -1,4 +1,4 @@
-"""Build Silver case-derived lifecycle facts.
+"""Build Silver case-derived lifecycle facts with single-writer protocol.
 
 Modes:
   full:
@@ -11,17 +11,21 @@ Reads:
   data/silver/notice_type_tables/noticeType=*/publicationDateDay=YYYY-MM-DD/
 
 Writes:
-  data/silver/case_derived_facts/asOfDate=YYYY-MM-DD/
+  data/silver/case_derived_facts/snapshots/version=<RUN_ID>/data/
+  data/silver/case_derived_facts/CURRENT.json
+  data/silver/case_derived_facts/_meta/case_derived.lock
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import os
-import shutil
 import sys
-from datetime import date, datetime, timedelta
+import time
+import uuid
+from datetime import UTC, date, datetime, timedelta
 from functools import reduce
 from pathlib import Path
 
@@ -103,12 +107,35 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-dir",
         default="data/silver/case_derived_facts",
-        help="Output directory for case_derived_facts snapshots",
+        help="Output directory for case_derived_facts (snapshots + pointer)",
     )
     parser.add_argument(
         "--spark-master",
         default=os.environ.get("SPARK_MASTER", "local[*]"),
         help="Spark master string (e.g. local[*], local[2])",
+    )
+    parser.add_argument(
+        "--lock-timeout-sec",
+        type=int,
+        default=1800,
+        help="Max wait for lock acquisition in seconds",
+    )
+    parser.add_argument(
+        "--lock-poll-sec",
+        type=int,
+        default=5,
+        help="Polling interval while waiting for lock",
+    )
+    parser.add_argument(
+        "--lock-stale-sec",
+        type=int,
+        default=21600,
+        help="Age threshold to consider lock stale (seconds)",
+    )
+    parser.add_argument(
+        "--break-stale-lock",
+        action="store_true",
+        help="Allow removing stale lock files",
     )
     return parser.parse_args()
 
@@ -171,7 +198,7 @@ def _read_notices_merged(
         safe_col(envelope_raw, "organizationId", "string").alias("env_organizationId"),
         safe_col(envelope_raw, "noticeType", "string").alias("env_noticeType"),
         safe_col(envelope_raw, "publicationDate", "string").alias("env_publicationDate"),
-        safe_col(envelope_raw, "submittingOffersDate", "string").alias("submittingOffersDate"),
+        safe_col(envelope_raw, "submittingOffersDate", "string").alias("env_submittingOffersDate"),
     )
 
     merged = specific_raw.join(envelope_slim, on="objectId", how="left").select(
@@ -194,7 +221,7 @@ def _read_notices_merged(
         ).alias("publicationDate"),
         coalesce(
             safe_col(specific_raw, "submittingOffersDate", "string"),
-            safe_col(envelope_slim, "submittingOffersDate", "string"),
+            safe_col(envelope_slim, "env_submittingOffersDate", "string"),
         ).alias("submittingOffersDate"),
         safe_col(specific_raw, "htmlExtracted", "struct<notice_change:struct<changes:array<struct<changed_section:string,change_description:string>>>,contract_execution:struct<contract_date:string,executed_on_time:boolean,executed_properly:boolean,execution_end_date:string,execution_period:string,num_changes:bigint>,values:struct<contract_value:double,total_paid:double>>").alias(
             "htmlExtracted"
@@ -382,36 +409,144 @@ def _build_case_derived(notices: DataFrame) -> DataFrame:
     )
 
 
-def _list_snapshot_dates(output_dir: Path) -> list[str]:
-    if not output_dir.exists():
-        return []
-    out = []
+def _now_iso() -> str:
+    return datetime.now(UTC).isoformat().replace("+00:00", "Z")
+
+
+def _atomic_write_json(path: Path, payload: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp.replace(path)
+
+
+def _lock_path(output_dir: Path) -> Path:
+    return output_dir / "_meta" / "case_derived.lock"
+
+
+def _pointer_path(output_dir: Path) -> Path:
+    return output_dir / "CURRENT.json"
+
+
+def _acquire_lock(
+    output_dir: Path,
+    timeout_sec: int,
+    poll_sec: int,
+    stale_sec: int,
+    break_stale_lock: bool,
+) -> str:
+    lock = _lock_path(output_dir)
+    token = str(uuid.uuid4())
+    deadline = time.time() + timeout_sec
+    lock.parent.mkdir(parents=True, exist_ok=True)
+    while True:
+        payload = {
+            "token": token,
+            "pid": os.getpid(),
+            "started_at": _now_iso(),
+            "host": os.environ.get("COMPUTERNAME") or os.environ.get("HOSTNAME"),
+        }
+        try:
+            fd = os.open(str(lock), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                json.dump(payload, f, ensure_ascii=False, indent=2)
+            return token
+        except FileExistsError:
+            if break_stale_lock and lock.exists():
+                age = time.time() - lock.stat().st_mtime
+                if age > stale_sec:
+                    log.warning("Breaking stale lock %s age=%.1fs", lock, age)
+                    lock.unlink(missing_ok=True)
+                    continue
+            if time.time() >= deadline:
+                raise TimeoutError(f"Timed out acquiring lock: {lock}")
+            time.sleep(max(1, poll_sec))
+
+
+def _release_lock(output_dir: Path, token: str) -> None:
+    lock = _lock_path(output_dir)
+    if not lock.exists():
+        return
+    try:
+        payload = json.loads(lock.read_text(encoding="utf-8"))
+    except Exception:
+        return
+    if payload.get("token") == token:
+        lock.unlink(missing_ok=True)
+
+
+def _snapshot_root(output_dir: Path) -> Path:
+    return output_dir / "snapshots"
+
+
+def _list_snapshots(output_dir: Path) -> list[dict]:
+    root = _snapshot_root(output_dir)
+    out: list[dict] = []
+    if root.exists():
+        for manifest in root.glob("version=*/manifest.json"):
+            try:
+                m = json.loads(manifest.read_text(encoding="utf-8"))
+                if m.get("asOfDate") and m.get("version"):
+                    m["data_path"] = str(manifest.parent / "data")
+                    out.append(m)
+            except Exception:
+                continue
+    # Backward compatibility with legacy paths.
     for p in output_dir.glob("asOfDate=*"):
         if p.is_dir():
-            out.append(p.name.replace("asOfDate=", ""))
-    return sorted(out)
+            asof = p.name.replace("asOfDate=", "")
+            out.append(
+                {
+                    "version": f"legacy-{asof}",
+                    "asOfDate": asof,
+                    "data_path": str(p),
+                    "legacy": True,
+                }
+            )
+    return sorted(out, key=lambda x: (x.get("asOfDate", ""), x.get("version", "")))
 
 
-def _latest_snapshot_before(output_dir: Path, target_date: str) -> str | None:
-    dates = [d for d in _list_snapshot_dates(output_dir) if d < target_date]
-    return dates[-1] if dates else None
+def _latest_snapshot_before(output_dir: Path, target_date: str) -> dict | None:
+    items = [s for s in _list_snapshots(output_dir) if s.get("asOfDate", "") < target_date]
+    return items[-1] if items else None
 
 
-def _earliest_snapshot_after(output_dir: Path, target_date: str) -> str | None:
-    dates = [d for d in _list_snapshot_dates(output_dir) if d > target_date]
-    return dates[0] if dates else None
+def _earliest_snapshot_after(output_dir: Path, target_date: str) -> dict | None:
+    items = [s for s in _list_snapshots(output_dir) if s.get("asOfDate", "") > target_date]
+    return items[0] if items else None
 
 
 def _parse_iso_day(day: str) -> date:
     return datetime.strptime(day, "%Y-%m-%d").date()
 
 
-def _write_snapshot(df: DataFrame, output_dir: Path, target_date: str) -> int:
-    out_path = output_dir / f"asOfDate={target_date}"
-    if out_path.exists():
-        shutil.rmtree(out_path)
-    df.write.mode("overwrite").parquet(str(out_path))
-    return df.count()
+def _write_snapshot(df: DataFrame, output_dir: Path, target_date: str, mode: str) -> dict:
+    run_id = f"{target_date}_{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}_{uuid.uuid4().hex[:8]}"
+    version_dir = _snapshot_root(output_dir) / f"version={run_id}"
+    data_path = version_dir / "data"
+    rows = df.count()
+    df.write.mode("overwrite").parquet(str(data_path))
+    manifest = {
+        "version": run_id,
+        "asOfDate": target_date,
+        "mode": mode,
+        "rows": rows,
+        "created_at": _now_iso(),
+        "data_path": str(data_path),
+    }
+    _atomic_write_json(version_dir / "manifest.json", manifest)
+    return manifest
+
+
+def _update_pointer(output_dir: Path, manifest: dict) -> None:
+    pointer = {
+        "current_version": manifest["version"],
+        "asOfDate": manifest["asOfDate"],
+        "updated_at": _now_iso(),
+        "rows": manifest["rows"],
+        "data_path": manifest["data_path"],
+    }
+    _atomic_write_json(_pointer_path(output_dir), pointer)
 
 
 def _touched_case_ids(spark: "SparkSession", silver_dir: Path, target_date: str) -> DataFrame:
@@ -468,54 +603,73 @@ def main() -> None:
 
     silver_dir = Path(args.silver_dir)
     output_dir = Path(args.output_dir)
-
-    from pyspark.sql import SparkSession
-
-    spark = (
-        SparkSession.builder.appName("bzp-silver-case-derived")
-        .master(args.spark_master)
-        .config("spark.pyspark.python", sys.executable)
-        .config("spark.pyspark.driver.python", sys.executable)
-        .config("spark.sql.ansi.enabled", "false")
-        .getOrCreate()
+    lock_token = _acquire_lock(
+        output_dir=output_dir,
+        timeout_sec=args.lock_timeout_sec,
+        poll_sec=args.lock_poll_sec,
+        stale_sec=args.lock_stale_sec,
+        break_stale_lock=args.break_stale_lock,
     )
 
+    from pyspark.sql import SparkSession
+    spark = None
     try:
+        spark = (
+            SparkSession.builder.appName("bzp-silver-case-derived")
+            .master(args.spark_master)
+            .config("spark.pyspark.python", sys.executable)
+            .config("spark.pyspark.driver.python", sys.executable)
+            .config("spark.sql.ansi.enabled", "false")
+            .getOrCreate()
+        )
         output_dir.mkdir(parents=True, exist_ok=True)
         if args.mode == "full":
             notices = _read_notices_merged(spark, silver_dir, target_date)
             case_df = _build_case_derived(notices).withColumn("asOfDate", lit(target_date))
-            rows = _write_snapshot(case_df, output_dir, target_date)
-            log.info("Built full case_derived_facts snapshot asOfDate=%s rows=%d", target_date, rows)
+            manifest = _write_snapshot(case_df, output_dir, target_date, mode="full")
+            _update_pointer(output_dir, manifest)
+            log.info(
+                "Built full case_derived_facts snapshot asOfDate=%s rows=%d version=%s",
+                target_date,
+                manifest["rows"],
+                manifest["version"],
+            )
             return
 
-        prev_date = _latest_snapshot_before(output_dir, target_date)
-        next_date = _earliest_snapshot_after(output_dir, target_date)
+        prev_snap = _latest_snapshot_before(output_dir, target_date)
+        next_snap = _earliest_snapshot_after(output_dir, target_date)
 
-        if prev_date is None and next_date is None:
+        if prev_snap is None and next_snap is None:
             log.warning("No neighboring snapshot found around %s, falling back to full mode", target_date)
             notices = _read_notices_merged(spark, silver_dir, target_date)
             case_df = _build_case_derived(notices).withColumn("asOfDate", lit(target_date))
-            rows = _write_snapshot(case_df, output_dir, target_date)
-            log.info("Built full (fallback) case_derived_facts snapshot asOfDate=%s rows=%d", target_date, rows)
+            manifest = _write_snapshot(case_df, output_dir, target_date, mode="full_fallback")
+            _update_pointer(output_dir, manifest)
+            log.info(
+                "Built full (fallback) case_derived_facts asOfDate=%s rows=%d version=%s",
+                target_date,
+                manifest["rows"],
+                manifest["version"],
+            )
             return
 
         chosen_direction = "forward"
-        anchor_date = prev_date
-        if prev_date is None:
+        anchor = prev_snap
+        if prev_snap is None:
             chosen_direction = "backward"
-            anchor_date = next_date
-        elif next_date is not None:
+            anchor = next_snap
+        elif next_snap is not None:
             # Choose nearer anchor to minimize recomputation window.
             target_day = _parse_iso_day(target_date)
-            prev_gap = (target_day - _parse_iso_day(prev_date)).days
-            next_gap = (_parse_iso_day(next_date) - target_day).days
+            prev_gap = (target_day - _parse_iso_day(prev_snap["asOfDate"])).days
+            next_gap = (_parse_iso_day(next_snap["asOfDate"]) - target_day).days
             if next_gap < prev_gap:
                 chosen_direction = "backward"
-                anchor_date = next_date
+                anchor = next_snap
 
-        assert anchor_date is not None
-        anchor_df = spark.read.parquet(str(output_dir / f"asOfDate={anchor_date}"))
+        assert anchor is not None
+        anchor_date = anchor["asOfDate"]
+        anchor_df = spark.read.parquet(anchor["data_path"])
 
         if chosen_direction == "forward":
             affected = _touched_case_ids_in_range(spark, silver_dir, anchor_date, target_date)
@@ -530,12 +684,14 @@ def main() -> None:
                 target_date,
             )
             out = anchor_df.drop("asOfDate").withColumn("asOfDate", lit(target_date))
-            rows = _write_snapshot(out, output_dir, target_date)
+            manifest = _write_snapshot(out, output_dir, target_date, mode=f"incremental_{chosen_direction}")
+            _update_pointer(output_dir, manifest)
             log.info(
-                "Built incremental case_derived_facts asOfDate=%s rows=%d direction=%s affected_cases=0",
+                "Built incremental case_derived_facts asOfDate=%s rows=%d direction=%s affected_cases=0 version=%s",
                 target_date,
-                rows,
+                manifest["rows"],
                 chosen_direction,
+                manifest["version"],
             )
             return
 
@@ -545,17 +701,21 @@ def main() -> None:
         out = unchanged.unionByName(recomputed, allowMissingColumns=True).withColumn(
             "asOfDate", lit(target_date)
         )
-        rows = _write_snapshot(out, output_dir, target_date)
+        manifest = _write_snapshot(out, output_dir, target_date, mode=f"incremental_{chosen_direction}")
+        _update_pointer(output_dir, manifest)
         log.info(
-            "Built incremental case_derived_facts asOfDate=%s rows=%d direction=%s anchor=%s affected_cases=%d",
+            "Built incremental case_derived_facts asOfDate=%s rows=%d direction=%s anchor=%s affected_cases=%d version=%s",
             target_date,
-            rows,
+            manifest["rows"],
             chosen_direction,
             anchor_date,
             affected_count,
+            manifest["version"],
         )
     finally:
-        spark.stop()
+        if spark is not None:
+            spark.stop()
+        _release_lock(output_dir, lock_token)
 
 
 if __name__ == "__main__":
