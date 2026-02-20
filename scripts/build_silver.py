@@ -9,8 +9,10 @@ Writes:
 """
 
 import argparse
+import json
 import logging
 import os
+import shutil
 import sys
 import time
 from datetime import date, timedelta
@@ -88,19 +90,56 @@ def _auto_target_partitions(raw_count: int, default_parallelism: int) -> int:
     return min(max_parallel, size_based_target)
 
 
+HEAVY_HTML_NOTICE_TYPES = {
+    "ContractNotice",
+    "TenderResultNotice",
+    "ContractPerformingNotice",
+}
+
+
+def _adaptive_target_partitions(
+    notice_type: str | None,
+    row_count: int,
+    default_parallelism: int,
+) -> int:
+    """Choose partitions for one notice-type batch.
+
+    Goal:
+    - keep small/light batches cheap,
+    - fan out heavy HTML parsing notice types to use available cores.
+    """
+    max_parallel = max(2, default_parallelism * 2)
+    notice = notice_type or ""
+    if notice in HEAVY_HTML_NOTICE_TYPES:
+        # For heavy parsers, target at least core-level parallelism when batch is non-trivial.
+        if row_count >= 200:
+            target = max(default_parallelism, (row_count + 149) // 150)
+            return min(max_parallel, max(2, target))
+    # General/default rule for light batches.
+    return _auto_target_partitions(row_count, default_parallelism)
+
+
 def _maybe_repartition_batch(
     df: "DataFrame",
+    notice_type: str | None,
     row_count: int,
     args: argparse.Namespace,
     spark: "SparkSession",
     notice_type_token: str,
 ) -> "DataFrame":
     current_parts = df.rdd.getNumPartitions()
-    target_parts = args.repartition if args.repartition > 0 else _auto_target_partitions(
-        row_count, spark.sparkContext.defaultParallelism
+    is_heavy = (notice_type or "") in HEAVY_HTML_NOTICE_TYPES
+    target_parts = (
+        args.repartition
+        if args.repartition > 0
+        else _adaptive_target_partitions(
+            notice_type=notice_type,
+            row_count=row_count,
+            default_parallelism=spark.sparkContext.defaultParallelism,
+        )
     )
-    # Keep tiny batches as-is to avoid shuffle overhead.
-    if row_count < 2000:
+    # Keep tiny non-heavy batches as-is to avoid shuffle overhead.
+    if row_count < 2000 and not is_heavy:
         log.info(
             "Batch noticeType=%s kept partitions=%d (rows=%d; tiny batch)",
             notice_type_token,
@@ -164,6 +203,11 @@ def _parse_args() -> argparse.Namespace:
         default=0,
         help="Repartition raw DataFrame before heavy HTML parsing (0 = auto by defaultParallelism*2)",
     )
+    parser.add_argument(
+        "--profile-json",
+        default="",
+        help="Optional path to write step-level performance profile as JSON",
+    )
     return parser.parse_args()
 
 
@@ -175,6 +219,7 @@ def main() -> None:
         target_date = (date.today() - timedelta(days=1)).isoformat()
 
     from pyspark.sql import SparkSession
+    from pyspark.storagelevel import StorageLevel
     from procurement.silver.spark_transforms import build_silver_for_notice_type
 
     spark = (
@@ -190,7 +235,6 @@ def main() -> None:
         log.info("Set spark.sql.shuffle.partitions=%d", args.shuffle_partitions)
 
     try:
-        from functools import reduce
         from pyspark.sql.functions import col, lit, to_date
 
         bronze_root = Path(args.bronze_dir) / "notices"
@@ -233,30 +277,52 @@ def main() -> None:
             notice_batches = [(nt, None) for nt in notice_types_sorted]
             log.info("Processing raw noticeType batches in order: %s", notice_types_sorted)
 
+        run_start = time.perf_counter()
+        profile: dict = {"target_date": target_date, "input_layer": "bronze" if use_bronze else "raw", "batches": []}
+
         silver_dir = Path(args.silver_dir)
         envelope_root = str(silver_dir / "common_envelope")
         specific_root = silver_dir / "notice_type_tables"
-        envelope_batches = []
+        envelope_day_dir = silver_dir / "common_envelope" / f"publicationDateDay={target_date}"
 
         # Overwrite only touched publicationDateDay partitions.
         spark.conf.set("spark.sql.sources.partitionOverwriteMode", "dynamic")
+        # For per-batch envelope appends, clear the target day first to keep reruns idempotent.
+        if envelope_day_dir.exists():
+            shutil.rmtree(envelope_day_dir, ignore_errors=False)
+            log.info("Cleared existing envelope day partition: %s", envelope_day_dir)
 
         total_input_rows = 0
         for notice_type, batch_path in notice_batches:
+            batch_profile: dict = {"noticeType": normalized_notice_type_token(notice_type)}
+            t0 = time.perf_counter()
             if use_bronze:
                 assert batch_path is not None
                 batch_raw = spark.read.option("basePath", str(bronze_root)).parquet(batch_path)
+                batch_profile["read_mode"] = "bronze_partition"
+                batch_profile["read_path"] = batch_path
             else:
                 if notice_type is None:
                     batch_raw = df_raw.filter(col("noticeType").isNull())
                 else:
                     batch_raw = df_raw.filter(col("noticeType") == lit(notice_type))
+                batch_profile["read_mode"] = "raw_filter"
+            batch_profile["read_sec"] = round(time.perf_counter() - t0, 3)
             notice_type_token = normalized_notice_type_token(notice_type)
+            t1 = time.perf_counter()
             batch_count = batch_raw.count()
+            batch_profile["count_sec"] = round(time.perf_counter() - t1, 3)
             total_input_rows += batch_count
+            batch_profile["rows"] = batch_count
             if args.shuffle_partitions <= 0:
-                per_batch_shuffle = args.repartition if args.repartition > 0 else _auto_target_partitions(
-                    batch_count, spark.sparkContext.defaultParallelism
+                per_batch_shuffle = (
+                    args.repartition
+                    if args.repartition > 0
+                    else _adaptive_target_partitions(
+                        notice_type=notice_type,
+                        row_count=batch_count,
+                        default_parallelism=spark.sparkContext.defaultParallelism,
+                    )
                 )
                 spark.conf.set("spark.sql.shuffle.partitions", str(per_batch_shuffle))
                 log.info(
@@ -264,7 +330,17 @@ def main() -> None:
                     notice_type_token,
                     per_batch_shuffle,
                 )
-            batch_raw = _maybe_repartition_batch(batch_raw, batch_count, args, spark, notice_type_token)
+                batch_profile["shuffle_partitions"] = per_batch_shuffle
+            t2 = time.perf_counter()
+            batch_raw = _maybe_repartition_batch(
+                batch_raw,
+                notice_type,
+                batch_count,
+                args,
+                spark,
+                notice_type_token,
+            )
+            batch_profile["repartition_sec"] = round(time.perf_counter() - t2, 3)
             specific_columns = specific_columns_for_notice_type(notice_type)
             html_fields = html_extracted_fields_for_notice_type(notice_type)
             required_columns = set(ENVELOPE_COLUMNS) | set(specific_columns)
@@ -278,38 +354,57 @@ def main() -> None:
                 "publicationDateDay",
                 to_date(col("publicationDate")).cast("string"),
             )
-            envelope_batches.append(_select_existing(batch_silver, ENVELOPE_COLUMNS))
+            batch_silver = batch_silver.persist(StorageLevel.MEMORY_AND_DISK)
+
+            # Materialize once so parsing/transforms are not recomputed for each downstream action.
+            t3 = time.perf_counter()
+            batch_silver_rows = batch_silver.count()
+            batch_profile["transform_materialize_sec"] = round(time.perf_counter() - t3, 3)
+            batch_profile["transformed_rows"] = batch_silver_rows
 
             specific_df = _select_existing(batch_silver, specific_columns)
             specific_df = _compact_html_extracted(specific_df, html_fields)
             specific_out = str(specific_root / f"noticeType={notice_type_token}")
+            t4 = time.perf_counter()
             (
                 specific_df.write.mode("overwrite")
                 .partitionBy("publicationDateDay")
                 .parquet(specific_out)
             )
-            log.info("Wrote specific table noticeType=%s to %s (%.2fs)", notice_type_token, specific_out, time.perf_counter() - batch_start)
+            batch_profile["write_specific_sec"] = round(time.perf_counter() - t4, 3)
 
-        if not envelope_batches:
+            envelope_batch = _select_existing(batch_silver, ENVELOPE_COLUMNS)
+            t5 = time.perf_counter()
+            (
+                envelope_batch.write.mode("append")
+                .partitionBy("publicationDateDay")
+                .parquet(envelope_root)
+            )
+            batch_profile["write_envelope_append_sec"] = round(time.perf_counter() - t5, 3)
+            batch_silver.unpersist()
+
+            batch_profile["batch_total_sec"] = round(time.perf_counter() - batch_start, 3)
+            profile["batches"].append(batch_profile)
+            log.info(
+                "Wrote batch noticeType=%s specific+envelope (%.2fs)",
+                notice_type_token,
+                time.perf_counter() - batch_start,
+            )
+
+        if total_input_rows == 0:
             log.warning("No Silver rows produced for %s", target_date)
             return
 
-        envelope_df = reduce(lambda a, b: a.unionByName(b, allowMissingColumns=True), envelope_batches)
-        envelope_write_start = time.perf_counter()
-        envelope_parts = args.repartition if args.repartition > 0 else _auto_target_partitions(
-            total_input_rows, spark.sparkContext.defaultParallelism
-        )
-        (
-            envelope_df.coalesce(envelope_parts).write.mode("overwrite")
-            .partitionBy("publicationDateDay")
-            .parquet(envelope_root)
-        )
-        log.info(
-            "Wrote common envelope to %s (%.2fs)",
-            envelope_root,
-            time.perf_counter() - envelope_write_start,
-        )
         log.info("Completed Silver build total_input_rows=%d", total_input_rows)
+        profile["total_input_rows"] = total_input_rows
+        profile["run_total_sec"] = round(time.perf_counter() - run_start, 3)
+        if args.profile_json:
+            profile_path = Path(args.profile_json)
+            profile_path.parent.mkdir(parents=True, exist_ok=True)
+            profile_path.write_text(json.dumps(profile, ensure_ascii=False, indent=2), encoding="utf-8")
+            log.info("Wrote profile JSON to %s", profile_path)
+        else:
+            log.info("Profile summary: %s", profile)
     finally:
         spark.stop()
 
