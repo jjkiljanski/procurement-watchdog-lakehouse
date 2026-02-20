@@ -1,11 +1,13 @@
-"""Batch-fetch BZP data for a date range and build bronze layer.
+"""Batch-fetch BZP data for a date range and build Bronze Parquet.
 
 Usage (run from the directory where you want data/ created):
     cd E:\\git_projects\\procurement-watchdog-api-exploration
     python E:\\git_projects\\procurement-watchdog-lakehouse\\scripts\\batch_fetch.py 2025-10-01 2025-12-31
 
-Skips dates whose raw file already exists, so it's safe to re-run.
+Skips dates whose Bronze-Raw file already exists, so it is safe to re-run.
 """
+
+from __future__ import annotations
 
 import logging
 import subprocess
@@ -47,32 +49,37 @@ def main() -> None:
 
     for i, d in enumerate(daterange(start, end), 1):
         ds = d.isoformat()
-        raw_path = Path("data/raw") / f"bzp_{ds}.json"
+        raw_path = Path("data/bronze_raw") / f"bzp_{ds}.json"
 
         if raw_path.exists():
-            log.info("[%d/%d] %s — raw file exists, skipping fetch", i, total_days, ds)
+            log.info("[%d/%d] %s - bronze_raw file exists, skipping fetch", i, total_days, ds)
         else:
-            log.info("[%d/%d] %s — fetching...", i, total_days, ds)
-            rc = subprocess.run(
-                [sys.executable, fetch_script, ds], capture_output=False
-            ).returncode
+            log.info("[%d/%d] %s - fetching...", i, total_days, ds)
+            rc = subprocess.run([sys.executable, fetch_script, ds], capture_output=False).returncode
             if rc != 0:
-                log.error("[%d/%d] %s — fetch FAILED (exit %d), skipping bronze", i, total_days, ds, rc)
+                log.error("[%d/%d] %s - fetch FAILED (exit %d), skipping bronze", i, total_days, ds, rc)
                 continue
 
-        bronze_path = Path("data/bronze") / f"bzp_{ds}.json"
-        if bronze_path.exists():
-            log.info("[%d/%d] %s — bronze file exists, skipping", i, total_days, ds)
+        bronze_daily_partitions = list(
+            Path("data/bronze/notices").glob(f"noticeType=*/publicationDateDay={ds}")
+        )
+        if bronze_daily_partitions:
+            log.info(
+                "[%d/%d] %s - bronze partitions exist (%d), skipping",
+                i,
+                total_days,
+                ds,
+                len(bronze_daily_partitions),
+            )
         else:
-            log.info("[%d/%d] %s — building bronze...", i, total_days, ds)
-            rc = subprocess.run(
-                [sys.executable, bronze_script, ds], capture_output=False
-            ).returncode
+            log.info("[%d/%d] %s - building bronze...", i, total_days, ds)
+            rc = subprocess.run([sys.executable, bronze_script, ds], capture_output=False).returncode
             if rc != 0:
-                log.error("[%d/%d] %s — bronze FAILED (exit %d)", i, total_days, ds, rc)
+                log.error("[%d/%d] %s - bronze FAILED (exit %d)", i, total_days, ds, rc)
 
     log.info("Batch complete")
 
 
 if __name__ == "__main__":
     main()
+

@@ -1,5 +1,6 @@
 """Fetch all BZP notices published yesterday and dump to JSON."""
 
+import argparse
 import json
 import logging
 import sys
@@ -38,6 +39,17 @@ NOTICE_TYPES = [
 ]
 
 PAGE_SIZE = 500
+
+
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Fetch BZP notices for a target date.")
+    parser.add_argument("target_date", nargs="?", help="Date in YYYY-MM-DD format")
+    parser.add_argument(
+        "--output-dir",
+        default="data/bronze_raw",
+        help="Directory for raw daily JSON payload",
+    )
+    return parser.parse_args()
 
 
 def fetch_notices_for_type(
@@ -115,10 +127,8 @@ def _filter_and_dedup_daily(notices: list[dict], target_day: str) -> tuple[list[
 
 
 def main() -> None:
-    if len(sys.argv) > 1:
-        target_date = date.fromisoformat(sys.argv[1])
-    else:
-        target_date = date.today() - timedelta(days=1)
+    args = _parse_args()
+    target_date = date.fromisoformat(args.target_date) if args.target_date else (date.today() - timedelta(days=1))
 
     date_from = f"{target_date.isoformat()}T00:00:00"
     date_to = f"{target_date.isoformat()}T23:59:59"
@@ -146,7 +156,7 @@ def main() -> None:
     log.info("Dropped duplicate notices by objectId: %d", dropped_duplicates)
     log.info("Total notices kept for %s: %d", target_date.isoformat(), len(filtered_notices))
 
-    output_dir = Path("data/raw")
+    output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / f"bzp_{target_date.isoformat()}.json"
 

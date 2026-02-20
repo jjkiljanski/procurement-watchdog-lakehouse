@@ -1,24 +1,30 @@
-"""Build bronze layer from raw BZP JSON.
+"""Build Bronze Parquet from Bronze-Raw JSON.
 
-Reads   data/raw/bzp_YYYY-MM-DD.json
-Writes  data/bronze/bzp_YYYY-MM-DD.json          (valid, HTML replaced with SHA-256)
-        data/bronze/bzp_YYYY-MM-DD_errors.json    (records that failed validation)
+Reads:
+  <bronze-raw-dir>/bzp_YYYY-MM-DD.json
+  optional chunks: <bronze-raw-dir>/bzp_YYYY-MM-DD_*.json
+
+Writes:
+  <bronze-dir>/notices/noticeType=<TYPE>/publicationDateDay=YYYY-MM-DD/
+  <bronze-dir>/errors/bzp_YYYY-MM-DD_errors.json (only when validation failures exist)
 """
 
+from __future__ import annotations
+
+import argparse
 import json
 import logging
+import os
 import sys
 from datetime import date, timedelta
 from pathlib import Path
 
 # Allow imports from project root / src
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+_src = str(Path(__file__).resolve().parent.parent / "src")
+sys.path.insert(0, _src)
+os.environ["PYTHONPATH"] = _src + os.pathsep + os.environ.get("PYTHONPATH", "")
 
-from procurement.bronze.models import (
-    BzpNoticeBronze,
-    BzpNoticeBronzeOut,
-    to_bronze_output,
-)
+from procurement.bronze.models import BzpNoticeBronze
 from procurement.logging import setup_logging
 from pydantic import ValidationError
 
@@ -26,14 +32,50 @@ setup_logging()
 log = logging.getLogger(__name__)
 
 
-def validate_raw(
-    raw_records: list[dict],
-) -> tuple[list[BzpNoticeBronze], list[dict]]:
-    """Validate raw dicts and split into valid models + error dicts.
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Build Bronze Parquet for one date.")
+    parser.add_argument("target_date", nargs="?", help="Date in YYYY-MM-DD format")
+    parser.add_argument(
+        "--bronze-raw-dir",
+        default="data/bronze_raw",
+        help="Directory with raw JSON payloads",
+    )
+    parser.add_argument(
+        "--bronze-dir",
+        default="data/bronze",
+        help="Bronze output directory",
+    )
+    parser.add_argument(
+        "--spark-master",
+        default=os.environ.get("SPARK_MASTER", "local[*]"),
+        help="Spark master string (e.g. local[*], local[4])",
+    )
+    return parser.parse_args()
 
-    Returns (valid, errors) where *valid* keeps the full htmlBody so that
-    downstream silver/Spark processing can consume it before it is hashed.
-    """
+
+def _candidate_input_files(bronze_raw_dir: Path, target_date: str) -> list[Path]:
+    # Support both single-file and chunked daily files.
+    direct = bronze_raw_dir / f"bzp_{target_date}.json"
+    chunked = sorted(bronze_raw_dir.glob(f"bzp_{target_date}_*.json"))
+    files: list[Path] = []
+    if direct.exists():
+        files.append(direct)
+    files.extend(chunked)
+    return files
+
+
+def _load_raw_records(input_files: list[Path]) -> list[dict]:
+    records: list[dict] = []
+    for path in input_files:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(payload, list):
+            raise ValueError(f"Expected JSON array in {path}, got {type(payload).__name__}")
+        records.extend(payload)
+    return records
+
+
+def validate_raw(raw_records: list[dict]) -> tuple[list[BzpNoticeBronze], list[dict]]:
+    """Validate raw dicts and split into valid models + error dicts."""
     valid: list[BzpNoticeBronze] = []
     errors: list[dict] = []
 
@@ -60,49 +102,76 @@ def validate_raw(
 
 
 def main() -> None:
-    # Determine target date
-    if len(sys.argv) > 1:
-        target_date = sys.argv[1]
-    else:
-        target_date = (date.today() - timedelta(days=1)).isoformat()
+    args = _parse_args()
+    target_date = args.target_date or (date.today() - timedelta(days=1)).isoformat()
 
-    raw_path = Path("data/raw") / f"bzp_{target_date}.json"
-    if not raw_path.exists():
-        log.error("Raw file not found: %s", raw_path)
-        sys.exit(1)
+    bronze_raw_dir = Path(args.bronze_raw_dir)
+    bronze_dir = Path(args.bronze_dir)
+    input_files = _candidate_input_files(bronze_raw_dir, target_date)
 
-    log.info("Reading %s", raw_path)
-    raw_records: list[dict] = json.loads(raw_path.read_text(encoding="utf-8"))
+    if not input_files:
+        # Backward compatibility for older layout.
+        legacy_raw = Path("data/raw") / f"bzp_{target_date}.json"
+        if legacy_raw.exists():
+            input_files = [legacy_raw]
+            log.warning("Using legacy raw input path: %s", legacy_raw)
+        else:
+            log.error(
+                "No Bronze-Raw input files found for %s under %s",
+                target_date,
+                bronze_raw_dir,
+            )
+            sys.exit(1)
+
+    log.info("Reading Bronze-Raw files for %s: %s", target_date, [str(p) for p in input_files])
+    raw_records = _load_raw_records(input_files)
     log.info("Loaded %d raw records", len(raw_records))
 
-    # Step 1: validate (returns models WITH full htmlBody)
     valid, errors = validate_raw(raw_records)
+    valid_rows = [model.model_dump() for model in valid]
 
-    # Step 2: produce bronze output (htmlBody → sha256)
-    bronze_out: list[BzpNoticeBronzeOut] = [to_bronze_output(n) for n in valid]
+    if not valid_rows:
+        log.error("No valid records after validation; nothing to write.")
+        sys.exit(1)
 
-    # Write outputs
-    out_dir = Path("data/bronze")
-    out_dir.mkdir(parents=True, exist_ok=True)
+    from pyspark.sql import SparkSession
+    from pyspark.sql.functions import col, to_date
 
-    bronze_path = out_dir / f"bzp_{target_date}.json"
-    bronze_path.write_text(
-        json.dumps(
-            [r.model_dump() for r in bronze_out],
-            ensure_ascii=False,
-            indent=2,
-        ),
-        encoding="utf-8",
+    spark = (
+        SparkSession.builder.appName("bzp-bronze")
+        .master(args.spark_master)
+        .config("spark.sql.ansi.enabled", "false")
+        .getOrCreate()
     )
-    log.info("Wrote %d bronze records to %s", len(bronze_out), bronze_path)
+    try:
+        df = spark.createDataFrame(valid_rows).withColumn(
+            "publicationDateDay",
+            to_date(col("publicationDate")).cast("string"),
+        )
+        spark.conf.set("spark.sql.sources.partitionOverwriteMode", "dynamic")
+        notices_root = bronze_dir / "notices"
+        (
+            df.write.mode("overwrite")
+            .partitionBy("noticeType", "publicationDateDay")
+            .parquet(str(notices_root))
+        )
+        log.info(
+            "Wrote Bronze Parquet rows=%d to %s partitioned by noticeType/publicationDateDay",
+            len(valid_rows),
+            notices_root,
+        )
+    finally:
+        spark.stop()
 
     if errors:
-        errors_path = out_dir / f"bzp_{target_date}_errors.json"
+        errors_dir = bronze_dir / "errors"
+        errors_dir.mkdir(parents=True, exist_ok=True)
+        errors_path = errors_dir / f"bzp_{target_date}_errors.json"
         errors_path.write_text(
             json.dumps(errors, ensure_ascii=False, indent=2, default=str),
             encoding="utf-8",
         )
-        log.info("Wrote %d error records to %s", len(errors), errors_path)
+        log.info("Wrote %d validation errors to %s", len(errors), errors_path)
 
     log.info(
         "Summary: total=%d  valid=%d  invalid=%d",
@@ -114,3 +183,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

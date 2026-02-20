@@ -2,13 +2,13 @@
 
 Purpose:
 
-- Preserve source payload fidelity.
-- Validate incoming records with Pydantic.
-- Keep a stable ingestion artifact for reproducibility.
+- Keep `bronze_raw` payload fidelity for replay/audit.
+- Validate incoming records with Pydantic models.
+- Publish canonical Bronze Parquet for fast downstream Spark jobs.
 
 Inputs:
 
-- `data/raw/bzp_YYYY-MM-DD.json`
+- `data/bronze_raw/bzp_YYYY-MM-DD.json`
 
 Primary build entrypoint:
 
@@ -16,12 +16,11 @@ Primary build entrypoint:
 
 Outputs:
 
-- `data/bronze/bzp_YYYY-MM-DD.json`
-- `data/bronze/bzp_YYYY-MM-DD_errors.json` (only when validation failures exist)
+- `data/bronze/notices/noticeType=<TYPE>/publicationDateDay=YYYY-MM-DD/`
+- `data/bronze/errors/bzp_YYYY-MM-DD_errors.json` (only when validation failures exist)
 
 Current guarantees:
 
-- Append-like daily snapshots.
+- Deterministic and idempotent daily writes (partition overwrite for touched day/type).
 - Validation split into valid/error outputs.
-- HTML body is hashed in bronze output for safe storage while preserving referential traceability.
-
+- Schema-stable canonical layer (`noticeType` + `publicationDateDay` partition contract).

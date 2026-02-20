@@ -4,9 +4,10 @@ A Spark-based lakehouse pipeline for public procurement data (BZP first), with d
 
 ## Overview
 
-The repository is organized around three data layers:
+The repository is organized around medallion-style layers:
 
-- `bronze`: raw API payloads (`data/raw/bzp_YYYY-MM-DD.json`)
+- `bronze_raw`: raw API payloads (`data/bronze_raw/bzp_YYYY-MM-DD.json`)
+- `bronze`: validated canonical notices in Parquet, partitioned by `noticeType/publicationDateDay`
 - `silver`: conformed notice-level datasets split into common envelope + notice-type tables
 - `gold`: analytical marts and buyer daily signals
 
@@ -20,12 +21,13 @@ Core goals:
 
 ### Bronze
 
-- Input files: `data/raw/bzp_YYYY-MM-DD.json`
-- Minimal transformation, source-preserving records
+- `bronze_raw` input files: `data/bronze_raw/bzp_YYYY-MM-DD.json`
+- `bronze` canonical Parquet: `data/bronze/notices/noticeType=<TYPE>/publicationDateDay=YYYY-MM-DD/`
+- Bronze validation errors: `data/bronze/errors/bzp_YYYY-MM-DD_errors.json`
 
 ### Silver
 
-Built by `scripts/build_silver.py`:
+Built by `scripts/build_silver.py` (reads Bronze Parquet by default, raw fallback):
 
 - `data/silver/common_envelope/publicationDateDay=YYYY-MM-DD/`
 - `data/silver/notice_type_tables/noticeType=<TYPE>/publicationDateDay=YYYY-MM-DD/`
@@ -58,7 +60,8 @@ Built by `scripts/build_gold.py`:
 
 ## Key Scripts
 
-- `scripts/fetch_raw.py` - fetch raw daily data
+- `scripts/fetch_bzp_yesterday.py` - fetch daily API payloads to `bronze_raw`
+- `scripts/build_bronze.py` - validate + write canonical Bronze Parquet
 - `scripts/build_silver.py` - notice-ingest Silver build
 - `scripts/build_case_derived_facts.py` - case-grain Silver derived layer (`full` / `incremental`)
 - `scripts/build_gold.py` - Gold marts/signals
@@ -70,6 +73,8 @@ Recommended (Docker Spark runtime):
 
 ```bash
 docker build -t procurement-pipeline .
+docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/fetch_bzp_yesterday.py 2025-10-01
+docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/build_bronze.py 2025-10-01
 docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/build_silver.py 2025-10-01
 docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/build_case_derived_facts.py 2025-10-01 --mode full
 docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/build_gold.py 2025-10-01 --scope daily

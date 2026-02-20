@@ -8,7 +8,8 @@ Purpose:
 
 Inputs:
 
-- `data/raw/bzp_YYYY-MM-DD.json`
+- Preferred: `data/bronze/notices/noticeType=*/publicationDateDay=YYYY-MM-DD/`
+- Fallback: `data/raw/bzp_YYYY-MM-DD.json` (legacy compatibility)
 
 Primary build entrypoint:
 

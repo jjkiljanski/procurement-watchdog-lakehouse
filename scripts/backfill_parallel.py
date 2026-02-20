@@ -39,7 +39,8 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Backfill silver/gold in parallel.")
     parser.add_argument("--start-date", required=True, help="Start date YYYY-MM-DD")
     parser.add_argument("--end-date", required=True, help="End date YYYY-MM-DD")
-    parser.add_argument("--raw-dir", default="data/raw")
+    parser.add_argument("--raw-dir", default="data/bronze_raw")
+    parser.add_argument("--bronze-dir", default="data/bronze")
     parser.add_argument("--silver-dir", default="data/silver")
     parser.add_argument("--gold-dir", default="data/gold")
     parser.add_argument("--workers", type=int, default=2, help="Max concurrent Spark jobs")
@@ -84,6 +85,10 @@ def _stage_command(stage: str, day: str, args: argparse.Namespace) -> list[str]:
             sys.executable,
             "scripts/build_silver.py",
             day,
+            "--bronze-dir",
+            args.bronze_dir,
+            "--input-layer",
+            "auto",
             "--raw-dir",
             args.raw_dir,
             "--silver-dir",
