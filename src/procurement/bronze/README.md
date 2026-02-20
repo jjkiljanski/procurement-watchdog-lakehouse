@@ -25,12 +25,14 @@ Outputs:
 
 - `data/bronze/notices/noticeType=<TYPE>/publicationDateDay=YYYY-MM-DD/`
 - `data/bronze/errors/bzp_YYYY-MM-DD_errors.json` (only when validation failures exist)
+- `data/bronze/_index/seen_notice_ids/seen_notice_ids.sqlite` (cross-day duplicate index by `objectId`)
 
 Current guarantees:
 
 - Deterministic and idempotent daily writes (partition overwrite for touched day/type).
 - Validation split into valid/error outputs.
 - Schema-stable canonical layer (`noticeType` + `publicationDateDay` partition contract).
+- Cross-day duplicate suppression (`objectId`) before Bronze write, with same-day rerun allowance.
 
 See also:
 

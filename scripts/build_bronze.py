@@ -15,6 +15,7 @@ import argparse
 import json
 import logging
 import os
+import sqlite3
 import sys
 from collections import Counter
 from datetime import date, timedelta
@@ -76,6 +77,135 @@ def _load_raw_records(input_files: list[Path]) -> list[dict]:
     return records
 
 
+def _chunked(values: list[str], size: int) -> list[list[str]]:
+    return [values[i : i + size] for i in range(0, len(values), size)]
+
+
+def _open_seen_index(index_db_path: Path) -> sqlite3.Connection:
+    index_db_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(index_db_path), timeout=60)
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA synchronous=NORMAL;")
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS seen_notice_ids (
+            object_id TEXT PRIMARY KEY,
+            first_target_date TEXT NOT NULL,
+            first_publication_day TEXT,
+            first_seen_at TEXT NOT NULL
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_seen_notice_ids_first_target_date
+        ON seen_notice_ids (first_target_date)
+        """
+    )
+    conn.commit()
+    return conn
+
+
+def _deduplicate_against_seen_index(
+    raw_records: list[dict],
+    target_date: str,
+    index_db_path: Path,
+) -> tuple[list[dict], dict]:
+    """Drop rows already seen on *other* target_date runs.
+
+    Notes:
+    - Same-day reruns stay idempotent: IDs first seen on this target_date are allowed.
+    - Intra-batch duplicate objectIds are dropped as well.
+    """
+
+    unique_ids = sorted(
+        {
+            str(rec.get("objectId")).strip()
+            for rec in raw_records
+            if rec.get("objectId") is not None and str(rec.get("objectId")).strip()
+        }
+    )
+
+    existing_first_day: dict[str, str] = {}
+    conn = _open_seen_index(index_db_path)
+    try:
+        for chunk in _chunked(unique_ids, 900):
+            placeholders = ",".join("?" for _ in chunk)
+            sql = (
+                "SELECT object_id, first_target_date "
+                f"FROM seen_notice_ids WHERE object_id IN ({placeholders})"
+            )
+            rows = conn.execute(sql, chunk).fetchall()
+            for object_id, first_target_date in rows:
+                existing_first_day[str(object_id)] = str(first_target_date)
+    finally:
+        conn.close()
+
+    in_file_seen: set[str] = set()
+    filtered: list[dict] = []
+    dropped_in_file = 0
+    dropped_seen_other_day = 0
+
+    for rec in raw_records:
+        object_id_raw = rec.get("objectId")
+        object_id = str(object_id_raw).strip() if object_id_raw is not None else ""
+        if not object_id:
+            filtered.append(rec)
+            continue
+
+        if object_id in in_file_seen:
+            dropped_in_file += 1
+            continue
+        in_file_seen.add(object_id)
+
+        seen_day = existing_first_day.get(object_id)
+        if seen_day is not None and seen_day != target_date:
+            dropped_seen_other_day += 1
+            continue
+        filtered.append(rec)
+
+    stats = {
+        "input_rows": len(raw_records),
+        "output_rows": len(filtered),
+        "dropped_duplicates_in_input": dropped_in_file,
+        "dropped_duplicates_seen_index_other_day": dropped_seen_other_day,
+    }
+    return filtered, stats
+
+
+def _update_seen_index(
+    index_db_path: Path,
+    object_ids: list[str],
+    target_date: str,
+    publication_day_hint: str | None,
+) -> int:
+    object_ids_unique = sorted({oid.strip() for oid in object_ids if oid and oid.strip()})
+    if not object_ids_unique:
+        return 0
+
+    inserted = 0
+    conn = _open_seen_index(index_db_path)
+    try:
+        now_iso = now_utc_iso()
+        rows = [
+            (oid, target_date, publication_day_hint, now_iso)
+            for oid in object_ids_unique
+        ]
+        cur = conn.executemany(
+            """
+            INSERT OR IGNORE INTO seen_notice_ids
+            (object_id, first_target_date, first_publication_day, first_seen_at)
+            VALUES (?, ?, ?, ?)
+            """,
+            rows,
+        )
+        inserted = int(cur.rowcount) if cur.rowcount is not None else 0
+        conn.commit()
+    finally:
+        conn.close()
+    return inserted
+
+
 def validate_raw(raw_records: list[dict]) -> tuple[list[BzpNoticeBronze], list[dict]]:
     """Validate raw dicts and split into valid models + error dicts."""
     valid: list[BzpNoticeBronze] = []
@@ -130,41 +260,57 @@ def main() -> None:
     raw_records = _load_raw_records(input_files)
     log.info("Loaded %d raw records", len(raw_records))
 
-    valid, errors = validate_raw(raw_records)
+    index_db_path = bronze_dir / "_index" / "seen_notice_ids" / "seen_notice_ids.sqlite"
+    deduped_records, dedup_stats = _deduplicate_against_seen_index(
+        raw_records,
+        target_date,
+        index_db_path,
+    )
+    if dedup_stats["dropped_duplicates_in_input"] or dedup_stats["dropped_duplicates_seen_index_other_day"]:
+        log.info(
+            "Dedup filtered rows: in_input=%d seen_index_other_day=%d (remaining=%d)",
+            dedup_stats["dropped_duplicates_in_input"],
+            dedup_stats["dropped_duplicates_seen_index_other_day"],
+            dedup_stats["output_rows"],
+        )
+
+    valid, errors = validate_raw(deduped_records)
     valid_rows = [model.model_dump() for model in valid]
 
-    if not valid_rows:
-        log.error("No valid records after validation; nothing to write.")
-        sys.exit(1)
+    wrote_notices = False
 
-    from pyspark.sql import SparkSession
-    from pyspark.sql.functions import col, to_date
+    if valid_rows:
+        from pyspark.sql import SparkSession
+        from pyspark.sql.functions import col, to_date
 
-    spark = (
-        SparkSession.builder.appName("bzp-bronze")
-        .master(args.spark_master)
-        .config("spark.sql.ansi.enabled", "false")
-        .getOrCreate()
-    )
-    try:
-        df = spark.createDataFrame(valid_rows).withColumn(
-            "publicationDateDay",
-            to_date(col("publicationDate")).cast("string"),
+        spark = (
+            SparkSession.builder.appName("bzp-bronze")
+            .master(args.spark_master)
+            .config("spark.sql.ansi.enabled", "false")
+            .getOrCreate()
         )
-        spark.conf.set("spark.sql.sources.partitionOverwriteMode", "dynamic")
-        notices_root = bronze_dir / "notices"
-        (
-            df.write.mode("overwrite")
-            .partitionBy("noticeType", "publicationDateDay")
-            .parquet(str(notices_root))
-        )
-        log.info(
-            "Wrote Bronze Parquet rows=%d to %s partitioned by noticeType/publicationDateDay",
-            len(valid_rows),
-            notices_root,
-        )
-    finally:
-        spark.stop()
+        try:
+            df = spark.createDataFrame(valid_rows).withColumn(
+                "publicationDateDay",
+                to_date(col("publicationDate")).cast("string"),
+            )
+            spark.conf.set("spark.sql.sources.partitionOverwriteMode", "dynamic")
+            notices_root = bronze_dir / "notices"
+            (
+                df.write.mode("overwrite")
+                .partitionBy("noticeType", "publicationDateDay")
+                .parquet(str(notices_root))
+            )
+            wrote_notices = True
+            log.info(
+                "Wrote Bronze Parquet rows=%d to %s partitioned by noticeType/publicationDateDay",
+                len(valid_rows),
+                notices_root,
+            )
+        finally:
+            spark.stop()
+    else:
+        log.warning("No valid records after validation (post-dedup); skipping Bronze Parquet write.")
 
     if errors:
         errors_dir = bronze_dir / "errors"
@@ -190,6 +336,14 @@ def main() -> None:
 
     repo_root = Path(__file__).resolve().parent.parent
     meta_path = bronze_dir / "_meta" / f"day={target_date}.json"
+    inserted_seen = _update_seen_index(
+        index_db_path=index_db_path,
+        object_ids=[str(row.get("objectId", "")).strip() for row in valid_rows],
+        target_date=target_date,
+        publication_day_hint=target_date,
+    )
+    log.info("Seen index updated: inserted_new_ids=%d path=%s", inserted_seen, index_db_path)
+
     manifest = {
         "layer": "bronze",
         "target_date": target_date,
@@ -202,13 +356,19 @@ def main() -> None:
         ],
         "outputs": {
             "notices_root": str(bronze_dir / "notices"),
+            "wrote_notices": wrote_notices,
             "partition_rows": partition_rows,
             "errors_path": str(bronze_dir / "errors" / f"bzp_{target_date}_errors.json") if errors else None,
+            "seen_index_db_path": str(index_db_path),
         },
         "counts": {
             "raw_total": len(raw_records),
+            "after_dedup_total": len(deduped_records),
             "valid_total": len(valid),
             "invalid_total": len(errors),
+            "dropped_duplicates_in_input": dedup_stats["dropped_duplicates_in_input"],
+            "dropped_duplicates_seen_index_other_day": dedup_stats["dropped_duplicates_seen_index_other_day"],
+            "seen_index_inserted_new_ids": inserted_seen,
         },
         "code": {
             "git_commit": git_commit_sha(repo_root),
@@ -225,10 +385,12 @@ def main() -> None:
     log.info("Wrote bronze lineage manifest to %s", meta_path)
 
     log.info(
-        "Summary: total=%d  valid=%d  invalid=%d",
+        "Summary: total=%d  after_dedup=%d  valid=%d  invalid=%d  dropped_seen=%d",
         len(raw_records),
+        len(deduped_records),
         len(valid),
         len(errors),
+        dedup_stats["dropped_duplicates_seen_index_other_day"],
     )
 
 

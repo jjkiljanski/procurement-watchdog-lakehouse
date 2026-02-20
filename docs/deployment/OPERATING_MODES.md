@@ -68,11 +68,13 @@ Lineage metadata:
 
 - fetch -> `data/bronze_raw/_meta/fetch_day=YYYY-MM-DD.json`
 - bronze -> `data/bronze/_meta/day=YYYY-MM-DD.json`
+- bronze dedup index -> `data/bronze/_index/seen_notice_ids/seen_notice_ids.sqlite`
 - silver -> `data/silver/_meta/day=YYYY-MM-DD.json`
 
 ## Reliability and Idempotency Notes
 
 - `build_bronze.py`: deterministic for the same `bronze_raw` input; writes partitioned Bronze by `noticeType/publicationDateDay`.
+- `build_bronze.py`: suppresses cross-day duplicate notices by `objectId` using persistent seen-index; same-day reruns are still allowed.
 - `build_silver.py`: deterministic and idempotent for a target day; overwrites touched day partitions.
 - `build_case_derived_facts.py`:
   - `full`: rebuilds snapshot as-of target day.
@@ -87,3 +89,9 @@ Lineage metadata:
   - `TenderResultNotice`
   - `ContractPerformingNotice`
 - Silver uses notice-type batches and adaptive repartitioning for heavy parser types to improve intra-day parallelism.
+
+## Notes
+
+Key rule:
+- API fetch and Spark processing are decoupled.
+- Backfill should amortize Spark startup overhead.
