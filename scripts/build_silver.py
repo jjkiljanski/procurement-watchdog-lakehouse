@@ -27,6 +27,7 @@ os.environ["PYSPARK_PYTHON"] = sys.executable
 os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
 
 from procurement.logging import setup_logging
+from procurement.lineage import atomic_write_json, git_commit_sha, now_utc_iso, script_hashes, sha256_file
 
 setup_logging()
 log = logging.getLogger(__name__)
@@ -140,7 +141,7 @@ def _maybe_repartition_batch(
     )
     # Keep tiny non-heavy batches as-is to avoid shuffle overhead.
     if row_count < 2000 and not is_heavy:
-        log.info(
+        log.debug(
             "Batch noticeType=%s kept partitions=%d (rows=%d; tiny batch)",
             notice_type_token,
             current_parts,
@@ -156,7 +157,7 @@ def _maybe_repartition_batch(
             row_count,
         )
         return df.repartition(target_parts)
-    log.info(
+    log.debug(
         "Batch noticeType=%s kept partitions=%d (target=%d, rows=%d)",
         notice_type_token,
         current_parts,
@@ -164,6 +165,26 @@ def _maybe_repartition_batch(
         row_count,
     )
     return df
+
+
+def _load_bronze_lineage_ref(bronze_dir: Path, target_date: str) -> dict | None:
+    meta_path = bronze_dir / "_meta" / f"day={target_date}.json"
+    if not meta_path.exists():
+        return None
+    try:
+        payload = json.loads(meta_path.read_text(encoding="utf-8"))
+    except Exception:
+        return {
+            "manifest_path": str(meta_path),
+            "manifest_sha256": sha256_file(meta_path),
+            "error": "failed_to_parse_bronze_manifest",
+        }
+    return {
+        "manifest_path": str(meta_path),
+        "manifest_sha256": sha256_file(meta_path),
+        "code": payload.get("code"),
+        "counts": payload.get("counts"),
+    }
 
 
 def _parse_args() -> argparse.Namespace:
@@ -213,6 +234,7 @@ def _parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = _parse_args()
+    started_at = now_utc_iso()
     if args.target_date:
         target_date = args.target_date
     else:
@@ -325,11 +347,6 @@ def main() -> None:
                     )
                 )
                 spark.conf.set("spark.sql.shuffle.partitions", str(per_batch_shuffle))
-                log.info(
-                    "Batch noticeType=%s set spark.sql.shuffle.partitions=%d",
-                    notice_type_token,
-                    per_batch_shuffle,
-                )
                 batch_profile["shuffle_partitions"] = per_batch_shuffle
             t2 = time.perf_counter()
             batch_raw = _maybe_repartition_batch(
@@ -345,7 +362,6 @@ def main() -> None:
             html_fields = html_extracted_fields_for_notice_type(notice_type)
             required_columns = set(ENVELOPE_COLUMNS) | set(specific_columns)
             batch_start = time.perf_counter()
-            log.info("Processing batch noticeType=%s rows=%d", notice_type_token, batch_count)
             batch_silver = build_silver_for_notice_type(
                 batch_raw,
                 notice_type=notice_type,
@@ -386,8 +402,9 @@ def main() -> None:
             batch_profile["batch_total_sec"] = round(time.perf_counter() - batch_start, 3)
             profile["batches"].append(batch_profile)
             log.info(
-                "Wrote batch noticeType=%s specific+envelope (%.2fs)",
+                "Batch noticeType=%s rows=%d wrote specific+envelope (%.2fs)",
                 notice_type_token,
+                batch_count,
                 time.perf_counter() - batch_start,
             )
 
@@ -405,6 +422,53 @@ def main() -> None:
             log.info("Wrote profile JSON to %s", profile_path)
         else:
             log.info("Profile summary: %s", profile)
+
+        repo_root = Path(__file__).resolve().parent.parent
+        input_manifest: dict
+        if use_bronze:
+            input_manifest = {
+                "mode": "bronze",
+                "bronze_root": str(bronze_root),
+                "paths": [str(p) for p in bronze_paths],
+                "bronze_lineage": _load_bronze_lineage_ref(Path(args.bronze_dir), target_date),
+            }
+        else:
+            raw_path = Path(args.raw_dir) / f"bzp_{target_date}.json"
+            input_manifest = {
+                "mode": "raw",
+                "raw_path": str(raw_path),
+                "raw_sha256": sha256_file(raw_path) if raw_path.exists() else None,
+            }
+
+        lineage = {
+            "layer": "silver",
+            "target_date": target_date,
+            "started_at": started_at,
+            "completed_at": now_utc_iso(),
+            "inputs": input_manifest,
+            "outputs": {
+                "common_envelope": str(silver_dir / "common_envelope" / f"publicationDateDay={target_date}"),
+                "notice_type_tables_root": str(silver_dir / "notice_type_tables"),
+                "profile_json": str(Path(args.profile_json)) if args.profile_json else None,
+            },
+            "performance": profile,
+            "code": {
+                "git_commit": git_commit_sha(repo_root),
+                "script_hashes": script_hashes(
+                    [
+                        Path(__file__).resolve(),
+                        repo_root / "src" / "procurement" / "silver" / "spark_transforms.py",
+                        repo_root / "src" / "procurement" / "silver" / "html_parser.py",
+                        repo_root / "src" / "procurement" / "silver" / "notice_types" / "definitions.py",
+                    ]
+                ),
+                "command": sys.argv,
+                "args": vars(args),
+            },
+        }
+        lineage_path = silver_dir / "_meta" / f"day={target_date}.json"
+        atomic_write_json(lineage_path, lineage)
+        log.info("Wrote silver lineage manifest to %s", lineage_path)
     finally:
         spark.stop()
 

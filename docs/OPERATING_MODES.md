@@ -38,7 +38,7 @@ Recommended split:
 ### Phase B: Spark-bound transforms (long-lived jobs)
 
 1. Convert `bronze_raw` range -> Bronze Parquet.
-2. Build Silver range from Bronze.
+2. Build Silver range from Bronze in one long-lived Spark run with checkpoint state.
 3. Build `case_derived_facts` (`full` once for initial snapshot, then `incremental` for new arrivals).
 4. Build Gold (daily or as-of snapshots, depending on use case).
 
@@ -47,6 +47,28 @@ Rationale:
 - Spark startup cost is significant when run per day.
 - Backfill should prefer long-lived Spark runs or parallel day workers to amortize startup overhead.
 - Separating API ingest from Spark compute improves failure isolation and retry behavior.
+
+Recommended backfill command:
+
+```bash
+python scripts/build_silver_backfill.py \
+  --start-date 2025-10-01 \
+  --end-date 2025-10-31 \
+  --bronze-dir data/bronze \
+  --silver-dir data/silver
+```
+
+Restart safety:
+
+- `build_silver_backfill.py` writes an explicit state index (`data/silver/_state/silver_backfill_<start>_<end>.json` by default).
+- Only days marked `completed` in state are skipped on resume.
+- Any interrupted/non-completed day is fully cleaned and rebuilt, so partial writes are never treated as done.
+
+Lineage metadata:
+
+- fetch -> `data/bronze_raw/_meta/fetch_day=YYYY-MM-DD.json`
+- bronze -> `data/bronze/_meta/day=YYYY-MM-DD.json`
+- silver -> `data/silver/_meta/day=YYYY-MM-DD.json`
 
 ## Reliability and Idempotency Notes
 

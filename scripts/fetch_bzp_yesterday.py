@@ -1,4 +1,6 @@
-"""Fetch all BZP notices published yesterday and dump to JSON."""
+"""Fetch all BZP notices for target day and dump to bronze_raw JSON."""
+
+from __future__ import annotations
 
 import argparse
 import json
@@ -6,13 +8,13 @@ import logging
 import sys
 from datetime import date, timedelta
 from pathlib import Path
-from urllib.parse import urlencode
 
 import requests
 
 # Allow imports from project root / src
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
+from procurement.lineage import atomic_write_json, git_commit_sha, now_utc_iso, script_hashes, sha256_file
 from procurement.logging import setup_logging
 
 setup_logging()
@@ -57,9 +59,10 @@ def fetch_notices_for_type(
     date_from: str,
     date_to: str,
     session: requests.Session,
-) -> list[dict]:
-    """Fetch all pages of a single notice type for the given date range."""
+) -> tuple[list[dict], list[dict]]:
+    """Fetch all pages for one notice type and return notices + query log."""
     all_notices: list[dict] = []
+    page_queries: list[dict] = []
     search_after: str | None = None
 
     while True:
@@ -76,12 +79,23 @@ def fetch_notices_for_type(
         resp.raise_for_status()
         page = resp.json()
 
+        page_queries.append(
+            {
+                "requested_at": now_utc_iso(),
+                "url": BASE_URL,
+                "params": dict(params),
+                "response_count": len(page),
+                "first_object_id": page[0].get("objectId") if page else None,
+                "last_object_id": page[-1].get("objectId") if page else None,
+            }
+        )
+
         if not page:
             break
 
         all_notices.extend(page)
         log.info(
-            "  %s — fetched page (%d records, %d total so far)",
+            "  %s - fetched page (%d records, %d total so far)",
             notice_type,
             len(page),
             len(all_notices),
@@ -95,7 +109,7 @@ def fetch_notices_for_type(
             break
         search_after = last_object_id
 
-    return all_notices
+    return all_notices, page_queries
 
 
 def _same_day(publication_date: str | None, target_day: str) -> bool:
@@ -105,7 +119,6 @@ def _same_day(publication_date: str | None, target_day: str) -> bool:
 
 
 def _filter_and_dedup_daily(notices: list[dict], target_day: str) -> tuple[list[dict], int, int]:
-    """Keep only notices with publicationDate on target day, then dedup by objectId."""
     filtered = [n for n in notices if _same_day(n.get("publicationDate"), target_day)]
     dropped_by_day = len(notices) - len(filtered)
 
@@ -129,22 +142,23 @@ def _filter_and_dedup_daily(notices: list[dict], target_day: str) -> tuple[list[
 def main() -> None:
     args = _parse_args()
     target_date = date.fromisoformat(args.target_date) if args.target_date else (date.today() - timedelta(days=1))
+    started_at = now_utc_iso()
 
     date_from = f"{target_date.isoformat()}T00:00:00"
     date_to = f"{target_date.isoformat()}T23:59:59"
 
     log.info("Fetching BZP notices for %s", target_date.isoformat())
-
     session = requests.Session()
     session.headers["Accept"] = "application/json"
 
     all_notices: list[dict] = []
-
+    fetch_queries: list[dict] = []
     for notice_type in NOTICE_TYPES:
         log.info("Fetching notice type: %s", notice_type)
-        notices = fetch_notices_for_type(notice_type, date_from, date_to, session)
+        notices, queries = fetch_notices_for_type(notice_type, date_from, date_to, session)
         all_notices.extend(notices)
-        log.info("  %s — %d notices", notice_type, len(notices))
+        fetch_queries.extend(queries)
+        log.info("  %s - %d notices", notice_type, len(notices))
 
     log.info("Total notices fetched (raw): %d", len(all_notices))
 
@@ -159,12 +173,40 @@ def main() -> None:
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / f"bzp_{target_date.isoformat()}.json"
-
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(filtered_notices, f, ensure_ascii=False, indent=2)
-
+    output_path.write_text(json.dumps(filtered_notices, ensure_ascii=False, indent=2), encoding="utf-8")
     log.info("Saved to %s", output_path)
+
+    repo_root = Path(__file__).resolve().parent.parent
+    meta_path = output_dir / "_meta" / f"fetch_day={target_date.isoformat()}.json"
+    manifest = {
+        "layer": "bronze_raw",
+        "target_date": target_date.isoformat(),
+        "started_at": started_at,
+        "completed_at": now_utc_iso(),
+        "endpoint": BASE_URL,
+        "query_window": {"from": date_from, "to": date_to, "page_size": PAGE_SIZE},
+        "notice_types": NOTICE_TYPES,
+        "queries": fetch_queries,
+        "counts": {
+            "fetched_raw": len(all_notices),
+            "dropped_by_day": dropped_by_day,
+            "dropped_duplicates": dropped_duplicates,
+            "kept_for_day": len(filtered_notices),
+        },
+        "output": {
+            "path": str(output_path),
+            "sha256": sha256_file(output_path),
+        },
+        "code": {
+            "git_commit": git_commit_sha(repo_root),
+            "script_hashes": script_hashes([Path(__file__).resolve()]),
+            "command": sys.argv,
+        },
+    }
+    atomic_write_json(meta_path, manifest)
+    log.info("Saved fetch lineage manifest to %s", meta_path)
 
 
 if __name__ == "__main__":
     main()
+

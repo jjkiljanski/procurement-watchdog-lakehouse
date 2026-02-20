@@ -16,6 +16,7 @@ Core goals:
 - deterministic, idempotent processing
 - safe daily reruns (date-partition overwrite)
 - stable schemas for downstream analytics/reporting
+- reproducible lineage metadata (inputs, code hashes, run metadata)
 
 ## Operating Modes
 
@@ -38,6 +39,7 @@ See `docs/OPERATING_MODES.md` for exact sequencing and retry semantics.
 - `bronze_raw` input files: `data/bronze_raw/bzp_YYYY-MM-DD.json`
 - `bronze` canonical Parquet: `data/bronze/notices/noticeType=<TYPE>/publicationDateDay=YYYY-MM-DD/`
 - Bronze validation errors: `data/bronze/errors/bzp_YYYY-MM-DD_errors.json`
+- Bronze lineage manifests: `data/bronze/_meta/day=YYYY-MM-DD.json`
 - API fetch and Bronze Spark conversion are intentionally separated (`bronze_raw` -> `bronze`) to improve backfill throughput and failure isolation.
 
 ### Silver
@@ -50,6 +52,7 @@ Built by `scripts/build_silver.py` (reads Bronze Parquet by default, raw fallbac
 Built by `scripts/build_case_derived_facts.py`:
 
 - `data/silver/case_derived_facts/asOfDate=YYYY-MM-DD/`
+- `data/silver/_meta/day=YYYY-MM-DD.json` (lineage/performance metadata)
 
 Notes:
 
@@ -81,6 +84,7 @@ Built by `scripts/build_gold.py`:
 - `scripts/build_case_derived_facts.py` - case-grain Silver derived layer (`full` / `incremental`)
 - `scripts/build_gold.py` - Gold marts/signals
 - `scripts/build_run_stats.py` - run-level reporting artifacts
+- `docs/OPERATING_MODES.md` - operational runbook (daily vs backfill + restart semantics)
 
 ## Local Execution
 

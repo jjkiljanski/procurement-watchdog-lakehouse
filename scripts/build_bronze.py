@@ -16,6 +16,7 @@ import json
 import logging
 import os
 import sys
+from collections import Counter
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -25,6 +26,7 @@ sys.path.insert(0, _src)
 os.environ["PYTHONPATH"] = _src + os.pathsep + os.environ.get("PYTHONPATH", "")
 
 from procurement.bronze.models import BzpNoticeBronze
+from procurement.lineage import atomic_write_json, git_commit_sha, now_utc_iso, script_hashes, sha256_file
 from procurement.logging import setup_logging
 from pydantic import ValidationError
 
@@ -104,6 +106,7 @@ def validate_raw(raw_records: list[dict]) -> tuple[list[BzpNoticeBronze], list[d
 def main() -> None:
     args = _parse_args()
     target_date = args.target_date or (date.today() - timedelta(days=1)).isoformat()
+    started_at = now_utc_iso()
 
     bronze_raw_dir = Path(args.bronze_raw_dir)
     bronze_dir = Path(args.bronze_dir)
@@ -173,6 +176,54 @@ def main() -> None:
         )
         log.info("Wrote %d validation errors to %s", len(errors), errors_path)
 
+    partition_counter = Counter(
+        (
+            str(row.get("noticeType")),
+            str(row.get("publicationDate", ""))[:10],
+        )
+        for row in valid_rows
+    )
+    partition_rows = [
+        {"noticeType": nt, "publicationDateDay": day, "rows": cnt}
+        for (nt, day), cnt in sorted(partition_counter.items(), key=lambda x: (x[0][1], x[0][0]))
+    ]
+
+    repo_root = Path(__file__).resolve().parent.parent
+    meta_path = bronze_dir / "_meta" / f"day={target_date}.json"
+    manifest = {
+        "layer": "bronze",
+        "target_date": target_date,
+        "started_at": started_at,
+        "completed_at": now_utc_iso(),
+        "inputs": [
+            {"path": str(p), "sha256": sha256_file(p)}
+            for p in input_files
+            if p.exists()
+        ],
+        "outputs": {
+            "notices_root": str(bronze_dir / "notices"),
+            "partition_rows": partition_rows,
+            "errors_path": str(bronze_dir / "errors" / f"bzp_{target_date}_errors.json") if errors else None,
+        },
+        "counts": {
+            "raw_total": len(raw_records),
+            "valid_total": len(valid),
+            "invalid_total": len(errors),
+        },
+        "code": {
+            "git_commit": git_commit_sha(repo_root),
+            "script_hashes": script_hashes(
+                [
+                    Path(__file__).resolve(),
+                    repo_root / "src" / "procurement" / "bronze" / "models.py",
+                ]
+            ),
+            "command": sys.argv,
+        },
+    }
+    atomic_write_json(meta_path, manifest)
+    log.info("Wrote bronze lineage manifest to %s", meta_path)
+
     log.info(
         "Summary: total=%d  valid=%d  invalid=%d",
         len(raw_records),
@@ -183,4 +234,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
