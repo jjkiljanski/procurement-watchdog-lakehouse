@@ -55,7 +55,7 @@ Key semantics:
 - `hasTenderResult` and `hasContractExecution` are not materialized in Silver; use `noticeType` semantics directly.
 - `procedureResult` and `procedureResultParsed` are emitted only for `TenderResultNotice` specific tables.
 - `AgreementIntentionNotice` specific table emits focused columns:
-- `ai_street_512`, `ai_contract_value_35`, `ai_prior_market_consultation_31` (without `htmlExtracted`,
+- `ai_street_512`, `value_estimated_procurement_ai_35`, `ai_prior_market_consultation_31` (without `htmlExtracted`,
 - and without criteria/weight/contractor-normalization fields that are null for this type).
 - `AgreementUpdateNotice` specific table drops `numCriteria`, `priceWeight`, `nonPriceWeightSum`, `contractorNameNormalized`, and `htmlExtracted`.
 - `ContractNotice` specific table drops `contractors`, `contractorNameNormalized`, and `htmlExtracted`, and emits:
@@ -64,12 +64,13 @@ Key semantics:
 - `ContractPerformingNotice` specific table drops `htmlExtracted`, `numCriteria`, `priceWeight`, `nonPriceWeightSum`,
 - `contractorNameNormalized`,
 - and emits contractor HTML fallback fields:
-- `cpn_contractor_national_ids_432`, `cpn_contractor_cities_434`, `cpn_contractor_provinces_436`, `cpn_contract_value_44`.
+- `contractor_id_raw`, `contractor_id_parsed`, `contractor_id_type`,
+- `cpn_contractor_cities_434`, `cpn_contractor_provinces_436`, `value_contract_reported_execution_44`, `value_paid_total_55`.
 - `NoticeUpdateNotice` specific table drops `cpvCodes`, `contractors`, criteria/weight fields and `htmlExtracted`,
 - and emits flattened change columns: `changed_notice_number`, `changed_notice_version`, `changes`.
 - `TenderResultNotice` specific table drops `numCriteria`, `priceWeight`, `nonPriceWeightSum`,
 - `contractorNameNormalized`, and `htmlExtracted`, and emits:
-- `trn_notice_concerns`, `trn_parts` (part-level `opis`, `mainCPV`, `secondaryCPV`, `expected_value`).
+- `trn_notice_concerns`, `trn_parts` (part-level `opis`, `mainCPV`, `secondaryCPV`, `value_estimated_procurement`).
 - Spark validation runs after each day write (`build_silver.py`, `build_silver_backfill.py`) and reports:
 - `street` non-null/non-empty coverage,
 - `postal_code` format validity (`XX-XXX`) for present values.
@@ -85,7 +86,7 @@ Key semantics:
 - `nonPriceWeightSum`, `contractorNameNormalized`, and `htmlExtracted`.
 - `CompetitionNotice` specific table drops `contractors`, `numCriteria`, `priceWeight`,
 - `nonPriceWeightSum`, `contractorNameNormalized`, and `htmlExtracted`, and emits:
-- `comp_num_awarded_63`, `comp_prizes_value_64`, `comp_order_value_651`, `comp_requirements_72`.
+- `comp_num_awarded_63`, `value_competition_prizes_64`, `value_competition_followon_order_651`, `comp_requirements_72`.
 - `ConcessionNotice` specific table drops `contractors`, `numCriteria`, `priceWeight`,
 - `nonPriceWeightSum`, `contractorNameNormalized`, and `htmlExtracted`.
 - `case_derived_facts` is case-grain lifecycle state with two modes:

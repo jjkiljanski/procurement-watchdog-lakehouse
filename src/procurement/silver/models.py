@@ -8,9 +8,10 @@ from procurement.bronze.models import ContractorDto
 
 
 class EvalCriterion(BaseModel):
-    """Single bid evaluation criterion with its weight."""
+    """Single bid evaluation criterion with order + weight."""
 
-    name: str
+    no: int | None = None
+    str: str
     weight: int
 
 
@@ -20,6 +21,8 @@ class ContractNoticePart(BaseModel):
     part_id: str | None = None
     opis: str | None = None
     kryteria_oceny: list[EvalCriterion] | None = None
+    mainCPV: str | None = None
+    secondaryCPV: list[str] | None = None
     criteria_aspects_4310: str | None = None
     criteria_aspects_4310_flag: bool | None = None
 
@@ -28,20 +31,21 @@ class ExtractedValues(BaseModel):
     """Monetary values extracted from the notice HTML.
 
     Different fields are populated depending on the notice type:
-    - ContractPerformingNotice: contract_value, total_paid
-    - TenderResultNotice: contract_value, estimated_value, lowest_bid, highest_bid, winning_bid
-    - ContractNotice: estimated_value
-    - AgreementUpdateNotice: contract_value
-    - AgreementIntentionNotice: estimated_value
-    - SmallContractNotice: contract_value
+    - ContractPerformingNotice: value_contract_reported_execution, value_paid_total
+    - TenderResultNotice: value_awarded_contract, value_estimated_procurement, value_bid_lowest, value_bid_highest, value_winning_offer
+    - ContractNotice: value_estimated_procurement
+    - AgreementUpdateNotice: value_awarded_contract
+    - AgreementIntentionNotice: value_estimated_procurement
+    - SmallContractNotice: value_awarded_contract
     """
 
-    contract_value: float | None = None
-    total_paid: float | None = None
-    estimated_value: float | None = None
-    lowest_bid: float | None = None
-    highest_bid: float | None = None
-    winning_bid: float | None = None
+    value_awarded_contract: float | None = None
+    value_contract_reported_execution: float | None = None
+    value_paid_total: float | None = None
+    value_estimated_procurement: float | None = None
+    value_bid_lowest: float | None = None
+    value_bid_highest: float | None = None
+    value_winning_offer: float | None = None
     currency: str = "PLN"
 
 
@@ -49,11 +53,11 @@ class TenderResultLot(BaseModel):
     """Per-lot values from TenderResultNotice."""
 
     lot_id: str | None = None
-    contract_value: float | None = None
-    lowest_bid: float | None = None
-    highest_bid: float | None = None
-    winning_bid: float | None = None
-    estimated_value: float | None = None
+    value_awarded_contract: float | None = None
+    value_bid_lowest: float | None = None
+    value_bid_highest: float | None = None
+    value_winning_offer: float | None = None
+    value_estimated_procurement: float | None = None
     winner: str | None = None
 
 
@@ -64,7 +68,7 @@ class TenderResultPart(BaseModel):
     opis: str | None = None
     mainCPV: str | None = None
     secondaryCPV: list[str] | None = None
-    expected_value: float | None = None
+    value_estimated_procurement: float | None = None
 
 
 class TenderResultEnrichment(BaseModel):
@@ -124,15 +128,20 @@ class HtmlExtracted(BaseModel):
     contract_execution: ContractExecution | None = None
     notice_change: NoticeChange | None = None
     ai_street_512: str | None = None
-    ai_contract_value_35: float | None = None
+    value_estimated_procurement_ai_35: float | None = None
     ai_prior_market_consultation_31: str | None = None
-    cpn_contractor_national_ids_432: list[str] | None = None
+    cpn_contractor_names_431: list[str] | None = None
+    contractor_id_raw: list[str] | None = None
+    contractor_id_parsed: list[str] | None = None
+    contractor_id_type: list[str] | None = None
     cpn_contractor_cities_434: list[str] | None = None
     cpn_contractor_provinces_436: list[str] | None = None
-    cpn_contract_value_44: float | None = None
+    cpn_contractor_countries_437: list[str] | None = None
+    value_contract_reported_execution_44: float | None = None
+    value_paid_total_55: float | None = None
     comp_num_awarded_63: int | None = None
-    comp_prizes_value_64: float | None = None
-    comp_order_value_651: float | None = None
+    value_competition_prizes_64: float | None = None
+    value_competition_followon_order_651: float | None = None
     comp_requirements_72: str | None = None
 
 
@@ -166,9 +175,9 @@ class BzpNoticeSilver(BaseModel):
     caseId: str | None = None
     noticeStage: str | None = None
     biddingWindowDays: int | None = None
-    numCriteria: int | None = None
-    priceWeight: int | None = None
-    nonPriceWeightSum: int | None = None
+    numCriteria: list[int] | None = None
+    priceWeight: list[int] | None = None
+    nonPriceWeightSum: list[int] | None = None
 
     deadlineChanged: bool | None = None
     criteriaChanged: bool | None = None

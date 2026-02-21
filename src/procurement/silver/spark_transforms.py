@@ -43,7 +43,8 @@ log = logging.getLogger(__name__)
 
 EVAL_CRITERION_SCHEMA = StructType(
     [
-        StructField("name", StringType()),
+        StructField("no", IntegerType()),
+        StructField("str", StringType()),
         StructField("weight", IntegerType()),
     ]
 )
@@ -53,6 +54,8 @@ CONTRACT_NOTICE_PART_SCHEMA = StructType(
         StructField("part_id", StringType()),
         StructField("opis", StringType()),
         StructField("kryteria_oceny", ArrayType(EVAL_CRITERION_SCHEMA)),
+        StructField("mainCPV", StringType()),
+        StructField("secondaryCPV", ArrayType(StringType())),
         StructField("criteria_aspects_4310", StringType()),
         StructField("criteria_aspects_4310_flag", BooleanType()),
     ]
@@ -60,12 +63,13 @@ CONTRACT_NOTICE_PART_SCHEMA = StructType(
 
 EXTRACTED_VALUES_SCHEMA = StructType(
     [
-        StructField("contract_value", DoubleType()),
-        StructField("total_paid", DoubleType()),
-        StructField("estimated_value", DoubleType()),
-        StructField("lowest_bid", DoubleType()),
-        StructField("highest_bid", DoubleType()),
-        StructField("winning_bid", DoubleType()),
+        StructField("value_awarded_contract", DoubleType()),
+        StructField("value_contract_reported_execution", DoubleType()),
+        StructField("value_paid_total", DoubleType()),
+        StructField("value_estimated_procurement", DoubleType()),
+        StructField("value_bid_lowest", DoubleType()),
+        StructField("value_bid_highest", DoubleType()),
+        StructField("value_winning_offer", DoubleType()),
         StructField("currency", StringType()),
     ]
 )
@@ -80,11 +84,11 @@ TENDER_RESULT_ENRICHMENT_SCHEMA = StructType(
 TENDER_RESULT_LOT_SCHEMA = StructType(
     [
         StructField("lot_id", StringType()),
-        StructField("contract_value", DoubleType()),
-        StructField("lowest_bid", DoubleType()),
-        StructField("highest_bid", DoubleType()),
-        StructField("winning_bid", DoubleType()),
-        StructField("estimated_value", DoubleType()),
+        StructField("value_awarded_contract", DoubleType()),
+        StructField("value_bid_lowest", DoubleType()),
+        StructField("value_bid_highest", DoubleType()),
+        StructField("value_winning_offer", DoubleType()),
+        StructField("value_estimated_procurement", DoubleType()),
         StructField("winner", StringType()),
     ]
 )
@@ -95,7 +99,7 @@ TENDER_RESULT_PART_SCHEMA = StructType(
         StructField("opis", StringType()),
         StructField("mainCPV", StringType()),
         StructField("secondaryCPV", ArrayType(StringType())),
-        StructField("expected_value", DoubleType()),
+        StructField("value_estimated_procurement", DoubleType()),
     ]
 )
 
@@ -145,15 +149,20 @@ HTML_EXTRACTED_SCHEMA = StructType(
         StructField("contract_execution", CONTRACT_EXECUTION_SCHEMA),
         StructField("notice_change", NOTICE_CHANGE_SCHEMA),
         StructField("ai_street_512", StringType()),
-        StructField("ai_contract_value_35", DoubleType()),
+        StructField("value_estimated_procurement_ai_35", DoubleType()),
         StructField("ai_prior_market_consultation_31", StringType()),
-        StructField("cpn_contractor_national_ids_432", ArrayType(StringType())),
+        StructField("cpn_contractor_names_431", ArrayType(StringType())),
+        StructField("contractor_id_raw", ArrayType(StringType())),
+        StructField("contractor_id_parsed", ArrayType(StringType())),
+        StructField("contractor_id_type", ArrayType(StringType())),
         StructField("cpn_contractor_cities_434", ArrayType(StringType())),
         StructField("cpn_contractor_provinces_436", ArrayType(StringType())),
-        StructField("cpn_contract_value_44", DoubleType()),
+        StructField("cpn_contractor_countries_437", ArrayType(StringType())),
+        StructField("value_contract_reported_execution_44", DoubleType()),
+        StructField("value_paid_total_55", DoubleType()),
         StructField("comp_num_awarded_63", IntegerType()),
-        StructField("comp_prizes_value_64", DoubleType()),
-        StructField("comp_order_value_651", DoubleType()),
+        StructField("value_competition_prizes_64", DoubleType()),
+        StructField("value_competition_followon_order_651", DoubleType()),
         StructField("comp_requirements_72", StringType()),
     ]
 )
@@ -172,7 +181,7 @@ HTML_AI_LIGHT_SCHEMA = StructType(
         StructField("ulica", StringType()),
         StructField("kod_pocztowy", StringType()),
         StructField("ai_street_512", StringType()),
-        StructField("ai_contract_value_35", DoubleType()),
+        StructField("value_estimated_procurement_ai_35", DoubleType()),
         StructField("ai_prior_market_consultation_31", StringType()),
     ]
 )
@@ -182,8 +191,8 @@ HTML_COMP_LIGHT_SCHEMA = StructType(
         StructField("ulica", StringType()),
         StructField("kod_pocztowy", StringType()),
         StructField("comp_num_awarded_63", IntegerType()),
-        StructField("comp_prizes_value_64", DoubleType()),
-        StructField("comp_order_value_651", DoubleType()),
+        StructField("value_competition_prizes_64", DoubleType()),
+        StructField("value_competition_followon_order_651", DoubleType()),
         StructField("comp_requirements_72", StringType()),
     ]
 )
@@ -192,10 +201,18 @@ HTML_CPN_LIGHT_SCHEMA = StructType(
     [
         StructField("ulica", StringType()),
         StructField("kod_pocztowy", StringType()),
-        StructField("cpn_contractor_national_ids_432", ArrayType(StringType())),
+        StructField("cpn_contractor_names_431", ArrayType(StringType())),
+        StructField("contractor_id_raw", ArrayType(StringType())),
+        StructField("contractor_id_parsed", ArrayType(StringType())),
+        StructField("contractor_id_type", ArrayType(StringType())),
         StructField("cpn_contractor_cities_434", ArrayType(StringType())),
         StructField("cpn_contractor_provinces_436", ArrayType(StringType())),
-        StructField("cpn_contract_value_44", DoubleType()),
+        StructField("cpn_contractor_countries_437", ArrayType(StringType())),
+        StructField("cpn_contract_date_41", StringType()),
+        StructField("cpn_execution_period_42", StringType()),
+        StructField("cpn_execution_end_date_52", StringType()),
+        StructField("value_contract_reported_execution_44", DoubleType()),
+        StructField("value_paid_total_55", DoubleType()),
     ]
 )
 
@@ -349,7 +366,7 @@ def _criteria_summary(criteria: list[dict] | None) -> tuple[int | None, int | No
     for criterion in criteria:
         if not isinstance(criterion, dict):
             continue
-        name = (criterion.get("name") or "").lower()
+        name = (criterion.get("str") or criterion.get("name") or "").lower()
         weight = criterion.get("weight")
         if isinstance(weight, int):
             total_weight += weight
@@ -406,6 +423,9 @@ HTML_FULL_DERIVED_COLUMNS = {
     "cn_criteria_aspects_4310",
     "cn_criteria_aspects_4310_flag",
     "cn_description_by_part",
+    "criteria",
+    "cpvMainCode",
+    "cpvSecondaryCode",
     "trn_notice_concerns",
     "trn_parts",
     "changed_notice_number",
@@ -511,12 +531,12 @@ def build_silver_for_notice_type(
             "ai_street_512",
             col("htmlExtracted.ai_street_512") if need_html_full else col("htmlLight.ai_street_512"),
         )
-    if "ai_contract_value_35" in required:
+    if "value_estimated_procurement_ai_35" in required:
         out = out.withColumn(
-            "ai_contract_value_35",
-            col("htmlExtracted.ai_contract_value_35")
+            "value_estimated_procurement_ai_35",
+            col("htmlExtracted.value_estimated_procurement_ai_35")
             if need_html_full
-            else col("htmlLight.ai_contract_value_35"),
+            else col("htmlLight.value_estimated_procurement_ai_35"),
         )
     if "ai_prior_market_consultation_31" in required:
         out = out.withColumn(
@@ -525,12 +545,33 @@ def build_silver_for_notice_type(
             if need_html_full
             else col("htmlLight.ai_prior_market_consultation_31"),
         )
-    if "cpn_contractor_national_ids_432" in required:
+    if "cpn_contractor_names_431" in required:
         out = out.withColumn(
-            "cpn_contractor_national_ids_432",
-            col("htmlExtracted.cpn_contractor_national_ids_432")
+            "cpn_contractor_names_431",
+            col("htmlExtracted.cpn_contractor_names_431")
             if need_html_full
-            else col("htmlLight.cpn_contractor_national_ids_432"),
+            else col("htmlLight.cpn_contractor_names_431"),
+        )
+    if "contractor_id_raw" in required:
+        out = out.withColumn(
+            "contractor_id_raw",
+            col("htmlExtracted.contractor_id_raw")
+            if need_html_full
+            else col("htmlLight.contractor_id_raw"),
+        )
+    if "contractor_id_parsed" in required:
+        out = out.withColumn(
+            "contractor_id_parsed",
+            col("htmlExtracted.contractor_id_parsed")
+            if need_html_full
+            else col("htmlLight.contractor_id_parsed"),
+        )
+    if "contractor_id_type" in required:
+        out = out.withColumn(
+            "contractor_id_type",
+            col("htmlExtracted.contractor_id_type")
+            if need_html_full
+            else col("htmlLight.contractor_id_type"),
         )
     if "cpn_contractor_cities_434" in required:
         out = out.withColumn(
@@ -546,12 +587,47 @@ def build_silver_for_notice_type(
             if need_html_full
             else col("htmlLight.cpn_contractor_provinces_436"),
         )
-    if "cpn_contract_value_44" in required:
+    if "cpn_contractor_countries_437" in required:
         out = out.withColumn(
-            "cpn_contract_value_44",
-            col("htmlExtracted.cpn_contract_value_44")
+            "cpn_contractor_countries_437",
+            col("htmlExtracted.cpn_contractor_countries_437")
             if need_html_full
-            else col("htmlLight.cpn_contract_value_44"),
+            else col("htmlLight.cpn_contractor_countries_437"),
+        )
+    if "value_contract_reported_execution_44" in required:
+        out = out.withColumn(
+            "value_contract_reported_execution_44",
+            col("htmlExtracted.value_contract_reported_execution_44")
+            if need_html_full
+            else col("htmlLight.value_contract_reported_execution_44"),
+        )
+    if "cpn_contract_date_41" in required:
+        out = out.withColumn(
+            "cpn_contract_date_41",
+            col("htmlExtracted.cpn_contract_date_41")
+            if need_html_full
+            else col("htmlLight.cpn_contract_date_41"),
+        )
+    if "cpn_execution_period_42" in required:
+        out = out.withColumn(
+            "cpn_execution_period_42",
+            col("htmlExtracted.cpn_execution_period_42")
+            if need_html_full
+            else col("htmlLight.cpn_execution_period_42"),
+        )
+    if "cpn_execution_end_date_52" in required:
+        out = out.withColumn(
+            "cpn_execution_end_date_52",
+            col("htmlExtracted.cpn_execution_end_date_52")
+            if need_html_full
+            else col("htmlLight.cpn_execution_end_date_52"),
+        )
+    if "value_paid_total_55" in required:
+        out = out.withColumn(
+            "value_paid_total_55",
+            col("htmlExtracted.value_paid_total_55")
+            if need_html_full
+            else col("htmlLight.value_paid_total_55"),
         )
     if "comp_num_awarded_63" in required:
         out = out.withColumn(
@@ -560,19 +636,19 @@ def build_silver_for_notice_type(
             if need_html_full
             else col("htmlLight.comp_num_awarded_63"),
         )
-    if "comp_prizes_value_64" in required:
+    if "value_competition_prizes_64" in required:
         out = out.withColumn(
-            "comp_prizes_value_64",
-            col("htmlExtracted.comp_prizes_value_64")
+            "value_competition_prizes_64",
+            col("htmlExtracted.value_competition_prizes_64")
             if need_html_full
-            else col("htmlLight.comp_prizes_value_64"),
+            else col("htmlLight.value_competition_prizes_64"),
         )
-    if "comp_order_value_651" in required:
+    if "value_competition_followon_order_651" in required:
         out = out.withColumn(
-            "comp_order_value_651",
-            col("htmlExtracted.comp_order_value_651")
+            "value_competition_followon_order_651",
+            col("htmlExtracted.value_competition_followon_order_651")
             if need_html_full
-            else col("htmlLight.comp_order_value_651"),
+            else col("htmlLight.value_competition_followon_order_651"),
         )
     if "comp_requirements_72" in required:
         out = out.withColumn(
@@ -603,6 +679,12 @@ def build_silver_for_notice_type(
         "cn_criteria_aspects_4310",
         "cn_criteria_aspects_4310_flag",
         "cn_description_by_part",
+        "criteria",
+        "cpvMainCode",
+        "cpvSecondaryCode",
+        "numCriteria",
+        "priceWeight",
+        "nonPriceWeightSum",
     }:
         out = out.withColumn(
             "cn_parts_normalized",
@@ -613,6 +695,8 @@ def build_silver_for_notice_type(
                 "'part_id', cast(null as string),"
                 "'opis', htmlExtracted.opis,"
                 "'kryteria_oceny', htmlExtracted.kryteria_oceny,"
+                "'mainCPV', cast(null as string),"
+                "'secondaryCPV', cast(array() as array<string>),"
                 "'criteria_aspects_4310', htmlExtracted.criteria_aspects_4310,"
                 "'criteria_aspects_4310_flag', htmlExtracted.criteria_aspects_4310_flag"
                 ")) END"
@@ -626,8 +710,13 @@ def build_silver_for_notice_type(
             expr(
                 "transform(cn_parts_normalized, p -> "
                 "map_from_entries(transform(coalesce(p.kryteria_oceny, array()), "
-                "x -> named_struct('key', x.name, 'value', x.weight))))"
+                "x -> named_struct('key', x.str, 'value', x.weight))))"
             ),
+        )
+    if "criteria" in required:
+        out = out.withColumn(
+            "criteria",
+            expr("transform(cn_parts_normalized, p -> coalesce(p.kryteria_oceny, array()))"),
         )
     if "cn_criteria_aspects_4310" in required:
         out = out.withColumn(
@@ -641,33 +730,72 @@ def build_silver_for_notice_type(
         )
     if "cn_description_by_part" in required:
         out = out.withColumn("cn_description_by_part", expr("transform(cn_parts_normalized, p -> p.opis)"))
+    if "cpvMainCode" in required:
+        out = out.withColumn("cpvMainCode", expr("transform(cn_parts_normalized, p -> p.mainCPV)"))
+    if "cpvSecondaryCode" in required:
+        out = out.withColumn(
+            "cpvSecondaryCode",
+            expr("transform(cn_parts_normalized, p -> coalesce(p.secondaryCPV, array()))"),
+        )
 
     if "numCriteria" in required:
         out = out.withColumn(
             "numCriteria",
-            size(col("htmlExtracted.kryteria_oceny")) if notice_type == "ContractNotice" else lit(None).cast("int"),
+            expr("transform(cn_parts_normalized, p -> size(coalesce(p.kryteria_oceny, array())))")
+            if notice_type == "ContractNotice"
+            else lit(None).cast("array<int>"),
         )
     if "priceWeight" in required:
         out = out.withColumn(
             "priceWeight",
             expr(
-                "aggregate(filter(htmlExtracted.kryteria_oceny, x -> lower(x.name) like '%cena%'),"
-                "0,(acc, x) -> acc + coalesce(x.weight, 0))"
+                "transform(cn_parts_normalized, p -> "
+                "aggregate("
+                "filter(coalesce(p.kryteria_oceny, array()), x -> lower(coalesce(x.str, '')) like '%cena%'),"
+                "0,"
+                "(acc, x) -> acc + coalesce(x.weight, 0)"
+                "))"
             )
             if notice_type == "ContractNotice"
-            else lit(None).cast("int"),
+            else lit(None).cast("array<int>"),
         )
     if "nonPriceWeightSum" in required:
         out = out.withColumn(
             "nonPriceWeightSum",
-            when(
-                col("htmlExtracted.kryteria_oceny").isNotNull(),
-                expr("aggregate(htmlExtracted.kryteria_oceny, 0, (acc, x) -> acc + coalesce(x.weight, 0))")
-                - coalesce(col("priceWeight"), lit(0)),
+            expr(
+                "transform(cn_parts_normalized, p -> "
+                "aggregate(coalesce(p.kryteria_oceny, array()), 0, (acc, x) -> acc + coalesce(x.weight, 0)) "
+                "- aggregate("
+                "filter(coalesce(p.kryteria_oceny, array()), x -> lower(coalesce(x.str, '')) like '%cena%'),"
+                "0, "
+                "(acc, x) -> acc + coalesce(x.weight, 0)"
+                "))"
             )
             if notice_type == "ContractNotice"
-            else lit(None).cast("int"),
+            else lit(None).cast("array<int>"),
         )
+
+    if notice_type is None:
+        # Backward-compatible mixed-mode build: only ContractNotice rows should carry list metrics.
+        if "numCriteria" in required:
+            out = out.withColumn(
+                "numCriteria",
+                when(col("noticeType") == lit("ContractNotice"), col("numCriteria")).otherwise(lit(None).cast("array<int>")),
+            )
+        if "priceWeight" in required:
+            out = out.withColumn(
+                "priceWeight",
+                when(col("noticeType") == lit("ContractNotice"), col("priceWeight")).otherwise(
+                    lit(None).cast("array<int>")
+                ),
+            )
+        if "nonPriceWeightSum" in required:
+            out = out.withColumn(
+                "nonPriceWeightSum",
+                when(col("noticeType") == lit("ContractNotice"), col("nonPriceWeightSum")).otherwise(
+                    lit(None).cast("array<int>")
+                ),
+            )
 
     drop_cols = ["htmlBody", "cpvCode"]
     if "htmlAddress" in out.columns:
@@ -690,15 +818,20 @@ def build_silver(df: DataFrame) -> DataFrame:
         "street",
         "postal_code",
         "ai_street_512",
-        "ai_contract_value_35",
+        "value_estimated_procurement_ai_35",
         "ai_prior_market_consultation_31",
-        "cpn_contractor_national_ids_432",
+        "cpn_contractor_names_431",
+        "contractor_id_raw",
+        "contractor_id_parsed",
+        "contractor_id_type",
         "cpn_contractor_cities_434",
         "cpn_contractor_provinces_436",
-        "cpn_contract_value_44",
+        "cpn_contractor_countries_437",
+        "value_contract_reported_execution_44",
+        "value_paid_total_55",
         "comp_num_awarded_63",
-        "comp_prizes_value_64",
-        "comp_order_value_651",
+        "value_competition_prizes_64",
+        "value_competition_followon_order_651",
         "comp_requirements_72",
         "changed_notice_number",
         "changed_notice_version",

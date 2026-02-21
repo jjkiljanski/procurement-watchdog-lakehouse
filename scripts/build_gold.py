@@ -19,7 +19,8 @@ from functools import reduce
 from pathlib import Path
 
 from pyspark.sql import DataFrame
-from pyspark.sql.functions import avg, coalesce, col, lit, struct, when
+from pyspark.sql.functions import avg, coalesce, col, expr, lit, size, struct, when
+from pyspark.sql.types import ArrayType
 
 # Allow imports from project root / src
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
@@ -126,6 +127,25 @@ def _nonnull_rate(df: DataFrame, field_name: str) -> float:
 
 
 def _normalize_for_gold(frame: DataFrame) -> DataFrame:
+    def _weight_scalar(field_name: str):
+        field = next((f for f in frame.schema.fields if f.name == field_name), None)
+        if field is None:
+            return lit(None).cast("double")
+        if isinstance(field.dataType, ArrayType):
+            return when(
+                col(field_name).isNull() | (size(col(field_name)) == 0),
+                lit(None).cast("double"),
+            ).otherwise(
+                expr(
+                    f"aggregate({field_name}, cast(0.0 as double), (acc, x) -> acc + coalesce(cast(x as double), 0.0))"
+                    f" / size({field_name})"
+                )
+            )
+        return safe_col(frame, field_name, "double").cast("double")
+
+    price_weight_scalar = _weight_scalar("priceWeight")
+    non_price_weight_scalar = _weight_scalar("nonPriceWeightSum")
+
     normalized_html = struct(
         safe_col(
             frame,
@@ -135,12 +155,12 @@ def _normalize_for_gold(frame: DataFrame) -> DataFrame:
         safe_col(
             frame,
             "htmlExtracted.lots",
-            "array<struct<contract_value:double,estimated_value:double,highest_bid:double,lot_id:string,lowest_bid:double,winner:string,winning_bid:double>>",
+            "array<struct<lot_id:string,value_awarded_contract:double,value_estimated_procurement:double,value_bid_highest:double,value_bid_lowest:double,winner:string,value_winning_offer:double,contract_value:double,estimated_value:double,highest_bid:double,lowest_bid:double,winning_bid:double>>",
         ).alias("lots"),
         safe_col(
             frame,
             "htmlExtracted.values",
-            "struct<contract_value:double,currency:string,estimated_value:double,highest_bid:double,lowest_bid:double,total_paid:double,winning_bid:double>",
+            "struct<value_awarded_contract:double,value_contract_reported_execution:double,value_paid_total:double,value_estimated_procurement:double,value_bid_highest:double,value_bid_lowest:double,value_winning_offer:double,contract_value:double,total_paid:double,estimated_value:double,highest_bid:double,lowest_bid:double,winning_bid:double,currency:string>",
         ).alias("values"),
         safe_col(frame, "htmlExtracted.nuts3_code", "string").alias("nuts3_code"),
     ).alias("htmlExtracted")
@@ -172,8 +192,8 @@ def _normalize_for_gold(frame: DataFrame) -> DataFrame:
                 "array<struct<contractorCity:string,contractorCountry:string,contractorName:string,contractorNationalId:string,contractorProvince:string>>",
             ).alias("contractors"),
             safe_col(frame, "biddingWindowDays", "long").alias("biddingWindowDays"),
-            safe_col(frame, "priceWeight", "double").alias("priceWeight"),
-            safe_col(frame, "nonPriceWeightSum", "double").alias("nonPriceWeightSum"),
+            price_weight_scalar.alias("priceWeight"),
+            non_price_weight_scalar.alias("nonPriceWeightSum"),
             safe_col(frame, "deadlineChanged", "boolean").alias("deadlineChanged"),
             safe_col(frame, "criteriaChanged", "boolean").alias("criteriaChanged"),
             safe_col(frame, "scopeChanged", "boolean").alias("scopeChanged"),

@@ -43,10 +43,22 @@ def _with_cpv_groups(df: DataFrame) -> DataFrame:
 
 def _base_notice_facts(df: DataFrame, target_date: str) -> DataFrame:
     cpv_df = _with_cpv_groups(df)
-    contract_value = safe_col(cpv_df, "htmlExtracted.values.contract_value", "double")
-    total_paid = safe_col(cpv_df, "htmlExtracted.values.total_paid", "double")
-    lowest_bid = safe_col(cpv_df, "htmlExtracted.values.lowest_bid", "double")
-    highest_bid = safe_col(cpv_df, "htmlExtracted.values.highest_bid", "double")
+    contract_value = coalesce(
+        safe_col(cpv_df, "htmlExtracted.values.value_awarded_contract", "double"),
+        safe_col(cpv_df, "htmlExtracted.values.contract_value", "double"),
+    )
+    total_paid = coalesce(
+        safe_col(cpv_df, "htmlExtracted.values.value_paid_total", "double"),
+        safe_col(cpv_df, "htmlExtracted.values.total_paid", "double"),
+    )
+    lowest_bid = coalesce(
+        safe_col(cpv_df, "htmlExtracted.values.value_bid_lowest", "double"),
+        safe_col(cpv_df, "htmlExtracted.values.lowest_bid", "double"),
+    )
+    highest_bid = coalesce(
+        safe_col(cpv_df, "htmlExtracted.values.value_bid_highest", "double"),
+        safe_col(cpv_df, "htmlExtracted.values.highest_bid", "double"),
+    )
     price_weight = safe_col(cpv_df, "priceWeight", "double")
     non_price_weight = safe_col(cpv_df, "nonPriceWeightSum", "double")
     country_expr = (
@@ -119,8 +131,20 @@ def _base_notice_facts(df: DataFrame, target_date: str) -> DataFrame:
             ),
         )
         .withColumn("contract_value", contract_value)
-        .withColumn("winning_bid_value", safe_col(cpv_df, "htmlExtracted.values.winning_bid", "double"))
-        .withColumn("estimated_value", safe_col(cpv_df, "htmlExtracted.values.estimated_value", "double"))
+        .withColumn(
+            "winning_bid_value",
+            coalesce(
+                safe_col(cpv_df, "htmlExtracted.values.value_winning_offer", "double"),
+                safe_col(cpv_df, "htmlExtracted.values.winning_bid", "double"),
+            ),
+        )
+        .withColumn(
+            "estimated_value",
+            coalesce(
+                safe_col(cpv_df, "htmlExtracted.values.value_estimated_procurement", "double"),
+                safe_col(cpv_df, "htmlExtracted.values.estimated_value", "double"),
+            ),
+        )
         .withColumn("total_paid_value", total_paid)
         .withColumn(
             "paid_ratio_effective",
@@ -227,6 +251,16 @@ def _base_notice_facts(df: DataFrame, target_date: str) -> DataFrame:
 def _lots_facts(df: DataFrame, target_date: str) -> DataFrame:
     cpv_df = _with_cpv_groups(df).withColumn("target_date", lit(target_date))
     has_lots = has_field(cpv_df, "htmlExtracted.lots")
+    has_lot_value_awarded_new = has_field(cpv_df, "htmlExtracted.lots.value_awarded_contract")
+    has_lot_value_estimated_new = has_field(cpv_df, "htmlExtracted.lots.value_estimated_procurement")
+    has_lot_value_low_new = has_field(cpv_df, "htmlExtracted.lots.value_bid_lowest")
+    has_lot_value_high_new = has_field(cpv_df, "htmlExtracted.lots.value_bid_highest")
+    has_lot_value_winning_new = has_field(cpv_df, "htmlExtracted.lots.value_winning_offer")
+    has_lot_value_awarded_old = has_field(cpv_df, "htmlExtracted.lots.contract_value")
+    has_lot_value_estimated_old = has_field(cpv_df, "htmlExtracted.lots.estimated_value")
+    has_lot_value_low_old = has_field(cpv_df, "htmlExtracted.lots.lowest_bid")
+    has_lot_value_high_old = has_field(cpv_df, "htmlExtracted.lots.highest_bid")
+    has_lot_value_winning_old = has_field(cpv_df, "htmlExtracted.lots.winning_bid")
 
     base_cols = [
         col("target_date"),
@@ -247,11 +281,26 @@ def _lots_facts(df: DataFrame, target_date: str) -> DataFrame:
             .select(
                 *base_cols,
                 col("lot.lot_id").alias("lot_id"),
-                col("lot.contract_value").cast("double").alias("lot_contract_value"),
-                col("lot.estimated_value").cast("double").alias("lot_estimated_value"),
-                col("lot.lowest_bid").cast("double").alias("lot_lowest_bid"),
-                col("lot.highest_bid").cast("double").alias("lot_highest_bid"),
-                col("lot.winning_bid").cast("double").alias("lot_winning_bid"),
+                coalesce(
+                    col("lot.value_awarded_contract") if has_lot_value_awarded_new else lit(None).cast("double"),
+                    col("lot.contract_value") if has_lot_value_awarded_old else lit(None).cast("double"),
+                ).cast("double").alias("lot_contract_value"),
+                coalesce(
+                    col("lot.value_estimated_procurement") if has_lot_value_estimated_new else lit(None).cast("double"),
+                    col("lot.estimated_value") if has_lot_value_estimated_old else lit(None).cast("double"),
+                ).cast("double").alias("lot_estimated_value"),
+                coalesce(
+                    col("lot.value_bid_lowest") if has_lot_value_low_new else lit(None).cast("double"),
+                    col("lot.lowest_bid") if has_lot_value_low_old else lit(None).cast("double"),
+                ).cast("double").alias("lot_lowest_bid"),
+                coalesce(
+                    col("lot.value_bid_highest") if has_lot_value_high_new else lit(None).cast("double"),
+                    col("lot.highest_bid") if has_lot_value_high_old else lit(None).cast("double"),
+                ).cast("double").alias("lot_highest_bid"),
+                coalesce(
+                    col("lot.value_winning_offer") if has_lot_value_winning_new else lit(None).cast("double"),
+                    col("lot.winning_bid") if has_lot_value_winning_old else lit(None).cast("double"),
+                ).cast("double").alias("lot_winning_bid"),
                 col("lot.winner").alias("lot_winner"),
                 lit(False).alias("lot_fallback_from_notice"),
             )
@@ -268,11 +317,26 @@ def _lots_facts(df: DataFrame, target_date: str) -> DataFrame:
         lots_df = cpv_df.select(
             *base_cols,
             lit(None).cast("string").alias("lot_id"),
-            safe_col(cpv_df, "htmlExtracted.values.contract_value", "double").alias("lot_contract_value"),
-            safe_col(cpv_df, "htmlExtracted.values.estimated_value", "double").alias("lot_estimated_value"),
-            safe_col(cpv_df, "htmlExtracted.values.lowest_bid", "double").alias("lot_lowest_bid"),
-            safe_col(cpv_df, "htmlExtracted.values.highest_bid", "double").alias("lot_highest_bid"),
-            safe_col(cpv_df, "htmlExtracted.values.winning_bid", "double").alias("lot_winning_bid"),
+            coalesce(
+                safe_col(cpv_df, "htmlExtracted.values.value_awarded_contract", "double"),
+                safe_col(cpv_df, "htmlExtracted.values.contract_value", "double"),
+            ).alias("lot_contract_value"),
+            coalesce(
+                safe_col(cpv_df, "htmlExtracted.values.value_estimated_procurement", "double"),
+                safe_col(cpv_df, "htmlExtracted.values.estimated_value", "double"),
+            ).alias("lot_estimated_value"),
+            coalesce(
+                safe_col(cpv_df, "htmlExtracted.values.value_bid_lowest", "double"),
+                safe_col(cpv_df, "htmlExtracted.values.lowest_bid", "double"),
+            ).alias("lot_lowest_bid"),
+            coalesce(
+                safe_col(cpv_df, "htmlExtracted.values.value_bid_highest", "double"),
+                safe_col(cpv_df, "htmlExtracted.values.highest_bid", "double"),
+            ).alias("lot_highest_bid"),
+            coalesce(
+                safe_col(cpv_df, "htmlExtracted.values.value_winning_offer", "double"),
+                safe_col(cpv_df, "htmlExtracted.values.winning_bid", "double"),
+            ).alias("lot_winning_bid"),
             lit(None).cast("string").alias("lot_winner"),
             lit(True).alias("lot_fallback_from_notice"),
             lit(False).alias("is_status_lot"),

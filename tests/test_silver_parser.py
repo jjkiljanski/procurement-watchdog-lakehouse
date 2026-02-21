@@ -123,12 +123,16 @@ CONTRACT_NOTICE_PARTS_HTML = """\
 <html><head></head><body><main>
 <h2 class="bg-light p-3 mt-4">SEKCJA IV - PRZEDMIOT ZAMOWIENIA</h2>
 <h3 class="mb-0">Czesc nr 1</h3>
+<h3 class="mb-0">4.2.6.) Główny kod CPV: <span class="normal">45000000-7 (Roboty budowlane)</span></h3>
+<h3 class="mb-0">4.2.7.) Dodatkowy kod CPV: <span class="normal">45100000-8 (Przygotowanie terenu)</span></h3>
 <h3 class="mb-0">4.3.5.) Nazwa kryterium: <span class="normal">Cena</span></h3>
 <h3 class="mb-0">4.3.6.) Waga: <span class="normal">60</span></h3>
 <h3 class="mb-0">4.3.5.) Nazwa kryterium: <span class="normal">Termin realizacji</span></h3>
 <h3 class="mb-0">4.3.6.) Waga: <span class="normal">40</span></h3>
 <h3 class="mb-0">4.3.10.) Zamawiajacy okresla aspekty spoleczne, srodowiskowe lub innowacyjne, zada etykiet lub stosuje rachunek kosztow cyklu zycia w odniesieniu do kryterium oceny ofert: <span class="normal">Tak</span></h3>
 <h3 class="mb-0">Czesc nr 2</h3>
+<h3 class="mb-0">4.2.6.) Główny kod CPV: <span class="normal">71000000-8 (Usługi architektoniczne)</span></h3>
+<h3 class="mb-0">4.2.7.) Dodatkowy kod CPV: <span class="normal">71200000-0 (Usługi architektoniczne i podobne)</span></h3>
 <h3 class="mb-0">4.3.5.) Nazwa kryterium: <span class="normal">Cena</span></h3>
 <h3 class="mb-0">4.3.6.) Waga: <span class="normal">80</span></h3>
 <h3 class="mb-0">4.3.5.) Nazwa kryterium: <span class="normal">Jakosc</span></h3>
@@ -161,6 +165,33 @@ CONTRACT_NOTICE_PARTS_DECIMAL_WEIGHTS_HTML = """\
 <h3 class="mb-0">4.3.6.) Waga: <span class="normal">60,00</span></h3>
 <h3 class="mb-0">4.3.5.) Nazwa kryterium: <span class="normal">Termin realizacji</span></h3>
 <h3 class="mb-0">4.3.6.) Waga: <span class="normal">40,00</span></h3>
+</main></body></html>"""
+
+CONTRACT_NOTICE_SECONDARY_CPV_PARAGRAPHS_HTML = """\
+<html><head></head><body><main>
+<h2 class="bg-light p-3 mt-4">SEKCJA IV - PRZEDMIOT ZAMOWIENIA</h2>
+<h3 class="mb-0">Czesc nr 1</h3>
+<h3 class="mb-0">4.2.6.) Główny kod CPV: </h3>
+<p class="mb-0">45233140-2 - Roboty drogowe</p>
+<h3 class="mb-0">4.2.7.) Dodatkowy kod CPV: </h3>
+<p class="mb-0">45100000-8 - Przygotowanie terenu pod budowę</p>
+<p class="mb-0">34922100-7 - Oznakowanie drogowe</p>
+<h3 class="mb-0">4.3.5.) Nazwa kryterium: <span class="normal">Cena</span></h3>
+<h3 class="mb-0">4.3.6.) Waga: <span class="normal">100</span></h3>
+</main></body></html>"""
+
+CONTRACT_NOTICE_SINGLE_PART_NO_HEADER_HTML = """\
+<html><head></head><body><main>
+<h2 class="bg-light p-3 mt-4">SEKCJA IV - PRZEDMIOT ZAMOWIENIA</h2>
+<h3 class="mb-0">4.2.2.) Krótki opis przedmiotu zamówienia</h3>
+<p class="mb-0">Opis jednej części.</p>
+<h3 class="mb-0">4.2.6.) Główny kod CPV: <span class="normal">45200000-9 (Roboty budowlane)</span></h3>
+<h3 class="mb-0">4.2.7.) Dodatkowy kod CPV: <span class="normal">45110000-1 (Roboty ziemne)</span></h3>
+<h3 class="mb-0">4.3.5.) Nazwa kryterium: <span class="normal">Cena</span></h3>
+<h3 class="mb-0">4.3.6.) Waga: <span class="normal">70</span></h3>
+<h3 class="mb-0">4.3.5.) Nazwa kryterium: <span class="normal">Termin</span></h3>
+<h3 class="mb-0">4.3.6.) Waga: <span class="normal">30</span></h3>
+<h3 class="mb-0">4.3.10.) ... <span class="normal">Tak</span></h3>
 </main></body></html>"""
 
 OGLOSZENIE_DOTYCZY_HTML = """\
@@ -251,12 +282,16 @@ CONTRACT_PERFORMING_LABEL_BASED_HTML = """\
 
 CONTRACT_PERFORMING_MULTI_CONTRACTOR_HTML = """\
 <html><head></head><body><main>
-<h3 class="mb-0">4.3.2.) Krajowy Numer Identyfikacyjny: <span class="normal">1111111111</span></h3>
+<h3 class="mb-0">4.3.1.) Nazwa (firma) wykonawcy, któremu udzielono zamówienia: <span class="normal">ABC Sp. z o.o.</span></h3>
+<h3 class="mb-0">4.3.2.) Krajowy Numer Identyfikacyjny: <span class="normal">NIP: 639-10-05-245</span></h3>
 <h3 class="mb-0">4.3.4.) Miejscowość: <span class="normal">Warszawa</span></h3>
 <h3 class="mb-0">4.3.6.) Województwo: <span class="normal">mazowieckie</span></h3>
-<h3 class="mb-0">4.3.2.) Krajowy Numer Identyfikacyjny: <span class="normal">2222222222</span></h3>
+<h3 class="mb-0">4.3.7.) Kraj: <span class="normal">Polska</span></h3>
+<h3 class="mb-0">4.3.1.) Nazwa (firma) wykonawcy, któremu udzielono zamówienia: <span class="normal">XYZ S.A.</span></h3>
+<h3 class="mb-0">4.3.2.) Krajowy Numer Identyfikacyjny: <span class="normal">DE-ABC-987654</span></h3>
 <h3 class="mb-0">4.3.4.) Miejscowość: <span class="normal">Krakow</span></h3>
 <h3 class="mb-0">4.3.6.) Województwo: <span class="normal">malopolskie</span></h3>
+<h3 class="mb-0">4.3.7.) Kraj: <span class="normal">Niemcy</span></h3>
 <h3 class="mb-0">4.4.) Wartość umowy: <span class="normal">12345,67 PLN</span></h3>
 </main></body></html>"""
 
@@ -483,9 +518,9 @@ class TestCriteriaExtraction:
 
     def test_criteria_names_and_weights(self):
         r = parse_html(MINIMAL_HTML)
-        names = {c.name for c in r.kryteria_oceny}
+        names = {c.str for c in r.kryteria_oceny}
         assert names == {"Cena", "Gwarancja"}
-        weights = {c.name: c.weight for c in r.kryteria_oceny}
+        weights = {c.str: c.weight for c in r.kryteria_oceny}
         assert weights["Cena"] == 60
         assert weights["Gwarancja"] == 40
 
@@ -502,7 +537,7 @@ class TestCriteriaExtraction:
 <h3 class="mb-0">4.3.6.) Waga: <span class="normal">40,00</span></h3>
 </main></body></html>"""
         r = parse_html(html)
-        weights = {c.name: c.weight for c in (r.kryteria_oceny or [])}
+        weights = {c.str: c.weight for c in (r.kryteria_oceny or [])}
         assert weights["Cena"] == 60
         assert weights["Jakosc"] == 40
 
@@ -514,17 +549,17 @@ class TestTenderResultValues:
     def test_contract_value(self):
         r = parse_html(TENDER_RESULT_HTML, notice_type="TenderResultNotice")
         assert r.values is not None
-        assert r.values.contract_value == pytest.approx(465163.88)
+        assert r.values.value_awarded_contract == pytest.approx(465163.88)
 
     def test_estimated_value(self):
         r = parse_html(TENDER_RESULT_HTML, notice_type="TenderResultNotice")
-        assert r.values.estimated_value == pytest.approx(500000.0)
+        assert r.values.value_estimated_procurement == pytest.approx(500000.0)
 
     def test_bid_values(self):
         r = parse_html(TENDER_RESULT_HTML, notice_type="TenderResultNotice")
-        assert r.values.lowest_bid == pytest.approx(400000.0)
-        assert r.values.highest_bid == pytest.approx(550000.0)
-        assert r.values.winning_bid == pytest.approx(465163.88)
+        assert r.values.value_bid_lowest == pytest.approx(400000.0)
+        assert r.values.value_bid_highest == pytest.approx(550000.0)
+        assert r.values.value_winning_offer == pytest.approx(465163.88)
 
     def test_default_currency(self):
         r = parse_html(TENDER_RESULT_HTML, notice_type="TenderResultNotice")
@@ -533,7 +568,7 @@ class TestTenderResultValues:
     def test_legacy_fallback_without_notice_type(self):
         r = parse_html(TENDER_RESULT_HTML)
         assert r.values is not None
-        assert r.values.contract_value == pytest.approx(465163.88)
+        assert r.values.value_awarded_contract == pytest.approx(465163.88)
 
     def test_multi_lot_extraction(self):
         r = parse_html(TENDER_RESULT_MULTI_LOT_HTML, notice_type="TenderResultNotice")
@@ -541,8 +576,8 @@ class TestTenderResultValues:
         assert len(r.lots) == 2
         assert r.lots[0].lot_id == "1"
         assert r.lots[1].lot_id == "2"
-        assert r.lots[0].winning_bid == pytest.approx(95000.0)
-        assert r.lots[1].winning_bid == pytest.approx(190000.0)
+        assert r.lots[0].value_winning_offer == pytest.approx(95000.0)
+        assert r.lots[1].value_winning_offer == pytest.approx(190000.0)
         assert r.values is None
 
     def test_cancellation_creates_status_lots(self):
@@ -562,9 +597,9 @@ class TestTenderResultValues:
         assert p1.opis == "Opis 1"
         assert p1.mainCPV.startswith("45000000-7")
         assert p1.secondaryCPV and p1.secondaryCPV[0].startswith("45100000-8")
-        assert p1.expected_value == pytest.approx(100000.0)
+        assert p1.value_estimated_procurement == pytest.approx(100000.0)
         assert p2.part_id == "2"
-        assert p2.expected_value == pytest.approx(200000.0)
+        assert p2.value_estimated_procurement == pytest.approx(200000.0)
 
 
 # --- Value extraction: ContractPerformingNotice ---
@@ -574,11 +609,11 @@ class TestContractPerformingValues:
     def test_contract_value(self):
         r = parse_html(CONTRACT_PERFORMING_HTML, notice_type="ContractPerformingNotice")
         assert r.values is not None
-        assert r.values.contract_value == pytest.approx(24280.56)
+        assert r.values.value_contract_reported_execution == pytest.approx(24280.56)
 
     def test_total_paid(self):
         r = parse_html(CONTRACT_PERFORMING_HTML, notice_type="ContractPerformingNotice")
-        assert r.values.total_paid == pytest.approx(20000.0)
+        assert r.values.value_paid_total == pytest.approx(20000.0)
 
     def test_currency_pln(self):
         r = parse_html(CONTRACT_PERFORMING_HTML, notice_type="ContractPerformingNotice")
@@ -587,7 +622,7 @@ class TestContractPerformingValues:
     def test_currency_eur(self):
         r = parse_html(CONTRACT_PERFORMING_EUR_HTML, notice_type="ContractPerformingNotice")
         assert r.values.currency == "EUR"
-        assert r.values.contract_value == pytest.approx(39127.53)
+        assert r.values.value_contract_reported_execution == pytest.approx(39127.53)
 
 
 # --- Value extraction: ContractNotice ---
@@ -597,12 +632,12 @@ class TestContractNoticeValues:
     def test_estimated_value_from_415(self):
         r = parse_html(CONTRACT_NOTICE_HTML, notice_type="ContractNotice")
         assert r.values is not None
-        assert r.values.estimated_value == pytest.approx(35946524.88)
+        assert r.values.value_estimated_procurement == pytest.approx(35946524.88)
 
     def test_fallback_to_416(self):
         r = parse_html(CONTRACT_NOTICE_VAT_HTML, notice_type="ContractNotice")
         assert r.values is not None
-        assert r.values.estimated_value == pytest.approx(570513.92)
+        assert r.values.value_estimated_procurement == pytest.approx(570513.92)
 
     def test_no_value_returns_none(self):
         r = parse_html(MINIMAL_HTML, notice_type="ContractNotice")
@@ -627,12 +662,18 @@ class TestContractNoticeValues:
         assert part2.criteria_aspects_4310 == "Nie"
         assert part2.criteria_aspects_4310_flag is False
 
-        p1_weights = {c.name: c.weight for c in (part1.kryteria_oceny or [])}
-        p2_weights = {c.name: c.weight for c in (part2.kryteria_oceny or [])}
+        p1_weights = {c.str: c.weight for c in (part1.kryteria_oceny or [])}
+        p2_weights = {c.str: c.weight for c in (part2.kryteria_oceny or [])}
         assert p1_weights["Cena"] == 60
         assert p1_weights["Termin realizacji"] == 40
         assert p2_weights["Cena"] == 80
         assert p2_weights["Jakosc"] == 20
+        assert [c.no for c in (part1.kryteria_oceny or [])] == [1, 2]
+        assert [c.no for c in (part2.kryteria_oceny or [])] == [1, 2]
+        assert part1.mainCPV == "45000000-7"
+        assert part2.mainCPV == "71000000-8"
+        assert part1.secondaryCPV == ["45100000-8"]
+        assert part2.secondaryCPV == ["71200000-0"]
 
     def test_extracts_part_descriptions(self):
         r = parse_html(CONTRACT_NOTICE_PARTS_WITH_OPIS_HTML, notice_type="ContractNotice")
@@ -643,9 +684,28 @@ class TestContractNoticeValues:
     def test_extracts_contract_notice_parts_decimal_weights(self):
         r = parse_html(CONTRACT_NOTICE_PARTS_DECIMAL_WEIGHTS_HTML, notice_type="ContractNotice")
         assert r.contract_notice_parts is not None
-        weights = {c.name: c.weight for c in (r.contract_notice_parts[0].kryteria_oceny or [])}
+        weights = {c.str: c.weight for c in (r.contract_notice_parts[0].kryteria_oceny or [])}
         assert weights["Cena"] == 60
         assert weights["Termin realizacji"] == 40
+
+    def test_single_part_without_explicit_part_header(self):
+        r = parse_html(CONTRACT_NOTICE_SINGLE_PART_NO_HEADER_HTML, notice_type="ContractNotice")
+        assert r.contract_notice_parts is not None
+        assert len(r.contract_notice_parts) == 1
+        part = r.contract_notice_parts[0]
+        assert part.part_id is None
+        assert part.mainCPV == "45200000-9"
+        assert part.secondaryCPV == ["45110000-1"]
+        assert part.opis == "Opis jednej części."
+        assert [c.no for c in (part.kryteria_oceny or [])] == [1, 2]
+
+    def test_extracts_secondary_cpv_from_paragraph_lines(self):
+        r = parse_html(CONTRACT_NOTICE_SECONDARY_CPV_PARAGRAPHS_HTML, notice_type="ContractNotice")
+        assert r.contract_notice_parts is not None
+        assert len(r.contract_notice_parts) == 1
+        part = r.contract_notice_parts[0]
+        assert part.mainCPV == "45233140-2"
+        assert part.secondaryCPV == ["45100000-8", "34922100-7"]
 
 
 # --- Value extraction: AgreementUpdateNotice ---
@@ -655,7 +715,7 @@ class TestAgreementUpdateValues:
     def test_contract_value(self):
         r = parse_html(AGREEMENT_UPDATE_HTML, notice_type="AgreementUpdateNotice")
         assert r.values is not None
-        assert r.values.contract_value == pytest.approx(996945.0)
+        assert r.values.value_awarded_contract == pytest.approx(996945.0)
 
 
 # --- Value extraction: AgreementIntentionNotice ---
@@ -665,12 +725,12 @@ class TestAgreementIntentionValues:
     def test_estimated_value(self):
         r = parse_html(AGREEMENT_INTENTION_HTML, notice_type="AgreementIntentionNotice")
         assert r.values is not None
-        assert r.values.estimated_value == pytest.approx(2509756.10)
+        assert r.values.value_estimated_procurement == pytest.approx(2509756.10)
 
     def test_ai_details_extracted(self):
         r = parse_html(AGREEMENT_INTENTION_DETAILS_HTML, notice_type="AgreementIntentionNotice")
         assert r.ai_street_512 == "ul. Rynek 5"
-        assert r.ai_contract_value_35 == pytest.approx(123456.78)
+        assert r.value_estimated_procurement_ai_35 == pytest.approx(123456.78)
         assert r.ai_prior_market_consultation_31 == "Tak"
 
 
@@ -681,7 +741,7 @@ class TestSmallContractValues:
     def test_contract_value_bare_number(self):
         r = parse_html(SMALL_CONTRACT_HTML, notice_type="SmallContractNotice")
         assert r.values is not None
-        assert r.values.contract_value == pytest.approx(25399.50)
+        assert r.values.value_awarded_contract == pytest.approx(25399.50)
 
     def test_currency_from_separate_field(self):
         r = parse_html(SMALL_CONTRACT_HTML, notice_type="SmallContractNotice")
@@ -692,15 +752,15 @@ class TestCompetitionNoticeValues:
     def test_extracts_competition_specific_fields(self):
         r = parse_html(COMPETITION_NOTICE_HTML, notice_type="CompetitionNotice")
         assert r.comp_num_awarded_63 == 3
-        assert r.comp_prizes_value_64 == pytest.approx(50000.0)
-        assert r.comp_order_value_651 == pytest.approx(120000.0)
+        assert r.value_competition_prizes_64 == pytest.approx(50000.0)
+        assert r.value_competition_followon_order_651 == pytest.approx(120000.0)
         assert r.comp_requirements_72 == "Tak"
 
     def test_missing_prizes_value_is_none(self):
         r = parse_html(COMPETITION_NOTICE_NO_PRIZES_HTML, notice_type="CompetitionNotice")
         assert r.comp_num_awarded_63 == 1
-        assert r.comp_prizes_value_64 is None
-        assert r.comp_order_value_651 == pytest.approx(80000.0)
+        assert r.value_competition_prizes_64 is None
+        assert r.value_competition_followon_order_651 == pytest.approx(80000.0)
 
 
 # --- Value extraction: unsupported types ---
@@ -758,7 +818,7 @@ class TestTenderResultEnrichment:
     def test_values_still_extracted(self):
         r = parse_html(TENDER_RESULT_ENRICHMENT_HTML, notice_type="TenderResultNotice")
         assert r.values is not None
-        assert r.values.contract_value == pytest.approx(465163.88)
+        assert r.values.value_awarded_contract == pytest.approx(465163.88)
 
     def test_no_enrichment_for_other_types(self):
         r = parse_html(CONTRACT_PERFORMING_HTML, notice_type="ContractPerformingNotice")
@@ -805,7 +865,7 @@ class TestContractExecution:
     def test_values_still_extracted(self):
         r = parse_html(CONTRACT_PERFORMING_DETAILS_HTML, notice_type="ContractPerformingNotice")
         assert r.values is not None
-        assert r.values.contract_value == pytest.approx(24280.56)
+        assert r.values.value_contract_reported_execution == pytest.approx(24280.56)
 
     def test_no_execution_for_other_types(self):
         r = parse_html(TENDER_RESULT_HTML, notice_type="TenderResultNotice")
@@ -828,21 +888,35 @@ class TestContractExecution:
             CONTRACT_PERFORMING_MULTI_CONTRACTOR_HTML,
             notice_type="ContractPerformingNotice",
         )
-        assert r.cpn_contractor_national_ids_432 == ["1111111111", "2222222222"]
+        assert r.cpn_contractor_names_431 == ["ABC Sp. z o.o.", "XYZ S.A."]
+        assert r.contractor_id_raw == ["NIP: 639-10-05-245", "DE-ABC-987654"]
+        assert r.contractor_id_parsed == ["6391005245", "DE-ABC-987654"]
+        assert r.contractor_id_type == ["NIP", "foreign"]
         assert r.cpn_contractor_cities_434 == ["Warszawa", "Krakow"]
         assert r.cpn_contractor_provinces_436 == ["mazowieckie", "malopolskie"]
-        assert r.cpn_contract_value_44 == pytest.approx(12345.67)
+        assert r.cpn_contractor_countries_437 == ["Polska", "Niemcy"]
+        assert r.value_contract_reported_execution_44 == pytest.approx(12345.67)
 
     def test_contract_value_not_confused_with_144(self):
         r = parse_html(
             CONTRACT_PERFORMING_WITH_144_COLLISION_HTML,
             notice_type="ContractPerformingNotice",
         )
-        assert r.cpn_contract_value_44 == pytest.approx(624212.60)
+        assert r.value_contract_reported_execution_44 == pytest.approx(624212.60)
 
     def test_contract_value_not_confused_with_144_light(self):
         r = parse_html_contract_performing_light(CONTRACT_PERFORMING_WITH_144_COLLISION_HTML)
-        assert r["cpn_contract_value_44"] == pytest.approx(624212.60)
+        assert r["value_contract_reported_execution_44"] == pytest.approx(624212.60)
+
+    def test_extracts_multi_contractor_html_fields_light(self):
+        r = parse_html_contract_performing_light(CONTRACT_PERFORMING_MULTI_CONTRACTOR_HTML)
+        assert r["cpn_contractor_names_431"] == ["ABC Sp. z o.o.", "XYZ S.A."]
+        assert r["contractor_id_raw"] == ["NIP: 639-10-05-245", "DE-ABC-987654"]
+        assert r["contractor_id_parsed"] == ["6391005245", "DE-ABC-987654"]
+        assert r["contractor_id_type"] == ["NIP", "foreign"]
+        assert r["cpn_contractor_cities_434"] == ["Warszawa", "Krakow"]
+        assert r["cpn_contractor_provinces_436"] == ["mazowieckie", "malopolskie"]
+        assert r["cpn_contractor_countries_437"] == ["Polska", "Niemcy"]
 
     def test_contract_performing_light_does_not_use_41_43_for_address(self):
         html = """\
@@ -853,6 +927,43 @@ class TestContractExecution:
         r = parse_html_contract_performing_light(html)
         assert r["ulica"] is None
         assert r["kod_pocztowy"] is None
+
+    def test_contractor_id_classification_poland_regon_pesel_and_nonrecognized(self):
+        html = """\
+<html><head></head><body><main>
+<h3 class="mb-0">4.3.2.) Krajowy Numer Identyfikacyjny: <span class="normal">REGON: 471 325 473</span></h3>
+<h3 class="mb-0">4.3.7.) Kraj: <span class="normal">Polska</span></h3>
+<h3 class="mb-0">4.3.2.) Krajowy Numer Identyfikacyjny: <span class="normal">44051401458</span></h3>
+<h3 class="mb-0">4.3.7.) Kraj: <span class="normal">Polska</span></h3>
+<h3 class="mb-0">4.3.2.) Krajowy Numer Identyfikacyjny: <span class="normal">ID-ABCD</span></h3>
+<h3 class="mb-0">4.3.7.) Kraj: <span class="normal">Polska</span></h3>
+</main></body></html>"""
+        r = parse_html_contract_performing_light(html)
+        assert r["contractor_id_raw"] == ["REGON: 471 325 473", "44051401458", "ID-ABCD"]
+        assert r["contractor_id_parsed"] == ["471325473", "44051401458"]
+        assert r["contractor_id_type"] == ["REGON", "PESEL", "not_recognized"]
+
+    def test_contractor_id_pesel_example_is_typed_as_pesel(self):
+        html = """\
+<html><head></head><body><main>
+<h3 class="mb-0">4.3.2.) Krajowy Numer Identyfikacyjny: <span class="normal">57300200091</span></h3>
+<h3 class="mb-0">4.3.7.) Kraj: <span class="normal">Polska</span></h3>
+</main></body></html>"""
+        r = parse_html_contract_performing_light(html)
+        assert r["contractor_id_raw"] == ["57300200091"]
+        assert r["contractor_id_parsed"] == ["57300200091"]
+        assert r["contractor_id_type"] == ["PESEL"]
+
+    def test_contractor_id_prefers_nip_over_regon_when_both_present(self):
+        html = """\
+<html><head></head><body><main>
+<h3 class="mb-0">4.3.2.) Krajowy Numer Identyfikacyjny: <span class="normal">NIP 7393843471 REGON 281393800</span></h3>
+<h3 class="mb-0">4.3.7.) Kraj: <span class="normal">Polska</span></h3>
+</main></body></html>"""
+        r = parse_html_contract_performing_light(html)
+        assert r["contractor_id_raw"] == ["NIP 7393843471 REGON 281393800"]
+        assert r["contractor_id_parsed"] == ["7393843471"]
+        assert r["contractor_id_type"] == ["NIP"]
 
 
 # --- Detail extraction: NoticeChange ---
@@ -980,4 +1091,7 @@ class TestSilverDerivedHelpers:
         assert deadline_changed is True
         assert criteria_changed is False
         assert scope_changed is False
+
+
+
 

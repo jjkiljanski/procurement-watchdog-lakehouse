@@ -223,9 +223,19 @@ def _read_notices_merged(
             safe_col(specific_raw, "submittingOffersDate", "string"),
             safe_col(envelope_slim, "env_submittingOffersDate", "string"),
         ).alias("submittingOffersDate"),
-        safe_col(specific_raw, "htmlExtracted", "struct<notice_change:struct<changes:array<struct<changed_section:string,change_description:string>>>,contract_execution:struct<contract_date:string,executed_on_time:boolean,executed_properly:boolean,execution_end_date:string,execution_period:string,num_changes:bigint>,values:struct<contract_value:double,total_paid:double>>").alias(
+        safe_col(specific_raw, "htmlExtracted", "struct<notice_change:struct<changes:array<struct<changed_section:string,change_description:string>>>,contract_execution:struct<contract_date:string,executed_on_time:boolean,executed_properly:boolean,execution_end_date:string,execution_period:string,num_changes:bigint>,values:struct<value_contract_reported_execution:double,value_paid_total:double,contract_value:double,total_paid:double>>").alias(
             "htmlExtracted"
         ),
+        safe_col(
+            specific_raw,
+            "changes",
+            "array<struct<changed_section:string,change_description:string>>",
+        ).alias("changes"),
+        safe_col(specific_raw, "cpn_contract_date_41", "string").alias("cpn_contract_date_41"),
+        safe_col(specific_raw, "cpn_execution_period_42", "string").alias("cpn_execution_period_42"),
+        safe_col(specific_raw, "cpn_execution_end_date_52", "string").alias("cpn_execution_end_date_52"),
+        safe_col(specific_raw, "value_contract_reported_execution_44", "double").alias("value_contract_reported_execution_44"),
+        safe_col(specific_raw, "value_paid_total_55", "double").alias("value_paid_total_55"),
     )
 
     if case_ids is not None:
@@ -245,7 +255,7 @@ def _build_case_derived(notices: DataFrame) -> DataFrame:
             "updateDeltaText",
             lower(
                 expr(
-                    "concat_ws(' ', transform(coalesce(htmlExtracted.notice_change.changes, array()), "
+                    "concat_ws(' ', transform(coalesce(changes, htmlExtracted.notice_change.changes, array()), "
                     "x -> concat_ws(' ', coalesce(x.changed_section, ''), coalesce(x.change_description, ''))))"
                 )
             ),
@@ -266,62 +276,85 @@ def _build_case_derived(notices: DataFrame) -> DataFrame:
             "executionDurationDays",
             coalesce(
                 when(
-                    col("htmlExtracted.contract_execution.execution_period").isNotNull(),
+                    coalesce(col("cpn_execution_period_42"), col("htmlExtracted.contract_execution.execution_period")).isNotNull(),
                     expr(
-                        "try_cast(regexp_extract(lower(htmlExtracted.contract_execution.execution_period), "
+                        "try_cast(regexp_extract(lower(coalesce(cpn_execution_period_42, htmlExtracted.contract_execution.execution_period)), "
                         "'(\\d+)\\s*(?:dni|dzien|days?)', 1) as int)"
                     ),
                 ),
                 when(
-                    col("htmlExtracted.contract_execution.execution_period").isNotNull(),
+                    coalesce(col("cpn_execution_period_42"), col("htmlExtracted.contract_execution.execution_period")).isNotNull(),
                     expr(
-                        "try_cast(regexp_extract(lower(htmlExtracted.contract_execution.execution_period), "
+                        "try_cast(regexp_extract(lower(coalesce(cpn_execution_period_42, htmlExtracted.contract_execution.execution_period)), "
                         "'(\\d+)\\s*(?:tygod\\w*|weeks?)', 1) as int)"
                     )
                     * lit(7),
                 ),
                 when(
-                    col("htmlExtracted.contract_execution.execution_period").isNotNull(),
+                    coalesce(col("cpn_execution_period_42"), col("htmlExtracted.contract_execution.execution_period")).isNotNull(),
                     expr(
-                        "try_cast(regexp_extract(lower(htmlExtracted.contract_execution.execution_period), "
+                        "try_cast(regexp_extract(lower(coalesce(cpn_execution_period_42, htmlExtracted.contract_execution.execution_period)), "
                         "'(\\d+)\\s*(?:miesi\\w*|months?)', 1) as int)"
                     )
                     * lit(30),
                 ),
                 when(
-                    col("htmlExtracted.contract_execution.contract_date").isNotNull()
-                    & col("htmlExtracted.contract_execution.execution_end_date").isNotNull(),
+                    coalesce(col("cpn_contract_date_41"), col("htmlExtracted.contract_execution.contract_date")).isNotNull()
+                    & coalesce(col("cpn_execution_end_date_52"), col("htmlExtracted.contract_execution.execution_end_date")).isNotNull(),
                     datediff(
-                        to_date(col("htmlExtracted.contract_execution.execution_end_date")),
-                        to_date(col("htmlExtracted.contract_execution.contract_date")),
+                        to_date(coalesce(col("cpn_execution_end_date_52"), col("htmlExtracted.contract_execution.execution_end_date"))),
+                        to_date(coalesce(col("cpn_contract_date_41"), col("htmlExtracted.contract_execution.contract_date"))),
                     ),
                 ),
             ),
         )
         .withColumn(
-            "paidRatio",
+            "finalPaidRatioNotice",
             when(
-                col("htmlExtracted.values.contract_value").isNotNull()
-                & (col("htmlExtracted.values.contract_value") != 0)
-                & col("htmlExtracted.values.total_paid").isNotNull(),
-                col("htmlExtracted.values.total_paid") / col("htmlExtracted.values.contract_value"),
+                coalesce(
+                    col("value_contract_reported_execution_44"),
+                    col("htmlExtracted.values.value_contract_reported_execution"),
+                    col("htmlExtracted.values.contract_value"),
+                ).isNotNull()
+                & (
+                    coalesce(
+                        col("value_contract_reported_execution_44"),
+                        col("htmlExtracted.values.value_contract_reported_execution"),
+                        col("htmlExtracted.values.contract_value"),
+                    )
+                    != 0
+                )
+                & coalesce(
+                    col("value_paid_total_55"),
+                    col("htmlExtracted.values.value_paid_total"),
+                    col("htmlExtracted.values.total_paid"),
+                ).isNotNull(),
+                coalesce(
+                    col("value_paid_total_55"),
+                    col("htmlExtracted.values.value_paid_total"),
+                    col("htmlExtracted.values.total_paid"),
+                )
+                / coalesce(
+                    col("value_contract_reported_execution_44"),
+                    col("htmlExtracted.values.value_contract_reported_execution"),
+                    col("htmlExtracted.values.contract_value"),
+                ),
             ),
         )
         .withColumn(
             "executionDelayed",
             when(
-                col("htmlExtracted.contract_execution.executed_on_time").isNotNull(),
-                ~col("htmlExtracted.contract_execution.executed_on_time"),
-            ),
-        )
-        .withColumn(
-            "executionRiskFlag",
-            when(
                 col("noticeType") == lit("ContractPerformingNotice"),
-                coalesce(col("executionDelayed"), lit(False))
-                | (coalesce(col("paidRatio"), lit(0.0)) > lit(1.05))
-                | (coalesce(col("htmlExtracted.contract_execution.num_changes"), lit(0)) > lit(0))
-                | (col("htmlExtracted.contract_execution.executed_properly") == lit(False)),
+                when(
+                    coalesce(col("cpn_contract_date_41"), col("htmlExtracted.contract_execution.contract_date")).isNotNull()
+                    & coalesce(col("cpn_execution_end_date_52"), col("htmlExtracted.contract_execution.execution_end_date")).isNotNull()
+                    & col("executionDurationDays").isNotNull(),
+                    datediff(
+                        to_date(coalesce(col("cpn_execution_end_date_52"), col("htmlExtracted.contract_execution.execution_end_date"))),
+                        to_date(coalesce(col("cpn_contract_date_41"), col("htmlExtracted.contract_execution.contract_date"))),
+                    )
+                    > col("executionDurationDays"),
+                ),
             ),
         )
         .withColumn(
@@ -378,17 +411,16 @@ def _build_case_derived(notices: DataFrame) -> DataFrame:
             spark_sum(when(col("scopeChanged"), lit(1)).otherwise(lit(0))).cast("long").alias(
                 "scope_changed_count"
             ),
-            spark_max(when(col("executionDelayed"), lit(1)).otherwise(lit(0)))
-            .cast("boolean")
-            .alias("execution_delayed_any"),
-            spark_max(when(col("executionRiskFlag"), lit(1)).otherwise(lit(0)))
-            .cast("boolean")
-            .alias("execution_risk_any"),
-            spark_max("paidRatio").alias("paid_ratio_max"),
-            percentile_approx(col("paidRatio"), 0.5, 1000).alias("paid_ratio_median"),
-            percentile_approx(col("biddingWindowDays"), 0.5, 1000).alias("bidding_window_days_median"),
-            percentile_approx(col("executionDurationDays"), 0.5, 1000).alias(
-                "execution_duration_days_median"
+            spark_max(when(col("executionDelayed"), lit(1)).otherwise(lit(0))).alias("__execution_delayed_any_i"),
+            spark_sum(when(col("executionDelayed").isNotNull(), lit(1)).otherwise(lit(0))).alias(
+                "__execution_delayed_obs"
+            ),
+            spark_max("finalPaidRatioNotice").alias("final_paid_ratio"),
+        )
+        .withColumn(
+            "execution_delayed_any",
+            when(col("__execution_delayed_obs") > lit(0), col("__execution_delayed_any_i").cast("boolean")).otherwise(
+                lit(None).cast("boolean")
             ),
         )
         .withColumn(
@@ -405,7 +437,13 @@ def _build_case_derived(notices: DataFrame) -> DataFrame:
                 datediff(col("first_execution_completion_date"), col("first_result_date")),
             ),
         )
-        .drop("first_init_date", "first_result_date", "first_execution_completion_date")
+        .drop(
+            "first_init_date",
+            "first_result_date",
+            "first_execution_completion_date",
+            "__execution_delayed_any_i",
+            "__execution_delayed_obs",
+        )
     )
 
 

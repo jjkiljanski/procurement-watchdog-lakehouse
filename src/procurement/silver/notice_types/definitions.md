@@ -39,12 +39,8 @@ Generated at: 2026-02-20T21:25:29.278334Z
 | `cpvCodes` | Parsed CPV code list (canonical code format). | `array<string>` | `['50232100-1', '09300000-2']` | yes |
 | `contractors` | Contractor list from metadata (array of structs/maps). | `array<map<string,string>>` | `[{'contractorNationalId': '85262912', 'contractorName': 'ENEA Oświetlenie sp. z o.o', 'contractorCountry': 'PL', 'contractorCity': 'Szczecin', 'contractorProvince': 'PL32'}]` | yes |
 | `ai_street_512` | AgreementIntentionNotice field 5.1.2 street value. | `string` | `Ku Słońcu 34` | yes |
-| `ai_contract_value_35` | AgreementIntentionNotice field 3.5 value. | `double` | `24390.24` | yes |
-| `ai_prior_market_consultation_31` | AgreementIntentionNotice field 3.1 consultation flag/text. | `string` | `Nie` | yes |
-
-## AgreementNotice
-
-Path not found in current Silver data: `/ext/data/silver/notice_type_tables/noticeType=AgreementNotice`
+| `value_estimated_procurement_ai_35` | AgreementIntentionNotice field 3.5 estimated procurement value. | `double` | `24390.24` | yes |
+| `ai_prior_market_consultation_31` | AgreementIntentionNotice field 3.1 consultation flag/text. | `string` | `Nie` | yes |Ok, 
 
 ### Fields (from definitions.py)
 
@@ -112,8 +108,8 @@ Path not found in current Silver data: `/ext/data/silver/notice_type_tables/noti
 | `cpvCode` | Raw CPV source string (legacy; not materialized currently). | `-` | `NULL` | no |
 | `cpvCodes` | Parsed CPV code list (canonical code format). | `array<string>` | `['71220000-6', '71420000-8', '71222000-0', '71248000-8']` | yes |
 | `comp_num_awarded_63` | CompetitionNotice field 6.3 number of awarded works. | `int` | `5` | yes |
-| `comp_prizes_value_64` | CompetitionNotice field 6.4 prizes value. | `double` | `68000.0` | yes |
-| `comp_order_value_651` | CompetitionNotice field 6.5.1 order value. | `double` | `284552.84` | yes |
+| `value_competition_prizes_64` | CompetitionNotice field 6.4 prizes value. | `double` | `68000.0` | yes |
+| `value_competition_followon_order_651` | CompetitionNotice field 6.5.1 follow-on order value. | `double` | `284552.84` | yes |
 | `comp_requirements_72` | CompetitionNotice field 7.2 environmental/social requirement. | `string` | `Nie` | yes |
 
 ## ConcessionNotice
@@ -171,10 +167,15 @@ Path not found in current Silver data: `/ext/data/silver/notice_type_tables/noti
 | `cpvCode` | Raw CPV source string (legacy; not materialized currently). | `-` | `NULL` | no |
 | `cpvCodes` | Parsed CPV code list (canonical code format). | `array<string>` | `['48611000-4']` | yes |
 | `contractors` | Contractor list from metadata (array of structs/maps). | `array<map<string,string>>` | `[{'contractorNationalId': '012521511', 'contractorName': 'A.P.N. Promise S.A.', 'contractorCountry': 'PL', 'contractorCity': 'Warszawa', 'contractorProvince': 'PL14'}]` | yes |
-| `cpn_contractor_national_ids_432` | ContractPerformingNotice field 4.3.2 values. | `array<string>` | `['012521511']` | yes |
+| `cpn_contractor_names_431` | ContractPerformingNotice field 4.3.1 contractor names. | `array<string>` | `['A.P.N. Promise S.A.']` | yes |
+| `contractor_id_raw` | Raw contractor identifier values from 4.3.2. | `array<string>` | `['NIP: 527-23-55-435']` | yes |
+| `contractor_id_parsed` | Parsed/normalized contractor IDs (validated NIP/REGON/PESEL; foreign left as raw). | `array<string>` | `['5272355435']` | yes |
+| `contractor_id_type` | Parsed identifier type per 4.3.2 values (`NIP`, `REGON`, `PESEL`, `foreign`, `not_recognized`). | `array<string>` | `['NIP']` | yes |
 | `cpn_contractor_cities_434` | ContractPerformingNotice field 4.3.4 values. | `array<string>` | `['Warszawa']` | yes |
 | `cpn_contractor_provinces_436` | ContractPerformingNotice field 4.3.6 values. | `array<string>` | `['mazowieckie']` | yes |
-| `cpn_contract_value_44` | ContractPerformingNotice field 4.4 contract value. | `double` | `117553.17` | yes |
+| `cpn_contractor_countries_437` | ContractPerformingNotice field 4.3.7 values. | `array<string>` | `['Polska']` | yes |
+| `value_contract_reported_execution_44` | ContractPerformingNotice field 4.4 contract value reported at execution stage. | `double` | `117553.17` | yes |
+| `value_paid_total_55` | ContractPerformingNotice field 5.5 total paid value. | `double` | `117553.17` | yes |
 
 ## NoticeUpdateNotice
 
@@ -226,4 +227,4 @@ Path not found in current Silver data: `/ext/data/silver/notice_type_tables/noti
 | `procedureResult` | TenderResultNotice procedure result text. | `string` | `zawarcieUmowy` | yes |
 | `procedureResultParsed` | Parsed procedureResult list. | `array<string>` | `['zawarcieUmowy']` | yes |
 | `trn_notice_concerns` | TenderResultNotice field 2.1 scope. | `string` | `Zamówienia publicznego` | yes |
-| `trn_parts` | TenderResultNotice part-level parsed struct list. | `array<struct<part_id:string,opis:string,mainCPV:string,secondaryCPV:array<string>,expected_value:double>>` | `[Row(part_id=None, opis='1.\tPrzedmiotem zamówienia jest remont segmentów mieszkalnych w D.S. „HILTON”      . 2. Szczegółowy opis oraz sposób realizacji zamówienia zawiera Opis przedmiotu zamówienia (OPZ), stanowiący Zał` | yes |
+| `trn_parts` | TenderResultNotice part-level parsed struct list. | `array<struct<part_id:string,opis:string,mainCPV:string,secondaryCPV:array<string>,value_estimated_procurement:double>>` | `[Row(part_id=None, opis='1.\tPrzedmiotem zamówienia jest remont segmentów mieszkalnych w D.S. „HILTON”      . 2. Szczegółowy opis oraz sposób realizacji zamówienia zawiera Opis przedmiotu zamówienia (OPZ), stanowiący Zał` | yes |

@@ -38,7 +38,7 @@ AGREEMENT_INTENTION_SPECIFIC_COLUMNS = [
     }
 ] + [
     "ai_street_512",
-    "ai_contract_value_35",
+    "value_estimated_procurement_ai_35",
     "ai_prior_market_consultation_31",
 ]
 
@@ -96,8 +96,8 @@ COMPETITION_NOTICE_SPECIFIC_COLUMNS = [
     }
 ] + [
     "comp_num_awarded_63",
-    "comp_prizes_value_64",
-    "comp_order_value_651",
+    "value_competition_prizes_64",
+    "value_competition_followon_order_651",
     "comp_requirements_72",
 ]
 
@@ -123,10 +123,13 @@ CONTRACT_NOTICE_SPECIFIC_COLUMNS = [
     if c not in {"contractors", "contractorNameNormalized", "htmlExtracted"}
 ] + [
     "cn_notice_concerns",
+    "criteria",
     "cn_award_criteria_by_part",
     "cn_criteria_aspects_4310",
     "cn_criteria_aspects_4310_flag",
     "cn_description_by_part",
+    "cpvMainCode",
+    "cpvSecondaryCode",
     "submittingOffersDate",
 ]
 
@@ -142,10 +145,18 @@ CONTRACT_PERFORMING_SPECIFIC_COLUMNS = [
         "htmlExtracted",
     }
 ] + [
-    "cpn_contractor_national_ids_432",
+    "cpn_contractor_names_431",
+    "contractor_id_raw",
+    "contractor_id_parsed",
+    "contractor_id_type",
     "cpn_contractor_cities_434",
     "cpn_contractor_provinces_436",
-    "cpn_contract_value_44",
+    "cpn_contractor_countries_437",
+    "cpn_contract_date_41",
+    "cpn_execution_period_42",
+    "cpn_execution_end_date_52",
+    "value_contract_reported_execution_44",
+    "value_paid_total_55",
 ]
 
 TENDER_RESULT_SPECIFIC_COLUMNS = [

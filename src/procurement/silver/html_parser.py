@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from datetime import date
 from html import unescape
 
 from bs4 import BeautifulSoup, Tag
@@ -175,6 +176,139 @@ def _parse_tak_nie(raw: str | None) -> bool | None:
     return None
 
 
+def _is_poland_country(raw: str | None) -> bool:
+    if not raw:
+        return False
+    normalized = _normalize_label_text(raw)
+    return ("polska" in normalized) or ("poland" in normalized)
+
+
+def _digits_only(raw: str) -> str:
+    return re.sub(r"\D", "", raw)
+
+
+def _validate_nip(digits: str) -> bool:
+    if len(digits) != 10:
+        return False
+    vals = [int(ch) for ch in digits]
+    weights = [6, 5, 7, 2, 3, 4, 5, 6, 7]
+    checksum = sum(vals[i] * weights[i] for i in range(9)) % 11
+    return checksum != 10 and checksum == vals[9]
+
+
+def _validate_regon9(digits: str) -> bool:
+    if len(digits) != 9:
+        return False
+    vals = [int(ch) for ch in digits]
+    weights = [8, 9, 2, 3, 4, 5, 6, 7]
+    checksum = sum(vals[i] * weights[i] for i in range(8)) % 11
+    if checksum == 10:
+        checksum = 0
+    return checksum == vals[8]
+
+
+def _validate_regon14(digits: str) -> bool:
+    if len(digits) != 14:
+        return False
+    vals = [int(ch) for ch in digits]
+    weights = [2, 3, 4, 5, 6, 7, 8, 9, 2, 3, 4, 5, 6]
+    checksum = sum(vals[i] * weights[i] for i in range(13)) % 11
+    if checksum == 10:
+        checksum = 0
+    return checksum == vals[13]
+
+
+def _decode_pesel_date(digits: str) -> date | None:
+    if len(digits) != 11:
+        return None
+    yy = int(digits[0:2])
+    mm = int(digits[2:4])
+    dd = int(digits[4:6])
+    if 1 <= mm <= 12:
+        year, month = 1900 + yy, mm
+    elif 21 <= mm <= 32:
+        year, month = 2000 + yy, mm - 20
+    elif 41 <= mm <= 52:
+        year, month = 2100 + yy, mm - 40
+    elif 61 <= mm <= 72:
+        year, month = 2200 + yy, mm - 60
+    elif 81 <= mm <= 92:
+        year, month = 1800 + yy, mm - 80
+    else:
+        return None
+    try:
+        return date(year, month, dd)
+    except ValueError:
+        return None
+
+
+def _validate_pesel(digits: str) -> bool:
+    if len(digits) != 11:
+        return False
+    vals = [int(ch) for ch in digits]
+    weights = [1, 3, 7, 9, 1, 3, 7, 9, 1, 3]
+    checksum = (10 - (sum(vals[i] * weights[i] for i in range(10)) % 10)) % 10
+    return checksum == vals[10] and _decode_pesel_date(digits) is not None
+
+
+def _classify_polish_contractor_id(raw_id: str) -> tuple[str | None, str]:
+    # Prefer NIP when multiple IDs are present in one raw field.
+    nip_candidates = re.findall(r"(?<!\d)(?:\d{3}[-\s]?\d{3}[-\s]?\d{2}[-\s]?\d{2}|\d{10})(?!\d)", raw_id)
+    for cand in nip_candidates:
+        digits = _digits_only(cand)
+        if _validate_nip(digits):
+            return digits, "NIP"
+
+    regon_candidates = re.findall(r"(?<!\d)\d{14}(?!\d)|(?<!\d)\d{9}(?!\d)|(?<!\d)\d{8}(?!\d)", raw_id)
+    for cand in regon_candidates:
+        digits = _digits_only(cand)
+        if len(digits) == 14 and _validate_regon14(digits):
+            return digits, "REGON"
+        if len(digits) == 9 and _validate_regon9(digits):
+            return digits, "REGON"
+        if len(digits) == 8:
+            padded = f"0{digits}"
+            if _validate_regon9(padded):
+                return padded, "REGON"
+
+    pesel_candidates = re.findall(r"(?<!\d)\d{11}(?!\d)", raw_id)
+    for cand in pesel_candidates:
+        if _validate_pesel(cand):
+            return cand, "PESEL"
+    # Fallback for operational typing: 11-digit national IDs are treated as PESEL
+    # even when checksum/date sanity fails in source data.
+    if pesel_candidates:
+        return pesel_candidates[0], "PESEL"
+
+    digits = _digits_only(raw_id)
+    if len(digits) == 10 and _validate_nip(digits):
+        return digits, "NIP"
+    if len(digits) == 14 and _validate_regon14(digits):
+        return digits, "REGON"
+    if len(digits) == 9 and _validate_regon9(digits):
+        return digits, "REGON"
+    if len(digits) == 8:
+        padded = f"0{digits}"
+        if _validate_regon9(padded):
+            return padded, "REGON"
+    if len(digits) == 11:
+        return digits, "PESEL"
+    return None, "not_recognized"
+
+
+def _classify_contractor_id(country: str | None, raw_id: str | None) -> tuple[str | None, str | None, str | None]:
+    """Return (raw, parsed, type) for contractor ID."""
+    if raw_id is None:
+        return None, None, None
+    raw = raw_id.strip()
+    if not raw:
+        return None, None, None
+    if not _is_poland_country(country):
+        return raw, raw, "foreign"
+    parsed, id_type = _classify_polish_contractor_id(raw)
+    return raw, parsed, id_type
+
+
 def _parse_criterion_weight(raw: str | None) -> int | None:
     """Parse criterion weight from strings like '60', '60,00', '40.00', '100 %'."""
     if raw is None:
@@ -243,6 +377,24 @@ def _collect_p_text(h3: Tag) -> str | None:
                     parts.append(text)
         sibling = sibling.next_sibling
     return "\n".join(parts) if parts else None
+
+
+def _collect_p_values(h3: Tag | None) -> list[str]:
+    """Collect plain values from sibling <p> tags after an h3 until next h3/h2."""
+    if h3 is None:
+        return []
+    parts: list[str] = []
+    sibling = h3.next_sibling
+    while sibling is not None:
+        if hasattr(sibling, "name"):
+            if sibling.name in ("h3", "h2"):
+                break
+            if sibling.name == "p":
+                text = sibling.get_text(separator=" ", strip=True)
+                if text:
+                    parts.append(text)
+        sibling = sibling.next_sibling
+    return parts
 
 
 # --- Address extraction (shared across types) ---
@@ -420,18 +572,20 @@ def _extract_criteria(soup: BeautifulSoup) -> list[EvalCriterion] | None:
     criteria: list[EvalCriterion] = []
     h3s = soup.find_all("h3")
 
+    ordinal = 1
     i = 0
     while i < len(h3s):
         text = h3s[i].get_text()
         if "4.3.5.)" in text:
-            name = _span_value(h3s[i])
+            criterion_text = _span_value(h3s[i])
             # Next h3 should be 4.3.6 with weight
             weight = None
             if i + 1 < len(h3s) and "4.3.6.)" in h3s[i + 1].get_text():
                 raw = _span_value(h3s[i + 1])
                 weight = _parse_criterion_weight(raw)
-            if name and weight is not None:
-                criteria.append(EvalCriterion(name=name, weight=weight))
+            if criterion_text and weight is not None:
+                criteria.append(EvalCriterion(no=ordinal, str=criterion_text, weight=weight))
+                ordinal += 1
         i += 1
 
     return criteria or None
@@ -461,7 +615,7 @@ def _extract_part_id_from_header(text: str) -> str | None:
 
 
 def _extract_contract_notice_parts(soup: BeautifulSoup) -> list[ContractNoticePart] | None:
-    """Extract per-part criteria blocks from ContractNotice SEKCJA IV."""
+    """Extract per-part criteria + CPV blocks from ContractNotice SEKCJA IV."""
     h3s = soup.find_all("h3")
     if not h3s:
         return None
@@ -473,16 +627,29 @@ def _extract_contract_notice_parts(soup: BeautifulSoup) -> list[ContractNoticePa
         if part_id:
             part_headers.append((idx, part_id))
 
-    if not part_headers:
-        return None
-
     parts: list[ContractNoticePart] = []
-    for i, (start_idx, part_id) in enumerate(part_headers):
-        end_idx = part_headers[i + 1][0] if i + 1 < len(part_headers) else len(h3s)
-        chunk = h3s[start_idx:end_idx]
+    chunks: list[tuple[str | None, list[Tag]]] = []
+    if part_headers:
+        for i, (start_idx, part_id) in enumerate(part_headers):
+            end_idx = part_headers[i + 1][0] if i + 1 < len(part_headers) else len(h3s)
+            chunks.append((part_id, h3s[start_idx:end_idx]))
+    else:
+        # Single-part notices often don't include explicit "Czesc nr ..." headers.
+        chunks.append((None, h3s))
+
+    for part_id, chunk in chunks:
+        has_marker = any(
+            any(marker in h3.get_text() for marker in ("4.2.2.)", "4.2.6.)", "4.2.7.)", "4.3.5.)", "4.3.6.)", "4.3.10.)"))
+            for h3 in chunk
+        )
+        if not has_marker:
+            continue
 
         criteria: list[EvalCriterion] = []
         opis: str | None = None
+        main_cpv: str | None = None
+        secondary_cpv: list[str] = []
+        ordinal = 1
         j = 0
         while j < len(chunk):
             text = chunk[j].get_text()
@@ -492,14 +659,38 @@ def _extract_contract_notice_parts(soup: BeautifulSoup) -> list[ContractNoticePa
                     opis_text = p.get_text(separator=" ", strip=True)
                     if opis_text:
                         opis = opis_text
+            if "4.2.6.)" in text:
+                raw = _span_value(chunk[j]) or _text_after_h3(chunk[j])
+                if not raw:
+                    p_values = _collect_p_values(chunk[j])
+                    raw = p_values[0] if p_values else None
+                if raw:
+                    parsed = parse_cpv_codes(raw)
+                    main_cpv = parsed[0] if parsed else raw
+            if "4.2.7.)" in text:
+                raw = _span_value(chunk[j]) or _text_after_h3(chunk[j])
+                p_values = _collect_p_values(chunk[j])
+                candidates: list[str] = []
+                if raw:
+                    candidates.append(raw)
+                candidates.extend(p_values)
+                for candidate in candidates:
+                    if not candidate:
+                        continue
+                    parsed = parse_cpv_codes(candidate)
+                    if parsed:
+                        secondary_cpv.extend(parsed)
+                    else:
+                        secondary_cpv.append(candidate)
             if "4.3.5.)" in text:
-                name = _span_value(chunk[j])
+                criterion_text = _span_value(chunk[j])
                 weight = None
                 if j + 1 < len(chunk) and "4.3.6.)" in chunk[j + 1].get_text():
                     raw_weight = _span_value(chunk[j + 1])
                     weight = _parse_criterion_weight(raw_weight)
-                if name and weight is not None:
-                    criteria.append(EvalCriterion(name=name, weight=weight))
+                if criterion_text and weight is not None:
+                    criteria.append(EvalCriterion(no=ordinal, str=criterion_text, weight=weight))
+                    ordinal += 1
             j += 1
 
         aspects_raw = None
@@ -514,7 +705,9 @@ def _extract_contract_notice_parts(soup: BeautifulSoup) -> list[ContractNoticePa
             ContractNoticePart(
                 part_id=part_id,
                 opis=opis,
-                kryteria_oceny=criteria or None,
+                kryteria_oceny=criteria,
+                mainCPV=main_cpv,
+                secondaryCPV=list(dict.fromkeys(secondary_cpv)),
                 criteria_aspects_4310=aspects_raw,
                 criteria_aspects_4310_flag=aspects_flag,
             )
@@ -528,15 +721,15 @@ def _extract_contract_notice_parts(soup: BeautifulSoup) -> list[ContractNoticePa
 
 def _extract_values_contract_performing(soup: BeautifulSoup) -> ExtractedValues | None:
     """ContractPerformingNotice: fields 4.4 (contract value), 5.5 (total paid)."""
-    contract_value = _parse_pln_value(_span_value(_find_h3(soup, "4.4.")))
-    total_paid = _parse_pln_value(_span_value(_find_h3(soup, "5.5.")))
+    value_contract_reported_execution = _parse_pln_value(_span_value(_find_h3(soup, "4.4.")))
+    value_paid_total = _parse_pln_value(_span_value(_find_h3(soup, "5.5.")))
     currency = _extract_currency(soup, "5.4.7.")
 
-    if contract_value is None and total_paid is None:
+    if value_contract_reported_execution is None and value_paid_total is None:
         return None
     return ExtractedValues(
-        contract_value=contract_value,
-        total_paid=total_paid,
+        value_contract_reported_execution=value_contract_reported_execution,
+        value_paid_total=value_paid_total,
         currency=currency,
     )
 
@@ -550,26 +743,35 @@ def _extract_values_tender_result(soup: BeautifulSoup) -> ExtractedValues | None
             # Keep notice-level values null to avoid flattening ambiguity.
             return None
         lot = lots[0]
-        contract_value = lot.contract_value
-        estimated_value = lot.estimated_value
-        lowest_bid = lot.lowest_bid
-        highest_bid = lot.highest_bid
-        winning_bid = lot.winning_bid
+        value_awarded_contract = lot.value_awarded_contract
+        value_estimated_procurement = lot.value_estimated_procurement
+        value_bid_lowest = lot.value_bid_lowest
+        value_bid_highest = lot.value_bid_highest
+        value_winning_offer = lot.value_winning_offer
     else:
-        contract_value = _parse_pln_value(_span_value(_find_h3(soup, "8.2.")))
-        estimated_value = _parse_pln_value(_span_value(_find_h3(soup, "4.3.")))
-        lowest_bid = _parse_pln_value(_span_value(_find_h3(soup, "6.2.")))
-        highest_bid = _parse_pln_value(_span_value(_find_h3(soup, "6.3.")))
-        winning_bid = _parse_pln_value(_span_value(_find_h3(soup, "6.4.")))
+        value_awarded_contract = _parse_pln_value(_span_value(_find_h3(soup, "8.2.")))
+        value_estimated_procurement = _parse_pln_value(_span_value(_find_h3(soup, "4.3.")))
+        value_bid_lowest = _parse_pln_value(_span_value(_find_h3(soup, "6.2.")))
+        value_bid_highest = _parse_pln_value(_span_value(_find_h3(soup, "6.3.")))
+        value_winning_offer = _parse_pln_value(_span_value(_find_h3(soup, "6.4.")))
 
-    if all(v is None for v in (contract_value, estimated_value, lowest_bid, highest_bid, winning_bid)):
+    if all(
+        v is None
+        for v in (
+            value_awarded_contract,
+            value_estimated_procurement,
+            value_bid_lowest,
+            value_bid_highest,
+            value_winning_offer,
+        )
+    ):
         return None
     return ExtractedValues(
-        contract_value=contract_value,
-        estimated_value=estimated_value,
-        lowest_bid=lowest_bid,
-        highest_bid=highest_bid,
-        winning_bid=winning_bid,
+        value_awarded_contract=value_awarded_contract,
+        value_estimated_procurement=value_estimated_procurement,
+        value_bid_lowest=value_bid_lowest,
+        value_bid_highest=value_bid_highest,
+        value_winning_offer=value_winning_offer,
     )
 
 
@@ -620,13 +822,22 @@ def _extract_tender_result_lots(soup: BeautifulSoup) -> list[TenderResultLot] | 
             if field in {"4.3.", "6.2.", "6.3.", "6.4.", "8.2."}:
                 by_field[field] = h3
 
-        contract_value = _parse_pln_value(_span_value(by_field.get("8.2.")))
-        estimated_value = _parse_pln_value(_span_value(by_field.get("4.3.")))
-        lowest_bid = _parse_pln_value(_span_value(by_field.get("6.2.")))
-        highest_bid = _parse_pln_value(_span_value(by_field.get("6.3.")))
-        winning_bid = _parse_pln_value(_span_value(by_field.get("6.4.")))
+        value_awarded_contract = _parse_pln_value(_span_value(by_field.get("8.2.")))
+        value_estimated_procurement = _parse_pln_value(_span_value(by_field.get("4.3.")))
+        value_bid_lowest = _parse_pln_value(_span_value(by_field.get("6.2.")))
+        value_bid_highest = _parse_pln_value(_span_value(by_field.get("6.3.")))
+        value_winning_offer = _parse_pln_value(_span_value(by_field.get("6.4.")))
 
-        if all(v is None for v in (contract_value, estimated_value, lowest_bid, highest_bid, winning_bid)):
+        if all(
+            v is None
+            for v in (
+                value_awarded_contract,
+                value_estimated_procurement,
+                value_bid_lowest,
+                value_bid_highest,
+                value_winning_offer,
+            )
+        ):
             continue
 
         lot_id = None
@@ -638,11 +849,11 @@ def _extract_tender_result_lots(soup: BeautifulSoup) -> list[TenderResultLot] | 
         lots.append(
             TenderResultLot(
                 lot_id=lot_id or str(idx),
-                contract_value=contract_value,
-                estimated_value=estimated_value,
-                lowest_bid=lowest_bid,
-                highest_bid=highest_bid,
-                winning_bid=winning_bid,
+                value_awarded_contract=value_awarded_contract,
+                value_estimated_procurement=value_estimated_procurement,
+                value_bid_lowest=value_bid_lowest,
+                value_bid_highest=value_bid_highest,
+                value_winning_offer=value_winning_offer,
                 winner=_extract_winner_from_chunk(chunk),
             )
         )
@@ -676,7 +887,7 @@ def _extract_tender_result_parts(soup: BeautifulSoup) -> list[TenderResultPart] 
         opis = None
         main_cpv = None
         secondary_cpv: list[str] = []
-        expected_value = None
+        value_estimated_procurement = None
 
         for h3 in chunk:
             text = h3.get_text(separator=" ", strip=True)
@@ -702,9 +913,9 @@ def _extract_tender_result_parts(soup: BeautifulSoup) -> list[TenderResultPart] 
             elif "4.3.)" in text:
                 value = _parse_pln_value(_span_value(h3) or _text_after_h3(h3))
                 if value is not None:
-                    expected_value = value
+                    value_estimated_procurement = value
 
-        if all(v is None for v in (opis, main_cpv, expected_value)) and not secondary_cpv:
+        if all(v is None for v in (opis, main_cpv, value_estimated_procurement)) and not secondary_cpv:
             continue
 
         parts.append(
@@ -713,7 +924,7 @@ def _extract_tender_result_parts(soup: BeautifulSoup) -> list[TenderResultPart] 
                 opis=opis,
                 mainCPV=main_cpv,
                 secondaryCPV=list(dict.fromkeys(secondary_cpv)) or None,
-                expected_value=expected_value,
+                value_estimated_procurement=value_estimated_procurement,
             )
         )
 
@@ -741,28 +952,28 @@ def _extract_status_lots_from_procedure_result(procedure_result: str | None) -> 
 
 def _extract_values_contract_notice(soup: BeautifulSoup) -> ExtractedValues | None:
     """ContractNotice: fields 4.1.5 (total value), 4.1.6 (net of VAT)."""
-    estimated_value = _parse_pln_value(_span_value(_find_h3(soup, "4.1.5.")))
-    if estimated_value is None:
-        estimated_value = _parse_pln_value(_span_value(_find_h3(soup, "4.1.6.")))
-    if estimated_value is None:
+    value_estimated_procurement = _parse_pln_value(_span_value(_find_h3(soup, "4.1.5.")))
+    if value_estimated_procurement is None:
+        value_estimated_procurement = _parse_pln_value(_span_value(_find_h3(soup, "4.1.6.")))
+    if value_estimated_procurement is None:
         return None
-    return ExtractedValues(estimated_value=estimated_value)
+    return ExtractedValues(value_estimated_procurement=value_estimated_procurement)
 
 
 def _extract_values_agreement_update(soup: BeautifulSoup) -> ExtractedValues | None:
     """AgreementUpdateNotice: field 4.4 (agreement value)."""
-    contract_value = _parse_pln_value(_span_value(_find_h3(soup, "4.4.")))
-    if contract_value is None:
+    value_awarded_contract = _parse_pln_value(_span_value(_find_h3(soup, "4.4.")))
+    if value_awarded_contract is None:
         return None
-    return ExtractedValues(contract_value=contract_value)
+    return ExtractedValues(value_awarded_contract=value_awarded_contract)
 
 
 def _extract_values_agreement_intention(soup: BeautifulSoup) -> ExtractedValues | None:
     """AgreementIntentionNotice: field 3.5 (procurement value)."""
-    estimated_value = _parse_pln_value(_span_value(_find_h3(soup, "3.5.")))
-    if estimated_value is None:
+    value_estimated_procurement = _parse_pln_value(_span_value(_find_h3(soup, "3.5.")))
+    if value_estimated_procurement is None:
         return None
-    return ExtractedValues(estimated_value=estimated_value)
+    return ExtractedValues(value_estimated_procurement=value_estimated_procurement)
 
 
 def _extract_agreement_intention_fields(
@@ -773,22 +984,34 @@ def _extract_agreement_intention_fields(
     if ai_street_512 is None:
         ai_street_512 = _span_value(_find_h3_by_label(soup, ["ulica"]))
 
-    ai_contract_value_35 = _parse_pln_value(_span_value(_find_h3(soup, "3.5.")))
+    value_estimated_procurement_ai_35 = _parse_pln_value(_span_value(_find_h3(soup, "3.5.")))
     ai_prior_market_consultation_31 = _span_value(_find_h3(soup, "3.1.")) or _text_after_h3(
         _find_h3(soup, "3.1.")
     )
-    return ai_street_512, ai_contract_value_35, ai_prior_market_consultation_31
+    return ai_street_512, value_estimated_procurement_ai_35, ai_prior_market_consultation_31
 
 
 def _extract_contract_performing_party_fields(
     soup: BeautifulSoup,
-) -> tuple[list[str] | None, list[str] | None, list[str] | None, float | None]:
+) -> tuple[
+    list[str] | None,
+    list[str] | None,
+    list[str] | None,
+    list[str] | None,
+    list[str] | None,
+    list[str] | None,
+    list[str] | None,
+    list[str] | None,
+    float | None,
+]:
     """ContractPerformingNotice: repeated contractor fields + contract value.
 
     Fields:
-    - 4.3.2.) Krajowy Numer Identyfikacyjny
+    - 4.3.1.) Nazwa wykonawcy
+    - 4.3.2.) Krajowy Numer Identyfikacyjny -> contractor_id_raw/parsed/type
     - 4.3.4.) Miejscowość
     - 4.3.6.) Województwo
+    - 4.3.7.) Kraj
     - 4.4.) Wartość umowy
     """
     def _collect(field_num: str) -> list[str] | None:
@@ -802,20 +1025,51 @@ def _extract_contract_performing_party_fields(
         # Preserve order, remove duplicates.
         return list(dict.fromkeys(out))
 
+    names = _collect("4.3.1.")
     national_ids = _collect("4.3.2.")
     cities = _collect("4.3.4.")
     provinces = _collect("4.3.6.")
-    contract_value = _parse_pln_value(_span_value(_find_h3(soup, "4.4.")))
-    return national_ids, cities, provinces, contract_value
+    countries = _collect("4.3.7.")
+    contractor_id_raw: list[str] = []
+    contractor_id_parsed: list[str] = []
+    contractor_id_type: list[str] = []
+
+    if national_ids:
+        for idx, national_id in enumerate(national_ids):
+            country = countries[idx] if countries and idx < len(countries) else None
+            raw, parsed, id_type = _classify_contractor_id(country, national_id)
+            if raw:
+                contractor_id_raw.append(raw)
+            if parsed:
+                contractor_id_parsed.append(parsed)
+            if id_type:
+                contractor_id_type.append(id_type)
+
+    def _uniq(values: list[str]) -> list[str] | None:
+        if not values:
+            return None
+        return list(dict.fromkeys(values))
+
+    value_contract_reported_execution_44 = _parse_pln_value(_span_value(_find_h3(soup, "4.4.")))
+    return (
+        names,
+        _uniq(contractor_id_raw),
+        _uniq(contractor_id_parsed),
+        _uniq(contractor_id_type),
+        cities,
+        provinces,
+        countries,
+        value_contract_reported_execution_44,
+    )
 
 
 def _extract_values_small_contract(soup: BeautifulSoup) -> ExtractedValues | None:
     """SmallContractNotice: field 3.4 (value, no PLN suffix), 3.5 (currency)."""
-    contract_value = _parse_pln_value(_span_value(_find_h3(soup, "3.4.")))
-    if contract_value is None:
+    value_awarded_contract = _parse_pln_value(_span_value(_find_h3(soup, "3.4.")))
+    if value_awarded_contract is None:
         return None
     currency = _extract_currency(soup, "3.5.")
-    return ExtractedValues(contract_value=contract_value, currency=currency)
+    return ExtractedValues(value_awarded_contract=value_awarded_contract, currency=currency)
 
 
 def _extract_competition_notice_fields(
@@ -832,15 +1086,20 @@ def _extract_competition_notice_fields(
             except ValueError:
                 comp_num_awarded_63 = None
 
-    comp_prizes_value_64 = _parse_pln_value(
+    value_competition_prizes_64 = _parse_pln_value(
         _span_value(_find_h3(soup, "6.4.")) or _text_after_h3(_find_h3(soup, "6.4."))
     )
-    comp_order_value_651 = _parse_pln_value(
+    value_competition_followon_order_651 = _parse_pln_value(
         _span_value(_find_h3(soup, "6.5.1.")) or _text_after_h3(_find_h3(soup, "6.5.1."))
     )
     comp_requirements_72 = _span_value(_find_h3(soup, "7.2.")) or _text_after_h3(_find_h3(soup, "7.2."))
 
-    return comp_num_awarded_63, comp_prizes_value_64, comp_order_value_651, comp_requirements_72
+    return (
+        comp_num_awarded_63,
+        value_competition_prizes_64,
+        value_competition_followon_order_651,
+        comp_requirements_72,
+    )
 
 
 _VALUE_EXTRACTORS = {
@@ -1028,34 +1287,44 @@ def parse_html(
     if notice_type == "TenderResultNotice" and not lots:
         lots = _extract_status_lots_from_procedure_result(procedure_result)
     ai_street_512 = None
-    ai_contract_value_35 = None
+    value_estimated_procurement_ai_35 = None
     ai_prior_market_consultation_31 = None
-    cpn_contractor_national_ids_432 = None
+    cpn_contractor_names_431 = None
+    contractor_id_raw = None
+    contractor_id_parsed = None
+    contractor_id_type = None
     cpn_contractor_cities_434 = None
     cpn_contractor_provinces_436 = None
-    cpn_contract_value_44 = None
+    cpn_contractor_countries_437 = None
+    value_contract_reported_execution_44 = None
+    value_paid_total_55 = None
     comp_num_awarded_63 = None
-    comp_prizes_value_64 = None
-    comp_order_value_651 = None
+    value_competition_prizes_64 = None
+    value_competition_followon_order_651 = None
     comp_requirements_72 = None
     if notice_type == "AgreementIntentionNotice":
         (
             ai_street_512,
-            ai_contract_value_35,
+            value_estimated_procurement_ai_35,
             ai_prior_market_consultation_31,
         ) = _extract_agreement_intention_fields(soup)
     if notice_type == "ContractPerformingNotice":
         (
-            cpn_contractor_national_ids_432,
+            cpn_contractor_names_431,
+            contractor_id_raw,
+            contractor_id_parsed,
+            contractor_id_type,
             cpn_contractor_cities_434,
             cpn_contractor_provinces_436,
-            cpn_contract_value_44,
+            cpn_contractor_countries_437,
+            value_contract_reported_execution_44,
         ) = _extract_contract_performing_party_fields(soup)
+        value_paid_total_55 = _parse_pln_value(_span_value(_find_h3(soup, "5.5.")))
     if notice_type == "CompetitionNotice":
         (
             comp_num_awarded_63,
-            comp_prizes_value_64,
-            comp_order_value_651,
+            value_competition_prizes_64,
+            value_competition_followon_order_651,
             comp_requirements_72,
         ) = _extract_competition_notice_fields(soup)
 
@@ -1067,7 +1336,7 @@ def parse_html(
         # Legacy fallback: extract only field 8.2 (TenderResultNotice)
         val = _parse_pln_value(_span_value(_find_h3(soup, "8.2.")))
         if val is not None:
-            values = ExtractedValues(contract_value=val)
+            values = ExtractedValues(value_awarded_contract=val)
 
     # Type-aware detail extraction (non-value)
     details: dict[str, object] = {}
@@ -1087,15 +1356,20 @@ def parse_html(
         lots=lots,
         tender_result_parts=tender_result_parts,
         ai_street_512=ai_street_512,
-        ai_contract_value_35=ai_contract_value_35,
+        value_estimated_procurement_ai_35=value_estimated_procurement_ai_35,
         ai_prior_market_consultation_31=ai_prior_market_consultation_31,
-        cpn_contractor_national_ids_432=cpn_contractor_national_ids_432,
+        cpn_contractor_names_431=cpn_contractor_names_431,
+        contractor_id_raw=contractor_id_raw,
+        contractor_id_parsed=contractor_id_parsed,
+        contractor_id_type=contractor_id_type,
         cpn_contractor_cities_434=cpn_contractor_cities_434,
         cpn_contractor_provinces_436=cpn_contractor_provinces_436,
-        cpn_contract_value_44=cpn_contract_value_44,
+        cpn_contractor_countries_437=cpn_contractor_countries_437,
+        value_contract_reported_execution_44=value_contract_reported_execution_44,
+        value_paid_total_55=value_paid_total_55,
         comp_num_awarded_63=comp_num_awarded_63,
-        comp_prizes_value_64=comp_prizes_value_64,
-        comp_order_value_651=comp_order_value_651,
+        value_competition_prizes_64=value_competition_prizes_64,
+        value_competition_followon_order_651=value_competition_followon_order_651,
         comp_requirements_72=comp_requirements_72,
         **details,
     )
@@ -1180,13 +1454,13 @@ def parse_html_agreement_intention_light(html: str) -> dict[str, object]:
         or _extract_h3_field_fast(html, "5.1.4.")
     )
     ai_street_512 = _extract_h3_field_fast(html, "5.1.2.")
-    ai_contract_value_35 = _parse_pln_value(_extract_h3_field_fast(html, "3.5."))
+    value_estimated_procurement_ai_35 = _parse_pln_value(_extract_h3_field_fast(html, "3.5."))
     ai_prior_market_consultation_31 = _extract_h3_field_fast(html, "3.1.")
     return {
         "ulica": ulica,
         "kod_pocztowy": kod_pocztowy,
         "ai_street_512": ai_street_512,
-        "ai_contract_value_35": ai_contract_value_35,
+        "value_estimated_procurement_ai_35": value_estimated_procurement_ai_35,
         "ai_prior_market_consultation_31": ai_prior_market_consultation_31,
     }
 
@@ -1204,15 +1478,15 @@ def parse_html_competition_light(html: str) -> dict[str, object]:
                 comp_num_awarded_63 = int(match.group(0))
             except ValueError:
                 comp_num_awarded_63 = None
-    comp_prizes_value_64 = _parse_pln_value(_extract_h3_field_fast(html, "6.4."))
-    comp_order_value_651 = _parse_pln_value(_extract_h3_field_fast(html, "6.5.1."))
+    value_competition_prizes_64 = _parse_pln_value(_extract_h3_field_fast(html, "6.4."))
+    value_competition_followon_order_651 = _parse_pln_value(_extract_h3_field_fast(html, "6.5.1."))
     comp_requirements_72 = _extract_h3_field_fast(html, "7.2.")
     return {
         "ulica": ulica,
         "kod_pocztowy": kod_pocztowy,
         "comp_num_awarded_63": comp_num_awarded_63,
-        "comp_prizes_value_64": comp_prizes_value_64,
-        "comp_order_value_651": comp_order_value_651,
+        "value_competition_prizes_64": value_competition_prizes_64,
+        "value_competition_followon_order_651": value_competition_followon_order_651,
         "comp_requirements_72": comp_requirements_72,
     }
 
@@ -1224,13 +1498,17 @@ def parse_html_contract_performing_light(html: str) -> dict[str, object]:
     kod_pocztowy = _extract_h3_field_fast(html, "1.5.3.") or _extract_h3_field_fast(html, "1.4.3.")
 
     ids: list[str] = []
+    names: list[str] = []
     cities: list[str] = []
     provinces: list[str] = []
+    countries: list[str] = []
 
     for field_num, bucket in (
+        ("4.3.1.", names),
         ("4.3.2.", ids),
         ("4.3.4.", cities),
         ("4.3.6.", provinces),
+        ("4.3.7.", countries),
     ):
         marker_re = _field_marker_re(field_num)
         for match in marker_re.finditer(html):
@@ -1252,12 +1530,33 @@ def parse_html_contract_performing_light(html: str) -> dict[str, object]:
             return None
         return list(dict.fromkeys(values))
 
+    contractor_id_raw: list[str] = []
+    contractor_id_parsed: list[str] = []
+    contractor_id_type: list[str] = []
+    for idx, national_id in enumerate(ids):
+        country = countries[idx] if idx < len(countries) else None
+        raw, parsed, id_type = _classify_contractor_id(country, national_id)
+        if raw:
+            contractor_id_raw.append(raw)
+        if parsed:
+            contractor_id_parsed.append(parsed)
+        if id_type:
+            contractor_id_type.append(id_type)
+
     return {
         "ulica": ulica,
         "kod_pocztowy": kod_pocztowy,
-        "cpn_contractor_national_ids_432": _uniq(ids),
+        "cpn_contractor_names_431": _uniq(names),
+        "contractor_id_raw": _uniq(contractor_id_raw),
+        "contractor_id_parsed": _uniq(contractor_id_parsed),
+        "contractor_id_type": _uniq(contractor_id_type),
         "cpn_contractor_cities_434": _uniq(cities),
         "cpn_contractor_provinces_436": _uniq(provinces),
-        "cpn_contract_value_44": _parse_pln_value(_extract_h3_field_fast(html, "4.4.")),
+        "cpn_contractor_countries_437": _uniq(countries),
+        "cpn_contract_date_41": _extract_h3_field_fast(html, "4.1."),
+        "cpn_execution_period_42": _extract_h3_field_fast(html, "4.2."),
+        "cpn_execution_end_date_52": _extract_h3_field_fast(html, "5.2."),
+        "value_contract_reported_execution_44": _parse_pln_value(_extract_h3_field_fast(html, "4.4.")),
+        "value_paid_total_55": _parse_pln_value(_extract_h3_field_fast(html, "5.5.")),
     }
 
