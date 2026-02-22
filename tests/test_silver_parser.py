@@ -602,6 +602,24 @@ class TestTenderResultValues:
         assert p2.part_id == "2"
         assert p2.value_estimated_procurement == pytest.approx(200000.0)
 
+    def test_tender_result_parts_are_numbered_sequentially(self):
+        html = """\
+<html><head></head><body><main>
+<h2 class="bg-light p-3 mt-4">SEKCJA IV - PRZEDMIOT ZAMOWIENIA</h2>
+<h3 class="mb-0">Czesc nr A</h3>
+<h3 class="mb-0">4.5.1.) Krotki opis przedmiotu zamowienia: <span class="normal">Opis A</span></h3>
+<h3 class="mb-0">4.5.3.) Glowny kod CPV: <span class="normal">45000000-7</span></h3>
+<h3 class="mb-0">4.3.) Wartosc zamowienia: <span class="normal">100000,00 PLN</span></h3>
+<h3 class="mb-0">Czesc nr B</h3>
+<h3 class="mb-0">4.5.1.) Krotki opis przedmiotu zamowienia: <span class="normal">Opis B</span></h3>
+<h3 class="mb-0">4.5.3.) Glowny kod CPV: <span class="normal">71000000-8</span></h3>
+<h3 class="mb-0">4.3.) Wartosc zamowienia: <span class="normal">200000,00 PLN</span></h3>
+</main></body></html>"""
+        r = parse_html(html, notice_type="TenderResultNotice")
+        assert r.tender_result_parts is not None
+        assert len(r.tender_result_parts) == 2
+        assert [p.part_id for p in r.tender_result_parts] == ["1", "2"]
+
 
 # --- Value extraction: ContractPerformingNotice ---
 

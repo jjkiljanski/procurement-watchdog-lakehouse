@@ -916,7 +916,7 @@ def _extract_tender_result_parts(soup: BeautifulSoup) -> list[TenderResultPart] 
         chunks.append((None, h3s))
 
     parts: list[TenderResultPart] = []
-    for part_id, chunk in chunks:
+    for seq, (_parsed_part_id, chunk) in enumerate(chunks, start=1):
         opis = None
         main_cpv = None
         secondary_cpv: list[str] = []
@@ -953,7 +953,8 @@ def _extract_tender_result_parts(soup: BeautifulSoup) -> list[TenderResultPart] 
 
         parts.append(
             TenderResultPart(
-                part_id=part_id,
+                # Keep deterministic numbering by appearance in SEKCJA IV.
+                part_id=str(seq),
                 opis=opis,
                 mainCPV=main_cpv,
                 secondaryCPV=list(dict.fromkeys(secondary_cpv)) or None,
