@@ -23,7 +23,6 @@ import json
 import logging
 import os
 import sys
-import time
 import uuid
 from datetime import UTC, date, datetime, timedelta
 from functools import reduce
@@ -58,6 +57,7 @@ os.environ["PYSPARK_PYTHON"] = sys.executable
 os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
 
 from procurement.logging import setup_logging
+from procurement.common.locks import acquire_token_file_lock, release_token_file_lock
 
 setup_logging()
 log = logging.getLogger(__name__)
@@ -475,42 +475,25 @@ def _acquire_lock(
 ) -> str:
     lock = _lock_path(output_dir)
     token = str(uuid.uuid4())
-    deadline = time.time() + timeout_sec
-    lock.parent.mkdir(parents=True, exist_ok=True)
-    while True:
-        payload = {
-            "token": token,
-            "pid": os.getpid(),
-            "started_at": _now_iso(),
-            "host": os.environ.get("COMPUTERNAME") or os.environ.get("HOSTNAME"),
-        }
-        try:
-            fd = os.open(str(lock), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-            with os.fdopen(fd, "w", encoding="utf-8") as f:
-                json.dump(payload, f, ensure_ascii=False, indent=2)
-            return token
-        except FileExistsError:
-            if break_stale_lock and lock.exists():
-                age = time.time() - lock.stat().st_mtime
-                if age > stale_sec:
-                    log.warning("Breaking stale lock %s age=%.1fs", lock, age)
-                    lock.unlink(missing_ok=True)
-                    continue
-            if time.time() >= deadline:
-                raise TimeoutError(f"Timed out acquiring lock: {lock}")
-            time.sleep(max(1, poll_sec))
+    payload = {
+        "token": token,
+        "pid": os.getpid(),
+        "started_at": _now_iso(),
+        "host": os.environ.get("COMPUTERNAME") or os.environ.get("HOSTNAME"),
+    }
+    acquire_token_file_lock(
+        lock_path=lock,
+        payload=payload,
+        timeout_sec=timeout_sec,
+        poll_sec=poll_sec,
+        stale_sec=stale_sec,
+        break_stale_lock=break_stale_lock,
+    )
+    return token
 
 
 def _release_lock(output_dir: Path, token: str) -> None:
-    lock = _lock_path(output_dir)
-    if not lock.exists():
-        return
-    try:
-        payload = json.loads(lock.read_text(encoding="utf-8"))
-    except Exception:
-        return
-    if payload.get("token") == token:
-        lock.unlink(missing_ok=True)
+    release_token_file_lock(_lock_path(output_dir), token=token, token_key="token")
 
 
 def _snapshot_root(output_dir: Path) -> Path:

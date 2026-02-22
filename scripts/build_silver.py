@@ -29,6 +29,7 @@ os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
 
 from procurement.logging import setup_logging
 from procurement.lineage import atomic_write_json, git_commit_sha, now_utc_iso, script_hashes, sha256_file
+from procurement.common.locks import acquire_directory_lock, release_directory_lock_if_owner
 
 setup_logging()
 log = logging.getLogger(__name__)
@@ -245,36 +246,6 @@ def _parse_args() -> argparse.Namespace:
 
 
 def _acquire_day_lock(silver_dir: Path, target_date: str, run_id: str, stale_minutes: int) -> Path:
-    locks_root = silver_dir / "_locks"
-    locks_root.mkdir(parents=True, exist_ok=True)
-    lock_dir = locks_root / f"silver_day={target_date}"
-    stale_seconds = max(1, stale_minutes) * 60
-
-    if lock_dir.exists():
-        age_sec = time.time() - lock_dir.stat().st_mtime
-        if age_sec > stale_seconds:
-            log.warning(
-                "Detected stale day lock for %s (age=%.1fs > %ss), removing: %s",
-                target_date,
-                age_sec,
-                stale_seconds,
-                lock_dir,
-            )
-            shutil.rmtree(lock_dir, ignore_errors=False)
-        else:
-            owner_path = lock_dir / "owner.json"
-            owner_payload = {}
-            if owner_path.exists():
-                try:
-                    owner_payload = json.loads(owner_path.read_text(encoding="utf-8"))
-                except Exception:
-                    owner_payload = {}
-            raise RuntimeError(
-                "Silver day lock already exists for "
-                f"{target_date}: {lock_dir} owner={owner_payload or 'unknown'}"
-            )
-
-    lock_dir.mkdir(parents=False, exist_ok=False)
     owner = {
         "run_id": run_id,
         "pid": os.getpid(),
@@ -282,8 +253,22 @@ def _acquire_day_lock(silver_dir: Path, target_date: str, run_id: str, stale_min
         "started_at_utc": now_utc_iso(),
         "target_date": target_date,
     }
-    (lock_dir / "owner.json").write_text(json.dumps(owner, ensure_ascii=False), encoding="utf-8")
-    return lock_dir
+    lock_dir = silver_dir / "_locks" / f"silver_day={target_date}"
+    try:
+        return acquire_directory_lock(
+            lock_dir=lock_dir,
+            owner_payload=owner,
+            stale_seconds=max(1, stale_minutes) * 60,
+        )
+    except RuntimeError as exc:
+        msg = str(exc)
+        if msg.startswith("Directory lock already exists:"):
+            msg = msg.replace(
+                "Directory lock already exists:",
+                f"Silver day lock already exists for {target_date}:",
+                1,
+            )
+        raise RuntimeError(msg) from exc
 
 
 def main() -> None:
@@ -595,16 +580,7 @@ def main() -> None:
         log.info("Wrote silver lineage manifest to %s", lineage_path)
     finally:
         if day_lock_dir is not None and day_lock_dir.exists():
-            owner_path = day_lock_dir / "owner.json"
-            owner_run_id = None
-            if owner_path.exists():
-                try:
-                    owner_run_id = json.loads(owner_path.read_text(encoding="utf-8")).get("run_id")
-                except Exception:
-                    owner_run_id = None
-            # Only remove if this process owns the lock.
-            if owner_run_id is None or (run_id is not None and owner_run_id == run_id):
-                shutil.rmtree(day_lock_dir, ignore_errors=True)
+            if release_directory_lock_if_owner(day_lock_dir, run_id):
                 log.info("Released day lock: %s", day_lock_dir)
         spark.stop()
 
