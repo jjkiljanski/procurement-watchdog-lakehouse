@@ -182,6 +182,33 @@ def with_notice_validation_errors(
             & (~col("postal_code").rlike(POSTAL_CODE_REGEX)),
         )
 
+    if notice_type == "ContractNotice":
+        if "criteria" in df.columns:
+            add_rule(
+                "contract_notice_criteria_null_rows",
+                col("criteria").isNull() | expr("exists(criteria, x -> x is null)"),
+            )
+        if "cpvSecondaryCode" in df.columns:
+            add_rule(
+                "contract_notice_cpvSecondaryCode_null_rows",
+                col("cpvSecondaryCode").isNull()
+                | expr("exists(cpvSecondaryCode, x -> x is null)")
+                | expr("exists(cpvSecondaryCode, x -> exists(x, y -> y is null))"),
+            )
+        if "numCriteria" in df.columns and "criteria" in df.columns:
+            add_rule(
+                "contract_notice_numCriteria_mismatch_rows",
+                col("numCriteria").isNull()
+                | expr("size(numCriteria) != size(criteria)")
+                | expr("exists(arrays_zip(numCriteria, criteria), z -> z.numCriteria != size(z.criteria))"),
+            )
+        if "numCriteria" in df.columns and "cpvSecondaryCode" in df.columns:
+            add_rule(
+                "contract_notice_cpvSecondaryCode_length_mismatch_rows",
+                col("numCriteria").isNull()
+                | expr("size(numCriteria) != size(cpvSecondaryCode)"),
+            )
+
     out = df
     if "objectId" in df.columns:
         dup_ids = (
@@ -208,25 +235,20 @@ def summarize_notice_validation(
     rules: list[str],
 ) -> dict[str, int]:
     """Summarize row-level validation errors to per-batch metrics."""
-    metrics = (
-        df_with_errors.agg(
-            count(lit(1)).alias("total_rows"),
-            sum(when(size(col("__validation_errors")) > lit(0), lit(1)).otherwise(lit(0))).alias("invalid_rows"),
-        )
-        .collect()[0]
-        .asDict()
+    agg_exprs = [
+        count(lit(1)).alias("total_rows"),
+        sum(when(size(col("__validation_errors")) > lit(0), lit(1)).otherwise(lit(0))).alias("invalid_rows"),
+    ]
+    agg_exprs.extend(
+        [
+            sum(when(array_contains(col("__validation_errors"), lit(rule)), lit(1)).otherwise(lit(0))).alias(rule)
+            for rule in rules
+        ]
     )
+    metrics = df_with_errors.agg(*agg_exprs).collect()[0].asDict()
     out = {k: int(v or 0) for k, v in metrics.items()}
 
     for rule in rules:
-        cnt = (
-            df_with_errors.agg(
-                sum(when(array_contains(col("__validation_errors"), lit(rule)), lit(1)).otherwise(lit(0))).alias("c")
-            )
-            .collect()[0]
-            .c
-        )
-        out[rule] = int(cnt or 0)
         _warn_if_positive(
             target_date,
             f"{notice_type or '__NULL__'}.{rule}",

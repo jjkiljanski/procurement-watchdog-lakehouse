@@ -180,7 +180,8 @@ def _is_poland_country(raw: str | None) -> bool:
     if not raw:
         return False
     normalized = _normalize_label_text(raw)
-    return ("polska" in normalized) or ("poland" in normalized)
+    compact = re.sub(r"[^a-z]", "", normalized)
+    return ("polska" in normalized) or ("poland" in normalized) or (compact == "pl")
 
 
 def _digits_only(raw: str) -> str:
@@ -307,6 +308,38 @@ def _classify_contractor_id(country: str | None, raw_id: str | None) -> tuple[st
         return raw, raw, "foreign"
     parsed, id_type = _classify_polish_contractor_id(raw)
     return raw, parsed, id_type
+
+
+def classify_contractor_id_for_notice(
+    country: str | None,
+    raw_id: str | None,
+) -> tuple[str | None, str | None, str | None]:
+    """Public helper used across notice-specific transforms."""
+    return _classify_contractor_id(country, raw_id)
+
+
+def normalize_tender_result_contractors(
+    contractors: list[dict] | None,
+) -> list[dict] | None:
+    """Normalize TRN contractor IDs to raw/parsed/type fields."""
+    if not contractors:
+        return contractors
+    out: list[dict] = []
+    for contractor in contractors:
+        if isinstance(contractor, dict):
+            row = dict(contractor)
+        elif hasattr(contractor, "asDict"):
+            row = contractor.asDict(recursive=True)
+        else:
+            continue
+        raw_id = row.pop("contractorNationalId", None)
+        country = row.get("contractorCountry")
+        raw, parsed, id_type = _classify_contractor_id(country, raw_id)
+        row["contractorNationalId_raw"] = raw
+        row["contractorNationalId_parsed"] = parsed
+        row["contractorNationalId_type"] = id_type
+        out.append(row)
+    return out
 
 
 def _parse_criterion_weight(raw: str | None) -> int | None:
@@ -1496,6 +1529,15 @@ def parse_html_contract_performing_light(html: str) -> dict[str, object]:
     # Keep envelope address tied to section I buyer fields only.
     ulica = _extract_h3_field_fast(html, "1.5.1.") or _extract_h3_field_fast(html, "1.4.1.")
     kod_pocztowy = _extract_h3_field_fast(html, "1.5.3.") or _extract_h3_field_fast(html, "1.4.3.")
+    if not ulica or not kod_pocztowy:
+        # Defensive fallback for rare HTML variants where fast regex misses
+        # section-I fields (layout drift, extra wrappers, malformed tags).
+        soup = BeautifulSoup(html, "lxml")
+        address = _extract_address(soup, notice_type="ContractPerformingNotice")
+        if not ulica:
+            ulica = address.get("ulica")
+        if not kod_pocztowy:
+            kod_pocztowy = address.get("kod_pocztowy")
 
     ids: list[str] = []
     names: list[str] = []
@@ -1556,6 +1598,8 @@ def parse_html_contract_performing_light(html: str) -> dict[str, object]:
         "cpn_contract_date_41": _extract_h3_field_fast(html, "4.1."),
         "cpn_execution_period_42": _extract_h3_field_fast(html, "4.2."),
         "cpn_execution_end_date_52": _extract_h3_field_fast(html, "5.2."),
+        "executed_in_time": _parse_tak_nie(_extract_h3_field_fast(html, "5.3.")),
+        "proper_execution": _parse_tak_nie(_extract_h3_field_fast(html, "5.6.")),
         "value_contract_reported_execution_44": _parse_pln_value(_extract_h3_field_fast(html, "4.4.")),
         "value_paid_total_55": _parse_pln_value(_extract_h3_field_fast(html, "5.5.")),
     }

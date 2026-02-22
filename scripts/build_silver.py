@@ -382,28 +382,30 @@ def main() -> None:
                 "publicationDateDay",
                 to_date(col("publicationDate")).cast("string"),
             )
-            batch_silver = batch_silver.persist(StorageLevel.MEMORY_AND_DISK)
-
-            # Materialize once so parsing/transforms are not recomputed for each downstream action.
-            t3 = time.perf_counter()
-            batch_silver_rows = batch_silver.count()
-            batch_profile["transform_materialize_sec"] = round(time.perf_counter() - t3, 3)
-            batch_profile["transformed_rows"] = batch_silver_rows
 
             batch_silver, validation_rules = with_notice_validation_errors(
                 batch_silver,
                 target_date=target_date,
                 notice_type=notice_type,
             )
+            # Cache validated frame before downstream actions
+            # (summary + quarantine write + two output writes).
+            batch_silver = batch_silver.persist(StorageLevel.MEMORY_AND_DISK)
+            # First aggregate both materializes transformations and returns
+            # row-level validation totals in a single pass.
+            t3 = time.perf_counter()
             batch_profile["validation"] = summarize_notice_validation(
                 batch_silver,
                 target_date=target_date,
                 notice_type=notice_type,
                 rules=validation_rules,
             )
+            batch_profile["transform_materialize_sec"] = round(time.perf_counter() - t3, 3)
+            batch_silver_rows = int(batch_profile["validation"].get("total_rows", 0))
+            batch_profile["transformed_rows"] = batch_silver_rows
             invalid_batch = batch_silver.filter(size(col("__validation_errors")) > 0)
             valid_batch = batch_silver.filter(size(col("__validation_errors")) == 0).drop("__validation_errors")
-            batch_invalid_rows = invalid_batch.count()
+            batch_invalid_rows = int(batch_profile["validation"].get("invalid_rows", 0))
             batch_valid_rows = batch_silver_rows - batch_invalid_rows
             total_invalid_rows += batch_invalid_rows
             batch_profile["invalid_rows"] = batch_invalid_rows
@@ -422,6 +424,10 @@ def main() -> None:
             specific_df = _select_existing(valid_batch, specific_columns)
             specific_df = _compact_html_extracted(specific_df, html_fields)
             specific_out = str(specific_root / f"noticeType={notice_type_token}")
+            specific_day_dir = specific_root / f"noticeType={notice_type_token}" / f"publicationDateDay={target_date}"
+            if specific_day_dir.exists():
+                shutil.rmtree(specific_day_dir, ignore_errors=False)
+                log.info("Cleared existing specific day partition: %s", specific_day_dir)
             t4 = time.perf_counter()
             (
                 specific_df.write.mode("overwrite")

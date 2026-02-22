@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from procurement.silver.html_parser import (
     _parse_pln_value,
+    normalize_tender_result_contractors,
     parse_html_agreement_intention_light,
     parse_cpv_codes,
     parse_html,
@@ -928,6 +929,17 @@ class TestContractExecution:
         assert r["ulica"] is None
         assert r["kod_pocztowy"] is None
 
+    def test_contract_performing_light_extracts_section_i_address_fields(self):
+        html = """\
+<html><head></head><body><main>
+<h3 class="mb-0">1.4.1.) Ulica: <span class="normal">ul. Testowa 10</span></h3>
+<h3 class="mb-0">1.4.3.) Kod pocztowy: <span class="normal">12-345</span></h3>
+<h3 class="mb-0">4.3.) Dane wykonawcy, z ktorym zawarto umowe:</h3>
+</main></body></html>"""
+        r = parse_html_contract_performing_light(html)
+        assert r["ulica"] == "ul. Testowa 10"
+        assert r["kod_pocztowy"] == "12-345"
+
     def test_contractor_id_classification_poland_regon_pesel_and_nonrecognized(self):
         html = """\
 <html><head></head><body><main>
@@ -964,6 +976,50 @@ class TestContractExecution:
         assert r["contractor_id_raw"] == ["NIP 7393843471 REGON 281393800"]
         assert r["contractor_id_parsed"] == ["7393843471"]
         assert r["contractor_id_type"] == ["NIP"]
+
+    def test_contract_performing_light_extracts_execution_booleans(self):
+        r = parse_html_contract_performing_light(CONTRACT_PERFORMING_DETAILS_HTML)
+        assert r["executed_in_time"] is True
+        assert r["proper_execution"] is True
+
+    def test_contract_performing_light_safe_wrapper_returns_address(self):
+        from procurement.silver.spark_transforms import _parse_html_cpn_light_safe
+
+        html = """\
+<html><head></head><body><main>
+<h3 class="mb-0">1.4.1.) Ulica: <span class="normal">ul. Testowa 10</span></h3>
+<h3 class="mb-0">1.4.3.) Kod pocztowy: <span class="normal">12-345</span></h3>
+<h3 class="mb-0">4.3.) Dane wykonawcy, z ktorym zawarto umowe:</h3>
+</main></body></html>"""
+        r = _parse_html_cpn_light_safe(html)
+        assert r is not None
+        assert r["ulica"] == "ul. Testowa 10"
+        assert r["kod_pocztowy"] == "12-345"
+
+
+class TestTenderResultContractorIdNormalization:
+    def test_normalizes_trn_contractor_national_id(self):
+        contractors = [
+            {
+                "contractorName": "ABC Sp. z o.o.",
+                "contractorCountry": "PL",
+                "contractorNationalId": "NIP 7393843471 REGON 281393800",
+            },
+            {
+                "contractorName": "XYZ GmbH",
+                "contractorCountry": "DE",
+                "contractorNationalId": "DE-ABC-987654",
+            },
+        ]
+        out = normalize_tender_result_contractors(contractors)
+        assert out is not None
+        assert out[0]["contractorNationalId_raw"] == "NIP 7393843471 REGON 281393800"
+        assert out[0]["contractorNationalId_parsed"] == "7393843471"
+        assert out[0]["contractorNationalId_type"] == "NIP"
+        assert "contractorNationalId" not in out[0]
+        assert out[1]["contractorNationalId_raw"] == "DE-ABC-987654"
+        assert out[1]["contractorNationalId_parsed"] == "DE-ABC-987654"
+        assert out[1]["contractorNationalId_type"] == "foreign"
 
 
 # --- Detail extraction: NoticeChange ---

@@ -155,6 +155,8 @@ CONTRACT_PERFORMING_SPECIFIC_COLUMNS = [
     "cpn_contract_date_41",
     "cpn_execution_period_42",
     "cpn_execution_end_date_52",
+    "executed_in_time",
+    "proper_execution",
     "value_contract_reported_execution_44",
     "value_paid_total_55",
 ]

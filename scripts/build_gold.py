@@ -20,7 +20,7 @@ from pathlib import Path
 
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import avg, coalesce, col, expr, lit, size, struct, when
-from pyspark.sql.types import ArrayType
+from pyspark.sql.types import ArrayType, MapType
 
 # Allow imports from project root / src
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
@@ -189,7 +189,17 @@ def _normalize_for_gold(frame: DataFrame) -> DataFrame:
             safe_col(
                 frame,
                 "contractors",
-                "array<struct<contractorCity:string,contractorCountry:string,contractorName:string,contractorNationalId:string,contractorProvince:string>>",
+                (
+                    "array<struct<"
+                    "contractorCity:string,"
+                    "contractorCountry:string,"
+                    "contractorName:string,"
+                    "contractorProvince:string,"
+                    "contractorNationalId_raw:string,"
+                    "contractorNationalId_parsed:string,"
+                    "contractorNationalId_type:string"
+                    ">>"
+                ),
             ).alias("contractors"),
             safe_col(frame, "biddingWindowDays", "long").alias("biddingWindowDays"),
             price_weight_scalar.alias("priceWeight"),
@@ -212,12 +222,44 @@ def _normalize_for_gold(frame: DataFrame) -> DataFrame:
 
 
 def _read_union_raw(spark: "SparkSession", paths: list[str], base_path: str | None = None) -> DataFrame:
+    contractor_struct = (
+        "array<struct<"
+        "contractorCity:string,"
+        "contractorCountry:string,"
+        "contractorName:string,"
+        "contractorProvince:string,"
+        "contractorNationalId_raw:string,"
+        "contractorNationalId_parsed:string,"
+        "contractorNationalId_type:string"
+        ">>"
+    )
     frames = []
     for path in paths:
         reader = spark.read
         if base_path is not None:
             reader = reader.option("basePath", base_path)
-        frames.append(reader.parquet(path))
+        frame = reader.parquet(path)
+        if "contractors" in frame.columns:
+            contractor_field = next((f for f in frame.schema.fields if f.name == "contractors"), None)
+            if contractor_field and isinstance(contractor_field.dataType, ArrayType) and isinstance(
+                contractor_field.dataType.elementType, MapType
+            ):
+                frame = frame.withColumn(
+                    "contractors",
+                    expr(
+                        "transform(contractors, x -> named_struct("
+                        "'contractorCity', x['contractorCity'],"
+                        "'contractorCountry', x['contractorCountry'],"
+                        "'contractorName', x['contractorName'],"
+                        "'contractorProvince', x['contractorProvince'],"
+                        "'contractorNationalId_raw', cast(null as string),"
+                        "'contractorNationalId_parsed', cast(null as string),"
+                        "'contractorNationalId_type', cast(null as string)"
+                        "))"
+                    ),
+                )
+            frame = frame.withColumn("contractors", col("contractors").cast(contractor_struct))
+        frames.append(frame)
     if not frames:
         raise ValueError("No silver paths to read")
     return reduce(lambda left, right: left.unionByName(right, allowMissingColumns=True), frames)

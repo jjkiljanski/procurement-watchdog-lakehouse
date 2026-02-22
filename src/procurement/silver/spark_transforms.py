@@ -31,6 +31,7 @@ from pyspark.sql.types import (
 
 from procurement.dictionaries import client_type_names, province_names
 from procurement.silver.html_parser import (
+    normalize_tender_result_contractors,
     parse_cpv_codes,
     parse_html,
     parse_html_address_light,
@@ -211,6 +212,8 @@ HTML_CPN_LIGHT_SCHEMA = StructType(
         StructField("cpn_contract_date_41", StringType()),
         StructField("cpn_execution_period_42", StringType()),
         StructField("cpn_execution_end_date_52", StringType()),
+        StructField("executed_in_time", BooleanType()),
+        StructField("proper_execution", BooleanType()),
         StructField("value_contract_reported_execution_44", DoubleType()),
         StructField("value_paid_total_55", DoubleType()),
     ]
@@ -279,6 +282,26 @@ def _parse_html_cpn_light_safe(html: str | None) -> dict | None:
     except Exception:
         log.warning("Failed to parse CPN light HTML (len=%d)", len(html), exc_info=True)
         return None
+
+
+CONTRACTOR_TRN_SCHEMA = StructType(
+    [
+        StructField("contractorCity", StringType()),
+        StructField("contractorCountry", StringType()),
+        StructField("contractorName", StringType()),
+        StructField("contractorProvince", StringType()),
+        StructField("contractorNationalId_raw", StringType()),
+        StructField("contractorNationalId_parsed", StringType()),
+        StructField("contractorNationalId_type", StringType()),
+    ]
+)
+
+
+def _normalize_tender_result_contractors_safe(contractors: list[dict] | None) -> list[dict] | None:
+    try:
+        return normalize_tender_result_contractors(contractors)
+    except Exception:
+        return contractors
 
 
 _PUNCT_RE = re.compile(r"[^\w\s]", flags=re.UNICODE)
@@ -397,6 +420,10 @@ parse_html_address_udf = udf(_parse_html_address_safe, HTML_ADDRESS_SCHEMA)
 parse_html_ai_light_udf = udf(_parse_html_ai_light_safe, HTML_AI_LIGHT_SCHEMA)
 parse_html_comp_light_udf = udf(_parse_html_comp_light_safe, HTML_COMP_LIGHT_SCHEMA)
 parse_html_cpn_light_udf = udf(_parse_html_cpn_light_safe, HTML_CPN_LIGHT_SCHEMA)
+normalize_tender_result_contractors_udf = udf(
+    _normalize_tender_result_contractors_safe,
+    ArrayType(CONTRACTOR_TRN_SCHEMA),
+)
 parse_cpv_udf = udf(_parse_cpv_safe, ArrayType(StringType()))
 normalize_name_udf = udf(_normalize_entity_name, StringType())
 normalize_contractors_udf = udf(_normalize_contractor_names, ArrayType(StringType()))
@@ -448,6 +475,11 @@ def build_silver_for_notice_type(
     need_contractors = "contractors" in required or "contractorNameNormalized" in required
     if need_contractors:
         out = out.withColumn("contractors", expr("filter(contractors, x -> x is not null)"))
+        if notice_type == "TenderResultNotice":
+            out = out.withColumn(
+                "contractors",
+                normalize_tender_result_contractors_udf(col("contractors")),
+            )
 
     if "cpvCodes" in required:
         out = out.withColumn("cpvCodes", parse_cpv_udf(col("cpvCode")))
@@ -621,6 +653,20 @@ def build_silver_for_notice_type(
             col("htmlExtracted.cpn_execution_end_date_52")
             if need_html_full
             else col("htmlLight.cpn_execution_end_date_52"),
+        )
+    if "executed_in_time" in required:
+        out = out.withColumn(
+            "executed_in_time",
+            col("htmlExtracted.contract_execution.executed_on_time")
+            if need_html_full
+            else col("htmlLight.executed_in_time"),
+        )
+    if "proper_execution" in required:
+        out = out.withColumn(
+            "proper_execution",
+            col("htmlExtracted.contract_execution.executed_properly")
+            if need_html_full
+            else col("htmlLight.proper_execution"),
         )
     if "value_paid_total_55" in required:
         out = out.withColumn(
