@@ -15,6 +15,7 @@ import os
 import shutil
 import sys
 import time
+import uuid
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -234,7 +235,55 @@ def _parse_args() -> argparse.Namespace:
         default="",
         help="Optional path to write step-level performance profile as JSON",
     )
+    parser.add_argument(
+        "--lock-stale-minutes",
+        type=int,
+        default=360,
+        help="Treat an existing day lock as stale after this many minutes",
+    )
     return parser.parse_args()
+
+
+def _acquire_day_lock(silver_dir: Path, target_date: str, run_id: str, stale_minutes: int) -> Path:
+    locks_root = silver_dir / "_locks"
+    locks_root.mkdir(parents=True, exist_ok=True)
+    lock_dir = locks_root / f"silver_day={target_date}"
+    stale_seconds = max(1, stale_minutes) * 60
+
+    if lock_dir.exists():
+        age_sec = time.time() - lock_dir.stat().st_mtime
+        if age_sec > stale_seconds:
+            log.warning(
+                "Detected stale day lock for %s (age=%.1fs > %ss), removing: %s",
+                target_date,
+                age_sec,
+                stale_seconds,
+                lock_dir,
+            )
+            shutil.rmtree(lock_dir, ignore_errors=False)
+        else:
+            owner_path = lock_dir / "owner.json"
+            owner_payload = {}
+            if owner_path.exists():
+                try:
+                    owner_payload = json.loads(owner_path.read_text(encoding="utf-8"))
+                except Exception:
+                    owner_payload = {}
+            raise RuntimeError(
+                "Silver day lock already exists for "
+                f"{target_date}: {lock_dir} owner={owner_payload or 'unknown'}"
+            )
+
+    lock_dir.mkdir(parents=False, exist_ok=False)
+    owner = {
+        "run_id": run_id,
+        "pid": os.getpid(),
+        "started_at_epoch": int(time.time()),
+        "started_at_utc": now_utc_iso(),
+        "target_date": target_date,
+    }
+    (lock_dir / "owner.json").write_text(json.dumps(owner, ensure_ascii=False), encoding="utf-8")
+    return lock_dir
 
 
 def main() -> None:
@@ -262,6 +311,8 @@ def main() -> None:
         spark.conf.set("spark.sql.shuffle.partitions", str(args.shuffle_partitions))
         log.info("Set spark.sql.shuffle.partitions=%d", args.shuffle_partitions)
 
+    day_lock_dir: Path | None = None
+    run_id: str | None = None
     try:
         from pyspark.sql.functions import col, lit, size, to_date
 
@@ -307,11 +358,25 @@ def main() -> None:
 
         run_start = time.perf_counter()
         profile: dict = {"target_date": target_date, "input_layer": "bronze" if use_bronze else "raw", "batches": []}
+        run_id = f"{target_date}_{int(time.time() * 1000)}_{os.getpid()}_{uuid.uuid4().hex[:8]}"
 
         silver_dir = Path(args.silver_dir)
-        envelope_root = str(silver_dir / "common_envelope")
+        day_lock_dir = _acquire_day_lock(
+            silver_dir=silver_dir,
+            target_date=target_date,
+            run_id=run_id,
+            stale_minutes=args.lock_stale_minutes,
+        )
+        log.info("Acquired day lock: %s", day_lock_dir)
         specific_root = silver_dir / "notice_type_tables"
         envelope_day_dir = silver_dir / "common_envelope" / f"publicationDateDay={target_date}"
+        envelope_tmp_dir = (
+            silver_dir
+            / "_tmp"
+            / "silver_envelope_buffer"
+            / f"day={target_date}"
+            / f"run={run_id}"
+        )
         quarantine_root = str(silver_dir / "_quarantine" / "notice_rows")
         quarantine_day_dir = silver_dir / "_quarantine" / "notice_rows" / f"publicationDateDay={target_date}"
 
@@ -438,18 +503,14 @@ def main() -> None:
 
             envelope_batch = _select_existing(valid_batch, ENVELOPE_COLUMNS)
             t5 = time.perf_counter()
-            (
-                envelope_batch.write.mode("append")
-                .partitionBy("publicationDateDay")
-                .parquet(envelope_root)
-            )
-            batch_profile["write_envelope_append_sec"] = round(time.perf_counter() - t5, 3)
+            envelope_batch.write.mode("append").parquet(str(envelope_tmp_dir))
+            batch_profile["buffer_envelope_sec"] = round(time.perf_counter() - t5, 3)
             batch_silver.unpersist()
 
             batch_profile["batch_total_sec"] = round(time.perf_counter() - batch_start, 3)
             profile["batches"].append(batch_profile)
             log.info(
-                "Batch noticeType=%s rows=%d wrote specific+envelope (%.2fs)",
+                "Batch noticeType=%s rows=%d wrote specific+buffered envelope (%.2fs)",
                 notice_type_token,
                 batch_count,
                 time.perf_counter() - batch_start,
@@ -458,6 +519,12 @@ def main() -> None:
         if total_input_rows == 0:
             log.warning("No Silver rows produced for %s", target_date)
             return
+
+        t_env = time.perf_counter()
+        if envelope_tmp_dir.exists():
+            spark.read.parquet(str(envelope_tmp_dir)).write.mode("overwrite").parquet(str(envelope_day_dir))
+            shutil.rmtree(envelope_tmp_dir, ignore_errors=False)
+        profile["write_envelope_once_sec"] = round(time.perf_counter() - t_env, 3)
 
         log.info("Completed Silver build total_input_rows=%d", total_input_rows)
         envelope_validation_df = spark.read.parquet(str(envelope_day_dir))
@@ -505,6 +572,7 @@ def main() -> None:
                 "common_envelope": str(silver_dir / "common_envelope" / f"publicationDateDay={target_date}"),
                 "notice_type_tables_root": str(silver_dir / "notice_type_tables"),
                 "quarantine_partition": str(quarantine_day_dir),
+                "envelope_tmp_run": str(envelope_tmp_dir),
                 "profile_json": str(Path(args.profile_json)) if args.profile_json else None,
             },
             "performance": profile,
@@ -526,6 +594,18 @@ def main() -> None:
         atomic_write_json(lineage_path, lineage)
         log.info("Wrote silver lineage manifest to %s", lineage_path)
     finally:
+        if day_lock_dir is not None and day_lock_dir.exists():
+            owner_path = day_lock_dir / "owner.json"
+            owner_run_id = None
+            if owner_path.exists():
+                try:
+                    owner_run_id = json.loads(owner_path.read_text(encoding="utf-8")).get("run_id")
+                except Exception:
+                    owner_run_id = None
+            # Only remove if this process owns the lock.
+            if owner_run_id is None or (run_id is not None and owner_run_id == run_id):
+                shutil.rmtree(day_lock_dir, ignore_errors=True)
+                log.info("Released day lock: %s", day_lock_dir)
         spark.stop()
 
 

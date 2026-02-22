@@ -333,6 +333,9 @@ def _process_day(
         specific_df = _select_existing(valid_batch, specific_columns)
         specific_df = _compact_html_extracted(specific_df, html_fields)
         specific_out = str(silver_dir / "notice_type_tables" / f"noticeType={notice_token}")
+        specific_day_dir = silver_dir / "notice_type_tables" / f"noticeType={notice_token}" / f"publicationDateDay={day}"
+        if specific_day_dir.exists():
+            shutil.rmtree(specific_day_dir, ignore_errors=False)
         (
             specific_df.write.mode("overwrite")
             .partitionBy("publicationDateDay")
@@ -371,6 +374,15 @@ def _process_day(
 
     # Commit envelope for this day in one overwrite write.
     envelope_day_df = spark.read.parquet(str(envelope_tmp))
+    envelope_day_dir = silver_dir / "common_envelope" / f"publicationDateDay={day}"
+    if envelope_day_dir.exists():
+        try:
+            shutil.rmtree(envelope_day_dir, ignore_errors=False)
+        except PermissionError:
+            log.warning(
+                "Could not pre-delete envelope partition (permission lock): %s; continuing with overwrite",
+                envelope_day_dir,
+            )
     (
         envelope_day_df.write.mode("overwrite")
         .partitionBy("publicationDateDay")
@@ -378,6 +390,15 @@ def _process_day(
     )
     if total_invalid_rows > 0:
         quarantine_day_df = spark.read.parquet(str(quarantine_tmp))
+        quarantine_day_dir = quarantine_root / f"publicationDateDay={day}"
+        if quarantine_day_dir.exists():
+            try:
+                shutil.rmtree(quarantine_day_dir, ignore_errors=False)
+            except PermissionError:
+                log.warning(
+                    "Could not pre-delete quarantine partition (permission lock): %s; continuing with overwrite",
+                    quarantine_day_dir,
+                )
         (
             quarantine_day_df.write.mode("overwrite")
             .partitionBy("publicationDateDay")
