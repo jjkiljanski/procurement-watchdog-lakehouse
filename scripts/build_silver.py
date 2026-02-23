@@ -424,73 +424,77 @@ def main() -> None:
             html_fields = html_extracted_fields_for_notice_type(notice_type)
             required_columns = set(ENVELOPE_COLUMNS) | set(specific_columns)
             batch_start = time.perf_counter()
-            batch_silver = build_silver_for_notice_type(
-                batch_raw,
-                notice_type=notice_type,
-                required_columns=required_columns,
-            ).withColumn(
-                "publicationDateDay",
-                to_date(col("publicationDate")).cast("string"),
-            )
-
-            batch_silver, validation_rules = with_notice_validation_errors(
-                batch_silver,
-                target_date=target_date,
-                notice_type=notice_type,
-            )
-            # Cache validated frame before downstream actions
-            # (summary + quarantine write + two output writes).
-            batch_silver = batch_silver.persist(StorageLevel.MEMORY_AND_DISK)
-            # First aggregate both materializes transformations and returns
-            # row-level validation totals in a single pass.
-            t3 = time.perf_counter()
-            batch_profile["validation"] = summarize_notice_validation(
-                batch_silver,
-                target_date=target_date,
-                notice_type=notice_type,
-                rules=validation_rules,
-            )
-            batch_profile["transform_materialize_sec"] = round(time.perf_counter() - t3, 3)
-            batch_silver_rows = int(batch_profile["validation"].get("total_rows", 0))
-            batch_profile["transformed_rows"] = batch_silver_rows
-            invalid_batch = batch_silver.filter(size(col("__validation_errors")) > 0)
-            valid_batch = batch_silver.filter(size(col("__validation_errors")) == 0).drop("__validation_errors")
-            batch_invalid_rows = int(batch_profile["validation"].get("invalid_rows", 0))
-            batch_valid_rows = batch_silver_rows - batch_invalid_rows
-            total_invalid_rows += batch_invalid_rows
-            batch_profile["invalid_rows"] = batch_invalid_rows
-            batch_profile["valid_rows"] = batch_valid_rows
-            if batch_invalid_rows > 0:
-                (
-                    invalid_batch.withColumn(
-                        "validation_notice_type",
-                        lit(notice_type_token),
-                    )
-                    .write.mode("append")
-                    .partitionBy("publicationDateDay")
-                    .parquet(quarantine_root)
+            cached_batch = None
+            try:
+                batch_silver = build_silver_for_notice_type(
+                    batch_raw,
+                    notice_type=notice_type,
+                    required_columns=required_columns,
+                ).withColumn(
+                    "publicationDateDay",
+                    to_date(col("publicationDate")).cast("string"),
                 )
 
-            specific_df = _select_existing(valid_batch, specific_columns)
-            specific_df = _compact_html_extracted(specific_df, html_fields)
-            specific_out = str(specific_root / f"noticeType={notice_type_token}")
-            specific_day_dir = specific_root / f"noticeType={notice_type_token}" / f"publicationDateDay={target_date}"
-            if specific_day_dir.exists():
-                shutil.rmtree(specific_day_dir, ignore_errors=False)
-                log.info("Cleared existing specific day partition: %s", specific_day_dir)
-            t4 = time.perf_counter()
-            (
-                specific_df.write.mode("overwrite")
-                .partitionBy("publicationDateDay")
-                .parquet(specific_out)
-            )
-            batch_profile["write_specific_sec"] = round(time.perf_counter() - t4, 3)
+                batch_silver, validation_rules = with_notice_validation_errors(
+                    batch_silver,
+                    target_date=target_date,
+                    notice_type=notice_type,
+                )
+                # Cache validated frame before downstream actions
+                # (summary + quarantine write + two output writes).
+                cached_batch = batch_silver.persist(StorageLevel.MEMORY_AND_DISK)
+                # First aggregate both materializes transformations and returns
+                # row-level validation totals in a single pass.
+                t3 = time.perf_counter()
+                batch_profile["validation"] = summarize_notice_validation(
+                    cached_batch,
+                    target_date=target_date,
+                    notice_type=notice_type,
+                    rules=validation_rules,
+                )
+                batch_profile["transform_materialize_sec"] = round(time.perf_counter() - t3, 3)
+                batch_silver_rows = int(batch_profile["validation"].get("total_rows", 0))
+                batch_profile["transformed_rows"] = batch_silver_rows
+                invalid_batch = cached_batch.filter(size(col("__validation_errors")) > 0)
+                valid_batch = cached_batch.filter(size(col("__validation_errors")) == 0).drop("__validation_errors")
+                batch_invalid_rows = int(batch_profile["validation"].get("invalid_rows", 0))
+                batch_valid_rows = batch_silver_rows - batch_invalid_rows
+                total_invalid_rows += batch_invalid_rows
+                batch_profile["invalid_rows"] = batch_invalid_rows
+                batch_profile["valid_rows"] = batch_valid_rows
+                if batch_invalid_rows > 0:
+                    (
+                        invalid_batch.withColumn(
+                            "validation_notice_type",
+                            lit(notice_type_token),
+                        )
+                        .write.mode("append")
+                        .partitionBy("publicationDateDay")
+                        .parquet(quarantine_root)
+                    )
 
-            envelope_batch = _select_existing(valid_batch, ENVELOPE_COLUMNS)
-            t5 = time.perf_counter()
-            envelope_batch.write.mode("append").parquet(str(envelope_tmp_dir))
-            batch_profile["buffer_envelope_sec"] = round(time.perf_counter() - t5, 3)
-            batch_silver.unpersist()
+                specific_df = _select_existing(valid_batch, specific_columns)
+                specific_df = _compact_html_extracted(specific_df, html_fields)
+                specific_out = str(specific_root / f"noticeType={notice_type_token}")
+                specific_day_dir = specific_root / f"noticeType={notice_type_token}" / f"publicationDateDay={target_date}"
+                if specific_day_dir.exists():
+                    shutil.rmtree(specific_day_dir, ignore_errors=False)
+                    log.info("Cleared existing specific day partition: %s", specific_day_dir)
+                t4 = time.perf_counter()
+                (
+                    specific_df.write.mode("overwrite")
+                    .partitionBy("publicationDateDay")
+                    .parquet(specific_out)
+                )
+                batch_profile["write_specific_sec"] = round(time.perf_counter() - t4, 3)
+
+                envelope_batch = _select_existing(valid_batch, ENVELOPE_COLUMNS)
+                t5 = time.perf_counter()
+                envelope_batch.write.mode("append").parquet(str(envelope_tmp_dir))
+                batch_profile["buffer_envelope_sec"] = round(time.perf_counter() - t5, 3)
+            finally:
+                if cached_batch is not None:
+                    cached_batch.unpersist()
 
             batch_profile["batch_total_sec"] = round(time.perf_counter() - batch_start, 3)
             profile["batches"].append(batch_profile)

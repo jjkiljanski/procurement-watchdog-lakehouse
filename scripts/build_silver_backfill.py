@@ -305,54 +305,58 @@ def _process_day(
         required_columns = set(ENVELOPE_COLUMNS) | set(specific_columns)
         batch_start = time.perf_counter()
 
-        batch_silver = build_silver_for_notice_type(
-            batch_raw,
-            notice_type=notice_type,
-            required_columns=required_columns,
-        ).withColumn("publicationDateDay", to_date(col("publicationDate")).cast("string"))
-        batch_silver = batch_silver.persist(StorageLevel.MEMORY_AND_DISK)
-        batch_silver_rows = batch_silver.count()  # materialize once
-        batch_silver, validation_rules = with_notice_validation_errors(
-            batch_silver,
-            target_date=day,
-            notice_type=notice_type,
-        )
-        batch_validation = summarize_notice_validation(
-            batch_silver,
-            target_date=day,
-            notice_type=notice_type,
-            rules=validation_rules,
-        )
-        invalid_batch = batch_silver.filter(size(col("__validation_errors")) > 0)
-        valid_batch = batch_silver.filter(size(col("__validation_errors")) == 0).drop("__validation_errors")
-        batch_invalid_rows = invalid_batch.count()
-        batch_valid_rows = batch_silver_rows - batch_invalid_rows
-        total_invalid_rows += batch_invalid_rows
-
-        specific_df = _select_existing(valid_batch, specific_columns)
-        specific_df = _compact_html_extracted(specific_df, html_fields)
-        specific_day_dir = silver_dir / "notice_type_tables" / f"noticeType={notice_token}" / f"publicationDateDay={day}"
-        if specific_day_dir.exists():
-            shutil.rmtree(specific_day_dir, ignore_errors=False)
-        (
-            specific_df.write.mode("overwrite")
-            .parquet(str(specific_day_dir))
-        )
-
-        envelope_df = _select_existing(valid_batch, ENVELOPE_COLUMNS)
-        envelope_df.write.mode("append").parquet(str(envelope_tmp))
-        if batch_invalid_rows > 0:
-            # Quarantine schema can differ by notice type (e.g. nested contractors).
-            # Write per notice type to avoid cross-type schema merge failures.
-            quarantine_notice_dir = quarantine_root / f"publicationDateDay={day}" / f"noticeType={notice_token}"
-            if quarantine_notice_dir.exists():
-                shutil.rmtree(quarantine_notice_dir, ignore_errors=True)
-            (
-                invalid_batch.withColumn("validation_notice_type", lit(notice_token))
-                .write.mode("overwrite")
-                .parquet(str(quarantine_notice_dir))
+        cached_batch = None
+        try:
+            batch_silver = build_silver_for_notice_type(
+                batch_raw,
+                notice_type=notice_type,
+                required_columns=required_columns,
+            ).withColumn("publicationDateDay", to_date(col("publicationDate")).cast("string"))
+            cached_batch = batch_silver.persist(StorageLevel.MEMORY_AND_DISK)
+            batch_silver_rows = cached_batch.count()  # materialize once
+            batch_silver, validation_rules = with_notice_validation_errors(
+                cached_batch,
+                target_date=day,
+                notice_type=notice_type,
             )
-        batch_silver.unpersist()
+            batch_validation = summarize_notice_validation(
+                batch_silver,
+                target_date=day,
+                notice_type=notice_type,
+                rules=validation_rules,
+            )
+            invalid_batch = batch_silver.filter(size(col("__validation_errors")) > 0)
+            valid_batch = batch_silver.filter(size(col("__validation_errors")) == 0).drop("__validation_errors")
+            batch_invalid_rows = invalid_batch.count()
+            batch_valid_rows = batch_silver_rows - batch_invalid_rows
+            total_invalid_rows += batch_invalid_rows
+
+            specific_df = _select_existing(valid_batch, specific_columns)
+            specific_df = _compact_html_extracted(specific_df, html_fields)
+            specific_day_dir = silver_dir / "notice_type_tables" / f"noticeType={notice_token}" / f"publicationDateDay={day}"
+            if specific_day_dir.exists():
+                shutil.rmtree(specific_day_dir, ignore_errors=False)
+            (
+                specific_df.write.mode("overwrite")
+                .parquet(str(specific_day_dir))
+            )
+
+            envelope_df = _select_existing(valid_batch, ENVELOPE_COLUMNS)
+            envelope_df.write.mode("append").parquet(str(envelope_tmp))
+            if batch_invalid_rows > 0:
+                # Quarantine schema can differ by notice type (e.g. nested contractors).
+                # Write per notice type to avoid cross-type schema merge failures.
+                quarantine_notice_dir = quarantine_root / f"publicationDateDay={day}" / f"noticeType={notice_token}"
+                if quarantine_notice_dir.exists():
+                    shutil.rmtree(quarantine_notice_dir, ignore_errors=True)
+                (
+                    invalid_batch.withColumn("validation_notice_type", lit(notice_token))
+                    .write.mode("overwrite")
+                    .parquet(str(quarantine_notice_dir))
+                )
+        finally:
+            if cached_batch is not None:
+                cached_batch.unpersist()
 
         log.info(
             "Day=%s noticeType=%s rows=%d wrote specific+envelope in %.2fs",
