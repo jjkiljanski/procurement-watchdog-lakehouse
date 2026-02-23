@@ -19,6 +19,10 @@ NOTICE_STAGE_BY_TYPE = {
 }
 
 
+def _is_poland_expr():
+    return expr("upper(trim(coalesce(organizationCountry, ''))) IN ('PL', 'POLSKA')")
+
+
 def _warn_if_positive(target_date: str, label: str, value: int) -> None:
     if value > 0:
         log.warning("Silver validation warning day=%s: %s=%d", target_date, label, value)
@@ -36,6 +40,8 @@ def validate_common_envelope(df: DataFrame, target_date: str) -> dict[str, int |
     missing = [c for c in required if c not in df.columns]
     if missing:
         raise ValueError(f"Silver common_envelope missing required columns: {missing}")
+    has_country = "organizationCountry" in df.columns
+    is_poland = _is_poland_expr() if has_country else lit(True)
 
     metrics = (
         df.agg(
@@ -56,7 +62,7 @@ def validate_common_envelope(df: DataFrame, target_date: str) -> dict[str, int |
                 when(
                     col("postal_code").isNotNull()
                     & (trim(col("postal_code")) != lit(""))
-                    & col("postal_code").rlike(POSTAL_CODE_REGEX),
+                    & ((~is_poland) | col("postal_code").rlike(POSTAL_CODE_REGEX)),
                     lit(1),
                 ).otherwise(lit(0))
             ).alias("postal_valid_rows"),
@@ -175,10 +181,13 @@ def with_notice_validation_errors(
         add_rule("street_missing_rows", col("street").isNull() | (trim(col("street")) == lit("")))
 
     if "postal_code" in df.columns:
+        has_country = "organizationCountry" in df.columns
+        is_poland = _is_poland_expr() if has_country else lit(True)
         add_rule(
             "postal_invalid_rows",
             col("postal_code").isNotNull()
             & (trim(col("postal_code")) != lit(""))
+            & is_poland
             & (~col("postal_code").rlike(POSTAL_CODE_REGEX)),
         )
 

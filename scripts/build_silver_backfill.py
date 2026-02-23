@@ -272,7 +272,6 @@ def _process_day(
     total_invalid_rows = 0
     batch_profiles: list[dict] = []
     envelope_tmp = silver_dir / "_tmp" / "silver_backfill_envelope" / f"day={day}" / f"attempt={day_state['attempts']}"
-    quarantine_tmp = silver_dir / "_tmp" / "silver_backfill_quarantine" / f"day={day}" / f"attempt={day_state['attempts']}"
     for notice_type, batch_path in notice_batches:
         batch_t0 = time.perf_counter()
         notice_token = normalized_notice_type_token(notice_type)
@@ -332,23 +331,26 @@ def _process_day(
 
         specific_df = _select_existing(valid_batch, specific_columns)
         specific_df = _compact_html_extracted(specific_df, html_fields)
-        specific_out = str(silver_dir / "notice_type_tables" / f"noticeType={notice_token}")
         specific_day_dir = silver_dir / "notice_type_tables" / f"noticeType={notice_token}" / f"publicationDateDay={day}"
         if specific_day_dir.exists():
             shutil.rmtree(specific_day_dir, ignore_errors=False)
         (
             specific_df.write.mode("overwrite")
-            .partitionBy("publicationDateDay")
-            .parquet(specific_out)
+            .parquet(str(specific_day_dir))
         )
 
         envelope_df = _select_existing(valid_batch, ENVELOPE_COLUMNS)
         envelope_df.write.mode("append").parquet(str(envelope_tmp))
         if batch_invalid_rows > 0:
+            # Quarantine schema can differ by notice type (e.g. nested contractors).
+            # Write per notice type to avoid cross-type schema merge failures.
+            quarantine_notice_dir = quarantine_root / f"publicationDateDay={day}" / f"noticeType={notice_token}"
+            if quarantine_notice_dir.exists():
+                shutil.rmtree(quarantine_notice_dir, ignore_errors=True)
             (
                 invalid_batch.withColumn("validation_notice_type", lit(notice_token))
-                .write.mode("append")
-                .parquet(str(quarantine_tmp))
+                .write.mode("overwrite")
+                .parquet(str(quarantine_notice_dir))
             )
         batch_silver.unpersist()
 
@@ -385,25 +387,10 @@ def _process_day(
             )
     (
         envelope_day_df.write.mode("overwrite")
-        .partitionBy("publicationDateDay")
-        .parquet(str(silver_dir / "common_envelope"))
+        .parquet(str(envelope_day_dir))
     )
-    if total_invalid_rows > 0:
-        quarantine_day_df = spark.read.parquet(str(quarantine_tmp))
-        quarantine_day_dir = quarantine_root / f"publicationDateDay={day}"
-        if quarantine_day_dir.exists():
-            try:
-                shutil.rmtree(quarantine_day_dir, ignore_errors=False)
-            except PermissionError:
-                log.warning(
-                    "Could not pre-delete quarantine partition (permission lock): %s; continuing with overwrite",
-                    quarantine_day_dir,
-                )
-        (
-            quarantine_day_df.write.mode("overwrite")
-            .partitionBy("publicationDateDay")
-            .parquet(str(quarantine_root))
-        )
+    # No day-level quarantine compaction: per-noticeType writes above are intentional
+    # to avoid schema merge issues across heterogeneous invalid rows.
     envelope_validation_df = spark.read.parquet(
         str(silver_dir / "common_envelope" / f"publicationDateDay={day}")
     )
