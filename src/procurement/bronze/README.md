@@ -27,6 +27,12 @@ Outputs:
 - `data/bronze/errors/bzp_YYYY-MM-DD_errors.json` (only when validation failures exist)
 - `data/bronze/_index/seen_notice_ids/seen_notice_ids.sqlite` (cross-day duplicate index by `objectId`)
 
+Bronze row payload notes:
+
+- Each validated notice row includes `recordHash` (SHA-256 of canonical validated notice JSON).
+- `recordHash` is deterministic and intended for future change-detection/upsert flows.
+- Silver remains backward-compatible with legacy Bronze partitions that do not have `recordHash`.
+
 Current guarantees:
 
 - Deterministic and idempotent daily writes (partition overwrite for touched day/type).

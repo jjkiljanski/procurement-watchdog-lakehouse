@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from typing import Literal
 
 from pydantic import BaseModel, field_validator
@@ -108,3 +109,10 @@ def to_bronze_output(notice: BzpNoticeBronze) -> BzpNoticeBronzeOut:
     html = data.pop("htmlBody")
     data["htmlBodySha256"] = hashlib.sha256(html.encode("utf-8")).hexdigest()
     return BzpNoticeBronzeOut(**data)
+
+
+def notice_record_hash(notice: BzpNoticeBronze) -> str:
+    """Stable hash of the validated notice payload used for change detection."""
+    payload = notice.model_dump(mode="json", exclude_none=False)
+    canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()

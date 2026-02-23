@@ -16,6 +16,7 @@ from procurement.bronze.models import (
     BzpNoticeBronze,
     BzpNoticeBronzeOut,
     ContractorDto,
+    notice_record_hash,
     to_bronze_output,
 )
 from pydantic import ValidationError
@@ -154,3 +155,19 @@ class TestToBronzeOutput:
         out = to_bronze_output(notice)
         assert out.contractors is not None
         assert out.contractors[0].contractorName == notice.contractors[0].contractorName
+
+
+class TestNoticeRecordHash:
+    def test_record_hash_is_deterministic(self, valid_record: dict):
+        notice = BzpNoticeBronze.model_validate(valid_record)
+        h1 = notice_record_hash(notice)
+        h2 = notice_record_hash(notice)
+        assert h1 == h2
+        assert len(h1) == 64
+
+    def test_record_hash_changes_when_payload_changes(self, valid_record: dict):
+        notice1 = BzpNoticeBronze.model_validate(valid_record)
+        changed = deepcopy(valid_record)
+        changed["organizationName"] = changed["organizationName"] + " X"
+        notice2 = BzpNoticeBronze.model_validate(changed)
+        assert notice_record_hash(notice1) != notice_record_hash(notice2)

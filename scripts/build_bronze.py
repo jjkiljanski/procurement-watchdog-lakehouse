@@ -26,7 +26,7 @@ _src = str(Path(__file__).resolve().parent.parent / "src")
 sys.path.insert(0, _src)
 os.environ["PYTHONPATH"] = _src + os.pathsep + os.environ.get("PYTHONPATH", "")
 
-from procurement.bronze.models import BzpNoticeBronze
+from procurement.bronze.models import BzpNoticeBronze, notice_record_hash
 from procurement.lineage import atomic_write_json, git_commit_sha, now_utc_iso, script_hashes, sha256_file
 from procurement.logging import setup_logging
 from pydantic import ValidationError
@@ -275,7 +275,13 @@ def main() -> None:
         )
 
     valid, errors = validate_raw(deduped_records)
-    valid_rows = [model.model_dump() for model in valid]
+    valid_rows = [
+        {
+            **model.model_dump(),
+            "recordHash": notice_record_hash(model),
+        }
+        for model in valid
+    ]
 
     wrote_notices = False
 
