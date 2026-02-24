@@ -30,9 +30,15 @@ from pathlib import Path
 
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import (
+    array,
+    array_contains,
+    array_distinct,
+    array_sort,
+    collect_set,
     col,
     coalesce,
     concat_ws,
+    countDistinct,
     count,
     datediff,
     expr,
@@ -44,8 +50,10 @@ from pyspark.sql.functions import (
     percentile_approx,
     sum as spark_sum,
     to_date,
+    to_json,
     to_timestamp,
     when,
+    size,
 )
 from pyspark.sql.types import ArrayType, DataType, StructType
 
@@ -137,6 +145,12 @@ def _parse_args() -> argparse.Namespace:
         action="store_true",
         help="Allow removing stale lock files",
     )
+    parser.add_argument(
+        "--shard-count",
+        type=int,
+        default=64,
+        help="Number of hash shards for case_derived_facts snapshot writes",
+    )
     return parser.parse_args()
 
 
@@ -174,7 +188,7 @@ def _specific_paths_up_to(silver_dir: Path, target_date: str) -> list[str]:
     return out
 
 
-def _read_notices_merged(
+def _read_envelope_rows(
     spark: "SparkSession",
     silver_dir: Path,
     target_date: str,
@@ -182,269 +196,674 @@ def _read_notices_merged(
 ) -> DataFrame:
     envelope_root = silver_dir / "common_envelope"
     envelope_paths = _paths_up_to(envelope_root, "publicationDateDay", target_date)
-    specific_paths = _specific_paths_up_to(silver_dir, target_date)
-    if not envelope_paths or not specific_paths:
-        raise ValueError(
-            f"Missing silver inputs for <= {target_date}: envelope={len(envelope_paths)} specific={len(specific_paths)}"
-    )
+    if not envelope_paths:
+        raise ValueError(f"Missing silver envelope inputs for <= {target_date}")
 
     envelope_raw = _union_paths(spark, envelope_paths, base_path=str(envelope_root))
-    # Avoid duplicate partition/data column warnings on noticeType by reading paths directly.
-    specific_raw = _union_paths(spark, specific_paths)
-
-    envelope_slim = envelope_raw.select(
-        safe_col(envelope_raw, "objectId", "string").alias("objectId"),
-        safe_col(envelope_raw, "caseId", "string").alias("env_caseId"),
-        safe_col(envelope_raw, "organizationId", "string").alias("env_organizationId"),
-        safe_col(envelope_raw, "noticeType", "string").alias("env_noticeType"),
-        safe_col(envelope_raw, "publicationDate", "string").alias("env_publicationDate"),
-        safe_col(envelope_raw, "submittingOffersDate", "string").alias("env_submittingOffersDate"),
-    )
-
-    merged = specific_raw.join(envelope_slim, on="objectId", how="left").select(
-        safe_col(specific_raw, "objectId", "string").alias("objectId"),
-        coalesce(
-            safe_col(specific_raw, "caseId", "string"),
-            safe_col(envelope_slim, "env_caseId", "string"),
-        ).alias("caseId"),
-        coalesce(
-            safe_col(specific_raw, "organizationId", "string"),
-            safe_col(envelope_slim, "env_organizationId", "string"),
-        ).alias("organizationId"),
-        coalesce(
-            safe_col(specific_raw, "noticeType", "string"),
-            safe_col(envelope_slim, "env_noticeType", "string"),
-        ).alias("noticeType"),
-        coalesce(
-            safe_col(specific_raw, "publicationDate", "string"),
-            safe_col(envelope_slim, "env_publicationDate", "string"),
-        ).alias("publicationDate"),
-        coalesce(
-            safe_col(specific_raw, "submittingOffersDate", "string"),
-            safe_col(envelope_slim, "env_submittingOffersDate", "string"),
-        ).alias("submittingOffersDate"),
-        safe_col(specific_raw, "htmlExtracted", "struct<notice_change:struct<changes:array<struct<changed_section:string,change_description:string>>>,contract_execution:struct<contract_date:string,executed_on_time:boolean,executed_properly:boolean,execution_end_date:string,execution_period:string,num_changes:bigint>,values:struct<value_contract_reported_execution:double,value_paid_total:double,contract_value:double,total_paid:double>>").alias(
-            "htmlExtracted"
-        ),
-        safe_col(
-            specific_raw,
-            "changes",
-            "array<struct<changed_section:string,change_description:string>>",
-        ).alias("changes"),
-        safe_col(specific_raw, "cpn_contract_date_41", "string").alias("cpn_contract_date_41"),
-        safe_col(specific_raw, "cpn_execution_period_42", "string").alias("cpn_execution_period_42"),
-        safe_col(specific_raw, "cpn_execution_end_date_52", "string").alias("cpn_execution_end_date_52"),
-        safe_col(specific_raw, "value_contract_reported_execution_44", "double").alias("value_contract_reported_execution_44"),
-        safe_col(specific_raw, "value_paid_total_55", "double").alias("value_paid_total_55"),
-    )
-
+    out = envelope_raw.select(
+        safe_col(envelope_raw, "caseId", "string").alias("caseId"),
+        safe_col(envelope_raw, "noticeType", "string").alias("noticeType"),
+        safe_col(envelope_raw, "publicationDate", "string").alias("publicationDate"),
+        safe_col(envelope_raw, "bzpNumber", "string").alias("bzpNumber"),
+        safe_col(envelope_raw, "isTenderAmountBelowEU", "boolean").alias("isTenderAmountBelowEU"),
+        safe_col(envelope_raw, "orderObject", "string").alias("orderObject"),
+        safe_col(envelope_raw, "clientTypeName", "string").alias("clientTypeName"),
+        safe_col(envelope_raw, "orderType", "string").alias("orderType"),
+        safe_col(envelope_raw, "tenderType", "string").alias("tenderType"),
+        safe_col(envelope_raw, "organizationCity", "string").alias("organizationCity"),
+        safe_col(envelope_raw, "provinceName", "string").alias("provinceName"),
+        safe_col(envelope_raw, "organizationCountry", "string").alias("organizationCountry"),
+        safe_col(envelope_raw, "organizationNationalId", "string").alias("organizationNationalId"),
+        safe_col(envelope_raw, "organizationNameNormalized", "string").alias("organizationNameNormalized"),
+        safe_col(envelope_raw, "street", "string").alias("street"),
+        safe_col(envelope_raw, "postal_code", "string").alias("postal_code"),
+    ).filter(col("caseId").isNotNull())
     if case_ids is not None:
-        merged = merged.join(case_ids.select("caseId"), on="caseId", how="inner")
+        out = out.join(case_ids.select("caseId"), on="caseId", how="inner")
+    return out
 
-    return merged.filter(col("caseId").isNotNull())
 
+def _read_specific_rows(
+    spark: "SparkSession",
+    silver_dir: Path,
+    target_date: str,
+    case_ids: DataFrame | None = None,
+) -> DataFrame:
+    specific_paths = _specific_paths_up_to(silver_dir, target_date)
+    if not specific_paths:
+        empty = spark.createDataFrame(
+            [],
+            (
+                "caseId string, noticeType string, publicationDate string, contractors array<map<string,string>>, "
+                "ai_street_512 string, value_estimated_procurement_ai_35 double, ai_prior_market_consultation_31 string, "
+                "cpvMainCode_source string, numCriteria array<int>, priceWeight array<double>, cn_notice_concerns string, "
+                "cn_criteria_aspects_4310_flag array<boolean>, cpvMainCode array<string>, cpvCode string, "
+                "submittingOffersDate string, comp_num_awarded_63 int, value_competition_prizes_64 double, "
+                "value_competition_followon_order_651 double, comp_requirements_72 string"
+            ),
+        )
+        return empty
 
-def _build_case_derived(notices: DataFrame) -> DataFrame:
-    with_metrics = (
-        notices.withColumn("publication_date", to_date(col("publicationDate")))
-        .withColumn(
-            "biddingWindowDays",
-            datediff(to_timestamp(col("submittingOffersDate")), to_timestamp(col("publicationDate"))),
+    frames: list[DataFrame] = []
+    for path in specific_paths:
+        frame_raw = spark.read.parquet(path)
+        contractor_count_col = (
+            size(col("contractors"))
+            if has_field(frame_raw, "contractors")
+            else lit(None).cast("int")
         )
-        .withColumn(
-            "updateDeltaText",
-            lower(
-                expr(
-                    "concat_ws(' ', transform(coalesce(changes, htmlExtracted.notice_change.changes, array()), "
-                    "x -> concat_ws(' ', coalesce(x.changed_section, ''), coalesce(x.change_description, ''))))"
-                )
+        frame = frame_raw.select(
+            safe_col(frame_raw, "caseId", "string").alias("caseId"),
+            safe_col(frame_raw, "noticeType", "string").alias("noticeType"),
+            safe_col(frame_raw, "publicationDate", "string").alias("publicationDate"),
+            contractor_count_col.alias("contractor_count_raw"),
+            safe_col(frame_raw, "ai_street_512", "string").alias("ai_street_512"),
+            safe_col(frame_raw, "value_estimated_procurement_ai_35", "double").alias(
+                "value_estimated_procurement_ai_35"
             ),
-        )
-        .withColumn(
-            "deadlineChanged",
-            col("updateDeltaText").rlike("termin|deadline|skladania ofert|otwarcia ofert"),
-        )
-        .withColumn(
-            "criteriaChanged",
-            col("updateDeltaText").rlike("kryter|cena|waga"),
-        )
-        .withColumn(
-            "scopeChanged",
-            col("updateDeltaText").rlike("zakres|przedmiot|opis"),
-        )
-        .withColumn(
-            "executionDurationDays",
-            coalesce(
-                when(
-                    coalesce(col("cpn_execution_period_42"), col("htmlExtracted.contract_execution.execution_period")).isNotNull(),
-                    expr(
-                        "try_cast(regexp_extract(lower(coalesce(cpn_execution_period_42, htmlExtracted.contract_execution.execution_period)), "
-                        "'(\\d+)\\s*(?:dni|dzien|days?)', 1) as int)"
-                    ),
-                ),
-                when(
-                    coalesce(col("cpn_execution_period_42"), col("htmlExtracted.contract_execution.execution_period")).isNotNull(),
-                    expr(
-                        "try_cast(regexp_extract(lower(coalesce(cpn_execution_period_42, htmlExtracted.contract_execution.execution_period)), "
-                        "'(\\d+)\\s*(?:tygod\\w*|weeks?)', 1) as int)"
-                    )
-                    * lit(7),
-                ),
-                when(
-                    coalesce(col("cpn_execution_period_42"), col("htmlExtracted.contract_execution.execution_period")).isNotNull(),
-                    expr(
-                        "try_cast(regexp_extract(lower(coalesce(cpn_execution_period_42, htmlExtracted.contract_execution.execution_period)), "
-                        "'(\\d+)\\s*(?:miesi\\w*|months?)', 1) as int)"
-                    )
-                    * lit(30),
-                ),
-                when(
-                    coalesce(col("cpn_contract_date_41"), col("htmlExtracted.contract_execution.contract_date")).isNotNull()
-                    & coalesce(col("cpn_execution_end_date_52"), col("htmlExtracted.contract_execution.execution_end_date")).isNotNull(),
-                    datediff(
-                        to_date(coalesce(col("cpn_execution_end_date_52"), col("htmlExtracted.contract_execution.execution_end_date"))),
-                        to_date(coalesce(col("cpn_contract_date_41"), col("htmlExtracted.contract_execution.contract_date"))),
-                    ),
-                ),
+            safe_col(frame_raw, "ai_prior_market_consultation_31", "string").alias(
+                "ai_prior_market_consultation_31"
             ),
-        )
-        .withColumn(
-            "finalPaidRatioNotice",
-            when(
-                coalesce(
-                    col("value_contract_reported_execution_44"),
-                    col("htmlExtracted.values.value_contract_reported_execution"),
-                    col("htmlExtracted.values.contract_value"),
-                ).isNotNull()
-                & (
-                    coalesce(
-                        col("value_contract_reported_execution_44"),
-                        col("htmlExtracted.values.value_contract_reported_execution"),
-                        col("htmlExtracted.values.contract_value"),
-                    )
-                    != 0
-                )
-                & coalesce(
-                    col("value_paid_total_55"),
-                    col("htmlExtracted.values.value_paid_total"),
-                    col("htmlExtracted.values.total_paid"),
-                ).isNotNull(),
-                coalesce(
-                    col("value_paid_total_55"),
-                    col("htmlExtracted.values.value_paid_total"),
-                    col("htmlExtracted.values.total_paid"),
-                )
-                / coalesce(
-                    col("value_contract_reported_execution_44"),
-                    col("htmlExtracted.values.value_contract_reported_execution"),
-                    col("htmlExtracted.values.contract_value"),
-                ),
+            safe_col(frame_raw, "cpvMainCode_source", "string").alias("cpvMainCode_source"),
+            safe_col(frame_raw, "numCriteria", "array<int>").alias("numCriteria"),
+            safe_col(frame_raw, "priceWeight", "array<double>").alias("priceWeight"),
+            safe_col(frame_raw, "cn_notice_concerns", "string").alias("cn_notice_concerns"),
+            safe_col(frame_raw, "cn_criteria_aspects_4310_flag", "array<boolean>").alias(
+                "cn_criteria_aspects_4310_flag"
             ),
-        )
-        .withColumn(
-            "executionDelayed",
-            when(
-                col("noticeType") == lit("ContractPerformingNotice"),
-                when(
-                    coalesce(col("cpn_contract_date_41"), col("htmlExtracted.contract_execution.contract_date")).isNotNull()
-                    & coalesce(col("cpn_execution_end_date_52"), col("htmlExtracted.contract_execution.execution_end_date")).isNotNull()
-                    & col("executionDurationDays").isNotNull(),
-                    datediff(
-                        to_date(coalesce(col("cpn_execution_end_date_52"), col("htmlExtracted.contract_execution.execution_end_date"))),
-                        to_date(coalesce(col("cpn_contract_date_41"), col("htmlExtracted.contract_execution.contract_date"))),
-                    )
-                    > col("executionDurationDays"),
-                ),
+            safe_col(frame_raw, "cpvMainCode", "array<string>").alias("cpvMainCode"),
+            safe_col(frame_raw, "cpvCode", "string").alias("cpvCode"),
+            safe_col(frame_raw, "cpvCodes", "array<string>").alias("cpvCodes"),
+            safe_col(frame_raw, "submittingOffersDate", "string").alias("submittingOffersDate"),
+            safe_col(frame_raw, "comp_num_awarded_63", "int").alias("comp_num_awarded_63"),
+            safe_col(frame_raw, "value_competition_prizes_64", "double").alias(
+                "value_competition_prizes_64"
             ),
-        )
-        .withColumn(
-            "init_date",
-            when(
-                col("noticeType").isin("ContractNotice", "ContractOrOrderNotice", "SmallContractNotice"),
-                col("publication_date"),
+            safe_col(frame_raw, "value_competition_followon_order_651", "double").alias(
+                "value_competition_followon_order_651"
             ),
-        )
-        .withColumn(
-            "result_date",
-            when(col("noticeType") == lit("TenderResultNotice"), col("publication_date")),
-        )
-        .withColumn(
-            "execution_completion_date",
-            when(
-                col("noticeType") == lit("ContractPerformingNotice"),
-                coalesce(
-                    to_date(col("htmlExtracted.contract_execution.execution_end_date")),
-                    col("publication_date"),
-                ),
+            safe_col(frame_raw, "comp_requirements_72", "string").alias("comp_requirements_72"),
+            safe_col(frame_raw, "procedureResultParsed", "array<string>").alias("procedureResultParsed"),
+            safe_col(frame_raw, "trn_notice_concerns", "string").alias("trn_notice_concerns"),
+            safe_col(frame_raw, "cpn_contract_date_41", "string").alias("cpn_contract_date_41"),
+            safe_col(frame_raw, "cpn_execution_end_date_52", "string").alias("cpn_execution_end_date_52"),
+            safe_col(frame_raw, "executed_in_time", "boolean").alias("executed_in_time"),
+            safe_col(frame_raw, "proper_execution", "boolean").alias("proper_execution"),
+            safe_col(frame_raw, "value_contract_reported_execution_44", "double").alias(
+                "value_contract_reported_execution_44"
             ),
+            safe_col(frame_raw, "value_paid_total_55", "double").alias("value_paid_total_55"),
+            (
+                to_json(col("trn_parts"))
+                if has_field(frame_raw, "trn_parts")
+                else lit(None).cast("string")
+            ).alias("trn_parts"),
         )
+        frames.append(frame)
+    out = reduce(lambda a, b: a.unionByName(b, allowMissingColumns=True), frames).filter(
+        col("caseId").isNotNull()
     )
+    if case_ids is not None:
+        out = out.join(case_ids.select("caseId"), on="caseId", how="inner")
+    return out
 
+
+def _build_notice_specific_features(specific_rows: DataFrame) -> DataFrame:
+    rows = specific_rows.withColumn("publication_ts", to_timestamp(col("publicationDate")))
+    grouped = rows.groupBy("caseId")
+
+    cpv_candidate_expr = (
+        "CASE WHEN noticeType IN ('AgreementIntentionNotice','ContractNotice','CompetitionNotice','ConcessionNotice') "
+        "THEN coalesce(element_at(cpvMainCode, 1), cpvCode, element_at(cpvCodes, 1)) END"
+    )
+    cpv_pick = spark_min(
+        expr(
+            "named_struct("
+            f"'is_null', CASE WHEN {cpv_candidate_expr} IS NULL THEN 1 ELSE 0 END, "
+            "'ts', publication_ts, "
+            f"'src', CASE WHEN {cpv_candidate_expr} IS NOT NULL THEN noticeType END, "
+            f"'v', {cpv_candidate_expr}"
+            ")"
+        )
+    ).alias("__cpv_pick")
+
+    out = grouped.agg(
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='AgreementIntentionNotice' "
+                "THEN CASE WHEN coalesce(element_at(cpvMainCode, 1), cpvCode, element_at(cpvCodes, 1)) IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='AgreementIntentionNotice' THEN coalesce(element_at(cpvMainCode, 1), cpvCode, element_at(cpvCodes, 1)) END)"
+            )
+        ).getField("v").alias("ai_cpvMainCode"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='AgreementIntentionNotice' "
+                "THEN CASE WHEN contractor_count_raw IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='AgreementIntentionNotice' THEN contractor_count_raw END)"
+            )
+        ).getField("v").alias("contractor_count"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='AgreementIntentionNotice' "
+                "THEN CASE WHEN ai_street_512 IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='AgreementIntentionNotice' THEN ai_street_512 END)"
+            )
+        ).getField("v").alias("contractor_street"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='AgreementIntentionNotice' "
+                "THEN CASE WHEN value_estimated_procurement_ai_35 IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='AgreementIntentionNotice' THEN value_estimated_procurement_ai_35 END)"
+            )
+        ).getField("v").alias("value_estimated_procurement_ai"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='AgreementIntentionNotice' "
+                "THEN CASE WHEN ai_prior_market_consultation_31 IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='AgreementIntentionNotice' THEN ai_prior_market_consultation_31 END)"
+            )
+        ).getField("v").alias("ai_prior_market_consultation"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='AgreementIntentionNotice' "
+                "THEN CASE WHEN cpvMainCode_source IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='AgreementIntentionNotice' THEN cpvMainCode_source END)"
+            )
+        ).getField("v").alias("cpvMainCode_source"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='ContractNotice' "
+                "THEN CASE WHEN size(numCriteria) IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='ContractNotice' THEN size(numCriteria) END)"
+            )
+        ).getField("v").alias("num_parts"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='ContractNotice' "
+                "THEN CASE WHEN numCriteria IS NOT NULL AND size(numCriteria) > 0 THEN 0 ELSE 1 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='ContractNotice' AND numCriteria IS NOT NULL AND size(numCriteria) > 0 "
+                "THEN aggregate(transform(numCriteria, x -> cast(x as double)), cast(0.0 as double), (acc, x) -> acc + x) / size(numCriteria) END)"
+            )
+        ).getField("v").alias("av_numCriteria"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='ContractNotice' "
+                "THEN CASE WHEN priceWeight IS NOT NULL AND size(priceWeight) > 0 THEN 0 ELSE 1 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='ContractNotice' AND priceWeight IS NOT NULL AND size(priceWeight) > 0 "
+                "THEN aggregate(transform(priceWeight, x -> cast(x as double)), cast(0.0 as double), (acc, x) -> acc + x) / size(priceWeight) END)"
+            )
+        ).getField("v").alias("priceWeight"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='ContractNotice' "
+                "THEN CASE WHEN cn_notice_concerns IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='ContractNotice' THEN cn_notice_concerns END)"
+            )
+        ).getField("v").alias("cn_notice_concerns"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='ContractNotice' "
+                "THEN CASE WHEN cn_criteria_aspects_4310_flag IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='ContractNotice' THEN cn_criteria_aspects_4310_flag END)"
+            )
+        ).getField("v").alias("criteria_esg"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType IN ('ContractNotice','ConcessionNotice') "
+                "THEN CASE WHEN submittingOffersDate IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType IN ('ContractNotice','ConcessionNotice') THEN submittingOffersDate END)"
+            )
+        ).getField("v").alias("submittingOffersDate"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='CompetitionNotice' "
+                "THEN CASE WHEN comp_num_awarded_63 IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='CompetitionNotice' THEN comp_num_awarded_63 END)"
+            )
+        ).getField("v").alias("comp_num_awarded_63"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='CompetitionNotice' "
+                "THEN CASE WHEN value_competition_prizes_64 IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='CompetitionNotice' THEN value_competition_prizes_64 END)"
+            )
+        ).getField("v").alias("value_competition_prizes_64"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='CompetitionNotice' "
+                "THEN CASE WHEN value_competition_followon_order_651 IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='CompetitionNotice' THEN value_competition_followon_order_651 END)"
+            )
+        ).getField("v").alias("value_competition_followon_order_651"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='CompetitionNotice' "
+                "THEN CASE WHEN comp_requirements_72 IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='CompetitionNotice' THEN comp_requirements_72 END)"
+            )
+        ).getField("v").alias("comp_requirements_72"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='TenderResultNotice' "
+                "THEN CASE WHEN procedureResultParsed IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='TenderResultNotice' THEN procedureResultParsed END)"
+            )
+        ).getField("v").alias("procedureResultParsed"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='TenderResultNotice' "
+                "THEN CASE WHEN trn_parts IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='TenderResultNotice' THEN trn_parts END)"
+            )
+        ).getField("v").alias("trn_parts"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='TenderResultNotice' "
+                "THEN CASE WHEN trn_notice_concerns IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='TenderResultNotice' THEN trn_notice_concerns END)"
+            )
+        ).getField("v").alias("trn_notice_concerns"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='TenderResultNotice' "
+                "THEN CASE WHEN coalesce(element_at(cpvMainCode, 1), cpvCode, element_at(cpvCodes, 1)) IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='TenderResultNotice' THEN coalesce(element_at(cpvMainCode, 1), cpvCode, element_at(cpvCodes, 1)) END)"
+            )
+        ).getField("v").alias("trn_cpvMainCode"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='CompetitionResultNotice' "
+                "THEN CASE WHEN coalesce(element_at(cpvMainCode, 1), cpvCode, element_at(cpvCodes, 1)) IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='CompetitionResultNotice' THEN coalesce(element_at(cpvMainCode, 1), cpvCode, element_at(cpvCodes, 1)) END)"
+            )
+        ).getField("v").alias("competition_result_cpvMainCode"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='ConcessionAgreementNotice' "
+                "THEN CASE WHEN coalesce(element_at(cpvMainCode, 1), cpvCode, element_at(cpvCodes, 1)) IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='ConcessionAgreementNotice' THEN coalesce(element_at(cpvMainCode, 1), cpvCode, element_at(cpvCodes, 1)) END)"
+            )
+        ).getField("v").alias("concession_agreement_cpvMainCode"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='CompetitionResultNotice' "
+                "THEN CASE WHEN contractor_count_raw IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='CompetitionResultNotice' THEN contractor_count_raw END)"
+            )
+        ).getField("v").alias("contractor_count_comp_result"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='ConcessionAgreementNotice' "
+                "THEN CASE WHEN contractor_count_raw IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='ConcessionAgreementNotice' THEN contractor_count_raw END)"
+            )
+        ).getField("v").alias("contractor_count_concession_agreement"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='CompetitionResultNotice' "
+                "THEN CASE WHEN trn_notice_concerns IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='CompetitionResultNotice' THEN trn_notice_concerns END)"
+            )
+        ).getField("v").alias("competition_result_notice_concerns"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='ConcessionAgreementNotice' "
+                "THEN CASE WHEN trn_notice_concerns IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='ConcessionAgreementNotice' THEN trn_notice_concerns END)"
+            )
+        ).getField("v").alias("concession_agreement_notice_concerns"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='ContractPerformingNotice' "
+                "THEN CASE WHEN coalesce(element_at(cpvMainCode, 1), cpvCode, element_at(cpvCodes, 1)) IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='ContractPerformingNotice' THEN coalesce(element_at(cpvMainCode, 1), cpvCode, element_at(cpvCodes, 1)) END)"
+            )
+        ).getField("v").alias("cpn_cpvMainCode"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='ContractPerformingNotice' "
+                "THEN CASE WHEN contractor_count_raw IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='ContractPerformingNotice' THEN contractor_count_raw END)"
+            )
+        ).getField("v").alias("contractor_count_cpn"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='ContractPerformingNotice' "
+                "THEN CASE WHEN cpn_contract_date_41 IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='ContractPerformingNotice' THEN cpn_contract_date_41 END)"
+            )
+        ).getField("v").alias("cpn_contract_date_41"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='ContractPerformingNotice' "
+                "THEN CASE WHEN cpn_execution_end_date_52 IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='ContractPerformingNotice' THEN cpn_execution_end_date_52 END)"
+            )
+        ).getField("v").alias("cpn_execution_end_date"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='ContractPerformingNotice' "
+                "THEN CASE WHEN executed_in_time IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='ContractPerformingNotice' THEN executed_in_time END)"
+            )
+        ).getField("v").alias("executed_in_time"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='ContractPerformingNotice' "
+                "THEN CASE WHEN proper_execution IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='ContractPerformingNotice' THEN proper_execution END)"
+            )
+        ).getField("v").alias("proper_execution"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='ContractPerformingNotice' "
+                "THEN CASE WHEN value_contract_reported_execution_44 IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='ContractPerformingNotice' THEN value_contract_reported_execution_44 END)"
+            )
+        ).getField("v").alias("value_contract_reported_execution"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='ContractPerformingNotice' "
+                "THEN CASE WHEN value_paid_total_55 IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='ContractPerformingNotice' THEN value_paid_total_55 END)"
+            )
+        ).getField("v").alias("value_paid_total_55"),
+        cpv_pick,
+    )
     return (
-        with_metrics.groupBy("caseId")
-        .agg(
-            first("organizationId", ignorenulls=True).alias("buyer_id"),
-            spark_min("publication_date").alias("first_publicationDate"),
-            spark_max("publication_date").alias("last_publicationDate"),
-            count(lit(1)).alias("num_notices"),
-            spark_sum(when(col("noticeType") == lit("NoticeUpdateNotice"), lit(1)).otherwise(lit(0)))
-            .cast("long")
-            .alias("num_updates"),
-            spark_max(when(col("noticeType").isin("ContractNotice", "ContractOrOrderNotice", "SmallContractNotice"), lit(1)).otherwise(lit(0)))
-            .cast("boolean")
-            .alias("has_init"),
-            spark_max(when(col("noticeType") == lit("TenderResultNotice"), lit(1)).otherwise(lit(0)))
-            .cast("boolean")
-            .alias("has_result"),
-            spark_max(when(col("noticeType") == lit("ContractPerformingNotice"), lit(1)).otherwise(lit(0)))
-            .cast("boolean")
-            .alias("has_execution"),
-            spark_min("init_date").alias("first_init_date"),
-            spark_min("result_date").alias("first_result_date"),
-            spark_min("execution_completion_date").alias("first_execution_completion_date"),
-            spark_sum(when(col("deadlineChanged"), lit(1)).otherwise(lit(0))).cast("long").alias(
-                "deadline_changed_count"
-            ),
-            spark_sum(when(col("criteriaChanged"), lit(1)).otherwise(lit(0))).cast("long").alias(
-                "criteria_changed_count"
-            ),
-            spark_sum(when(col("scopeChanged"), lit(1)).otherwise(lit(0))).cast("long").alias(
-                "scope_changed_count"
-            ),
-            spark_max(when(col("executionDelayed"), lit(1)).otherwise(lit(0))).alias("__execution_delayed_any_i"),
-            spark_sum(when(col("executionDelayed").isNotNull(), lit(1)).otherwise(lit(0))).alias(
-                "__execution_delayed_obs"
-            ),
-            spark_max("finalPaidRatioNotice").alias("final_paid_ratio"),
+        out.withColumn("cpvMainCode_init", col("__cpv_pick.v"))
+        .withColumn("cpvMainCode_source_init", col("__cpv_pick.src"))
+        .drop("__cpv_pick")
+    )
+
+
+def _apply_result_fallbacks(df: DataFrame) -> DataFrame:
+    cond_trn = (
+        col("cpvMainCode_init").isNull()
+        & (~col("has_ContractNotice"))
+        & (~col("has_AgreementIntentionNotice"))
+        & col("trn_cpvMainCode").isNotNull()
+    )
+    cond_comp = (
+        col("cpvMainCode_init").isNull()
+        & (~cond_trn)
+        & (~col("has_CompetitionNotice"))
+        & col("competition_result_cpvMainCode").isNotNull()
+    )
+    cond_concession = (
+        col("cpvMainCode_init").isNull()
+        & (~cond_trn)
+        & (~cond_comp)
+        & (~col("has_ConcessionNotice"))
+        & col("concession_agreement_cpvMainCode").isNotNull()
+    )
+    cond_cpn = (
+        col("cpvMainCode_init").isNull()
+        & (~cond_trn)
+        & (~cond_comp)
+        & (~cond_concession)
+        & (~col("has_ContractNotice"))
+        & (~col("has_TenderResultNotice"))
+        & col("cpn_cpvMainCode").isNotNull()
+    )
+
+    out = (
+        df.withColumn(
+            "cpvMainCode",
+            when(cond_trn, col("trn_cpvMainCode"))
+            .when(cond_comp, col("competition_result_cpvMainCode"))
+            .when(cond_concession, col("concession_agreement_cpvMainCode"))
+            .when(cond_cpn, col("cpn_cpvMainCode"))
+            .otherwise(col("cpvMainCode_init")),
         )
         .withColumn(
-            "execution_delayed_any",
-            when(col("__execution_delayed_obs") > lit(0), col("__execution_delayed_any_i").cast("boolean")).otherwise(
-                lit(None).cast("boolean")
-            ),
-        )
-        .withColumn(
-            "time_to_award_days",
-            when(
-                col("first_init_date").isNotNull() & col("first_result_date").isNotNull(),
-                datediff(col("first_result_date"), col("first_init_date")),
-            ),
-        )
-        .withColumn(
-            "award_to_completion_days",
-            when(
-                col("first_result_date").isNotNull() & col("first_execution_completion_date").isNotNull(),
-                datediff(col("first_execution_completion_date"), col("first_result_date")),
-            ),
-        )
-        .drop(
-            "first_init_date",
-            "first_result_date",
-            "first_execution_completion_date",
-            "__execution_delayed_any_i",
-            "__execution_delayed_obs",
+            "cpvMainCode_source",
+            when(cond_trn, lit("TenderResultNotice"))
+            .when(cond_comp, lit("CompetitionResultNotice"))
+            .when(cond_concession, lit("ConcessionAgreementNotice"))
+            .when(cond_cpn, lit("ContractPerformingNotice"))
+            .otherwise(col("cpvMainCode_source_init")),
         )
     )
+    out = out.withColumn(
+        "cpv_drift_trn",
+        when(
+            col("trn_cpvMainCode").isNotNull() & col("cpvMainCode").isNotNull(),
+            col("trn_cpvMainCode") != col("cpvMainCode"),
+        ).otherwise(lit(None).cast("boolean")),
+    )
+    out = out.withColumn(
+        "cpv_drift_cpn",
+        when(
+            col("cpn_cpvMainCode").isNotNull() & col("cpvMainCode").isNotNull(),
+            col("cpn_cpvMainCode") != col("cpvMainCode"),
+        ).otherwise(lit(None).cast("boolean")),
+    )
+    out = out.withColumn(
+        "contractors_source",
+        when(
+            (~col("has_CompetitionNotice")) & col("contractor_count_comp_result").isNotNull(),
+            lit("CompetitionResultNotice"),
+        )
+        .when(
+            (~col("has_ConcessionNotice")) & col("contractor_count_concession_agreement").isNotNull(),
+            lit("ConcessionAgreementNotice"),
+        )
+        .when(cond_cpn & col("contractor_count_cpn").isNotNull(), lit("ContractPerformingNotice"))
+        .otherwise(lit(None).cast("string")),
+    )
+    out = out.withColumn(
+        "notice_concerns_source",
+        when(
+            (~col("has_CompetitionNotice")) & col("competition_result_notice_concerns").isNotNull(),
+            lit("CompetitionResultNotice"),
+        )
+        .when(
+            (~col("has_ConcessionNotice")) & col("concession_agreement_notice_concerns").isNotNull(),
+            lit("ConcessionAgreementNotice"),
+        )
+        .otherwise(lit(None).cast("string")),
+    )
+    out = out.withColumn(
+        "paid_ratio",
+        when(
+            col("value_contract_reported_execution").isNotNull()
+            & (col("value_contract_reported_execution") != lit(0))
+            & col("value_paid_total_55").isNotNull(),
+            col("value_paid_total_55") / col("value_contract_reported_execution"),
+        ).otherwise(lit(None).cast("double")),
+    )
+    return out.withColumn("cpv_source", col("cpvMainCode_source"))
+
+
+def _build_case_derived(envelope_rows: DataFrame) -> DataFrame:
+    fields = [
+        "bzpNumber",
+        "isTenderAmountBelowEU",
+        "orderObject",
+        "clientTypeName",
+        "orderType",
+        "tenderType",
+        "organizationCity",
+        "provinceName",
+        "organizationCountry",
+        "organizationNationalId",
+        "organizationNameNormalized",
+        "street",
+        "postal_code",
+    ]
+
+    rows = (
+        envelope_rows.withColumn("publication_ts", to_timestamp(col("publicationDate")))
+        .withColumn("publication_date", to_date(col("publicationDate")))
+    )
+    grouped = rows.groupBy("caseId")
+
+    agg_exprs = []
+    for field in fields:
+        agg_exprs.append(
+            spark_min(
+                expr(
+                    f"named_struct('is_null', CASE WHEN {field} IS NULL THEN 1 ELSE 0 END, "
+                    f"'ts', publication_ts, 'v', {field})"
+                )
+            ).getField("v").alias(field)
+        )
+
+    inconsistency_flags = [
+        countDistinct(when(col(field).isNotNull(), col(field))).alias(f"__cnt_{field}")
+        for field in fields
+    ]
+
+    out = grouped.agg(
+        *agg_exprs,
+        *inconsistency_flags,
+        array_sort(array_distinct(collect_set(col("noticeType")))).alias("notice_types_set"),
+        spark_min(col("publication_date")).alias("first_publication_date"),
+        spark_max(col("publication_date")).alias("last_publication_date"),
+        count(lit(1)).cast("long").alias("num_notices_total"),
+        spark_sum(when(col("noticeType") == lit("NoticeUpdateNotice"), lit(1)).otherwise(lit(0)))
+        .cast("long")
+        .alias("n_changes_init_notice"),
+        spark_sum(when(col("noticeType") == lit("NoticeUpdateConcession"), lit(1)).otherwise(lit(0)))
+        .cast("long")
+        .alias("n_changes_concession_init_notice"),
+        spark_sum(when(col("noticeType") == lit("AgreementUpdateNotice"), lit(1)).otherwise(lit(0)))
+        .cast("long")
+        .alias("n_changes_agreement_notice"),
+        spark_sum(
+            when(col("noticeType") == lit("ConcessionUpdateAgreementNotice"), lit(1)).otherwise(lit(0))
+        )
+        .cast("long")
+        .alias("n_changes_concession_agreement_notice"),
+    )
+
+    out = out.withColumn(
+        "inconsistent_fields",
+        expr(
+            "filter(array({}), x -> x is not null)".format(
+                ", ".join([f"CASE WHEN __cnt_{f} > 1 THEN '{f}' ELSE NULL END" for f in fields])
+            )
+        ),
+    )
+    out = out.withColumn("is_envelope_consistent", size(col("inconsistent_fields")) == lit(0))
+    out = (
+        out.withColumn("has_ContractNotice", array_contains(col("notice_types_set"), lit("ContractNotice")))
+        .withColumn(
+            "has_AgreementIntentionNotice",
+            array_contains(col("notice_types_set"), lit("AgreementIntentionNotice")),
+        )
+        .withColumn(
+            "has_TenderResultNotice",
+            array_contains(col("notice_types_set"), lit("TenderResultNotice")),
+        )
+        .withColumn(
+            "has_ContractPerformingNotice",
+            array_contains(col("notice_types_set"), lit("ContractPerformingNotice")),
+        )
+        .withColumn(
+            "has_CompetitionNotice",
+            array_contains(col("notice_types_set"), lit("CompetitionNotice")),
+        )
+        .withColumn(
+            "has_CompetitionResultNotice",
+            array_contains(col("notice_types_set"), lit("CompetitionResultNotice")),
+        )
+        .withColumn(
+            "has_SmallContractNotice",
+            array_contains(col("notice_types_set"), lit("SmallContractNotice")),
+        )
+        .withColumn(
+            "has_ConcessionNotice",
+            array_contains(col("notice_types_set"), lit("ConcessionNotice")),
+        )
+        .withColumn(
+            "has_ConcessionIntentionAgreementNotice",
+            array_contains(col("notice_types_set"), lit("ConcessionIntentionAgreementNotice")),
+        )
+        .withColumn(
+            "has_ConcessionAgreementNotice",
+            array_contains(col("notice_types_set"), lit("ConcessionAgreementNotice")),
+        )
+    )
+    out = out.withColumn(
+        "has_init",
+        (
+            col("has_ContractNotice")
+            | col("has_AgreementIntentionNotice")
+            | col("has_CompetitionNotice")
+            | col("has_SmallContractNotice")
+            | col("has_ConcessionNotice")
+            | col("has_ConcessionIntentionAgreementNotice")
+        ),
+    )
+    out = out.withColumn(
+        "has_result",
+        (
+            col("has_TenderResultNotice")
+            | col("has_CompetitionResultNotice")
+            | col("has_ConcessionAgreementNotice")
+        ),
+    )
+    out = out.withColumn("has_execution", col("has_ContractPerformingNotice"))
+    out = out.withColumn(
+        "case_type",
+        when(
+            col("has_CompetitionNotice") | col("has_CompetitionResultNotice"),
+            lit("COMPETITION"),
+        )
+        .when(col("has_SmallContractNotice"), lit("SMALL_CONTRACT"))
+        .when(col("has_ConcessionIntentionAgreementNotice"), lit("CONCESSION_INTENTION"))
+        .when(
+            col("has_ConcessionNotice") | col("has_ConcessionAgreementNotice"),
+            lit("CONCESSION_NOTICE"),
+        )
+        .when(col("has_AgreementIntentionNotice"), lit("PROCUREMENT_INTENTION"))
+        .when(
+            col("has_ContractNotice")
+            | col("has_TenderResultNotice")
+            | col("has_ContractPerformingNotice"),
+            lit("PROCUREMENT_COMPETITIVE"),
+        )
+        .otherwise(lit("UNKNOWN")),
+    )
+
+    drop_cols = [f"__cnt_{f}" for f in fields]
+    return out.drop(*drop_cols)
 
 
 def _now_iso() -> str:
@@ -541,17 +960,34 @@ def _parse_iso_day(day: str) -> date:
     return datetime.strptime(day, "%Y-%m-%d").date()
 
 
-def _write_snapshot(df: DataFrame, output_dir: Path, target_date: str, mode: str) -> dict:
+def _write_snapshot(
+    df: DataFrame,
+    output_dir: Path,
+    target_date: str,
+    mode: str,
+    shard_count: int,
+) -> dict:
     run_id = f"{target_date}_{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}_{uuid.uuid4().hex[:8]}"
     version_dir = _snapshot_root(output_dir) / f"version={run_id}"
     data_path = version_dir / "data"
+    effective_shards = max(1, int(shard_count))
     rows = df.count()
-    df.write.mode("overwrite").parquet(str(data_path))
+    write_df = df
+    if "shard" in write_df.columns:
+        write_df = write_df.drop("shard")
+    write_df = write_df.withColumn(
+        "shard",
+        expr(
+            f"CASE WHEN caseId IS NULL THEN 0 ELSE pmod(xxhash64(caseId), {effective_shards}) END"
+        ).cast("int"),
+    )
+    write_df.write.mode("overwrite").partitionBy("shard").parquet(str(data_path))
     manifest = {
         "version": run_id,
         "asOfDate": target_date,
         "mode": mode,
         "rows": rows,
+        "partitioning": {"strategy": "case_id_hash_shard", "shard_count": effective_shards},
         "created_at": _now_iso(),
         "data_path": str(data_path),
     }
@@ -645,9 +1081,20 @@ def main() -> None:
         )
         output_dir.mkdir(parents=True, exist_ok=True)
         if args.mode == "full":
-            notices = _read_notices_merged(spark, silver_dir, target_date)
-            case_df = _build_case_derived(notices).withColumn("asOfDate", lit(target_date))
-            manifest = _write_snapshot(case_df, output_dir, target_date, mode="full")
+            envelope_rows = _read_envelope_rows(spark, silver_dir, target_date)
+            specific_rows = _read_specific_rows(spark, silver_dir, target_date)
+            case_df = _apply_result_fallbacks(
+                _build_case_derived(envelope_rows).join(
+                    _build_notice_specific_features(specific_rows), on="caseId", how="left"
+                )
+            ).withColumn("asOfDate", lit(target_date))
+            manifest = _write_snapshot(
+                case_df,
+                output_dir,
+                target_date,
+                mode="full",
+                shard_count=args.shard_count,
+            )
             _update_pointer(output_dir, manifest)
             log.info(
                 "Built full case_derived_facts snapshot asOfDate=%s rows=%d version=%s",
@@ -662,9 +1109,20 @@ def main() -> None:
 
         if prev_snap is None and next_snap is None:
             log.warning("No neighboring snapshot found around %s, falling back to full mode", target_date)
-            notices = _read_notices_merged(spark, silver_dir, target_date)
-            case_df = _build_case_derived(notices).withColumn("asOfDate", lit(target_date))
-            manifest = _write_snapshot(case_df, output_dir, target_date, mode="full_fallback")
+            envelope_rows = _read_envelope_rows(spark, silver_dir, target_date)
+            specific_rows = _read_specific_rows(spark, silver_dir, target_date)
+            case_df = _apply_result_fallbacks(
+                _build_case_derived(envelope_rows).join(
+                    _build_notice_specific_features(specific_rows), on="caseId", how="left"
+                )
+            ).withColumn("asOfDate", lit(target_date))
+            manifest = _write_snapshot(
+                case_df,
+                output_dir,
+                target_date,
+                mode="full_fallback",
+                shard_count=args.shard_count,
+            )
             _update_pointer(output_dir, manifest)
             log.info(
                 "Built full (fallback) case_derived_facts asOfDate=%s rows=%d version=%s",
@@ -705,7 +1163,13 @@ def main() -> None:
                 target_date,
             )
             out = anchor_df.drop("asOfDate").withColumn("asOfDate", lit(target_date))
-            manifest = _write_snapshot(out, output_dir, target_date, mode=f"incremental_{chosen_direction}")
+            manifest = _write_snapshot(
+                out,
+                output_dir,
+                target_date,
+                mode=f"incremental_{chosen_direction}",
+                shard_count=args.shard_count,
+            )
             _update_pointer(output_dir, manifest)
             log.info(
                 "Built incremental case_derived_facts asOfDate=%s rows=%d direction=%s affected_cases=0 version=%s",
@@ -716,13 +1180,24 @@ def main() -> None:
             )
             return
 
-        notices_affected = _read_notices_merged(spark, silver_dir, target_date, case_ids=affected)
-        recomputed = _build_case_derived(notices_affected)
+        envelope_affected = _read_envelope_rows(spark, silver_dir, target_date, case_ids=affected)
+        specific_affected = _read_specific_rows(spark, silver_dir, target_date, case_ids=affected)
+        recomputed = _apply_result_fallbacks(
+            _build_case_derived(envelope_affected).join(
+                _build_notice_specific_features(specific_affected), on="caseId", how="left"
+            )
+        )
         unchanged = anchor_df.join(affected, on="caseId", how="left_anti").drop("asOfDate")
         out = unchanged.unionByName(recomputed, allowMissingColumns=True).withColumn(
             "asOfDate", lit(target_date)
         )
-        manifest = _write_snapshot(out, output_dir, target_date, mode=f"incremental_{chosen_direction}")
+        manifest = _write_snapshot(
+            out,
+            output_dir,
+            target_date,
+            mode=f"incremental_{chosen_direction}",
+            shard_count=args.shard_count,
+        )
         _update_pointer(output_dir, manifest)
         log.info(
             "Built incremental case_derived_facts asOfDate=%s rows=%d direction=%s anchor=%s affected_cases=%d version=%s",
