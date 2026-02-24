@@ -22,6 +22,7 @@ import argparse
 import json
 import logging
 import os
+import shutil
 import sys
 import uuid
 from datetime import UTC, date, datetime, timedelta
@@ -100,6 +101,23 @@ def safe_col(df: DataFrame, field_path: str, cast_to: str | None = None):
     if cast_to is None:
         return lit(None)
     return lit(None).cast(cast_to)
+
+
+def _with_case_shard(
+    df: DataFrame,
+    shard_count: int,
+    case_col: str = "caseId",
+    shard_col: str = "caseId_shard",
+) -> DataFrame:
+    effective = max(1, int(shard_count))
+    if shard_col in df.columns:
+        return df.withColumn(shard_col, col(shard_col).cast("int"))
+    return df.withColumn(
+        shard_col,
+        expr(
+            f"CASE WHEN {case_col} IS NULL THEN NULL ELSE pmod(xxhash64({case_col}), {effective}) END"
+        ).cast("int"),
+    )
 
 
 def _parse_args() -> argparse.Namespace:
@@ -193,6 +211,7 @@ def _read_envelope_rows(
     silver_dir: Path,
     target_date: str,
     case_ids: DataFrame | None = None,
+    shard_count: int = 64,
 ) -> DataFrame:
     envelope_root = silver_dir / "common_envelope"
     envelope_paths = _paths_up_to(envelope_root, "publicationDateDay", target_date)
@@ -202,6 +221,7 @@ def _read_envelope_rows(
     envelope_raw = _union_paths(spark, envelope_paths, base_path=str(envelope_root))
     out = envelope_raw.select(
         safe_col(envelope_raw, "caseId", "string").alias("caseId"),
+        safe_col(envelope_raw, "caseId_shard", "int").alias("caseId_shard"),
         safe_col(envelope_raw, "noticeType", "string").alias("noticeType"),
         safe_col(envelope_raw, "publicationDate", "string").alias("publicationDate"),
         safe_col(envelope_raw, "bzpNumber", "string").alias("bzpNumber"),
@@ -218,8 +238,13 @@ def _read_envelope_rows(
         safe_col(envelope_raw, "street", "string").alias("street"),
         safe_col(envelope_raw, "postal_code", "string").alias("postal_code"),
     ).filter(col("caseId").isNotNull())
+    out = _with_case_shard(out, shard_count=shard_count)
     if case_ids is not None:
-        out = out.join(case_ids.select("caseId"), on="caseId", how="inner")
+        case_keys = _with_case_shard(
+            case_ids.select("caseId", *([c for c in ["caseId_shard"] if c in case_ids.columns])),
+            shard_count=shard_count,
+        ).select("caseId", "caseId_shard")
+        out = out.join(case_keys, on=["caseId", "caseId_shard"], how="inner")
     return out
 
 
@@ -228,6 +253,7 @@ def _read_specific_rows(
     silver_dir: Path,
     target_date: str,
     case_ids: DataFrame | None = None,
+    shard_count: int = 64,
 ) -> DataFrame:
     specific_paths = _specific_paths_up_to(silver_dir, target_date)
     if not specific_paths:
@@ -235,6 +261,7 @@ def _read_specific_rows(
             [],
             (
                 "caseId string, noticeType string, publicationDate string, contractors array<map<string,string>>, "
+                "caseId_shard int, "
                 "ai_street_512 string, value_estimated_procurement_ai_35 double, ai_prior_market_consultation_31 string, "
                 "cpvMainCode_source string, numCriteria array<int>, priceWeight array<double>, cn_notice_concerns string, "
                 "cn_criteria_aspects_4310_flag array<boolean>, cpvMainCode array<string>, cpvCode string, "
@@ -254,6 +281,7 @@ def _read_specific_rows(
         )
         frame = frame_raw.select(
             safe_col(frame_raw, "caseId", "string").alias("caseId"),
+            safe_col(frame_raw, "caseId_shard", "int").alias("caseId_shard"),
             safe_col(frame_raw, "noticeType", "string").alias("noticeType"),
             safe_col(frame_raw, "publicationDate", "string").alias("publicationDate"),
             contractor_count_col.alias("contractor_count_raw"),
@@ -303,8 +331,13 @@ def _read_specific_rows(
     out = reduce(lambda a, b: a.unionByName(b, allowMissingColumns=True), frames).filter(
         col("caseId").isNotNull()
     )
+    out = _with_case_shard(out, shard_count=shard_count)
     if case_ids is not None:
-        out = out.join(case_ids.select("caseId"), on="caseId", how="inner")
+        case_keys = _with_case_shard(
+            case_ids.select("caseId", *([c for c in ["caseId_shard"] if c in case_ids.columns])),
+            shard_count=shard_count,
+        ).select("caseId", "caseId_shard")
+        out = out.join(case_keys, on=["caseId", "caseId_shard"], how="inner")
     return out
 
 
@@ -995,6 +1028,86 @@ def _write_snapshot(
     return manifest
 
 
+def _read_snapshot_shard_or_empty(
+    spark: "SparkSession",
+    shard_path: Path,
+    empty_schema_df: DataFrame,
+) -> DataFrame:
+    if shard_path.exists():
+        return spark.read.parquet(str(shard_path))
+    return empty_schema_df.limit(0)
+
+
+def _write_snapshot_incremental_by_shard(
+    spark: "SparkSession",
+    anchor_manifest: dict,
+    recomputed_df: DataFrame,
+    affected_case_ids: DataFrame,
+    output_dir: Path,
+    target_date: str,
+    mode: str,
+    shard_count: int,
+) -> dict:
+    effective_shards = max(1, int(shard_count))
+    run_id = f"{target_date}_{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}_{uuid.uuid4().hex[:8]}"
+    version_dir = _snapshot_root(output_dir) / f"version={run_id}"
+    data_path = version_dir / "data"
+    anchor_data_path = Path(anchor_manifest["data_path"])
+
+    if version_dir.exists():
+        shutil.rmtree(version_dir, ignore_errors=False)
+    data_path.mkdir(parents=True, exist_ok=True)
+
+    affected_keys = (
+        _with_case_shard(affected_case_ids.select("caseId", "caseId_shard"), shard_count=effective_shards)
+        .select("caseId", "caseId_shard")
+        .where(col("caseId").isNotNull() & col("caseId_shard").isNotNull())
+        .distinct()
+    )
+    affected_shards = {
+        int(r["caseId_shard"])
+        for r in affected_keys.select("caseId_shard").distinct().collect()
+    }
+
+    recomputed_with_shard = _with_case_shard(recomputed_df, shard_count=effective_shards).drop("asOfDate")
+    base_schema_df = recomputed_with_shard.limit(0).withColumn("asOfDate", lit(target_date))
+
+    for shard in range(effective_shards):
+        shard_dir_name = f"shard={shard}"
+        src_shard_path = anchor_data_path / shard_dir_name
+        dst_shard_path = data_path / shard_dir_name
+
+        if shard not in affected_shards:
+            if src_shard_path.exists():
+                shutil.copytree(src_shard_path, dst_shard_path, dirs_exist_ok=False)
+            continue
+
+        anchor_shard = _read_snapshot_shard_or_empty(spark, src_shard_path, base_schema_df)
+        affected_case_ids_shard = affected_keys.where(col("caseId_shard") == lit(shard)).select("caseId").distinct()
+        unchanged_shard = anchor_shard.join(affected_case_ids_shard, on="caseId", how="left_anti").drop(
+            "asOfDate",
+            "shard",
+        )
+        recomputed_shard = recomputed_with_shard.where(col("caseId_shard") == lit(shard)).drop("caseId_shard")
+        out_shard = unchanged_shard.unionByName(recomputed_shard, allowMissingColumns=True).withColumn(
+            "asOfDate", lit(target_date)
+        )
+        out_shard.write.mode("overwrite").parquet(str(dst_shard_path))
+
+    rows = spark.read.parquet(str(data_path)).count()
+    manifest = {
+        "version": run_id,
+        "asOfDate": target_date,
+        "mode": mode,
+        "rows": rows,
+        "partitioning": {"strategy": "case_id_hash_shard", "shard_count": effective_shards},
+        "created_at": _now_iso(),
+        "data_path": str(data_path),
+    }
+    _atomic_write_json(version_dir / "manifest.json", manifest)
+    return manifest
+
+
 def _update_pointer(output_dir: Path, manifest: dict) -> None:
     pointer = {
         "current_version": manifest["version"],
@@ -1011,9 +1124,14 @@ def _touched_case_ids(spark: "SparkSession", silver_dir: Path, target_date: str)
     if not daily_envelope.exists():
         raise ValueError(f"Missing daily envelope partition: {daily_envelope}")
     daily_df = spark.read.parquet(str(daily_envelope))
-    return daily_df.select(safe_col(daily_df, "caseId", "string").alias("caseId")).filter(
-        col("caseId").isNotNull()
-    ).distinct()
+    return (
+        daily_df.select(
+            safe_col(daily_df, "caseId", "string").alias("caseId"),
+            safe_col(daily_df, "caseId_shard", "int").alias("caseId_shard"),
+        )
+        .filter(col("caseId").isNotNull())
+        .distinct()
+    )
 
 
 def _touched_case_ids_in_range(
@@ -1029,7 +1147,7 @@ def _touched_case_ids_in_range(
     start_day = _parse_iso_day(start_exclusive)
     end_day = _parse_iso_day(end_inclusive)
     if start_day >= end_day:
-        return spark.createDataFrame([], "caseId string")
+        return spark.createDataFrame([], "caseId string, caseId_shard int")
 
     paths: list[str] = []
     for p in sorted(envelope_root.glob("publicationDateDay=*")):
@@ -1041,11 +1159,14 @@ def _touched_case_ids_in_range(
             paths.append(str(p))
 
     if not paths:
-        return spark.createDataFrame([], "caseId string")
+        return spark.createDataFrame([], "caseId string, caseId_shard int")
 
     daily_df = _union_paths(spark, paths, base_path=str(envelope_root))
     return (
-        daily_df.select(safe_col(daily_df, "caseId", "string").alias("caseId"))
+        daily_df.select(
+            safe_col(daily_df, "caseId", "string").alias("caseId"),
+            safe_col(daily_df, "caseId_shard", "int").alias("caseId_shard"),
+        )
         .filter(col("caseId").isNotNull())
         .distinct()
     )
@@ -1081,8 +1202,12 @@ def main() -> None:
         )
         output_dir.mkdir(parents=True, exist_ok=True)
         if args.mode == "full":
-            envelope_rows = _read_envelope_rows(spark, silver_dir, target_date)
-            specific_rows = _read_specific_rows(spark, silver_dir, target_date)
+            envelope_rows = _read_envelope_rows(
+                spark, silver_dir, target_date, shard_count=args.shard_count
+            )
+            specific_rows = _read_specific_rows(
+                spark, silver_dir, target_date, shard_count=args.shard_count
+            )
             case_df = _apply_result_fallbacks(
                 _build_case_derived(envelope_rows).join(
                     _build_notice_specific_features(specific_rows), on="caseId", how="left"
@@ -1109,8 +1234,12 @@ def main() -> None:
 
         if prev_snap is None and next_snap is None:
             log.warning("No neighboring snapshot found around %s, falling back to full mode", target_date)
-            envelope_rows = _read_envelope_rows(spark, silver_dir, target_date)
-            specific_rows = _read_specific_rows(spark, silver_dir, target_date)
+            envelope_rows = _read_envelope_rows(
+                spark, silver_dir, target_date, shard_count=args.shard_count
+            )
+            specific_rows = _read_specific_rows(
+                spark, silver_dir, target_date, shard_count=args.shard_count
+            )
             case_df = _apply_result_fallbacks(
                 _build_case_derived(envelope_rows).join(
                     _build_notice_specific_features(specific_rows), on="caseId", how="left"
@@ -1148,12 +1277,12 @@ def main() -> None:
 
         assert anchor is not None
         anchor_date = anchor["asOfDate"]
-        anchor_df = spark.read.parquet(anchor["data_path"])
 
         if chosen_direction == "forward":
             affected = _touched_case_ids_in_range(spark, silver_dir, anchor_date, target_date)
         else:
             affected = _touched_case_ids_in_range(spark, silver_dir, target_date, anchor_date)
+        affected = _with_case_shard(affected, shard_count=args.shard_count)
         affected_count = affected.count()
 
         if affected_count == 0:
@@ -1162,6 +1291,7 @@ def main() -> None:
                 anchor_date,
                 target_date,
             )
+            anchor_df = spark.read.parquet(anchor["data_path"])
             out = anchor_df.drop("asOfDate").withColumn("asOfDate", lit(target_date))
             manifest = _write_snapshot(
                 out,
@@ -1180,21 +1310,32 @@ def main() -> None:
             )
             return
 
-        envelope_affected = _read_envelope_rows(spark, silver_dir, target_date, case_ids=affected)
-        specific_affected = _read_specific_rows(spark, silver_dir, target_date, case_ids=affected)
+        envelope_affected = _read_envelope_rows(
+            spark,
+            silver_dir,
+            target_date,
+            case_ids=affected,
+            shard_count=args.shard_count,
+        )
+        specific_affected = _read_specific_rows(
+            spark,
+            silver_dir,
+            target_date,
+            case_ids=affected,
+            shard_count=args.shard_count,
+        )
         recomputed = _apply_result_fallbacks(
             _build_case_derived(envelope_affected).join(
                 _build_notice_specific_features(specific_affected), on="caseId", how="left"
             )
         )
-        unchanged = anchor_df.join(affected, on="caseId", how="left_anti").drop("asOfDate")
-        out = unchanged.unionByName(recomputed, allowMissingColumns=True).withColumn(
-            "asOfDate", lit(target_date)
-        )
-        manifest = _write_snapshot(
-            out,
-            output_dir,
-            target_date,
+        manifest = _write_snapshot_incremental_by_shard(
+            spark=spark,
+            anchor_manifest=anchor,
+            recomputed_df=recomputed,
+            affected_case_ids=affected,
+            output_dir=output_dir,
+            target_date=target_date,
             mode=f"incremental_{chosen_direction}",
             shard_count=args.shard_count,
         )

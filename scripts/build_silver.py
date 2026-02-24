@@ -65,9 +65,11 @@ ENVELOPE_COLUMNS = [
     "provinceName",
     "organizationCountry",
     "organizationNationalId",
+    "organizationNationalId_parsed",
     "organizationId",
     "tenderId",
     "caseId",
+    "caseId_shard",
     "noticeStage",
     "organizationNameNormalized",
     "street",
@@ -299,7 +301,7 @@ def main() -> None:
     day_lock_dir: Path | None = None
     run_id: str | None = None
     try:
-        from pyspark.sql.functions import col, lit, size, to_date
+        from pyspark.sql.functions import col, lit, pmod, size, to_date, when, xxhash64
 
         bronze_root = Path(args.bronze_dir) / "notices"
         bronze_paths = sorted(
@@ -433,6 +435,9 @@ def main() -> None:
                 ).withColumn(
                     "publicationDateDay",
                     to_date(col("publicationDate")).cast("string"),
+                ).withColumn(
+                    "caseId_shard",
+                    when(col("caseId").isNotNull(), pmod(xxhash64(col("caseId")), lit(64)).cast("int")),
                 )
 
                 batch_silver, validation_rules = with_notice_validation_errors(
@@ -473,7 +478,7 @@ def main() -> None:
                         .parquet(quarantine_root)
                     )
 
-                specific_df = _select_existing(valid_batch, specific_columns)
+                specific_df = _select_existing(valid_batch, ["caseId_shard", *specific_columns])
                 specific_df = _compact_html_extracted(specific_df, html_fields)
                 specific_out = str(specific_root / f"noticeType={notice_type_token}")
                 specific_day_dir = specific_root / f"noticeType={notice_type_token}" / f"publicationDateDay={target_date}"

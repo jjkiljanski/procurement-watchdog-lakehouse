@@ -32,6 +32,7 @@ os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
 
 from procurement.logging import setup_logging
 from procurement.lineage import atomic_write_json, git_commit_sha, now_utc_iso, script_hashes
+from procurement.common.locks import acquire_directory_lock, release_directory_lock_if_owner
 from procurement.silver.notice_types import (
     html_extracted_fields_for_notice_type,
     normalized_notice_type_token,
@@ -66,9 +67,11 @@ ENVELOPE_COLUMNS = [
     "provinceName",
     "organizationCountry",
     "organizationNationalId",
+    "organizationNationalId_parsed",
     "organizationId",
     "tenderId",
     "caseId",
+    "caseId_shard",
     "noticeStage",
     "organizationNameNormalized",
     "street",
@@ -182,6 +185,16 @@ def _date_list(start_date: str, end_date: str) -> list[str]:
     return out
 
 
+def _safe_rmtree(path: Path, label: str) -> None:
+    if not path.exists():
+        return
+    try:
+        shutil.rmtree(path, ignore_errors=False)
+    except (PermissionError, OSError) as exc:
+        # Overwrite writes are still attempted; this only skips eager cleanup.
+        log.warning("Could not pre-delete %s at %s: %s", label, path, exc)
+
+
 def _default_state_path(silver_dir: Path, start_date: str, end_date: str) -> Path:
     return silver_dir / "_state" / f"silver_backfill_{start_date}_{end_date}.json"
 
@@ -224,6 +237,33 @@ def _save_state(state_path: Path, state: dict) -> None:
     atomic_write_json(state_path, state)
 
 
+def _acquire_day_lock(silver_dir: Path, day: str, run_id: str, stale_minutes: int) -> Path:
+    owner = {
+        "run_id": run_id,
+        "pid": os.getpid(),
+        "started_at_epoch": int(time.time()),
+        "started_at_utc": now_utc_iso(),
+        "target_date": day,
+        "mode": "backfill",
+    }
+    lock_dir = silver_dir / "_locks" / f"silver_day={day}"
+    try:
+        return acquire_directory_lock(
+            lock_dir=lock_dir,
+            owner_payload=owner,
+            stale_seconds=max(1, stale_minutes) * 60,
+        )
+    except RuntimeError as exc:
+        msg = str(exc)
+        if msg.startswith("Directory lock already exists:"):
+            msg = msg.replace(
+                "Directory lock already exists:",
+                f"Silver day lock already exists for {day}:",
+                1,
+            )
+        raise RuntimeError(msg) from exc
+
+
 def _process_day(
     spark: "SparkSession",
     day: str,
@@ -233,180 +273,186 @@ def _process_day(
     repartition: int,
     state: dict,
     state_path: Path,
+    lock_run_id: str,
+    lock_stale_minutes: int,
 ) -> tuple[int, int, list[dict], list[str], dict[str, int | float]]:
-    from pyspark.sql.functions import col, lit, size, to_date
+    from pyspark.sql.functions import col, lit, pmod, size, to_date, when, xxhash64
     from pyspark.storagelevel import StorageLevel
 
     bronze_root = bronze_dir / "notices"
     bronze_paths = sorted(bronze_root.glob(f"noticeType=*/publicationDateDay={day}"))
     if not bronze_paths:
         raise ValueError(f"No Bronze partitions found for day={day} under {bronze_root}")
-
-    day_state = state["days"][day]
-    day_state["status"] = "in_progress"
-    day_state["attempts"] = int(day_state.get("attempts", 0)) + 1
-    day_state["started_at"] = datetime.now(UTC).isoformat().replace("+00:00", "Z")
-    day_state["current_notice_type"] = None
-    day_state.pop("error", None)
-    _save_state(state_path, state)
-
-    spark.conf.set("spark.sql.sources.partitionOverwriteMode", "dynamic")
-    quarantine_root = silver_dir / "_quarantine" / "notice_rows"
-    quarantine_day_dir = quarantine_root / f"publicationDateDay={day}"
-    if quarantine_day_dir.exists():
-        shutil.rmtree(quarantine_day_dir, ignore_errors=False)
-    notice_batches: list[tuple[str | None, str]] = []
-    for p in bronze_paths:
-        token = p.parent.name.replace("noticeType=", "")
-        nt = None if token in ("__NULL__", "__HIVE_DEFAULT_PARTITION__") else token
-        notice_batches.append((nt, str(p)))
-    notice_batches.sort(key=lambda x: (x[0] is None, "" if x[0] is None else str(x[0])))
-
-    log.info(
-        "Day=%s processing noticeType batches: %s",
-        day,
-        [normalized_notice_type_token(nt) for nt, _ in notice_batches],
+    day_lock_dir = _acquire_day_lock(
+        silver_dir=silver_dir,
+        day=day,
+        run_id=lock_run_id,
+        stale_minutes=lock_stale_minutes,
     )
-
-    total_rows = 0
-    total_invalid_rows = 0
-    batch_profiles: list[dict] = []
-    envelope_tmp = silver_dir / "_tmp" / "silver_backfill_envelope" / f"day={day}" / f"attempt={day_state['attempts']}"
-    for notice_type, batch_path in notice_batches:
-        batch_t0 = time.perf_counter()
-        notice_token = normalized_notice_type_token(notice_type)
-        day_state["current_notice_type"] = notice_token
+    log.info("Backfill acquired day lock: %s", day_lock_dir)
+    try:
+        day_state = state["days"][day]
+        day_state["status"] = "in_progress"
+        day_state["attempts"] = int(day_state.get("attempts", 0)) + 1
+        day_state["started_at"] = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+        day_state["current_notice_type"] = None
+        day_state.pop("error", None)
         _save_state(state_path, state)
 
-        batch_raw = spark.read.option("basePath", str(bronze_root)).parquet(batch_path)
-        batch_count = batch_raw.count()
-        total_rows += batch_count
-
-        if shuffle_partitions > 0:
-            per_batch_shuffle = shuffle_partitions
-        else:
-            per_batch_shuffle = (
-                repartition
-                if repartition > 0
-                else _adaptive_target_partitions(notice_type, batch_count, spark.sparkContext.defaultParallelism)
-            )
-        spark.conf.set("spark.sql.shuffle.partitions", str(per_batch_shuffle))
-        batch_raw = _maybe_repartition_batch(
-            batch_raw,
-            notice_type,
-            batch_count,
-            repartition,
-            spark,
-            notice_token,
-        )
-
-        specific_columns = specific_columns_for_notice_type(notice_type)
-        html_fields = html_extracted_fields_for_notice_type(notice_type)
-        required_columns = set(ENVELOPE_COLUMNS) | set(specific_columns)
-        batch_start = time.perf_counter()
-
-        cached_batch = None
-        try:
-            batch_silver = build_silver_for_notice_type(
-                batch_raw,
-                notice_type=notice_type,
-                required_columns=required_columns,
-            ).withColumn("publicationDateDay", to_date(col("publicationDate")).cast("string"))
-            cached_batch = batch_silver.persist(StorageLevel.MEMORY_AND_DISK)
-            batch_silver_rows = cached_batch.count()  # materialize once
-            batch_silver, validation_rules = with_notice_validation_errors(
-                cached_batch,
-                target_date=day,
-                notice_type=notice_type,
-            )
-            batch_validation = summarize_notice_validation(
-                batch_silver,
-                target_date=day,
-                notice_type=notice_type,
-                rules=validation_rules,
-            )
-            invalid_batch = batch_silver.filter(size(col("__validation_errors")) > 0)
-            valid_batch = batch_silver.filter(size(col("__validation_errors")) == 0).drop("__validation_errors")
-            batch_invalid_rows = invalid_batch.count()
-            batch_valid_rows = batch_silver_rows - batch_invalid_rows
-            total_invalid_rows += batch_invalid_rows
-
-            specific_df = _select_existing(valid_batch, specific_columns)
-            specific_df = _compact_html_extracted(specific_df, html_fields)
-            specific_day_dir = silver_dir / "notice_type_tables" / f"noticeType={notice_token}" / f"publicationDateDay={day}"
-            if specific_day_dir.exists():
-                shutil.rmtree(specific_day_dir, ignore_errors=False)
-            (
-                specific_df.write.mode("overwrite")
-                .parquet(str(specific_day_dir))
-            )
-
-            envelope_df = _select_existing(valid_batch, ENVELOPE_COLUMNS)
-            envelope_df.write.mode("append").parquet(str(envelope_tmp))
-            if batch_invalid_rows > 0:
-                # Quarantine schema can differ by notice type (e.g. nested contractors).
-                # Write per notice type to avoid cross-type schema merge failures.
-                quarantine_notice_dir = quarantine_root / f"publicationDateDay={day}" / f"noticeType={notice_token}"
-                if quarantine_notice_dir.exists():
-                    shutil.rmtree(quarantine_notice_dir, ignore_errors=True)
-                (
-                    invalid_batch.withColumn("validation_notice_type", lit(notice_token))
-                    .write.mode("overwrite")
-                    .parquet(str(quarantine_notice_dir))
-                )
-        finally:
-            if cached_batch is not None:
-                cached_batch.unpersist()
+        spark.conf.set("spark.sql.sources.partitionOverwriteMode", "dynamic")
+        quarantine_root = silver_dir / "_quarantine" / "notice_rows"
+        quarantine_day_dir = quarantine_root / f"publicationDateDay={day}"
+        _safe_rmtree(quarantine_day_dir, "quarantine day dir")
+        notice_batches: list[tuple[str | None, str]] = []
+        for p in bronze_paths:
+            token = p.parent.name.replace("noticeType=", "")
+            nt = None if token in ("__NULL__", "__HIVE_DEFAULT_PARTITION__") else token
+            notice_batches.append((nt, str(p)))
+        notice_batches.sort(key=lambda x: (x[0] is None, "" if x[0] is None else str(x[0])))
 
         log.info(
-            "Day=%s noticeType=%s rows=%d wrote specific+envelope in %.2fs",
+            "Day=%s processing noticeType batches: %s",
             day,
-            notice_token,
-            batch_count,
-            time.perf_counter() - batch_start,
-        )
-        batch_profiles.append(
-            {
-                "noticeType": notice_token,
-                "rows": batch_count,
-                "shuffle_partitions": per_batch_shuffle,
-                "validation": batch_validation,
-                "invalid_rows": batch_invalid_rows,
-                "valid_rows": batch_valid_rows,
-                "batch_total_sec": round(time.perf_counter() - batch_t0, 3),
-                "batch_path": batch_path,
-            }
+            [normalized_notice_type_token(nt) for nt, _ in notice_batches],
         )
 
-    # Commit envelope for this day in one overwrite write.
-    envelope_day_df = spark.read.parquet(str(envelope_tmp))
-    envelope_day_dir = silver_dir / "common_envelope" / f"publicationDateDay={day}"
-    if envelope_day_dir.exists():
-        try:
-            shutil.rmtree(envelope_day_dir, ignore_errors=False)
-        except PermissionError:
-            log.warning(
-                "Could not pre-delete envelope partition (permission lock): %s; continuing with overwrite",
-                envelope_day_dir,
+        total_rows = 0
+        total_invalid_rows = 0
+        batch_profiles: list[dict] = []
+        envelope_tmp = silver_dir / "_tmp" / "silver_backfill_envelope" / f"day={day}" / f"attempt={day_state['attempts']}"
+        for notice_type, batch_path in notice_batches:
+            batch_t0 = time.perf_counter()
+            notice_token = normalized_notice_type_token(notice_type)
+            day_state["current_notice_type"] = notice_token
+            _save_state(state_path, state)
+
+            batch_raw = spark.read.option("basePath", str(bronze_root)).parquet(batch_path)
+            batch_count = batch_raw.count()
+            total_rows += batch_count
+
+            if shuffle_partitions > 0:
+                per_batch_shuffle = shuffle_partitions
+            else:
+                per_batch_shuffle = (
+                    repartition
+                    if repartition > 0
+                    else _adaptive_target_partitions(notice_type, batch_count, spark.sparkContext.defaultParallelism)
+                )
+            spark.conf.set("spark.sql.shuffle.partitions", str(per_batch_shuffle))
+            batch_raw = _maybe_repartition_batch(
+                batch_raw,
+                notice_type,
+                batch_count,
+                repartition,
+                spark,
+                notice_token,
             )
-    (
-        envelope_day_df.write.mode("overwrite")
-        .parquet(str(envelope_day_dir))
-    )
-    # No day-level quarantine compaction: per-noticeType writes above are intentional
-    # to avoid schema merge issues across heterogeneous invalid rows.
-    envelope_validation_df = spark.read.parquet(
-        str(silver_dir / "common_envelope" / f"publicationDateDay={day}")
-    )
-    validation_metrics = validate_common_envelope(envelope_validation_df, target_date=day)
 
-    day_state["status"] = "completed"
-    day_state["completed_at"] = datetime.now(UTC).isoformat().replace("+00:00", "Z")
-    day_state["current_notice_type"] = None
-    day_state["rows"] = total_rows
-    day_state["quarantined_rows"] = total_invalid_rows
-    _save_state(state_path, state)
-    return total_rows, total_invalid_rows, batch_profiles, [p for _, p in notice_batches], validation_metrics
+            specific_columns = specific_columns_for_notice_type(notice_type)
+            html_fields = html_extracted_fields_for_notice_type(notice_type)
+            required_columns = set(ENVELOPE_COLUMNS) | set(specific_columns)
+            batch_start = time.perf_counter()
+
+            cached_batch = None
+            try:
+                batch_silver = build_silver_for_notice_type(
+                    batch_raw,
+                    notice_type=notice_type,
+                    required_columns=required_columns,
+                ).withColumn("publicationDateDay", to_date(col("publicationDate")).cast("string")).withColumn(
+                    "caseId_shard",
+                    when(col("caseId").isNotNull(), pmod(xxhash64(col("caseId")), lit(64)).cast("int")),
+                )
+                cached_batch = batch_silver.persist(StorageLevel.MEMORY_AND_DISK)
+                batch_silver_rows = cached_batch.count()  # materialize once
+                batch_silver, validation_rules = with_notice_validation_errors(
+                    cached_batch,
+                    target_date=day,
+                    notice_type=notice_type,
+                )
+                batch_validation = summarize_notice_validation(
+                    batch_silver,
+                    target_date=day,
+                    notice_type=notice_type,
+                    rules=validation_rules,
+                )
+                invalid_batch = batch_silver.filter(size(col("__validation_errors")) > 0)
+                valid_batch = batch_silver.filter(size(col("__validation_errors")) == 0).drop("__validation_errors")
+                batch_invalid_rows = invalid_batch.count()
+                batch_valid_rows = batch_silver_rows - batch_invalid_rows
+                total_invalid_rows += batch_invalid_rows
+
+                specific_df = _select_existing(valid_batch, ["caseId_shard", *specific_columns])
+                specific_df = _compact_html_extracted(specific_df, html_fields)
+                specific_day_dir = silver_dir / "notice_type_tables" / f"noticeType={notice_token}" / f"publicationDateDay={day}"
+                _safe_rmtree(specific_day_dir, f"specific day dir noticeType={notice_token}")
+                (
+                    specific_df.write.mode("overwrite")
+                    .parquet(str(specific_day_dir))
+                )
+
+                envelope_df = _select_existing(valid_batch, ENVELOPE_COLUMNS)
+                envelope_df.write.mode("append").parquet(str(envelope_tmp))
+                if batch_invalid_rows > 0:
+                    # Quarantine schema can differ by notice type (e.g. nested contractors).
+                    # Write per notice type to avoid cross-type schema merge failures.
+                    quarantine_notice_dir = quarantine_root / f"publicationDateDay={day}" / f"noticeType={notice_token}"
+                    _safe_rmtree(quarantine_notice_dir, f"quarantine notice dir noticeType={notice_token}")
+                    (
+                        invalid_batch.withColumn("validation_notice_type", lit(notice_token))
+                        .write.mode("overwrite")
+                        .parquet(str(quarantine_notice_dir))
+                    )
+            finally:
+                if cached_batch is not None:
+                    cached_batch.unpersist()
+
+            log.info(
+                "Day=%s noticeType=%s rows=%d wrote specific+envelope in %.2fs",
+                day,
+                notice_token,
+                batch_count,
+                time.perf_counter() - batch_start,
+            )
+            batch_profiles.append(
+                {
+                    "noticeType": notice_token,
+                    "rows": batch_count,
+                    "shuffle_partitions": per_batch_shuffle,
+                    "validation": batch_validation,
+                    "invalid_rows": batch_invalid_rows,
+                    "valid_rows": batch_valid_rows,
+                    "batch_total_sec": round(time.perf_counter() - batch_t0, 3),
+                    "batch_path": batch_path,
+                }
+            )
+
+        # Commit envelope for this day in one overwrite write.
+        envelope_day_df = spark.read.parquet(str(envelope_tmp))
+        envelope_day_dir = silver_dir / "common_envelope" / f"publicationDateDay={day}"
+        _safe_rmtree(envelope_day_dir, "envelope day dir")
+        (
+            envelope_day_df.write.mode("overwrite")
+            .parquet(str(envelope_day_dir))
+        )
+        # No day-level quarantine compaction: per-noticeType writes above are intentional
+        # to avoid schema merge issues across heterogeneous invalid rows.
+        envelope_validation_df = spark.read.parquet(
+            str(silver_dir / "common_envelope" / f"publicationDateDay={day}")
+        )
+        validation_metrics = validate_common_envelope(envelope_validation_df, target_date=day)
+
+        day_state["status"] = "completed"
+        day_state["completed_at"] = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+        day_state["current_notice_type"] = None
+        day_state["rows"] = total_rows
+        day_state["quarantined_rows"] = total_invalid_rows
+        _save_state(state_path, state)
+        return total_rows, total_invalid_rows, batch_profiles, [p for _, p in notice_batches], validation_metrics
+    finally:
+        if day_lock_dir.exists():
+            if release_directory_lock_if_owner(day_lock_dir, lock_run_id):
+                log.info("Backfill released day lock: %s", day_lock_dir)
 
 
 def _parse_args() -> argparse.Namespace:
@@ -444,6 +490,12 @@ def _parse_args() -> argparse.Namespace:
         type=int,
         default=0,
         help="Force repartition count per batch (0 = adaptive)",
+    )
+    parser.add_argument(
+        "--lock-stale-minutes",
+        type=int,
+        default=240,
+        help="Treat an existing day lock as stale after this many minutes",
     )
     return parser.parse_args()
 
@@ -497,6 +549,7 @@ def main() -> None:
         for day in pending_days:
             log.info("Backfill day start: %s", day)
             try:
+                day_run_id = f"backfill_{args.start_date}_{args.end_date}_{int(time.time() * 1000)}_{os.getpid()}"
                 rows, quarantined_rows, batch_profiles, input_paths, validation_metrics = _process_day(
                     spark=spark,
                     day=day,
@@ -506,6 +559,8 @@ def main() -> None:
                     repartition=args.repartition,
                     state=state,
                     state_path=state_path,
+                    lock_run_id=day_run_id,
+                    lock_stale_minutes=args.lock_stale_minutes,
                 )
                 log.info("Backfill day done: %s rows=%d", day, rows)
                 day_manifest = {
