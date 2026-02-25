@@ -24,6 +24,8 @@ import logging
 import os
 import shutil
 import sys
+import threading
+import time
 import uuid
 from datetime import UTC, date, datetime, timedelta
 from functools import reduce
@@ -55,6 +57,8 @@ from pyspark.sql.functions import (
     to_timestamp,
     when,
     size,
+    trim,
+    explode_outer,
 )
 from pyspark.sql.types import ArrayType, DataType, StructType
 
@@ -70,6 +74,26 @@ from procurement.common.locks import acquire_token_file_lock, release_token_file
 
 setup_logging()
 log = logging.getLogger(__name__)
+DEBUG_FAILING_PATH = False
+
+
+def _run_with_heartbeat(label: str, fn, interval_sec: int = 60):
+    stop = threading.Event()
+    started = time.perf_counter()
+
+    def _beat():
+        while not stop.wait(interval_sec):
+            elapsed = int(time.perf_counter() - started)
+            log.info("%s still running elapsed_sec=%d", label, elapsed)
+
+    t = threading.Thread(target=_beat, daemon=True)
+    t.start()
+    try:
+        return fn()
+    finally:
+        stop.set()
+        elapsed = round(time.perf_counter() - started, 2)
+        log.info("%s finished elapsed_sec=%.2f", label, elapsed)
 
 
 def has_field(df: DataFrame, field_path: str) -> bool:
@@ -120,6 +144,28 @@ def _with_case_shard(
     )
 
 
+def _require_eu_lookup_parquet(parquet_path: Path) -> Path:
+    if not parquet_path.exists():
+        raise FileNotFoundError(
+            f"Missing EU countries parquet lookup: {parquet_path}. "
+            "Run one-off conversion refs/eu_countries.csv -> refs/eu_countries.parquet first."
+        )
+    return parquet_path
+
+
+def _load_eu_country_name_lookup(
+    spark: "SparkSession",
+    lookup_parquet_path: Path,
+) -> DataFrame:
+    ref = spark.read.parquet(str(lookup_parquet_path))
+    return (
+        ref.select(explode_outer(col("pl_name_and_variants")).alias("country_name_ref"))
+        .where(col("country_name_ref").isNotNull())
+        .select(lower(trim(col("country_name_ref"))).alias("country_name_ref_norm"))
+        .distinct()
+    )
+
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build Silver case_derived_facts snapshot.")
     parser.add_argument("target_date", nargs="?", help="Date in YYYY-MM-DD format")
@@ -166,22 +212,61 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--shard-count",
         type=int,
+        default=1,
+        help="Number of hash shards for case_derived_facts snapshot writes (1 = no practical sharding)",
+    )
+    parser.add_argument(
+        "--shuffle-partitions",
+        type=int,
         default=64,
-        help="Number of hash shards for case_derived_facts snapshot writes",
+        help="spark.sql.shuffle.partitions for case_derived job",
+    )
+    parser.add_argument(
+        "--eu-lookup-parquet",
+        default="refs/eu_countries.parquet",
+        help="Parquet lookup with EU country Polish names/variants",
+    )
+    parser.add_argument(
+        "--debug-failing-path",
+        action="store_true",
+        help="On parquet read failure, log exact failing partition/file path(s) before raising",
     )
     return parser.parse_args()
 
 
 def _union_paths(spark: "SparkSession", paths: list[str], base_path: str | None = None) -> DataFrame:
-    frames = []
-    for path in paths:
-        reader = spark.read
-        if base_path:
-            reader = reader.option("basePath", base_path)
-        frames.append(reader.parquet(path))
-    if not frames:
+    log.info("Reading parquet paths=%d base_path=%s", len(paths), base_path or "")
+    if not paths:
         raise ValueError("No paths to read")
-    return reduce(lambda a, b: a.unionByName(b, allowMissingColumns=True), frames)
+    reader = spark.read
+    if base_path:
+        reader = reader.option("basePath", base_path)
+    # Bulk read is much faster than N reads + unionByName in Python loop.
+    try:
+        return reader.parquet(*paths)
+    except Exception:
+        if not DEBUG_FAILING_PATH:
+            raise
+        log.exception("Bulk parquet read failed. Starting failing-path diagnosis...")
+        for p in paths:
+            try:
+                probe = spark.read
+                if base_path:
+                    probe = probe.option("basePath", base_path)
+                probe_df = probe.parquet(p)
+                # Force physical read of at least one row.
+                probe_df.limit(1).collect()
+            except Exception:
+                log.exception("Failing partition path detected: %s", p)
+                part_files = sorted(Path(p).glob("part-*.parquet"))
+                for part_file in part_files:
+                    try:
+                        spark.read.parquet(str(part_file)).limit(1).collect()
+                    except Exception:
+                        log.exception("Failing parquet file detected: %s", part_file)
+                        break
+                break
+        raise
 
 
 def _paths_up_to(base_dir: Path, partition_key: str, target_date: str) -> list[str]:
@@ -204,6 +289,25 @@ def _specific_paths_up_to(silver_dir: Path, target_date: str) -> list[str]:
         if token <= target_date:
             out.append(str(p))
     return out
+
+
+def _specific_paths_by_notice_type_up_to(
+    silver_dir: Path,
+    target_date: str,
+    allowed_notice_types: set[str] | None = None,
+) -> dict[str, list[str]]:
+    grouped: dict[str, list[str]] = {}
+    for p in sorted(silver_dir.glob("notice_type_tables/noticeType=*/publicationDateDay=*")):
+        if not p.is_dir():
+            continue
+        day_token = p.name.replace("publicationDateDay=", "")
+        if day_token > target_date:
+            continue
+        notice_token = p.parent.name.replace("noticeType=", "")
+        if allowed_notice_types is not None and notice_token not in allowed_notice_types:
+            continue
+        grouped.setdefault(notice_token, []).append(str(p))
+    return grouped
 
 
 def _read_envelope_rows(
@@ -255,36 +359,53 @@ def _read_specific_rows(
     case_ids: DataFrame | None = None,
     shard_count: int = 64,
 ) -> DataFrame:
-    specific_paths = _specific_paths_up_to(silver_dir, target_date)
-    if not specific_paths:
+    notice_types_needed = {
+        "AgreementIntentionNotice",
+        "ContractNotice",
+        "CompetitionNotice",
+        "ConcessionNotice",
+        "TenderResultNotice",
+        "CompetitionResultNotice",
+        "ConcessionAgreementNotice",
+        "ContractPerformingNotice",
+        "NoticeUpdateNotice",
+        "NoticeUpdateConcessionNotice",
+        "AgreementUpdateNotice",
+        "ConcessionUpdateAgreementNotice",
+    }
+    specific_paths_by_type = _specific_paths_by_notice_type_up_to(
+        silver_dir=silver_dir,
+        target_date=target_date,
+        allowed_notice_types=notice_types_needed,
+    )
+    if not specific_paths_by_type:
         empty = spark.createDataFrame(
             [],
             (
-                "caseId string, noticeType string, publicationDate string, contractors array<map<string,string>>, "
+                "caseId string, noticeType string, publicationDate string, "
                 "caseId_shard int, "
                 "ai_street_512 string, value_estimated_procurement_ai_35 double, ai_prior_market_consultation_31 string, "
                 "cpvMainCode_source string, numCriteria array<int>, priceWeight array<double>, cn_notice_concerns string, "
                 "cn_criteria_aspects_4310_flag array<boolean>, cpvMainCode array<string>, cpvCode string, "
                 "submittingOffersDate string, comp_num_awarded_63 int, value_competition_prizes_64 double, "
-                "value_competition_followon_order_651 double, comp_requirements_72 string"
+                "value_competition_followon_order_651 double, comp_requirements_72 string, "
+                "cpn_contractor_countries_437 array<string>"
             ),
         )
         return empty
 
     frames: list[DataFrame] = []
-    for path in specific_paths:
-        frame_raw = spark.read.parquet(path)
-        contractor_count_col = (
-            size(col("contractors"))
-            if has_field(frame_raw, "contractors")
-            else lit(None).cast("int")
+    for notice_type_token, paths in sorted(specific_paths_by_type.items()):
+        frame_raw = _union_paths(
+            spark=spark,
+            paths=paths,
+            base_path=str(silver_dir / "notice_type_tables" / f"noticeType={notice_type_token}"),
         )
         frame = frame_raw.select(
             safe_col(frame_raw, "caseId", "string").alias("caseId"),
             safe_col(frame_raw, "caseId_shard", "int").alias("caseId_shard"),
             safe_col(frame_raw, "noticeType", "string").alias("noticeType"),
             safe_col(frame_raw, "publicationDate", "string").alias("publicationDate"),
-            contractor_count_col.alias("contractor_count_raw"),
             safe_col(frame_raw, "ai_street_512", "string").alias("ai_street_512"),
             safe_col(frame_raw, "value_estimated_procurement_ai_35", "double").alias(
                 "value_estimated_procurement_ai_35"
@@ -315,6 +436,9 @@ def _read_specific_rows(
             safe_col(frame_raw, "trn_notice_concerns", "string").alias("trn_notice_concerns"),
             safe_col(frame_raw, "cpn_contract_date_41", "string").alias("cpn_contract_date_41"),
             safe_col(frame_raw, "cpn_execution_end_date_52", "string").alias("cpn_execution_end_date_52"),
+            safe_col(frame_raw, "cpn_contractor_countries_437", "array<string>").alias(
+                "cpn_contractor_countries_437"
+            ),
             safe_col(frame_raw, "executed_in_time", "boolean").alias("executed_in_time"),
             safe_col(frame_raw, "proper_execution", "boolean").alias("proper_execution"),
             safe_col(frame_raw, "value_contract_reported_execution_44", "double").alias(
@@ -369,14 +493,6 @@ def _build_notice_specific_features(specific_rows: DataFrame) -> DataFrame:
                 "'v', CASE WHEN noticeType='AgreementIntentionNotice' THEN coalesce(element_at(cpvMainCode, 1), cpvCode, element_at(cpvCodes, 1)) END)"
             )
         ).getField("v").alias("ai_cpvMainCode"),
-        spark_min(
-            expr(
-                "named_struct('is_null', CASE WHEN noticeType='AgreementIntentionNotice' "
-                "THEN CASE WHEN contractor_count_raw IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
-                "'ts', publication_ts, "
-                "'v', CASE WHEN noticeType='AgreementIntentionNotice' THEN contractor_count_raw END)"
-            )
-        ).getField("v").alias("contractor_count"),
         spark_min(
             expr(
                 "named_struct('is_null', CASE WHEN noticeType='AgreementIntentionNotice' "
@@ -542,22 +658,6 @@ def _build_notice_specific_features(specific_rows: DataFrame) -> DataFrame:
         spark_min(
             expr(
                 "named_struct('is_null', CASE WHEN noticeType='CompetitionResultNotice' "
-                "THEN CASE WHEN contractor_count_raw IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
-                "'ts', publication_ts, "
-                "'v', CASE WHEN noticeType='CompetitionResultNotice' THEN contractor_count_raw END)"
-            )
-        ).getField("v").alias("contractor_count_comp_result"),
-        spark_min(
-            expr(
-                "named_struct('is_null', CASE WHEN noticeType='ConcessionAgreementNotice' "
-                "THEN CASE WHEN contractor_count_raw IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
-                "'ts', publication_ts, "
-                "'v', CASE WHEN noticeType='ConcessionAgreementNotice' THEN contractor_count_raw END)"
-            )
-        ).getField("v").alias("contractor_count_concession_agreement"),
-        spark_min(
-            expr(
-                "named_struct('is_null', CASE WHEN noticeType='CompetitionResultNotice' "
                 "THEN CASE WHEN trn_notice_concerns IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
                 "'ts', publication_ts, "
                 "'v', CASE WHEN noticeType='CompetitionResultNotice' THEN trn_notice_concerns END)"
@@ -579,14 +679,6 @@ def _build_notice_specific_features(specific_rows: DataFrame) -> DataFrame:
                 "'v', CASE WHEN noticeType='ContractPerformingNotice' THEN coalesce(element_at(cpvMainCode, 1), cpvCode, element_at(cpvCodes, 1)) END)"
             )
         ).getField("v").alias("cpn_cpvMainCode"),
-        spark_min(
-            expr(
-                "named_struct('is_null', CASE WHEN noticeType='ContractPerformingNotice' "
-                "THEN CASE WHEN contractor_count_raw IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
-                "'ts', publication_ts, "
-                "'v', CASE WHEN noticeType='ContractPerformingNotice' THEN contractor_count_raw END)"
-            )
-        ).getField("v").alias("contractor_count_cpn"),
         spark_min(
             expr(
                 "named_struct('is_null', CASE WHEN noticeType='ContractPerformingNotice' "
@@ -641,6 +733,43 @@ def _build_notice_specific_features(specific_rows: DataFrame) -> DataFrame:
         out.withColumn("cpvMainCode_init", col("__cpv_pick.v"))
         .withColumn("cpvMainCode_source_init", col("__cpv_pick.src"))
         .drop("__cpv_pick")
+    )
+
+
+def _build_cpn_contractor_non_eu_flag(
+    specific_rows: DataFrame,
+    eu_country_name_lookup: DataFrame,
+) -> DataFrame:
+    cpn_rows = specific_rows.filter(col("noticeType") == lit("ContractPerformingNotice"))
+    exploded = (
+        cpn_rows.select(
+            col("caseId"),
+            explode_outer(col("cpn_contractor_countries_437")).alias("country_name_raw"),
+        )
+        .where(col("caseId").isNotNull())
+        .withColumn("country_name_norm", lower(trim(col("country_name_raw"))))
+    )
+    tagged = exploded.join(
+        eu_country_name_lookup,
+        exploded.country_name_norm == eu_country_name_lookup.country_name_ref_norm,
+        how="left",
+    )
+    return tagged.groupBy("caseId").agg(
+        when(
+            spark_max(when(col("country_name_norm").isNotNull(), lit(1)).otherwise(lit(0))) == lit(0),
+            lit(None).cast("boolean"),
+        )
+        .otherwise(
+            spark_max(
+                when(
+                    col("country_name_norm").isNotNull()
+                    & col("country_name_ref_norm").isNull(),
+                    lit(1),
+                ).otherwise(lit(0))
+            )
+            == lit(1)
+        )
+        .alias("contractor_non_eu")
     )
 
 
@@ -705,19 +834,6 @@ def _apply_result_fallbacks(df: DataFrame) -> DataFrame:
             col("cpn_cpvMainCode").isNotNull() & col("cpvMainCode").isNotNull(),
             col("cpn_cpvMainCode") != col("cpvMainCode"),
         ).otherwise(lit(None).cast("boolean")),
-    )
-    out = out.withColumn(
-        "contractors_source",
-        when(
-            (~col("has_CompetitionNotice")) & col("contractor_count_comp_result").isNotNull(),
-            lit("CompetitionResultNotice"),
-        )
-        .when(
-            (~col("has_ConcessionNotice")) & col("contractor_count_concession_agreement").isNotNull(),
-            lit("ConcessionAgreementNotice"),
-        )
-        .when(cond_cpn & col("contractor_count_cpn").isNotNull(), lit("ContractPerformingNotice"))
-        .otherwise(lit(None).cast("string")),
     )
     out = out.withColumn(
         "notice_concerns_source",
@@ -1004,7 +1120,8 @@ def _write_snapshot(
     version_dir = _snapshot_root(output_dir) / f"version={run_id}"
     data_path = version_dir / "data"
     effective_shards = max(1, int(shard_count))
-    rows = df.count()
+    log.info("Snapshot write start mode=%s asOfDate=%s run_id=%s", mode, target_date, run_id)
+    rows = None
     write_df = df
     if "shard" in write_df.columns:
         write_df = write_df.drop("shard")
@@ -1014,7 +1131,21 @@ def _write_snapshot(
             f"CASE WHEN caseId IS NULL THEN 0 ELSE pmod(xxhash64(caseId), {effective_shards}) END"
         ).cast("int"),
     )
-    write_df.write.mode("overwrite").partitionBy("shard").parquet(str(data_path))
+    from pyspark.storagelevel import StorageLevel
+    cached_write_df = write_df.persist(StorageLevel.MEMORY_AND_DISK)
+    try:
+        rows = _run_with_heartbeat(
+            "snapshot_count_rows",
+            lambda: cached_write_df.count(),
+            interval_sec=60,
+        )
+        _run_with_heartbeat(
+            "snapshot_write_partitioned",
+            lambda: cached_write_df.write.mode("overwrite").partitionBy("shard").parquet(str(data_path)),
+            interval_sec=60,
+        )
+    finally:
+        cached_write_df.unpersist()
     manifest = {
         "version": run_id,
         "asOfDate": target_date,
@@ -1025,6 +1156,14 @@ def _write_snapshot(
         "data_path": str(data_path),
     }
     _atomic_write_json(version_dir / "manifest.json", manifest)
+    log.info(
+        "Snapshot write complete mode=%s asOfDate=%s run_id=%s rows=%d path=%s",
+        mode,
+        target_date,
+        run_id,
+        rows,
+        data_path,
+    )
     return manifest
 
 
@@ -1057,6 +1196,13 @@ def _write_snapshot_incremental_by_shard(
     if version_dir.exists():
         shutil.rmtree(version_dir, ignore_errors=False)
     data_path.mkdir(parents=True, exist_ok=True)
+    log.info(
+        "Incremental shard write start asOfDate=%s mode=%s run_id=%s shard_count=%d",
+        target_date,
+        mode,
+        run_id,
+        effective_shards,
+    )
 
     affected_keys = (
         _with_case_shard(affected_case_ids.select("caseId", "caseId_shard"), shard_count=effective_shards)
@@ -1068,10 +1214,16 @@ def _write_snapshot_incremental_by_shard(
         int(r["caseId_shard"])
         for r in affected_keys.select("caseId_shard").distinct().collect()
     }
+    log.info(
+        "Incremental affected cases=%d affected_shards=%d",
+        affected_keys.count(),
+        len(affected_shards),
+    )
 
     recomputed_with_shard = _with_case_shard(recomputed_df, shard_count=effective_shards).drop("asOfDate")
     base_schema_df = recomputed_with_shard.limit(0).withColumn("asOfDate", lit(target_date))
 
+    processed_shards = 0
     for shard in range(effective_shards):
         shard_dir_name = f"shard={shard}"
         src_shard_path = anchor_data_path / shard_dir_name
@@ -1080,8 +1232,16 @@ def _write_snapshot_incremental_by_shard(
         if shard not in affected_shards:
             if src_shard_path.exists():
                 shutil.copytree(src_shard_path, dst_shard_path, dirs_exist_ok=False)
+            processed_shards += 1
+            if processed_shards % 8 == 0 or processed_shards == effective_shards:
+                log.info(
+                    "Incremental shard progress processed=%d/%d (copy/pass-through)",
+                    processed_shards,
+                    effective_shards,
+                )
             continue
 
+        log.info("Incremental shard=%d merge start", shard)
         anchor_shard = _read_snapshot_shard_or_empty(spark, src_shard_path, base_schema_df)
         affected_case_ids_shard = affected_keys.where(col("caseId_shard") == lit(shard)).select("caseId").distinct()
         unchanged_shard = anchor_shard.join(affected_case_ids_shard, on="caseId", how="left_anti").drop(
@@ -1093,8 +1253,19 @@ def _write_snapshot_incremental_by_shard(
             "asOfDate", lit(target_date)
         )
         out_shard.write.mode("overwrite").parquet(str(dst_shard_path))
+        processed_shards += 1
+        log.info(
+            "Incremental shard=%d merge complete processed=%d/%d",
+            shard,
+            processed_shards,
+            effective_shards,
+        )
 
-    rows = spark.read.parquet(str(data_path)).count()
+    rows = _run_with_heartbeat(
+        "incremental_snapshot_count_rows",
+        lambda: spark.read.parquet(str(data_path)).count(),
+        interval_sec=60,
+    )
     manifest = {
         "version": run_id,
         "asOfDate": target_date,
@@ -1105,6 +1276,12 @@ def _write_snapshot_incremental_by_shard(
         "data_path": str(data_path),
     }
     _atomic_write_json(version_dir / "manifest.json", manifest)
+    log.info(
+        "Incremental shard write complete asOfDate=%s run_id=%s rows=%d",
+        target_date,
+        run_id,
+        rows,
+    )
     return manifest
 
 
@@ -1174,6 +1351,10 @@ def _touched_case_ids_in_range(
 
 def main() -> None:
     args = _parse_args()
+    global DEBUG_FAILING_PATH
+    DEBUG_FAILING_PATH = bool(args.debug_failing_path)
+    if DEBUG_FAILING_PATH:
+        log.info("Parquet failing-path diagnostics enabled")
     if args.target_date:
         target_date = args.target_date
     else:
@@ -1191,6 +1372,7 @@ def main() -> None:
 
     from pyspark.sql import SparkSession
     spark = None
+    eu_country_name_lookup = None
     try:
         spark = (
             SparkSession.builder.appName("bzp-silver-case-derived")
@@ -1200,19 +1382,51 @@ def main() -> None:
             .config("spark.sql.ansi.enabled", "false")
             .getOrCreate()
         )
+        if int(args.shuffle_partitions) > 0:
+            spark.conf.set("spark.sql.shuffle.partitions", str(int(args.shuffle_partitions)))
+            log.info("Configured spark.sql.shuffle.partitions=%s", int(args.shuffle_partitions))
         output_dir.mkdir(parents=True, exist_ok=True)
+        log.info(
+            "case_derived_facts start mode=%s target_date=%s silver_dir=%s output_dir=%s",
+            args.mode,
+            target_date,
+            silver_dir,
+            output_dir,
+        )
+        from pyspark.storagelevel import StorageLevel
+
+        eu_lookup_path = _require_eu_lookup_parquet(Path(args.eu_lookup_parquet))
+        log.info("Loading EU lookup parquet path=%s", eu_lookup_path)
+        eu_country_name_lookup = _load_eu_country_name_lookup(spark, eu_lookup_path).persist(
+            StorageLevel.MEMORY_ONLY
+        )
+        # Materialize once and keep cached for all feature joins in this run.
+        eu_rows = _run_with_heartbeat(
+            "eu_lookup_cache_materialize",
+            lambda: eu_country_name_lookup.count(),
+            interval_sec=30,
+        )
+        log.info("EU lookup cached rows=%d", eu_rows)
+
         if args.mode == "full":
+            log.info("Full mode: reading envelope+specific rows")
             envelope_rows = _read_envelope_rows(
                 spark, silver_dir, target_date, shard_count=args.shard_count
             )
             specific_rows = _read_specific_rows(
                 spark, silver_dir, target_date, shard_count=args.shard_count
             )
+            log.info("Full mode: building feature tables")
+            specific_features = _build_notice_specific_features(specific_rows)
+            cpn_country_flags = _build_cpn_contractor_non_eu_flag(
+                specific_rows, eu_country_name_lookup
+            )
+            log.info("Full mode: building case derived dataframe")
             case_df = _apply_result_fallbacks(
                 _build_case_derived(envelope_rows).join(
-                    _build_notice_specific_features(specific_rows), on="caseId", how="left"
+                    specific_features, on="caseId", how="left"
                 )
-            ).withColumn("asOfDate", lit(target_date))
+            ).join(cpn_country_flags, on="caseId", how="left").withColumn("asOfDate", lit(target_date))
             manifest = _write_snapshot(
                 case_df,
                 output_dir,
@@ -1234,17 +1448,24 @@ def main() -> None:
 
         if prev_snap is None and next_snap is None:
             log.warning("No neighboring snapshot found around %s, falling back to full mode", target_date)
+            log.info("Full fallback mode: reading envelope+specific rows")
             envelope_rows = _read_envelope_rows(
                 spark, silver_dir, target_date, shard_count=args.shard_count
             )
             specific_rows = _read_specific_rows(
                 spark, silver_dir, target_date, shard_count=args.shard_count
             )
+            log.info("Full fallback mode: building feature tables")
+            specific_features = _build_notice_specific_features(specific_rows)
+            cpn_country_flags = _build_cpn_contractor_non_eu_flag(
+                specific_rows, eu_country_name_lookup
+            )
+            log.info("Full fallback mode: building case derived dataframe")
             case_df = _apply_result_fallbacks(
                 _build_case_derived(envelope_rows).join(
-                    _build_notice_specific_features(specific_rows), on="caseId", how="left"
+                    specific_features, on="caseId", how="left"
                 )
-            ).withColumn("asOfDate", lit(target_date))
+            ).join(cpn_country_flags, on="caseId", how="left").withColumn("asOfDate", lit(target_date))
             manifest = _write_snapshot(
                 case_df,
                 output_dir,
@@ -1284,6 +1505,13 @@ def main() -> None:
             affected = _touched_case_ids_in_range(spark, silver_dir, target_date, anchor_date)
         affected = _with_case_shard(affected, shard_count=args.shard_count)
         affected_count = affected.count()
+        log.info(
+            "Incremental mode: direction=%s anchor=%s target=%s affected_cases=%d",
+            chosen_direction,
+            anchor_date,
+            target_date,
+            affected_count,
+        )
 
         if affected_count == 0:
             log.info(
@@ -1324,11 +1552,16 @@ def main() -> None:
             case_ids=affected,
             shard_count=args.shard_count,
         )
+        log.info("Incremental mode: building recomputed affected dataframe")
+        specific_features = _build_notice_specific_features(specific_affected)
+        cpn_country_flags = _build_cpn_contractor_non_eu_flag(
+            specific_affected, eu_country_name_lookup
+        )
         recomputed = _apply_result_fallbacks(
             _build_case_derived(envelope_affected).join(
-                _build_notice_specific_features(specific_affected), on="caseId", how="left"
+                specific_features, on="caseId", how="left"
             )
-        )
+        ).join(cpn_country_flags, on="caseId", how="left")
         manifest = _write_snapshot_incremental_by_shard(
             spark=spark,
             anchor_manifest=anchor,
@@ -1350,6 +1583,8 @@ def main() -> None:
             manifest["version"],
         )
     finally:
+        if eu_country_name_lookup is not None:
+            eu_country_name_lookup.unpersist()
         if spark is not None:
             spark.stop()
         _release_lock(output_dir, lock_token)
