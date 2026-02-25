@@ -37,9 +37,11 @@ from pyspark.sql.functions import (
     array_contains,
     array_distinct,
     array_sort,
+    broadcast,
     collect_set,
     col,
     coalesce,
+    concat,
     concat_ws,
     countDistinct,
     count,
@@ -51,12 +53,15 @@ from pyspark.sql.functions import (
     max as spark_max,
     min as spark_min,
     percentile_approx,
+    regexp_replace,
     sum as spark_sum,
+    substring,
     to_date,
     to_json,
     to_timestamp,
     when,
     size,
+    length,
     trim,
     explode_outer,
 )
@@ -166,6 +171,118 @@ def _load_eu_country_name_lookup(
     )
 
 
+def _load_cpv_lookup_csv(
+    spark: "SparkSession",
+    csv_path: Path,
+    key_len: int,
+    code_alias: str,
+    desc_alias: str,
+) -> DataFrame:
+    if not csv_path.exists():
+        raise FileNotFoundError(f"Missing CPV mapping CSV: {csv_path}")
+    raw = (
+        spark.read.option("header", True)
+        .option("sep", ";")
+        .option("encoding", "UTF-8")
+        .csv(str(csv_path))
+    )
+    code_digits = regexp_replace(coalesce(col("CODE"), lit("")), "[^0-9]", "")
+    return (
+        raw.select(
+            when(length(code_digits) >= lit(key_len), substring(code_digits, 1, key_len)).alias(
+                code_alias
+            ),
+            trim(col("PL")).alias(desc_alias),
+        )
+        .where(col(code_alias).isNotNull())
+        .groupBy(code_alias)
+        .agg(first(col(desc_alias), ignorenulls=True).alias(desc_alias))
+    )
+
+
+def _add_cpv_features(
+    df: DataFrame,
+    cpv8_lookup: DataFrame,
+    cpv4_lookup: DataFrame,
+    cpv2_lookup: DataFrame,
+) -> DataFrame:
+    cpv_digits = regexp_replace(coalesce(col("cpvMainCode"), lit("")), "[^0-9]", "")
+    out = (
+        df.withColumn("cpv_8", when(length(cpv_digits) >= lit(8), substring(cpv_digits, 1, 8)))
+        .withColumn("cpv_4", when(length(cpv_digits) >= lit(4), substring(cpv_digits, 1, 4)))
+        .withColumn("cpv_2", when(length(cpv_digits) >= lit(2), substring(cpv_digits, 1, 2)))
+    )
+    out = out.join(broadcast(cpv8_lookup), on="cpv_8", how="left")
+    out = out.join(broadcast(cpv4_lookup), on="cpv_4", how="left")
+    out = out.join(broadcast(cpv2_lookup), on="cpv_2", how="left")
+    out = out.withColumn(
+        "cpv_8_display",
+        when(col("cpv_8").isNotNull(), concat(col("cpv_8"), lit(": "), col("cpv_8_pl"))),
+    )
+    out = out.withColumn(
+        "cpv_4_display",
+        when(col("cpv_4").isNotNull(), concat(col("cpv_4"), lit(": "), col("cpv_4_pl"))),
+    )
+    out = out.withColumn(
+        "cpv_2_display",
+        when(col("cpv_2").isNotNull(), concat(col("cpv_2"), lit(": "), col("cpv_2_pl"))),
+    )
+    return out.drop("cpv_8_pl", "cpv_4_pl", "cpv_2_pl")
+
+
+def _flatten_enum_items(items: list[dict]) -> list[tuple[str, str]]:
+    out: list[tuple[str, str]] = []
+
+    def _walk(node: dict) -> None:
+        identifier = node.get("identifier")
+        key = node.get("key")
+        if identifier is not None and key is not None:
+            out.append((str(identifier), str(key)))
+        children = node.get("items")
+        if children is None:
+            children = node.get("Items")
+        if isinstance(children, list):
+            for child in children:
+                if isinstance(child, dict):
+                    _walk(child)
+
+    for item in items:
+        if isinstance(item, dict):
+            _walk(item)
+    return out
+
+
+def _load_tender_type_lookup(
+    spark: "SparkSession",
+    enum_paths: list[Path],
+) -> DataFrame:
+    pairs: list[tuple[str, str]] = []
+    for path in enum_paths:
+        if not path.exists():
+            raise FileNotFoundError(f"Missing tenderType enum file: {path}")
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        pairs.extend(_flatten_enum_items(payload.get("items", [])))
+    if not pairs:
+        return spark.createDataFrame([], "tenderType string, tenderType_value string")
+    return (
+        spark.createDataFrame(pairs, schema="tenderType string, tenderType_value string")
+        .groupBy("tenderType")
+        .agg(first(col("tenderType_value"), ignorenulls=True).alias("tenderType_value"))
+    )
+
+
+def _replace_tender_type_code(
+    df: DataFrame,
+    tender_type_lookup: DataFrame,
+) -> DataFrame:
+    out = df.join(broadcast(tender_type_lookup), on="tenderType", how="left")
+    return (
+        out.withColumn("tenderType_raw", col("tenderType"))
+        .withColumn("tenderType", coalesce(col("tenderType_value"), col("tenderType")))
+        .drop("tenderType_value")
+    )
+
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build Silver case_derived_facts snapshot.")
     parser.add_argument("target_date", nargs="?", help="Date in YYYY-MM-DD format")
@@ -225,6 +342,36 @@ def _parse_args() -> argparse.Namespace:
         "--eu-lookup-parquet",
         default="refs/eu_countries.parquet",
         help="Parquet lookup with EU country Polish names/variants",
+    )
+    parser.add_argument(
+        "--cpv-8-mapping-csv",
+        default="refs/cpv_mapping.csv",
+        help="CSV lookup for CPV 8-digit code to PL description (sep=';')",
+    )
+    parser.add_argument(
+        "--cpv-4-mapping-csv",
+        default="refs/cpv_4_mapping.csv",
+        help="CSV lookup for CPV 4-digit code to PL description (sep=';')",
+    )
+    parser.add_argument(
+        "--cpv-2-mapping-csv",
+        default="refs/cpv_2_mapping.csv",
+        help="CSV lookup for CPV 2-digit code to PL description (sep=';')",
+    )
+    parser.add_argument(
+        "--tender-type-enum-017",
+        default="refs/bzp_api/ENUM.017.json",
+        help="Path to ENUM.017.json (tenderType dictionary)",
+    )
+    parser.add_argument(
+        "--tender-type-enum-018",
+        default="refs/bzp_api/ENUM.018.json",
+        help="Path to ENUM.018.json (tenderType dictionary)",
+    )
+    parser.add_argument(
+        "--tender-type-enum-019",
+        default="refs/bzp_api/ENUM.019.json",
+        help="Path to ENUM.019.json (tenderType dictionary)",
     )
     parser.add_argument(
         "--debug-failing-path",
@@ -1373,6 +1520,10 @@ def main() -> None:
     from pyspark.sql import SparkSession
     spark = None
     eu_country_name_lookup = None
+    cpv8_lookup = None
+    cpv4_lookup = None
+    cpv2_lookup = None
+    tender_type_lookup = None
     try:
         spark = (
             SparkSession.builder.appName("bzp-silver-case-derived")
@@ -1407,6 +1558,42 @@ def main() -> None:
             interval_sec=30,
         )
         log.info("EU lookup cached rows=%d", eu_rows)
+        cpv8_lookup = _load_cpv_lookup_csv(
+            spark=spark,
+            csv_path=Path(args.cpv_8_mapping_csv),
+            key_len=8,
+            code_alias="cpv_8",
+            desc_alias="cpv_8_pl",
+        ).persist(StorageLevel.MEMORY_ONLY)
+        cpv4_lookup = _load_cpv_lookup_csv(
+            spark=spark,
+            csv_path=Path(args.cpv_4_mapping_csv),
+            key_len=4,
+            code_alias="cpv_4",
+            desc_alias="cpv_4_pl",
+        ).persist(StorageLevel.MEMORY_ONLY)
+        cpv2_lookup = _load_cpv_lookup_csv(
+            spark=spark,
+            csv_path=Path(args.cpv_2_mapping_csv),
+            key_len=2,
+            code_alias="cpv_2",
+            desc_alias="cpv_2_pl",
+        ).persist(StorageLevel.MEMORY_ONLY)
+        log.info(
+            "CPV lookups cached rows cpv8=%d cpv4=%d cpv2=%d",
+            cpv8_lookup.count(),
+            cpv4_lookup.count(),
+            cpv2_lookup.count(),
+        )
+        tender_type_lookup = _load_tender_type_lookup(
+            spark=spark,
+            enum_paths=[
+                Path(args.tender_type_enum_017),
+                Path(args.tender_type_enum_018),
+                Path(args.tender_type_enum_019),
+            ],
+        ).persist(StorageLevel.MEMORY_ONLY)
+        log.info("TenderType lookup cached rows=%d", tender_type_lookup.count())
 
         if args.mode == "full":
             log.info("Full mode: reading envelope+specific rows")
@@ -1427,6 +1614,8 @@ def main() -> None:
                     specific_features, on="caseId", how="left"
                 )
             ).join(cpn_country_flags, on="caseId", how="left").withColumn("asOfDate", lit(target_date))
+            case_df = _add_cpv_features(case_df, cpv8_lookup, cpv4_lookup, cpv2_lookup)
+            case_df = _replace_tender_type_code(case_df, tender_type_lookup)
             manifest = _write_snapshot(
                 case_df,
                 output_dir,
@@ -1466,6 +1655,8 @@ def main() -> None:
                     specific_features, on="caseId", how="left"
                 )
             ).join(cpn_country_flags, on="caseId", how="left").withColumn("asOfDate", lit(target_date))
+            case_df = _add_cpv_features(case_df, cpv8_lookup, cpv4_lookup, cpv2_lookup)
+            case_df = _replace_tender_type_code(case_df, tender_type_lookup)
             manifest = _write_snapshot(
                 case_df,
                 output_dir,
@@ -1521,6 +1712,8 @@ def main() -> None:
             )
             anchor_df = spark.read.parquet(anchor["data_path"])
             out = anchor_df.drop("asOfDate").withColumn("asOfDate", lit(target_date))
+            out = _add_cpv_features(out, cpv8_lookup, cpv4_lookup, cpv2_lookup)
+            out = _replace_tender_type_code(out, tender_type_lookup)
             manifest = _write_snapshot(
                 out,
                 output_dir,
@@ -1562,6 +1755,8 @@ def main() -> None:
                 specific_features, on="caseId", how="left"
             )
         ).join(cpn_country_flags, on="caseId", how="left")
+        recomputed = _add_cpv_features(recomputed, cpv8_lookup, cpv4_lookup, cpv2_lookup)
+        recomputed = _replace_tender_type_code(recomputed, tender_type_lookup)
         manifest = _write_snapshot_incremental_by_shard(
             spark=spark,
             anchor_manifest=anchor,
@@ -1583,6 +1778,14 @@ def main() -> None:
             manifest["version"],
         )
     finally:
+        if cpv8_lookup is not None:
+            cpv8_lookup.unpersist()
+        if cpv4_lookup is not None:
+            cpv4_lookup.unpersist()
+        if cpv2_lookup is not None:
+            cpv2_lookup.unpersist()
+        if tender_type_lookup is not None:
+            tender_type_lookup.unpersist()
         if eu_country_name_lookup is not None:
             eu_country_name_lookup.unpersist()
         if spark is not None:

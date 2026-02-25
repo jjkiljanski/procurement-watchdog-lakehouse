@@ -1,0 +1,1322 @@
+CODE;PL
+0300;Produkty rolnictwa, hodowli, rybołówstwa, leśnictwa i podobne
+0310;Produkty rolnictwa i ogrodnictwa
+0311;Rośliny uprawne, produkty warzywnictwa i ogrodnictwa
+0312;Produkty ogrodnicze i szkółkarskie
+0313;Rośliny wykorzystywane do produkcji napojów i przypraw
+0314;Produkty zwierzęce i podobne
+0320;Zboża, ziemniaki, warzywa, owoce i orzechy
+0321;Zboża i ziemniaki
+0322;Warzywa, owoce i orzechy
+0330;Produkty hodowli, łowiectwa i rybołówstwa
+0331;Ryby, skorupiaki i produkty wodne
+0332;Bydło, zwierzęta gospodarskie i małe zwierzęta
+0333;Produkty zwierząt hodowlanych
+0334;Zawieszki do kolczykowania zwierząt
+0340;Leśnictwo i pozyskiwanie drewna
+0341;Drewno
+0342;Kauczuk
+0343;Korek
+0344;Produkty leśnictwa
+0345;Produkty szkółek leśnych
+0346;Masa papiernicza
+0900;Produkty naftowe, paliwo, energia elektryczna i inne źródła energii
+0910;Paliwa
+0911;Paliwa stałe
+0912;Paliwa gazowe
+0913;Ropa naftowa i destylaty
+0920;Ropa naftowa, węgiel i produkty naftowe
+0921;Preparaty smarowe
+0922;Wazelina, woski i benzyny specjalne
+0923;Ropa naftowa (surowa)
+0924;Produkty pochodne ropy i węgla
+0930;Energia elektryczna, cieplna, słoneczna i jądrowa
+0931;Elektryczność
+0932;Para, gorąca woda i podobne produkty
+0933;Energia słoneczna
+0934;Paliwa jądrowe
+1400;Górnictwo, metale podstawowe i produkty pokrewne
+1420;Piasek i glina
+1421;Żwir, piasek, kamień kruszony i kruszywa
+1422;Glinki i kaolin
+1430;Minerały chemiczne i minerały do produkcji nawozów
+1431;Minerały do produkcji nawozów
+1432;Minerały chemiczne
+1440;Sole i czysty chlorek sodu
+1441;Sól kamienna
+1442;Sól morska
+1443;Sól warzona i czysty chlorek sodu
+1445;Sól w solance
+1450;Podobne produkty wydobywcze i kopalne
+1452;"Kamienie szlachetne i półszlachetne; pumeks; szmergiel; materiały ścierne naturalne; inne minerały i metale szlachetne"
+1460;Rudy i stopy metali
+1461;Rudy metali
+1462;Stopy
+1463;Żużel, popioły, odpady żelaza i złom
+1470;Metale zwykłe
+1471;Żelazo, ołów, cynk, cyna i miedź
+1472;Glin, nikiel, skand, tytan i wanad
+1473;Chrom, mangan, kobalt, itr i cyrkon
+1474;Molibden, technet, ruten i rod
+1475;Kadm, lutet, hafn, tantal i wolfram
+1476;Iryd, gal, ind, tal i bar
+1477;Cez, stront, rubid i wapń
+1478;Potas, magnez, sód i lit
+1479;Niob, osm, ren i pallad
+1480;Różne niemetalowe produkty mineralne
+1481;Wyroby ścierne
+1482;Szkło
+1483;Włókno szklane
+1490;Odzyskane surowce wtórne
+1491;Odzyskane surowce wtórne z metalu
+1492;Odzyskane surowce wtórne niemetalowe
+1493;Pył i pozostałości zawierające metale
+1500;Żywność, napoje, tytoń i produkty pokrewne
+1510;Produkty zwierzęce, mięso i produkty mięsne
+1511;Mięso
+1513;Produkty mięsne
+1520;Ryby przetworzone i konserwowane
+1521;Filety rybne, wątróbki rybne i ikra
+1522;Ryby mrożone, filety rybne i pozostałe mięso ryb
+1523;"Ryby suszone lub solone; ryby w solance; ryby wędzone"
+1524;Ryby puszkowane i pozostałe ryby konserwowane lub przetworzone
+1525;Owoce morza
+1530;Owoce, warzywa i podobne produkty
+1531;Ziemniaki i produkty z ziemniaków
+1532;Soki owocowe i warzywne
+1533;Przetworzone owoce i warzywa
+1540;Oleje i tłuszcze zwierzęce lub roślinne
+1541;Surowe oleje i tłuszcze zwierzęce lub roślinne
+1542;Rafinowane oleje i tłuszcze
+1543;Tłuszcze jadalne
+1550;Produkty mleczarskie
+1551;Mleko i śmietana
+1553;Masło
+1554;Produkty serowarskie
+1555;Klasyfikowane produkty mleczarskie
+1560;Produkty przemiału ziarna, skrobi i produktów skrobiowych
+1561;Produkty przemiału ziarna
+1562;Skrobia i produkty skrobiowe
+1570;Pasza dla zwierząt
+1571;Pasza dla zwierząt hodowlanych i innych
+1580;Różne produkty spożywcze
+1581;Pieczywo, świeże wyroby piekarskie i ciastkarskie
+1582;"Sucharki i herbatniki; wyroby piekarskie i ciastkarskie o przedłużonej trwałości"
+1583;Cukier i produkty pokrewne
+1584;"Kakao; czekolada i wyroby cukiernicze"
+1585;Produkty z ciasta makaronowego
+1586;Kawa, herbata i podobne produkty
+1587;Przyprawy i przyprawy korzenne
+1588;Specjalne produkty odżywcze
+1589;Różne produkty spożywcze i produkty suszone
+1590;Napoje, tytoń i produkty podobne
+1591;Destylowane napoje alkoholowe
+1593;Wina
+1594;Wino z jabłek i pozostałe wina owocowe
+1595;Niedestylowane przefermentowane napoje
+1596;Piwo słodowe
+1598;Napoje bezalkoholowe
+1599;Tytoń, wyroby tytoniowe i artykuły
+1600;Maszyny rolnicze
+1610;Maszyny używane w rolnictwie i leśnictwie do przygotowywania lub uprawy gleby
+1611;Pługi lub brony talerzowe
+1612;Brony, spulchniarki, kultywatory, brony chwastowniki lub glebogryzarki
+1613;Siewniki, sadzarki lub maszyny lub przesadzania
+1614;Maszyny do rozrzucania obornika
+1615;Walce do wyrównywania trawników lub boisk sportowych
+1616;Różny sprzęt ogrodniczy
+1630;Maszyny żniwne
+1631;Kosiarki
+1632;Maszyny do przygotowania siana
+1633;Prasy do belowania słomy lub paszy
+1634;Maszyny żniwne i młockarki
+1640;Maszyny natryskujące używane w rolnictwie lub ogrodnictwie
+1650;Przyczepy lub naczepy samozaładowcze i wyładowcze do celów rolniczych
+1651;Samozaładowcze przyczepy do celów rolniczych
+1652;Samowyładowcze przyczepy do celów rolniczych
+1653;Samozaładowcze naczepy do celów rolniczych
+1654;Samowyładowcze naczepy do celów rolniczych
+1660;Specjalne maszyny używane w rolnictwie lub leśnictwie
+1661;Maszyny do czyszczenia, sortowania lub klasyfikowania jaj, owoców innych produktów
+1662;Dojarki
+1663;Maszyny do przygotowania preparatów żywienia zwierząt
+1664;Maszyny pszczelarskie
+1665;Maszyny do hodowli drobiu
+1670;Ciągniki
+1671;Ciągniki rolnicze pedałowe
+1672;Ciągniki używane
+1673;Ciągniki trakcyjne
+1680;Części maszyn używanych w rolnictwie i leśnictwie
+1681;Części maszyn rolniczych
+1682;Części maszyn używanych w leśnictwie
+1800;Odzież, obuwie, artykuły bagażowe i dodatki
+1810;Odzież branżowa, specjalna odzież robocza i dodatki
+1811;Odzież branżowa
+1813;Specjalna odzież robocza
+1814;Dodatki do odzieży roboczej
+1820;Odzież wierzchnia
+1821;Palta
+1822;Odzież przeciwdeszczowa
+1823;Odzież różna
+1830;Części garderoby
+1831;Bielizna osobista
+1832;Biustonosze, gorsety, pasy do pończoch i podobne wyroby
+1833;Koszulki i koszule
+1840;Odzież specjalna i dodatki
+1841;Odzież specjalna
+1842;Dodatki odzieżowe
+1844;Kapelusze i nakrycia głowy
+1845;Zapięcia (do odzieży)
+1850;Biżuteria, zegarki i artykuły podobne
+1851;Biżuteria i podobne wyroby
+1852;Wyroby zegarmistrzowskie do użytku osobistego
+1853;Prezenty i nagrody
+1860;Futra i wyroby z futra
+1861;Wyroby futrzane
+1862;Futra
+1880;Obuwie
+1881;Obuwie inne niż sportowe oraz ochronne
+1882;Obuwie sportowe
+1883;Obuwie ochronne
+1884;Części obuwia
+1890;Bagaże, wyroby rymarskie, worki i torby
+1891;Wyroby rymarskie
+1892;Bagaże
+1893;Worki i torby
+1900;Skóra i tkaniny włókiennicze, tworzywa sztuczne i guma
+1910;Skóra wyprawiona
+1911;Skóra zamszowa
+1912;Skóra bydlęca lub ze zwierząt parzystokopytnych
+1913;Skóra owiec, kóz lub świń
+1914;Skóra innych zwierząt, skóra wtórna i inna skóra
+1916;Paski do zegarków
+1917;Wyroby skórzane używane w maszynach lub urządzeniach mechanicznych
+1920;Tkaniny włókiennicze i podobne
+1921;Tkaniny tkane
+1922;Tkaniny wełniane
+1923;Tkaniny bieliźniane
+1924;Tkaniny specjalne
+1925;Tkaniny dziane lub szydełkowane
+1926;Tkaniny
+1927;Tkaniny inne niż tkane
+1928;Wełna zwierzęca, skóry i skórki
+1940;Przędza i nić włókiennicza
+1941;Włókna tkane naturalne
+1942;Włókna tkane sztuczne
+1943;Przędza włókiennicza i nić z włókien naturalnych
+1944;Nić lub przędza syntetyczna
+1950;Guma i tworzywa sztuczne
+1951;Produkty z gumy
+1952;Produkty z tworzyw sztucznych
+1960;Odpady skórzane, włókiennicze, gumowe i tworzyw sztucznych
+1961;Odpady skórzane
+1962;Odpady włókiennicze
+1963;Odpady gumowe
+1964;Torebki i torby z odpadów i resztek polietylenu
+1970;Kauczuk syntetyczny i włókna
+1971;Kauczuk syntetyczny
+1972;Włókna syntetyczne
+1973;Włókna sztuczne
+2200;Druki i produkty podobne
+2210;Drukowane książki, broszury i ulotki
+2211;Drukowane książki
+2212;Wydawnictwa
+2213;Spisy
+2214;Ulotki
+2215;Broszury
+2216;Informatory
+2220;Gazety, dzienniki, czasopisma i magazyny
+2221;Gazety
+2230;Pocztówki, karty okolicznościowe i inne druki
+2231;Pocztówki
+2232;Karty okolicznościowe
+2240;Znaczki, formularze czeków, świadectwa udziałowe, handlowe materiały reklamowe, katalogi i podręczniki
+2241;Znaczki
+2242;Papier ze znakiem wodnym
+2243;Banknoty
+2244;Formularze czeków
+2245;Papiery wartościowe
+2246;Handlowe materiały reklamowe, handlowe katalogi i przewodniki
+2247;Instrukcje
+2250;Klisze lub cylindry, lub inne nośniki do użytku w drukarstwie
+2251;Płyty offsetowe
+2252;Sprzęt do wytrawiania
+2260;Tusz
+2261;Farba drukarska
+2280;Rejestry, księgi rachunkowe, skoroszyty, formularze i inne wyroby piśmiennicze z papieru lub tektury
+2281;Rejestry papierowe lub tekturowe
+2282;Formularze
+2283;Zeszyty ćwiczeń
+2284;Albumy do przechowywania eksponatów
+2285;Skoroszyty i podobne wyroby
+2290;Różne druki
+2299;Papier gazetowy, papier czerpany i innego rodzaju papier lub tektura w rodzaju używanych do celów graficznych
+2400;Produkty chemiczne
+2410;Gazy
+2411;Gazy przemysłowe
+2420;Barwniki i pigmenty
+2421;Tlenki, nadtlenki i wodorotlenki
+2422;Ekstrakty garbników, ekstrakty barwników, garbniki i środki barwiące
+2430;Podstawowe chemikalia nieorganiczne i organiczne
+2431;Zasadowe chemikalia nieorganiczne
+2432;Zasadowe organiczne substancje chemiczne
+2440;Nawozy azotowe i związki azotu
+2441;Nawozy azotowe
+2442;Nawozy fosforowe
+2443;Nawozy zwierzęce lub roślinne
+2444;Różne nawozy
+2445;Wyroby rolno-chemiczne
+2450;Tworzywa sztuczne w formach podstawowych
+2451;Polimery etylenu w formach podstawowych
+2452;Polimery propylenu w formach podstawowych
+2453;Polimery styrenu w formach podstawowych
+2454;Polimery winylu w formach podstawowych
+2455;Poliestry w formach podstawowych
+2456;Poliamidy w formach podstawowych
+2457;Żywice mocznikowe w formach podstawowych
+2458;Żywice aminowe w formach podstawowych
+2459;Krzemiany w formach podstawowych
+2460;Materiały wybuchowe
+2461;Gotowe materiały wybuchowe
+2490;Produkty chemiczne wysokowartościowe i różne
+2491;Kleje
+2492;Olejki eteryczne
+2493;Chemikalia fotograficzne
+2495;Specjalistyczne produkty chemiczne
+2496;Różne produkty chemiczne
+3000;Maszyny biurowe i liczące, sprzęt i materiały, z wyjątkiem mebli i pakietów oprogramowania
+3010;Maszyny biurowe, sprzęt i materiały, z wyjątkiem komputerów, drukarek i mebli
+3011;Edytory tekstu
+3012;Urządzenia fotokopiujące i do druku offsetowego
+3013;Urządzenia pocztowe
+3014;Maszyny liczące i rachunkowe
+3015;Maszyny do pisania
+3016;Karty magnetyczne
+3017;Maszyny do metkowania
+3018;Maszyny do potwierdzania i wypisywania czeków
+3019;Różny sprzęt i artykuły biurowe
+3020;Urządzenia komputerowe
+3021;Maszyny do przetwarzania danych (sprzęt)
+3022;Cyfrowy sprzęt kartograficzny
+3023;Sprzęt związany z komputerami
+3100;"Maszyny, aparatura, urządzenia i wyroby elektryczne; oświetlenie"
+3110;Elektryczne silniki, generatory i transformatory
+3111;Silniki elektryczne
+3112;Generatory
+3113;Alternatory
+3114;Układy chłodzące
+3115;Stateczniki do lamp wyładowczych lub świetlówek
+3116;Części silników elektrycznych, generatorów i transformatorów
+3117;Transformatory
+3120;Aparatura do przesyłu i eksploatacji energii elektrycznej
+3121;Elektryczna aparatura do wyłączania lub ochrony obwodów elektrycznych
+3122;Elementy składowe obwodów elektrycznych
+3123;Części aparatury do przesyłu i eksploatacji energii elektrycznej
+3130;Drut i kabel izolowany
+3131;Sieci zasilające
+3132;Kable energetyczne
+3133;Kabel koncentryczny
+3134;Akcesoria do kabli izolowanych
+3135;Przewodniki elektryczne do celów przetwarzania danych i sterowania
+3140;Akumulatory, komory galwaniczne i baterie galwaniczne
+3141;Komory galwaniczne
+3142;Baterie galwaniczne
+3143;Akumulatory elektryczne
+3144;Baterie
+3150;Urządzenia oświetleniowe i lampy elektryczne
+3151;Żarówki elektryczne
+3152;Lampy i oprawy oświetleniowe
+3153;Części lamp i sprzętu oświetleniowego
+3160;Sprzęt i aparatura elektryczna
+3161;Sprzęt elektryczny do silników i pojazdów mechanicznych
+3162;Dźwiękowa i wizualna aparatura sygnalizacyjna
+3163;Magnesy
+3164;Maszyny i aparatura jednozadaniowa
+3165;Oprawy izolowane
+3166;Elektrody węglowe
+3167;Elektryczne części maszyn i aparatury
+3168;Elektryczne artykuły i akcesoria
+3170;Urządzenia elektroniczne, elektromechaniczne i elektrotechniczne
+3171;Sprzęt elektroniczny
+3172;Urządzenia elektromechaniczne
+3173;Sprzęt elektrotechniczny
+3200;Sprzęt radiowy, telewizyjny, komunikacyjny, telekomunikacyjny i podobny
+3220;Aparatura transmisyjna do radiotelefonii, radiotelegrafii, transmisji radiowej i telewizyjnej
+3221;Sprzęt nadawczy
+3222;Telewizyjna aparatura nadawcza bez aparatury odbiorczej
+3223;Radiowa aparatura nadawcza z aparaturą odbiorczą
+3224;Kamery telewizyjne
+3225;Telefony komórkowe
+3226;Urządzenia do przesyłu danych
+3227;Cyfrowa aparatura nadawcza
+3230;Odbiorniki telewizyjne i radiowe oraz aparatura nagrywająca dźwięk lub obraz lub aparatura powielająca
+3231;Odbiorniki audycji radiowych
+3232;Sprzęt telewizyjny i audiowizualny
+3233;Aparatura do nagrywania i powielania dźwięku i obrazu wideo
+3234;Mikrofony i głośniki
+3235;Części sprzętu dźwiękowego i wideo
+3236;Urządzenia komunikacji wewnętrznej
+3240;Sieci
+3241;Lokalna sieć komputerowa
+3242;Urządzenia sieciowe
+3243;Rozległa sieć komputerowa
+3244;Wyposażenie telemetryczne i terminali
+3250;Urządzenia i artykuły telekomunikacyjne
+3251;Bezprzewodowy system telekomunikacyjny
+3252;Sprzęt i kable telekomunikacyjne
+3253;Satelitarne urządzenia komunikacyjne
+3254;Centrale
+3255;Sprzęt telefoniczny
+3256;Tworzywa z włókna optycznego
+3257;Urządzenia łączności
+3258;Sprzęt do obsługi danych
+3300;Urządzenia medyczne, farmaceutyki i produkty do pielęgnacji ciała
+3310;Urządzenia medyczne
+3311;Sprzęt obrazujący do użytku medycznego, stomatologicznego i weterynaryjnego
+3312;Systemy rejestrujące i urządzenia badawcze
+3313;Instrumenty i urządzenia stomatologiczne i specjalistyczne
+3314;Materiały medyczne
+3315;Urządzenia do radioterapii, mechanoterapii, elektroterapii i fizykoterapii
+3316;Techniki operacyjne
+3317;Aparatura do anestezji i resuscytacji
+3318;Wsparcie czynnościowe
+3319;Różne urządzenia i produkty medyczne
+3360;Produkty farmaceutyczne
+3361;Produkty lecznicze dla przewodu pokarmowego i metabolizmu
+3362;Produkty lecznicze dla krwi, organów krwiotwórczych oraz układu krążenia
+3363;Produkty lecznicze dla dermatologii oraz układu mięśniowo-szkieletowego
+3364;Produkty lecznicze dla układu moczowo-płciowego oraz hormonów
+3365;Ogólne środki przeciwinfekcyjne do użytku ogólnoustrojowego, szczepionki, środki przeciwnowotworowe oraz immunomodulacyjne
+3366;Produkty lecznicze dla układu nerwowego i organów zmysłów
+3367;Środki lecznicze dla układu oddechowego
+3368;Wyroby farmaceutyczne
+3369;Różne produkty lecznicze
+3370;Produkty do pielęgnacji ciała
+3371;Perfumy, produkty toaletowe i prezerwatywy
+3372;Golarki i zestawy do manikiuru lub pedikiuru
+3373;Produkty do pielęgnacji oczu i soczewki korekcyjne
+3374;Produkty do pielęgnacji rąk i paznokci
+3375;Produkty do pielęgnacji niemowląt
+3376;Papier toaletowy, chusteczki higieniczne, ręczniki do rąk i serwety
+3377;Artykuły higieniczne z papieru
+3379;Laboratoryjne, higieniczne lub farmaceutyczne wyroby szklane
+3390;Sprzęt i artykuły do użytku post mortem oraz w kostnicach
+3391;Przyrządy i artykuły do przeprowadzania sekcji w przypadkach patologicznych
+3392;Sprzęt i artykuły do autopsji
+3393;Meble do autopsji
+3394;Sprzęt i artykuły do transportu i przechowywania zwłok
+3395;Sprzęt i artykuły dla medycyny sądowej
+3396;Sprzęt i artykuły do balsamowania
+3397;Sprzęt i artykuły dla kostnic
+3400;Sprzęt transportowy i produkty pomocnicze dla transportu
+3410;Pojazdy silnikowe
+3411;Samochody osobowe
+3412;Pojazdy silnikowe do transportu 10 lub więcej osób
+3413;Pojazdy silnikowe do transportu towarów
+3414;Wysokowydajne pojazdy silnikowe
+3415;Symulatory
+3420;Nadwozia pojazdów, przyczepy lub naczepy
+3421;Nadwozia pojazdów mechanicznych
+3422;Przyczepy, naczepy oraz cysterny samojezdne
+3430;Części i akcesoria do pojazdów i silników do nich
+3431;Silniki do pojazdów i części silników
+3432;Mechaniczne części zapasowe, z wyłączeniem silników i części silników
+3433;Części zapasowe do pojazdów do transportu towarów, pojazdów pasażersko-towarowych i samochodów
+3435;Opony do pracy w lekkich i ciężkich warunkach
+3436;Siedziska do cywilnych statków powietrznych
+3437;Siedziska do pojazdów mechanicznych
+3439;Akcesoria do ciągników
+3440;Motocykle, rowery, przyczepy motocyklowe boczne
+3441;Motocykle
+3442;Skutery silnikowe i rowery z silnikiem
+3443;Rowery
+3450;Statki i łodzie
+3451;Statki
+3452;Łodzie
+3460;Lokomotywy kolejowe i tramwajowe oraz tabor kolejowy i podobne elementy
+3461;Parowozy i lokomotywy kolejowe
+3462;Tabor kolejowy
+3463;"Części lokomotyw kolejowych lub tramwajowych, lub taboru kolejowego; urządzenia do sterowania ruchem kolejowym"
+3464;Elementy samochodowe
+3470;Statki powietrzne i kosmiczne
+3471;Śmigłowce, samoloty, statki kosmiczne i inne statki powietrzne z napędem
+3472;Balony, sterowce i pozostałe statki powietrzne nienapędzane paliwem
+3473;Części statków powietrznych, kosmicznych i śmigłowców
+3474;Urządzenia do statków powietrznych lub kosmicznych, urządzenia szkoleniowe, symulatory i podobne części
+3490;Różny sprzęt transportowy i części zapasowe
+3491;Wozy konne i ręczne, inne pojazdy nienapędzane mechanicznie, wózki bagażowe i różne części zapasowe
+3492;Sprzęt drogowy
+3493;Urządzenia wodne
+3494;Urządzenia kolejowe
+3495;Urządzenia balastowe
+3496;Urządzenia lotniskowe
+3497;Urządzenia monitorowania ruchu
+3498;Bilety przewozowe
+3499;Sprzęt kontrolny, bezpieczeństwa, sygnalizacyjny i oświetleniowy
+3500;Sprzęt bezpieczeństwa, gaśniczy, policyjny i obronny
+3510;Urządzenia awaryjne i zabezpieczające
+3511;Sprzęt gaśniczy, ratowniczy i bezpieczeństwa
+3512;Systemy i urządzenia nadzoru i bezpieczeństwa
+3520;Sprzęt policyjny
+3521;Cele strzelnicze
+3522;Sprzęt do tłumienia zamieszek
+3523;Rękawy
+3524;Syreny
+3525;Środki odstraszające psy
+3526;Znaki policyjne
+3530;Broń, amunicja i podobne elementy
+3531;Broń różna
+3532;Broń palna
+3533;Amunicja
+3534;Części broni palnej i amunicja
+3540;Pojazdy wojskowe i ich części
+3541;Opancerzone pojazdy wojskowe
+3542;Części pojazdów wojskowych
+3550;Okręty wojenne i ich części
+3551;Okręty wojenne
+3552;Części okrętów wojennych
+3560;Samoloty wojskowe, rakiety (pociski rakietowe) i statki kosmiczne
+3561;Samoloty wojskowe
+3562;Rakiety (pociski rakietowe)
+3563;Wojskowe pojazdy kosmiczne
+3564;Części wojskowego sprzętu kosmicznego
+3570;Wojskowe systemy elektroniczne
+3571;Systemy dowodzenia, kontroli, łączności i systemy komputerowe
+3572;Wywiad, nadzór, zbieranie danych o celach i zwiad
+3573;Systemy walki elektronicznej i środki przeciwdziałania elektronicznego
+3574;Symulatory walki
+3580;Sprzęt osobisty i pomocniczy
+3581;Sprzęt osobisty
+3582;Sprzęt pomocniczy
+3700;Instrumenty muzyczne, artykuły sportowe, gry, zabawki, wyroby rzemieślnicze, materiały i akcesoria artystyczne
+3730;Instrumenty muzyczne i ich części
+3731;Instrumenty muzyczne
+3732;Części i akcesoria do instrumentów muzycznych
+3740;Artykuły i sprzęt sportowy
+3741;Sprzęt sportowy do uprawiania sportów na wolnym powietrzu
+3742;Sprzęt gimnastyczny
+3743;Sprzęt bokserski
+3744;Sprzęt do ćwiczeń fizycznych
+3745;Sprzęt do sportów uprawianych na boiskach lub na kortach
+3746;Gry tarczowe i stołowe oraz wyposażenie
+3747;Sprzęt do golfa i bowlingu
+3748;Maszyny lub sprzęt wypoczynkowy
+3750;Gry i zabawki, wyposażenie parków zabaw
+3751;Lalki
+3752;Zabawki
+3753;Artykuły do zabaw na wolnym powietrzu, gier salonowych lub towarzyskich
+3754;Maszyny do gier hazardowych
+3780;Wyroby rękodzielnicze i artystyczne
+3781;Wyroby rękodzielnicze
+3782;Wyroby artystyczne
+3800;Sprzęt laboratoryjny, optyczny i precyzyjny (z wyjątkiem szklanego)
+3810;Przyrządy nawigacyjne i meteorologiczne
+3811;Przyrządy nawigacyjne
+3812;Przyrządy meteorologiczne
+3820;Przyrządy geologiczne i geofizyczne
+3821;Kompasy geologiczne
+3822;Geologiczna aparatura poszukiwawcza
+3823;Elektromagnetyczne przyrządy geofizyczne
+3824;Grawitacyjne przyrządy geofizyczne
+3825;Przyrządy geofizyczne oparte na polaryzacji indukcyjnej IP
+3826;Magnetometryczne przyrządy geofizyczne
+3827;Przyrządy geofizyczne oparte na rezystywności
+3828;Grawimetry
+3829;Przyrządy i urządzenia badawcze, hydrograficzne, oceanograficzne i hydrologiczne
+3830;Przyrządy do pomiaru
+3831;Wagi precyzyjne
+3832;Stoły kreślarskie
+3833;Ręczne przyrządy do mierzenia długości
+3834;Przyrządy do mierzenia ilości
+3840;Przyrządy do badania właściwości fizycznych
+3841;Przyrządy pomiarowe
+3842;Przyrządy do mierzenia przepływu, poziomu i ciśnienia cieczy i gazów
+3843;Aparatura do wykrywania i analizy
+3850;Aparatura kontrolna i badawcza
+3851;Mikroskopy
+3852;Skanery
+3853;Aparatura dyfrakcyjna
+3854;Maszyny i aparatura badawcza i pomiarowa
+3855;Liczniki
+3856;Liczniki produkcji
+3857;Przyrządy i aparatura nastawcza i kontrolna
+3858;Pozamedyczne urządzenia wykorzystujące promieniowanie
+3860;Przyrządy optyczne
+3862;Materiał polaryzacyjny
+3863;Przyrządy astronomiczne i optyczne
+3864;Urządzenia ciekłokrystaliczne
+3865;Sprzęt fotograficzny
+3870;"Liczniki czasu i tym podobne; parkometry"
+3871;Liczniki czasu
+3872;Rejestratory czasu
+3873;Parkometry
+3874;Regulatory programowe
+3875;Wyłączniki czasowe
+3880;Urządzenia sterujące procesem przemysłowym i urządzenia do zdalnego sterowania
+3881;Urządzenia sterujące procesem przemysłowym
+3882;Urządzenia zdalnie sterowane
+3890;Różne przyrządy do badań lub testowania
+3891;Sprzęt do monitorowania i testowania stanu higienicznego
+3892;Sprzęt do nasion i pasz
+3893;Przyrządy do pomiaru wilgoci i wilgotności
+3894;Przyrządy do oceny zagrożenia jądrowego
+3895;Łańcuchowa reakcja polimeryzacji katalizowana przez polimerazę (PCR)
+3896;Blokada zapłonu w samochodzie w przypadku wykrycia oparów alkoholu
+3897;Badawcze, testowe i naukowe symulatory techniczne
+3900;Meble (włącznie z biurowymi), wyposażenie, urządzenia domowe (z wyłączeniem oświetlenia) i środki czyszczące
+3910;Meble
+3911;Siedziska, krzesła i produkty z nimi związane, i ich części
+3912;Stoły, kredensy, biurka i biblioteczki
+3913;Meble biurowe
+3914;Meble domowe
+3915;Różne meble i wyposażenie
+3916;Meble szkolne
+3917;Meble sklepowe
+3918;Meble laboratoryjne
+3919;Tapety papierowe i inne okładziny ścienne
+3920;Wyposażenie domowe
+3922;Sprzęt kuchenny, artykuły gospodarstwa domowego i artykuły domowe oraz artykuły cateringowe
+3923;Produkty specjalnego zastosowania
+3924;Wyroby nożownicze
+3925;Wyroby zegarmistrzowskie
+3926;Tacki dostawcze i wyposażenie biurek
+3927;Artykuły religijne
+3929;Wyposażenie różne
+3930;Różny sprzęt
+3931;Urządzenia zaopatrzeniowe
+3933;Urządzenia dezynfekujące
+3934;Sprzęt sieci gazowniczej
+3935;Urządzenia do obróbki ścieków
+3936;Urządzenia uszczelniające
+3937;Instalacje wodne
+3950;Wyroby włókiennicze
+3951;Wyroby włókiennicze w rodzaju używanych w gospodarstwie domowym
+3952;Gotowe wyroby włókiennicze
+3953;Dywany, maty i dywaniki
+3954;Różne wyroby powroźnicze, linowe, szpagatowe i sieciowe
+3955;Wyroby inne niż tkane
+3956;Różne wyroby włókiennicze
+3970;Sprzęt gospodarstwa domowego
+3971;Elektryczny sprzęt gospodarstwa domowego
+3972;Sprzęt gospodarstwa domowego inny niż elektryczny
+3980;Środki czyszczące i polerujące
+3981;Preparaty i woski wonne
+3982;Środki organiczne powierzchniowo czynne
+3983;Środki czyszczące
+4100;Woda zlewnicza i oczyszczona
+4110;Woda naturalna
+4111;Woda pitna
+4112;Woda nienadająca się do picia
+4200;Maszyny przemysłowe
+4210;Maszyny do wytwarzania i wykorzystywania mocy mechanicznej
+4211;Turbiny i silniki
+4212;Pompy i sprężarki
+4213;Krany, kurki, zawory i podobna armatura
+4214;Przekładnie, przekładnie zębate i elementy napędowe
+4215;Reaktory jądrowe i części reaktorów jądrowych
+4216;Układy kotłów grzewczych
+4220;Maszyny do obróbki żywności, napojów i tytoniu oraz podobne części
+4221;Maszyny do przetwarzania żywności, napojów i tytoniu
+4222;Części maszyn do przetwarzania żywności, napojów i tytoniu
+4230;Piece przemysłowe lub laboratoryjne, piece do spopielania i paleniska
+4231;Palniki
+4232;Piece do spalania odpadów
+4233;Piece do spopielania
+4234;Piece inne niż domowe
+4235;Piece kremacyjne
+4239;Części palników, palenisk lub pieców
+4240;Urządzenia podnośnikowe i przeładunkowe oraz ich części
+4241;Urządzenia podnośnikowe i przeładunkowe
+4242;Łopatki, szufle, łyżki i chwytaki do dźwigów lub koparek
+4250;Urządzenia chłodzące i wentylacyjne
+4251;Wymienniki ciepła, urządzenia do konfekcjonowania powietrza i urządzenia chłodzące oraz maszyny filtrujące
+4252;Urządzenia wentylacyjne
+4253;Części sprzętu chłodniczego i mrożącego i pompy grzewcze
+4260;Obrabiarki
+4261;Obrabiarki sterowane laserem lub centra obróbkowe
+4262;Tokarki, obrabiarki do wiercenia i frezowania
+4263;Obrabiarki do obróbki metali
+4264;Obrabiarki do obróbki tworzyw twardych, z wyjątkiem metalu
+4265;Pneumatyczne lub silnikowe narzędzia ręczne
+4266;Narzędzia do lutowania na miękko, lutowania na twardo, obróbki powierzchni oraz maszyny i urządzenia do natryskiwania na gorąco
+4267;Części i akcesoria do obrabiarek
+4270;Maszyny do produkcji wyrobów włókienniczych, odzieży i skóry
+4271;Maszyny do produkcji wyrobów włókienniczych
+4272;Części maszyn do produkcji wyrobów włókienniczych i odzieży
+4280;Maszyny do produkcji papieru i tektury
+4281;Części maszyn do produkcji papieru i tektury
+4290;Różne maszyny ogólnego i specjalnego przeznaczenia
+4291;Aparatura do destylacji, filtrowania lub rektyfikacji
+4292;Maszyny do czyszczenia butelek, opakowań oraz maszyny ważące i natryskujące
+4293;Wirówki, gładzarki i automaty sprzedające
+4294;Maszyny do obróbki cieplnej tworzyw
+4295;Części maszyn ogólnego zastosowania
+4296;System sterowania i kontroli, sprzęt drukujący, graficzny, automatyzujący prace biurowe i przetwarzający informacje
+4297;Części zmywarek oraz maszyn do czyszczenia, napełniania, pakowania zbiorczego lub jednostkowego
+4298;Generatory gazu
+4299;Różne maszyny specjalnego zastosowania
+4300;Maszyny górnicze, do pracy w kamieniołomach, sprzęt budowlany
+4310;Urządzenia górnicze
+4312;Wrębiarki do węgla lub skał oraz maszyny do drążenia tuneli oraz wytaczania lub maszyny do głębienia szybów
+4313;Sprzęt wiertniczy
+4314;Przenośne hydrauliczne zmechanizowane wsporniki korytarzy górniczych
+4320;Maszyny do usuwania gleby i koparki oraz podobne części
+4321;Maszyny do usuwania gleby
+4322;Równiarki i niwelatory
+4323;Maszyny zgarniające
+4324;Podbijaki
+4325;Ładowarki czołowe
+4326;Koparki, czerparki i ładowarki, i maszyny górnicze
+4330;Maszyny i sprzęt budowlany
+4331;Maszyny inżynierii lądowej i wodnej
+4332;Urządzenia budowlane
+4340;Maszyny do obróbki minerałów i formierskie
+4341;Maszyny do obróbki minerałów
+4342;Maszyny do form odlewniczych
+4350;Maszyny do kładzenia szyn
+4360;Części maszyn górniczych, kopalniczych oraz budowlanych
+4361;Części maszyn do strugania
+4362;Części maszyn do obróbki minerałów
+4363;Części maszyn do głębienia szybów
+4364;Części koparek
+4370;Części maszyn metalurgicznych oraz podobne części
+4371;Maszyny do walcowania metalu
+4372;Maszyny odlewnicze
+4380;Urządzenia warsztatowe
+4381;Urządzenia do obróbki drewna
+4382;Sprzęt do wyrobu butów
+4383;Narzędzia ręczne z napędem mechanicznym
+4384;Urządzenia kowalskie
+4400;"Konstrukcje i materiały budowlane; wyroby pomocnicze dla budownictwa (z wyjątkiem aparatury elektrycznej)"
+4410;Materiały konstrukcyjne i elementy podobne
+4411;Materiały konstrukcyjne
+4413;Studzienki kanalizacyjne
+4414;Produkty związane z materiałami budowlanymi
+4416;Rurociągi, instalacje rurowe, rury, okładziny rurowe, rury i podobne elementy
+4417;Płyty, arkusze, pasek i folia związana z materiałami budowlanymi
+4419;Różne materiały budowlane
+4420;Wyroby konstrukcyjne
+4421;Konstrukcje i części konstrukcji
+4422;Stolarka budowlana
+4423;Ciesielskie elementy budowlane
+4430;Kabel, drut i podobne wyroby
+4431;Wyroby z drutu
+4432;Kabel i podobne wyroby
+4433;Sztaby, pręty, drut i profile stosowane w budownictwie
+4440;Różne produkty gotowe i elementy z nimi związane
+4441;Artykuły łazienkowe i kuchenne
+4442;Wyroby stosowane w budownictwie
+4443;Zbrojenia
+4444;Łożyska
+4445;Stal miękka
+4446;Podpórki i rozpórki górnicze
+4447;Wyroby z żeliwa
+4448;Różny sprzęt gaśniczy
+4450;Narzędzia, zamki, klucze, zawiasy, mocowania, łańcuchy i sprężyny
+4451;Narzędzia
+4452;Zamki, klucze i zawiasy
+4453;Zaczepy
+4454;Łańcuch
+4455;Sprężyny
+4460;"Zbiorniki, rezerwuary i pojemniki; grzejniki centralnego ogrzewania i kotły"
+4461;Zbiorniki, rezerwuary, pojemniki i zbiorniki ciśnieniowe
+4462;Grzejniki centralnego ogrzewania i kotły grzewcze, i ich części
+4480;Farby, lakiery i mastyksy
+4481;Farby
+4482;Lakiery
+4483;Mastyksy, wypełniacze, kity i rozpuszczalniki
+4490;Kamień budowlany, wapień, gips i łupek
+4491;Kamień budowlany
+4492;Wapień, kamień gipsowy i kreda
+4493;Łupek
+4500;Roboty budowlane
+4510;Przygotowanie terenu pod budowę
+4511;"Roboty w zakresie burzenia i rozbiórki obiektów budowlanych; roboty ziemne"
+4512;Próbne wiercenia i wykopy
+4520;Roboty budowlane w zakresie wznoszenia kompletnych obiektów budowlanych lub ich części oraz roboty w zakresie inżynierii lądowej i wodnej
+4521;Roboty budowlane w zakresie budynków
+4522;Roboty inżynieryjne i budowlane
+4523;"Roboty budowlane w zakresie budowy rurociągów, linii komunikacyjnych i elektroenergetycznych, autostrad, dróg, lotnisk i kolei; wyrównywanie terenu"
+4524;Budowa obiektów inżynierii wodnej
+4525;Roboty w zakresie instalowania, wydobycia produkcji oraz budowy obiektów budowlanych przemysłu naftowego i gazowniczego
+4526;Roboty w zakresie wykonywania pokryć i konstrukcji dachowych i inne podobne roboty specjalistycze
+4530;Roboty instalacyjne w budynkach
+4531;Roboty instalacyjne elektryczne
+4532;Roboty izolacyjne
+4533;Roboty instalacyjne wodno-kanalizacyjne i sanitarne
+4534;Instalowanie ogrodzeń, płotów i sprzętu ochronnego
+4535;Instalacje mechaniczne
+4540;Roboty wykończeniowe w zakresie obiektów budowlanych
+4541;Tynkowanie
+4542;Roboty w zakresie zakładania stolarki budowlanej oraz roboty ciesielskie
+4543;Pokrywanie podłóg i ścian
+4544;Roboty malarskie i szklarskie
+4545;Roboty budowlane wykończeniowe, pozostałe
+4550;Wynajem maszyn i urządzeń wraz z obsługą operatorską do prowadzenia robót z zakresu budownictwa oraz inżynierii wodnej i lądowej
+4551;Wynajem dźwigów wraz z obsługą operatorską
+4552;Wynajem koparek wraz z obsługą operatorską
+4800;Pakiety oprogramowania i systemy informatyczne
+4810;Przemysłowe specyficzne pakiety oprogramowania
+4811;Pakiety oprogramowania dla punktów sprzedaży
+4812;Pakiety oprogramowania do kontroli lotów
+4813;Pakiety oprogramowania dla wsparcia naziemnego dla lotnictwa i do testów lotniczych
+4814;Pakiety oprogramowania do kontroli ruchu kolejowego
+4815;Pakiety oprogramowania do kontroli przemysłowej
+4816;Pakiety oprogramowania bibliotecznego
+4817;Pakiety oprogramowania zapewniające zgodność
+4818;Pakiety oprogramowania medycznego
+4819;Pakiety oprogramowania edukacyjnego
+4820;Pakiety oprogramowania dla sieci, internetu i intranetu
+4821;Pakiety oprogramowania dla sieci
+4822;Pakiety oprogramowania dla internetu i intranetu
+4830;Pakiety oprogramowania do tworzenia dokumentów, rysowania, odwzorowywania, tworzenia harmonogramów i produkowania
+4831;Pakiety oprogramowania do tworzenia dokumentów
+4832;Pakiety oprogramowania do rysowania i odwzorowywania
+4833;Pakiety oprogramowania do opracowywania harmonogramów i kontroli produkcji
+4840;Pakiety oprogramowania do kontroli transakcji biznesowych i osobistych
+4841;Pakiety oprogramowania do zarządzania inwestycjami i przygotowywania deklaracji podatkowych
+4842;Pakiety oprogramowania do zarządzania urządzeniami i zestawy pakietów oprogramowania
+4843;Pakiety oprogramowania do zarządzania zapasami
+4844;Pakiety oprogramowania do analizy finansowej i rachunkowości/księgowości
+4845;Pakiety oprogramowania do rozliczania czasu lub zarządzania zasobami ludzkimi
+4846;Analityczne, naukowe, matematyczne lub prognozujące pakiety oprogramowania
+4847;Pakiety oprogramowania do aukcji
+4848;Pakiety oprogramowania dla sprzedaży, marketingu i wywiadu gospodarczego
+4849;Pakiety oprogramowania do zamówień
+4850;Pakiety oprogramowania komunikacyjnego i multimedialnego
+4851;Pakiety oprogramowania komunikacyjnego
+4852;Pakiety oprogramowania multimedialnego
+4860;Pakiety oprogramowania dla baz danych i operacyjne
+4861;Systemy baz danych
+4862;Systemy operacyjne
+4870;Pakiety oprogramowania użytkowego
+4871;Pakiety oprogramowania do kopii zapasowych i odzyskiwania
+4872;Pakiety oprogramowania do kodów kreskowych
+4873;Pakiety oprogramowania zabezpieczającego
+4874;Pakiety oprogramowania do tłumaczenia z języków obcych
+4875;Pakiety oprogramowania do wczytywania z nośników przechowujących
+4876;Pakiety oprogramowania do ochrony antywirusowej
+4877;Pakiety oprogramowania użytkowego ogólnego, kompresującego i do drukowania
+4878;Pakiety oprogramowania do zarządzania systemem, przechowywaniem i zawartością
+4879;Pakiety oprogramowania do sprawdzania wersji
+4880;Systemy i serwery informacyjne
+4881;Systemy informacyjne
+4882;Serwery
+4890;Różne pakiety oprogramowania i systemy komputerowe
+4891;Pakiety oprogramowania do gier komputerowych, gry rodzinne i wygaszacze ekranu
+4892;Pakiety oprogramowania do automatyzacji prac biurowych
+4893;Pakiety oprogramowania szkoleniowego i rozrywkowego
+4894;Pakiety oprogramowania do projektowania wzorów i oprogramowania kalendarzowego
+4895;System namierzania łodzi i system nagłaśniający
+4896;Pakiety oprogramowania do sterowników systemowych
+4897;Pakiety oprogramowania dla drukarni
+4898;Języki programowania i narzędzia
+4899;Pakiety oprogramowania arkuszy kalkulacyjnych i rozszerzeń
+5000;Usługi naprawcze i konserwacyjne
+5010;Usługi w zakresie napraw i konserwacji pojazdów i podobnego sprzętu oraz podobne usługi
+5011;Usługi w zakresie napraw i konserwacji pojazdów silnikowych i podobnego sprzętu oraz podobne usługi
+5019;Usługi w zakresie złomowania pojazdów
+5020;Usługi w zakresie napraw i konserwacji statków powietrznych, kolei, sprzętu drogowego i morskiego
+5021;Usługi w zakresie napraw i konserwacji statków powietrznych i innego sprzętu
+5022;Usługi w zakresie napraw i konserwacji oraz podobne usługi dotyczące kolei i innego sprzętu
+5023;Usługi w zakresie napraw i konserwacji i podobne usługi osprzętu dróg i innego sprzętu
+5024;Usługi w zakresie napraw i konserwacji i inne usługi dotyczące sprzętu morskiego i innego
+5030;Usługi w zakresie napraw i konserwacji i podobne usługi dotyczące komputerów osobistych, sprzętu biurowego, sprzętu telekomunikacyjnego i audiowizualnego
+5031;Usługi w zakresie napraw i konserwacji maszyn biurowych
+5032;Usługi w zakresie napraw i konserwacji komputerów osobistych
+5033;Usługi w zakresie konserwacji sprzętu telekomunikacyjnego
+5034;Usługi w zakresie napraw i konserwacji urządzeń audiowizualnych i optycznych
+5040;Usługi w zakresie napraw i konserwacji urządzeń medycznych i precyzyjnych
+5041;Usługi w zakresie napraw i konserwacji aparatury pomiarowej, badawczej i kontrolnej
+5042;Usługi w zakresie napraw i konserwacji sprzętu medycznego i chirurgicznego
+5043;Usługi w zakresie napraw i konserwacji urządzeń precyzyjnych
+5050;Usługi w zakresie napraw i konserwacji pomp, zaworów, zaworów odcinających, pojemników metalowych i maszyn
+5051;Usługi w zakresie napraw i konserwacji pomp, zaworów, zaworów odcinających i pojemników metalowych
+5053;Usługi w zakresie napraw i konserwacji maszyn
+5060;Usługi w zakresie napraw i konserwacji materiałów dla bezpieczeństwa i obrony
+5061;Usługi w zakresie napraw i konserwacji sprzętu bezpieczeństwa
+5062;Usługi w zakresie napraw i konserwacji broni palnej i amunicji
+5063;Usługi w zakresie napraw i konserwacji pojazdów wojskowych
+5064;Usługi w zakresie napraw i konserwacji okrętów wojennych
+5065;Usługi w zakresie napraw i konserwacji samolotów wojskowych, rakiet (pocisków rakietowych) i statków kosmicznych
+5066;Usługi w zakresie napraw i konserwacji wojskowych systemów elektronicznych
+5070;Usługi w zakresie napraw i konserwacji instalacji budynkowych
+5071;Usługi w zakresie napraw i konserwacji elektrycznych i mechanicznych instalacji budynkowych
+5072;Usługi w zakresie napraw i konserwacji centralnego ogrzewania
+5073;Usługi w zakresie napraw i konserwacji układów chłodzących
+5074;Usługi w zakresie napraw i konserwacji podnośników
+5075;Usługi w zakresie konserwacji wind
+5076;Usługi napraw i konserwacji obiektów użyteczności społecznej
+5080;Różne usługi w zakresie napraw i konserwacji
+5081;Usługi w zakresie naprawy biżuterii
+5082;Usługi w zakresie naprawy wyrobów skórzanych użytku osobistego
+5083;Usługi w zakresie naprawy odzieży i wyrobów włókienniczych
+5084;Usługi w zakresie napraw i konserwacji broni i systemów uzbrojenia
+5085;Usługi w zakresie napraw i konserwacji mebli
+5086;Usługi w zakresie napraw i konserwacji instrumentów muzycznych
+5087;Usługi w zakresie napraw i konserwacji wyposażenia placów zabaw
+5088;Usługi w zakresie napraw i konserwacji wyposażenia hotelowego i restauracyjnego
+5100;Usługi instalowania (z wyjątkiem oprogramowania komputerowego)
+5110;Usługi instalowania urządzeń elektrycznych i mechanicznych
+5111;Usługi instalowania sprzętu elektrycznego
+5112;Usługi instalowania urządzeń mechanicznych
+5113;Usługi instalowania generatorów pary, turbin, sprężarek i palników
+5114;Usługi instalowania silników
+5120;Usługi instalowania urządzeń do mierzenia, kontroli, badania i nawigacji
+5121;Usługi instalowania urządzeń pomiarowych
+5122;Usługi instalowania urządzeń kontrolnych
+5123;Usługi instalowania urządzeń badawczych
+5124;Usługi instalowania urządzeń nawigacyjnych
+5130;Usługi instalowania urządzeń komunikacyjnych
+5131;Usługi instalowania urządzeń telewizyjnych, radiowych, dźwiękowych i wideo
+5132;Usługi instalowania nadajników radiowych i telewizyjnych
+5133;Usługi instalowania aparatury radiotelefonicznej
+5134;Usługi instalowania urządzeń telefonicznych
+5135;Usługi instalowania urządzeń telegraficznych
+5140;Usługi instalowania sprzętu medycznego i chirurgicznego
+5141;Usługi instalowania sprzętu medycznego
+5142;Usługi instalowania sprzętu chirurgicznego
+5143;Usługi instalowania sprzętu laboratoryjnego
+5150;Usługi instalowania maszyn i urządzeń
+5151;Usługi instalowania maszyn i urządzeń ogólnego zastosowania
+5152;Usługi instalowania maszyn rolniczych i używanych w leśnictwie
+5153;Usługi instalowania obrabiarek
+5154;Usługi instalowania maszyn i urządzeń specjalnego zastosowania
+5155;Usługi instalowania systemów uzbrojenia
+5160;Usługi instalowania komputerów i urządzeń biurowych
+5161;Usługi instalowania urządzeń komputerowych i przetwarzania informacji
+5162;Usługi instalowania urządzeń biurowych
+5170;Usługi instalowania sprzętu przeciwpożarowego
+5180;Usługi instalowania metalowych pojemników
+5181;Usługi instalowania zbiorników
+5182;Usługi instalowania rezerwuarów
+5190;Usługi instalowania systemów sterowania i kontroli
+5500;Usługi hotelarskie, restauracyjne i handlu detalicznego
+5510;Usługi hotelarskie
+5511;Hotelarskie usługi noclegowe
+5512;Usługi hotelarskie w zakresie spotkań i konferencji
+5513;Inne usługi hotelarskie
+5520;Pola kempingowe i inne miejsca noclegowe, inne niż hotelowe
+5521;Usługi w zakresie schronisk młodzieżowych
+5522;Usługi w zakresie pól kempingowych
+5524;Usługi w zakresie ośrodków i domów wypoczynkowych
+5525;Usługi w zakresie krótkoterminowego wynajmu umeblowanych miejsc noclegowych
+5526;Usługi w zakresie pojazdów z miejscami noclegowymi
+5527;Usługi świadczone przez placówki oferujące wyżywienie i miejsca noclegowe
+5530;Usługi restauracyjne i dotyczące podawania posiłków
+5531;Restauracyjne usługi kelnerskie
+5532;Usługi podawania posiłków
+5533;Usługi kawiarniane
+5540;Usługi podawania napojów
+5541;Usługi prowadzenia baru
+5550;Usługi bufetowe oraz w zakresie podawania posiłków
+5551;Usługi bufetowe
+5552;Usługi dostarczania posiłków
+5590;Usługi handlu detalicznego
+6000;Usługi transportowe (z wyłączeniem transportu odpadów)
+6010;Usługi w zakresie transportu drogowego
+6011;Usługi w zakresie publicznego transportu drogowego
+6012;Usługi taxi
+6013;Usługi w zakresie specjalistycznego transportu drogowego osób
+6014;Nieregularny transport osób
+6015;Transport osób pojazdami ciągniętymi przez zwierzęta
+6016;Drogowy transport przesyłek pocztowych
+6017;Wynajem pojazdów przeznaczonych do transportu osób wraz z kierowcą
+6018;Wynajem pojazdów do transportu towarów wraz z kierowcą
+6020;Usługi transportu kolejowego
+6021;Usługi publicznego transportu kolejowego
+6022;Transport kolejowy poczty
+6030;Usługi przesyłu rurociągami
+6040;Usługi transportu lotniczego
+6041;Usługi regularnego transportu lotniczego
+6042;Usługi nieregularnego transportu lotniczego
+6044;Usługi lotnicze i podobne
+6050;Usługi transportu kosmicznego
+6051;Usługi w zakresie wystrzeliwania satelitów
+6052;Usługi eksperymentalne w zakresie ładunków użytecznych
+6060;Usługi transportu wodnego
+6061;Usługi transportu promowego
+6062;Transport poczty drogą wodną
+6063;Usługi wykonywane przez statki kablowce
+6064;Działalność żeglugowa
+6065;Wynajem transportowego sprzętu wodnego wraz z załogą
+6300;Usługi dodatkowe i pomocnicze w zakresie transportu, usługi biur podróży
+6310;Usługi przeładunku i składowania towarów
+6311;Usługi przeładunku towarów
+6312;Usługi składowania i magazynowania
+6350;Usługi biur podróży, podmiotów turystycznych i pomocy turystycznej
+6351;Usługi biur podróży i podobne
+6352;Usługi agencji transportowych
+6370;Usługi dodatkowe w zakresie transportu lądowego, wodnego i lotniczego
+6371;Usługi dodatkowe w zakresie transportu lądowego
+6372;Usługi wspierające transport wodny
+6373;Usługi dodatkowe dla transportu lotniczego
+6400;Usługi pocztowe i telekomunikacyjne
+6410;Usługi pocztowe i kurierskie
+6411;Usługi pocztowe
+6412;Usługi kurierskie
+6420;Usługi telekomunikacyjne
+6421;Usługi telefoniczne i przesyłu danych
+6422;Usługi telekomunikacyjne, z wyjątkiem usług telefonicznych i przesyłu danych
+6500;Obiekty użyteczności publicznej
+6510;Usługi przesyłu wody i podobne
+6511;Przesył wody
+6512;Obsługa zakładów oczyszczania wody
+6513;Obsługa stacji wody
+6520;Przesył gazu i podobne usługi
+6521;Przesył gazu
+6530;Przesył energii elektrycznej i podobne usługi
+6531;Przesył energii elektrycznej
+6532;Eksploatacja instalacji elektrycznych
+6540;Przesył i stacje innych źródeł energii
+6541;Eksploatacja elektrowni
+6550;Odczyty liczników
+6600;Usługi finansowe i ubezpieczeniowe
+6610;Usługi bankowe i inwestycyjne
+6611;Usługi bankowe
+6612;Inwestycyjne usługi bankowe i usługi powiązane
+6613;Usługi brokerskie i usługi podobne w zakresie zabezpieczenia ubezpieczeń towarów
+6614;Usługi zarządzania pakietem
+6615;Usługi administrowania rynkami finansowymi
+6616;Usługi powiernicze i przechowywania (aktywów)
+6617;Usługi w zakresie doradztwa finansowego, przetwarzania transakcji finansowych i usługi izb rozrachunkowych
+6618;Usługi wymiany walut
+6619;Usługi maklerskie w zakresie pożyczek
+6650;Usługi ubezpieczeniowe i emerytalne
+6651;Usługi ubezpieczeniowe
+6652;Usługi emerytalno-rentowe
+6660;Usługi skarbowe
+6670;Usługi reasekuracji
+6671;Usługi reasekuracji na życie
+6672;Usługi reasekuracji od następstw nieszczęśliwych wypadków i ubezpieczeń zdrowotnych
+7000;Usługi w zakresie nieruchomości
+7010;Usługi w zakresie obsługi nieruchomości własnych
+7011;Usługi rozbudowy nieruchomości
+7012;Kupno i sprzedaż nieruchomości
+7013;Wynajem nieruchomości stanowiących własność
+7020;Usługi wynajmu lub leasingu nieruchomości stanowiących własność
+7021;Usługi wynajmu lub leasingu nieruchomości mieszkalnych
+7022;Usługi wynajmu lub leasingu nieruchomości innych niż mieszkalne
+7030;Obsługa nieruchomości realizowana na zasadzie bezpośredniej płatności lub umowy
+7031;Usługi wynajmu lub sprzedaży obiektów budowlanych
+7032;Usługi wynajmu lub sprzedaży gruntów
+7033;Usługi zarządzania nieruchomościami na zasadzie bezpośredniej płatności lub umowy
+7034;Usługi przydziału
+7100;Usługi architektoniczne, budowlane, inżynieryjne i kontrolne
+7120;Usługi architektoniczne i podobne
+7121;Doradcze usługi architektoniczne
+7122;Usługi projektowania architektonicznego
+7123;Organizowanie architektonicznych konkursów projektowych
+7124;Usługi architektoniczne, inżynieryjne i planowania
+7125;Usługi architektoniczne, inżynieryjne i pomiarowe
+7130;Usługi inżynieryjne
+7131;Doradcze usługi inżynieryjne i budowlane
+7132;Usługi inżynieryjne w zakresie projektowania
+7133;Różne usługi inżynieryjne
+7134;Zintegrowane usługi inżynieryjne
+7135;Usługi inżynieryjne naukowe i techniczne
+7140;Usługi architektoniczne dotyczące planowania przestrzennego i zagospodarowania terenu
+7141;Usługi planowania przestrzennego
+7142;Architektoniczne usługi zagospodarowania terenu
+7150;Usługi związane z budownictwem
+7151;Usługi badania terenu
+7152;Usługi nadzoru budowlanego
+7153;Doradcze usługi budowlane
+7154;Usługi zarządzania budową
+7155;Usługi kowalskie
+7160;Usługi w zakresie testowania technicznego, analizy i konsultacji technicznej
+7161;Usługi badania i analizy czystości i składu
+7162;Usługi analizy
+7163;Usługi kontroli i nadzoru technicznego
+7170;Usługi nadzoru i kontroli
+7173;Usługi kontroli przemysłowej
+7180;Usługi konsultacyjne w zakresie dostaw wody i konsultacje dotyczące odpadów
+7190;Usługi laboratoryjne
+7200;Usługi informatyczne: konsultacyjne, opracowywania oprogramowania, internetowe i wsparcia
+7210;Usługi doradcze w zakresie sprzętu komputerowego
+7211;Usługi doradcze w zakresie doboru sprzętu komputerowego
+7212;Usługi doradcze w zakresie poawaryjnego odzyskiwania sprzętu koputerowego
+7213;Usługi doradcze w zakresie planowania powierzchni komputerowej
+7214;Usługi doradcze w zakresie badań odbiorczych sprzętu komputerowego
+7215;Usługi doradztwa w zakresie audytu komputerowego oraz sprzętu komputerowego
+7220;Usługi doradcze w zakresie programowania oprogramowania
+7221;Usługi programowania pakietów oprogramowania
+7222;Usługi doradcze w zakresie systemów i doradztwo techniczne
+7223;Usługi w zakresie rozbudowy oprogramowania
+7224;Usługi analizy systemu i programowania
+7225;Usługi w zakresie konserwacji i wsparcia systemów
+7226;Usługi w zakresie oprogramowania
+7230;Usługi w zakresie danych
+7231;Usługi przetwarzania danych
+7232;Usługi bazy danych
+7233;Usługi w zakresie standaryzacji i klasyfikacji zawartości lub danych
+7240;Usługi internetowe
+7241;Usługi dostawców
+7242;Usługi w zakresie rozwijania internetu
+7250;Komputerowe usługi pokrewne
+7251;Usługi zarządzania wspierane komputerowo
+7254;Usługi modernizowania komputerów
+7259;Profesjonalne usługi komputerowe
+7260;Usługi doradcze i dodatkowe w zakresie sprzętu komputerowego
+7261;Usługi dodatkowe w zakresie sprzętu komputerowego
+7270;Usługi w zakresie sieci komputerowej
+7271;Usługi w zakresie lokalnej sieci komputerowej
+7272;Usługi w zakresie rozległej sieci komputerowej
+7280;Usługi audytu komputerowego i testowania komputerów
+7281;Usługi audytu komputerowego
+7282;Usługi testowania komputerów
+7290;Usługi archiwizacji komputerowej i konwersji katalogów
+7291;Usługi archiwizacji komputerowej
+7292;Usługi konwersji katalogów
+7300;Usługi badawcze i eksperymentalno-rozwojowe oraz pokrewne usługi doradcze
+7310;Usługi badawcze i eksperymentalno-rozwojowe
+7311;Usługi badawcze
+7312;Usługi eksperymentalno-rozwojowe
+7320;Usługi doradcze w zakresie badań i rozwoju
+7321;Usługi doradcze w zakresie badań
+7322;Usługi doradcze w zakresie rozwoju
+7330;Projekt i realizacja badań oraz rozwój
+7340;Usługi badawczo-rozwojowe w zakresie bezpieczeństwa i materiałów obronnych
+7341;Badania wojskowe i technologia wojskowa
+7342;Studium przedwykonalności i demonstracja technologiczna
+7343;Testy i ocena
+7500;Usługi administracji publicznej, obrony i zabezpieczenia socjalnego
+7510;Usługi administracji publicznej
+7511;Usługi administracji ogólnej
+7512;Usługi administracyjne świadczone przez agencje
+7513;Usługi administracyjne dotyczące ruchu turystycznego
+7520;Ogólne usługi personelu dla władz publicznych
+7521;Świadczenie usług na rzecz wspólnoty
+7522;Usługi w zakresie obrony
+7523;Usługi wymiaru sprawiedliwości
+7524;Usługi w zakresie bezpieczeństwa, prawa i porządku publicznego
+7525;Usługi straży pożarnej oraz ratownicze
+7530;Usługi w zakresie obowiązkowego ubezpieczenia społecznego
+7531;Świadczenia społeczne
+7532;Plany emerytalne dla pracowników administracji rządowej
+7533;Zasiłki rodzinne
+7534;Zasiłki przysługujące na dzieci
+7600;Usługi przemysłu naftowego oraz gazowniczego
+7610;Usługi zawodowe w branży gazowniczej
+7611;Doraźne usługi związane z wydobyciem gazu
+7612;Doraźne usługi nurkowe związane z wydobyciem gazu
+7620;Usługi zawodowe przemysłu naftowego
+7621;Usługi doraźne związane z wydobyciem ropy
+7630;Usługi wiertnicze
+7631;Doraźne usługi wiertnicze związane z wydobyciem gazu
+7632;Przybrzeżne usługi wiertnicze
+7633;Usługi wiertnicze turbinowe
+7634;Wiercenie rdzeniowe
+7640;Usługi wprowadzania sprzętu wiertniczego
+7641;Usługi kładzenia rur okładzinowych oraz przewodów rurowych do odwiertów
+7642;Usługi betonowania odwiertów
+7643;Usługi odwiertów oraz produkcji
+7644;Usługi wybijania odwiertów
+7645;Usługi utrzymania odwiertów
+7646;Usługi dodatkowe dotyczące odwiertów
+7647;Usługi badania odwiertów
+7648;Usługi kładzenia rur
+7649;Usługi instalowania odwiertów
+7650;Usługi lądowe i przybrzeżne
+7651;Usługi lądowe
+7652;Usługi przybrzeżne
+7653;Usługi związane z odwiertami podziemnymi
+7660;Usługi nadzoru nad rurociągami
+7700;Usługi rolnicze, leśne, ogrodnicze, hydroponiczne i pszczelarskie
+7710;Usługi rolnicze
+7711;Usługi doraźne produkcji rolnej
+7712;Usługi kompostowania
+7720;Usługi leśnictwa
+7721;Usługi pozyskiwania drewna
+7722;Usługi impregnacji drewna
+7723;Usługi doraźne dotyczące leśnictwa
+7730;Usługi ogrodnicze
+7731;Usługi sadzenia roślin oraz utrzymania terenów zielonych
+7732;Usługi utrzymania terenów sportowych
+7733;Usługi wystaw kwiatowych
+7734;Usługi okrzesywania drzew oraz przycinania żywopłotów
+7740;Usługi zoologiczne
+7750;Usługi hodowli zwierząt
+7751;Usługi rozmnażania zwierzyny łownej
+7760;Usługi myśliwskie
+7761;Usługi zakładania pułapek
+7770;Usługi dodatkowe w stosunku do rybołówstwa
+7780;Usługi hydroponiczne
+7781;Usługi w zakresie hodowli morskich
+7782;Usługi w zakresie hodowli ostryg
+7783;Usługi w zakresie hodowli skorupiaków
+7784;Usługi w zakresie ferm krewetek
+7785;Usługi w zakresie ferm rybnych
+7790;Usługi pszczelarskie
+7900;Usługi biznesowe: prawnicze, marketingowe, konsultingowe, rekrutacji, drukowania i zabezpieczania
+7910;Usługi prawnicze
+7911;Usługi w zakresie doradztwa prawnego i reprezentacji prawnej
+7912;Usługi doradztwa w zakresie patentów i praw autorskich
+7913;Usługi prawne w zakresie dokumentów oraz uwierzytelniania
+7914;Doradztwo prawne i usługi informacyjne
+7920;Usługi księgowe, audytorskie i podatkowe
+7921;Usługi księgowe i audytorskie
+7922;Usługi podatkowe
+7930;"Badania rynkowe i ekonomiczne; ankietowanie i statystyka"
+7931;Usługi badania rynku
+7932;Usługi badania opinii publicznej
+7933;Usługi statystycne
+7934;Usługi reklamowe i marketingowe
+7940;Usługi doradcze w zakresie działalności gospodarczej i zarządzania oraz podobne
+7941;Usługi doradcze w zakresie działalności gospodarczej i zarządzania
+7942;Usługi związane z zarządzaniem
+7943;Usługi zarządzania kryzysowego
+7950;Dodatkowe usługi biurowe
+7951;Usługi telefonicznych automatów zgłoszeniowych
+7952;Usługi reprograficzne
+7953;Usługi w zakresie tłumaczeń pisemnych
+7954;Usługi w zakresie tłumaczeń ustnych
+7955;Usługi w zakresie komputerowego maszynopisania, przetwarzania tekstu i powiązanych z nimi komputerowych usług wydawniczych
+7956;Usługi w zakresie klasyfikowania
+7957;Usługi w zakresie tworzenia list adresowych oraz usługi wysyłkowe
+7960;Usługi rekrutacyjne
+7961;Zapewnianie usług personelu
+7962;Usługi w zakresie pozyskiwania personelu, w tym pracowników sezonowych
+7963;Usługi dotyczące personelu, z wyjątkiem rekrutacji i pozyskiwania personelu
+7970;Usługi detektywistyczne i ochroniarskie
+7971;Usługi ochroniarskie
+7972;Usługi detektywistyczne
+7980;Usługi drukowania i powiązane
+7981;Usługi drukowania
+7982;Usługi związane z drukowaniem
+7990;Różne usługi branżowe i podobne
+7991;Usługi zarządzania przedsiębiorstwami holdingowymi
+7992;Pakowanie i podobne usługi
+7993;Specjalne usługi projektowe
+7994;Usługi agencji ściągających należności
+7995;Usługi w zakresie organizowania wystaw, targów i kongresów
+7996;Usługi fotograficzne i pomocnicze
+7997;Usługi publikacji
+7998;Usługi prenumeraty
+7999;Różne usługi dla przedsiębiorstw
+8000;Usługi edukacyjne i szkoleniowe
+8010;Usługi szkolnictwa podstawowego
+8011;Usługi szkolnictwa przedszkolnego
+8020;Usługi szkolnictwa średniego
+8021;Usługi edukacji technicznej i zawodowej na poziomie szkoły średniej
+8030;Usługi szkolnictwa wyższego
+8031;Usługi edukacji młodzieży
+8032;Usługi edukacji medycznej
+8033;Usługi edukacji w zakresie bezpieczeństwa
+8034;Usługi edukacji specjalnej
+8040;Usługi edukacji osób dorosłych oraz inne
+8041;Różne usługi szkolne
+8042;Usługi e-learning
+8043;Usługi edukacji osób dorosłych na poziomie akademickim
+8049;Prowadzenie ośrodków nauczania
+8050;Usługi szkoleniowe
+8051;Usługi szkolenia specjalistycznego
+8052;Placówki szkoleniowe
+8053;Usługi szkolenia zawodowego
+8054;Usługi szkolenia w dziedzinie środowiska naturalnego
+8055;Usługi szkolenia w dziedzinie bezpieczeństwa
+8056;Usługi szkolenia w dziedzinie zdrowia i pierwszej pomocy
+8057;Usługi szkolenia w dziedzinie rozwoju osobistego
+8058;Oferowanie kursów językowych
+8059;Usługi seminaryjne
+8060;Usługi szkolenia w zakresie obrony i materiałów bezpieczeństwa
+8061;Szkolenie i symulacja w zakresie sprzętu bezpieczeństwa
+8062;Szkolenie i symulacja w zakresie broni palnej i amunicji
+8063;Szkolenie i symulacja w zakresie pojazdów wojskowych
+8064;Szkolenie i symulacja w zakresie okrętów wojennych
+8065;Szkolenie i symulacja w zakresie samolotów, rakiet (pocisków rakietowych) i statków kosmicznych
+8066;Szkolenie i symulacja w zakresie wojskowych systemów elektronicznych
+8500;Usługi w zakresie zdrowia i opieki społecznej
+8510;Usługi ochrony zdrowia
+8511;Usługi szpitalne i podobne
+8512;Usługi medyczne i podobne
+8513;Usługi stomatologiczne i podobne
+8514;Różne usługi w dziedzinie zdrowia
+8515;Usługi obrazowania medycznego
+8516;Usługi optyczne
+8517;Usługi w zakresie akupunktury i kręgarstwa
+8520;Usługi weterynaryjne
+8521;Ośrodki pielęgnowania zwierząt domowych
+8530;Usługi pracy społecznej i podobnej
+8531;Usługi pracy społecznej
+8532;Usługi społeczne
+9000;Usługi odbioru ścieków, usuwania odpadów, czyszczenia/sprzątania i usługi ekologiczne
+9040;Usługi utylizacji nieczystości
+9041;Usługi usuwania ścieków
+9042;Usługi obróbki ścieków
+9043;Usługi likwidacji ścieków
+9044;Usługi uzdatniania basenów septycznych
+9045;Usługi uzdatniania zbiorników septycznych
+9046;Usługi opróżniania basenów septycznych lub zbiorników septycznych
+9047;Usługi czyszczenia kanałów ściekowych
+9048;Usługi gospodarki ściekowej
+9049;Usługi kontroli ścieków i usługi konsultacyjne w zakresie oczyszczania ścieków
+9050;Usługi związane z odpadami
+9051;Usuwanie i obróbka odpadów
+9052;Usługi w zakresie odpadów radioaktywnych, toksycznych, medycznych i niebezpiecznych
+9053;Eksploatacja składowisk odpadów
+9060;Usługi sprzątania oraz usługi sanitarne na obszarach miejskich lub wiejskich oraz usługi powiązane
+9061;Usługi sprzątania i zamiatania ulic
+9062;Usługi odśnieżania
+9063;Usługi usuwania oblodzeń
+9064;Usługi czyszczenia i opróżniania kanałów ściekowych
+9065;Usługi usuwania azbestu
+9066;Usługi usuwania ołowiu
+9067;Usługi w zakresie dezynfekcji oraz tępienia szkodników na obszarach miejskich lub wiejskich
+9068;Usługi sprzątania plaż
+9069;Usługi usuwania graffiti
+9070;Usługi środowiska naturalnego
+9071;Zarządzanie środowiskiem naturalnym
+9072;Ochrona środowiska
+9073;Śledzenie zanieczyszczeń, monitoring i rekultywacja
+9074;Usługi śledzenia skażeń, monitoringu i oczyszczania
+9090;Usługi w zakresie sprzątania i odkażania
+9091;Usługi sprzątania
+9092;Usługi w zakresie odkażania urządzeń
+9200;Usługi rekreacyjne, kulturalne i sportowe
+9210;Usługi kinematograficzne oraz wideo
+9211;Produkcja filmów kinowych i wideo oraz podobne usługi
+9212;Usługi dystrybucji filmów kinowych oraz taśm wideo
+9213;Usługi projekcji filmów
+9214;Usługi projekcji taśm wideo
+9220;Usługi radiowe i telewizyjne
+9221;Usługi radiowe
+9222;Usługi telewizyjne
+9223;Usługi kablowej sieci radiowej i telewizyjnej
+9230;Usługi rozrywkowe
+9231;Usługi tworzenia dzieł artystycznych i literackich oraz przekładu
+9232;Usługi prowadzenia placówek artystycznych
+9233;Usługi świadczone przez ośrodki rekreacyjne
+9234;Usługi taneczne oraz przedstawienia artystyczne
+9235;Usługi gier hazardowych i organizowania zakładów
+9236;Usługi pirotechniczne
+9237;Usługi techników dźwięku
+9240;Usługi świadczone przez agencje informacyjne
+9250;Usługi świadczone przez biblioteki, archiwa, muzea i inne usługi kulturalne
+9251;Usługi świadczone przez biblioteki i archiwa
+9252;Usługi świadczone przez muzea i w zakresie ochrony obiektów i budynków zabytkowych
+9253;Usługi świadczone przez ogrody botaniczne i zoologiczne oraz rezerwaty przyrody
+9260;Usługi sportowe
+9261;Usługi świadczone przez ośrodki sportowe
+9262;Usługi w zakresie sportu
+9270;Usługi cyberkawiarni
+9800;Inne usługi komunalne, socjalne i osobiste
+9810;Usługi organizacji członkowskich
+9811;Usługi świadczone przez organizacje przedsiębiorców, organizacje zawodowe oraz organizacje specjalistyczne
+9812;Usługi świadczone przez związki zawodowe
+9813;Usługi świadczone przez różne organizacje członkowskie
+9820;Usługi konsultacyjne dotyczące zapewniania równych szans
+9830;Różne usługi
+9831;Usługi prania i czyszczenia na sucho
+9832;Usługi fryzjerskie oraz dotyczące pielęgnacji urody
+9833;Usługi zapewnienia komfortu fizycznego
+9834;Usługi miejsc noclegowych oraz biur
+9835;Usługi świadczone na rzecz społeczeństwa
+9836;Usługi morskie
+9837;Usługi pogrzebowe i podobne
+9838;Usługi psiarni
+9839;Inne usługi
+9850;Zatrudnianie pracowników do prowadzenia gospodarstwa domowego
+9851;Usługi pracowników handlowych i przemysłowych
+9890;Usługi świadczone przez zagraniczne organizacje i organy
+9891;Usługi specjalne dla międzynarodowych organizacji i organów
