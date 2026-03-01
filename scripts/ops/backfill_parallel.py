@@ -83,7 +83,7 @@ def _stage_command(stage: str, day: str, args: argparse.Namespace) -> list[str]:
     if stage == "silver":
         return [
             sys.executable,
-            "scripts/build_silver.py",
+            "scripts/pipeline/build_silver.py",
             day,
             "--bronze-dir",
             args.bronze_dir,
@@ -101,7 +101,7 @@ def _stage_command(stage: str, day: str, args: argparse.Namespace) -> list[str]:
     if stage == "gold":
         return [
             sys.executable,
-            "scripts/build_gold.py",
+            "scripts/pipeline/build_gold.py",
             day,
             "--silver-dir",
             args.silver_dir,

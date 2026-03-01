@@ -1,7 +1,7 @@
 """Run the full BZP pipeline: fetch → bronze → silver → gold.
 
 Usage:
-    python scripts/run_pipeline.py [YYYY-MM-DD]
+    python scripts/ops/run_pipeline.py [YYYY-MM-DD]
 
 Defaults to yesterday when no date is given.  Each step is wrapped in
 try/except so partial failures are logged but don't crash the pipeline.
@@ -19,13 +19,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 from procurement.logging import setup_logging
 
 SCRIPTS_DIR = Path(__file__).resolve().parent
+PIPELINE_DIR = SCRIPTS_DIR.parent / "pipeline"
 
 STEPS = [
-    ("fetch", SCRIPTS_DIR / "fetch_bzp_yesterday.py"),
-    ("bronze", SCRIPTS_DIR / "build_bronze.py"),
-    ("silver", SCRIPTS_DIR / "build_silver.py"),
-    ("gold", SCRIPTS_DIR / "build_gold.py"),
-    ("run-stats", SCRIPTS_DIR / "build_run_stats.py"),
+    ("fetch", PIPELINE_DIR / "fetch_bzp_yesterday.py"),
+    ("bronze", PIPELINE_DIR / "build_bronze.py"),
+    ("silver", PIPELINE_DIR / "build_silver.py"),
+    ("gold", PIPELINE_DIR / "build_gold.py"),
+    ("run-stats", PIPELINE_DIR / "build_run_stats.py"),
 ]
 
 

@@ -25,3 +25,5 @@ If rendering fails with missing Jupyter modules (`yaml`, `notebook`, etc.), inst
 ```powershell
 py -m pip install jupyter pyyaml
 ```
+
+Developer utility scripts were moved to `scripts/dev/`.

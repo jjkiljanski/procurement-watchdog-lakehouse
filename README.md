@@ -30,7 +30,7 @@ Core goals:
   - first fetch large date ranges to `bronze_raw`,
   - then run Spark transforms (`bronze -> silver -> case_derived -> gold`) in long-lived jobs.
 
-See `docs/deployment/OPERATING_MODES.md` for exact sequencing and retry semantics.
+See `docs/runbooks/OPERATING_MODES.md` for exact sequencing and retry semantics.
 
 ## Current Data Layout
 
@@ -44,12 +44,12 @@ See `docs/deployment/OPERATING_MODES.md` for exact sequencing and retry semantic
 
 ### Silver
 
-Built by `scripts/build_silver.py` (reads Bronze Parquet by default, raw fallback):
+Built by `scripts/pipeline/build_silver.py` (reads Bronze Parquet by default, raw fallback):
 
 - `data/silver/common_envelope/publicationDateDay=YYYY-MM-DD/`
 - `data/silver/notice_type_tables/noticeType=<TYPE>/publicationDateDay=YYYY-MM-DD/`
 
-Built by `scripts/build_case_derived_facts.py`:
+Built by `scripts/pipeline/build_case_derived_facts.py`:
 
 - `data/silver/case_derived_facts/asOfDate=YYYY-MM-DD/`
 - `data/silver/_meta/day=YYYY-MM-DD.json` (lineage/performance metadata)
@@ -64,7 +64,7 @@ Notes:
 
 ### Gold
 
-Built by `scripts/build_gold.py`:
+Built by `scripts/pipeline/build_gold.py`:
 
 - `data/gold/case_mart/date=YYYY-MM-DD/`
 - `data/gold/buyer_mart/date=YYYY-MM-DD/`
@@ -78,13 +78,16 @@ Built by `scripts/build_gold.py`:
 
 ## Key Scripts
 
-- `scripts/fetch_bzp_yesterday.py` - fetch daily API payloads to `bronze_raw`
-- `scripts/build_bronze.py` - validate + write canonical Bronze Parquet
-- `scripts/build_silver.py` - notice-ingest Silver build
-- `scripts/build_case_derived_facts.py` - case-grain Silver derived layer (`full` / `incremental`)
-- `scripts/build_gold.py` - Gold marts/signals
-- `scripts/build_run_stats.py` - run-level reporting artifacts
-- `docs/deployment/OPERATING_MODES.md` - operational runbook (daily vs backfill + restart semantics)
+- `scripts/pipeline/fetch_bzp_yesterday.py` - fetch daily API payloads to `bronze_raw`
+- `scripts/pipeline/build_bronze.py` - validate + write canonical Bronze Parquet
+- `scripts/pipeline/build_silver.py` - notice-ingest Silver build
+- `scripts/pipeline/build_case_derived_facts.py` - case-grain Silver derived layer (`full` / `incremental`)
+- `scripts/pipeline/build_gold.py` - Gold marts/signals
+- `scripts/pipeline/build_run_stats.py` - run-level reporting artifacts
+- `scripts/ops/run_pipeline.py` - local orchestrator wrapper
+- `scripts/ops/backfill_parallel.py` - bounded parallel backfill runner
+- `scripts/dev/*` - exploratory one-off tools (non-prod)
+- `docs/runbooks/OPERATING_MODES.md` - operational runbook (daily vs backfill + restart semantics)
 
 ## Local Execution
 
@@ -92,11 +95,11 @@ Recommended (Docker Spark runtime):
 
 ```bash
 docker build -t procurement-pipeline .
-docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/fetch_bzp_yesterday.py 2025-10-01
-docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/build_bronze.py 2025-10-01
-docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/build_silver.py 2025-10-01
-docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/build_case_derived_facts.py 2025-10-01 --mode full
-docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/build_gold.py 2025-10-01 --scope daily
+docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/pipeline/fetch_bzp_yesterday.py 2025-10-01
+docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/pipeline/build_bronze.py 2025-10-01
+docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/pipeline/build_silver.py 2025-10-01
+docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/pipeline/build_case_derived_facts.py 2025-10-01 --mode full
+docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/pipeline/build_gold.py 2025-10-01 --scope daily
 ```
 
 Direct Python runs are also possible if local Spark/PySpark is configured.
@@ -116,6 +119,9 @@ src/procurement/
   gold/
   ingest/
 scripts/
+  pipeline/
+  ops/
+  dev/
 tests/
 docs/
 examples/

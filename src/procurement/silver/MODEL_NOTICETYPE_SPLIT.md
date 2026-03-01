@@ -4,10 +4,10 @@ This file name is kept for history, but the content below describes the model th
 
 ## Status
 
-- Notice ingest split is implemented in `scripts/build_silver.py`.
-- Case lifecycle projection is implemented in `scripts/build_case_derived_facts.py`.
-- Gold consumes notice-level Silver (`common_envelope` + `notice_type_tables`) in `scripts/build_gold.py`.
-- Run-stats reads daily Silver notice outputs in `scripts/build_run_stats.py`.
+- Notice ingest split is implemented in `scripts/pipeline/build_silver.py`.
+- Case lifecycle projection is implemented in `scripts/pipeline/build_case_derived_facts.py`.
+- Gold consumes notice-level Silver (`common_envelope` + `notice_type_tables`) in `scripts/pipeline/build_gold.py`.
+- Run-stats reads daily Silver notice outputs in `scripts/pipeline/build_run_stats.py`.
 
 ## Physical layout
 
@@ -29,7 +29,7 @@ Notes:
 ## Common envelope contract
 
 The envelope contains shared identity and buyer/context fields.
-Current contract (see `ENVELOPE_COLUMNS` in `scripts/build_silver.py`):
+Current contract (see `ENVELOPE_COLUMNS` in `scripts/pipeline/build_silver.py`):
 
 - `objectId`
 - `noticeType`
@@ -151,7 +151,7 @@ Gold reads split notice-level Silver and reconstructs analytical inputs by:
 3. Left-joining specific to envelope by `objectId`.
 4. Coalescing shared fields (`organizationId`, `clientType`, etc.) from envelope when missing in specific.
 
-This join is implemented in `scripts/build_gold.py` (`_read_silver_split_layout`).
+This join is implemented in `scripts/pipeline/build_gold.py` (`_read_silver_split_layout`).
 
 ## Determinism and reruns
 

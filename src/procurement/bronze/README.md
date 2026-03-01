@@ -12,7 +12,7 @@ Inputs:
 
 Primary build entrypoint:
 
-- `scripts/build_bronze.py`
+- `scripts/pipeline/build_bronze.py`
 
 Operational intent:
 
@@ -42,4 +42,4 @@ Current guarantees:
 
 See also:
 
-- `docs/deployment/OPERATING_MODES.md`
+- `docs/runbooks/OPERATING_MODES.md`

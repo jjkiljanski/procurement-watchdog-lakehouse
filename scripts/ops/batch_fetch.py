@@ -2,7 +2,7 @@
 
 Usage (run from the directory where you want data/ created):
     cd E:\\git_projects\\procurement-watchdog-api-exploration
-    python E:\\git_projects\\procurement-watchdog-lakehouse\\scripts\\batch_fetch.py 2025-10-01 2025-12-31
+    python E:\\git_projects\\procurement-watchdog-lakehouse\\scripts\\ops\\batch_fetch.py 2025-10-01 2025-12-31
 
 Skips dates whose Bronze-Raw file already exists, so it is safe to re-run.
 """
@@ -16,6 +16,7 @@ from datetime import date, timedelta
 from pathlib import Path
 
 SCRIPTS_DIR = Path(__file__).resolve().parent
+PIPELINE_DIR = SCRIPTS_DIR.parent / "pipeline"
 
 sys.path.insert(0, str(SCRIPTS_DIR.parent / "src"))
 from procurement.logging import setup_logging
@@ -44,8 +45,8 @@ def main() -> None:
 
     log.info("Batch fetch: %s to %s (%d days)", start, end, total_days)
 
-    fetch_script = str(SCRIPTS_DIR / "fetch_bzp_yesterday.py")
-    bronze_script = str(SCRIPTS_DIR / "build_bronze.py")
+    fetch_script = str(PIPELINE_DIR / "fetch_bzp_yesterday.py")
+    bronze_script = str(PIPELINE_DIR / "build_bronze.py")
 
     for i, d in enumerate(daterange(start, end), 1):
         ds = d.isoformat()
@@ -82,4 +83,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
