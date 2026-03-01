@@ -23,3 +23,18 @@ data/
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# Runtime logs / artifacts
+logs/
+*.out.log
+*.err.log
+tmp_*.log
+tmp_lock_test_proc*.log
+
+# Generated docs/report assets
+*_files/
+docs/**/*.html
+examples/**/*.html
+
+# Local odd file on Windows
+nul

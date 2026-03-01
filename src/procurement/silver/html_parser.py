@@ -2,7 +2,7 @@
 
 Each notice type has a different HTML template with different field numbers.
 This parser dispatches value extraction by notice type. See
-docs/data_profile/html_structure.md for the full field reference.
+docs/data_model/html_structure.md for the full field reference.
 """
 
 from __future__ import annotations
@@ -672,7 +672,10 @@ def _extract_contract_notice_parts(soup: BeautifulSoup) -> list[ContractNoticePa
 
     for part_id, chunk in chunks:
         has_marker = any(
-            any(marker in h3.get_text() for marker in ("4.2.2.)", "4.2.6.)", "4.2.7.)", "4.3.5.)", "4.3.6.)", "4.3.10.)"))
+            any(
+                marker in h3.get_text()
+                for marker in ("4.2.2.)", "4.2.6.)", "4.2.7.)", "4.2.10.)", "4.3.5.)", "4.3.6.)", "4.3.10.)")
+            )
             for h3 in chunk
         )
         if not has_marker:
@@ -682,6 +685,7 @@ def _extract_contract_notice_parts(soup: BeautifulSoup) -> list[ContractNoticePa
         opis: str | None = None
         main_cpv: str | None = None
         secondary_cpv: list[str] = []
+        contract_planned_execution_date: str | None = None
         ordinal = 1
         j = 0
         while j < len(chunk):
@@ -715,6 +719,13 @@ def _extract_contract_notice_parts(soup: BeautifulSoup) -> list[ContractNoticePa
                         secondary_cpv.extend(parsed)
                     else:
                         secondary_cpv.append(candidate)
+            if "4.2.10.)" in text:
+                raw = _span_value(chunk[j]) or _text_after_h3(chunk[j])
+                if not raw:
+                    p_values = _collect_p_values(chunk[j])
+                    raw = p_values[0] if p_values else None
+                if raw:
+                    contract_planned_execution_date = raw
             if "4.3.5.)" in text:
                 criterion_text = _span_value(chunk[j])
                 weight = None
@@ -741,6 +752,7 @@ def _extract_contract_notice_parts(soup: BeautifulSoup) -> list[ContractNoticePa
                 kryteria_oceny=criteria,
                 mainCPV=main_cpv,
                 secondaryCPV=list(dict.fromkeys(secondary_cpv)),
+                contract_planned_execution_date=contract_planned_execution_date,
                 criteria_aspects_4310=aspects_raw,
                 criteria_aspects_4310_flag=aspects_flag,
             )
@@ -1108,8 +1120,8 @@ def _extract_values_small_contract(soup: BeautifulSoup) -> ExtractedValues | Non
 
 def _extract_competition_notice_fields(
     soup: BeautifulSoup,
-) -> tuple[int | None, float | None, float | None, str | None]:
-    """CompetitionNotice: 6.3 count, 6.4 prizes value, 6.5.1 order value, 7.2 requirements."""
+) -> tuple[int | None, float | None, float | None, str | None, str | None]:
+    """CompetitionNotice: core competition fields + submission deadline variants."""
     comp_num_awarded_63 = None
     raw_num_awarded = _span_value(_find_h3(soup, "6.3.")) or _text_after_h3(_find_h3(soup, "6.3."))
     if raw_num_awarded is not None:
@@ -1127,13 +1139,29 @@ def _extract_competition_notice_fields(
         _span_value(_find_h3(soup, "6.5.1.")) or _text_after_h3(_find_h3(soup, "6.5.1."))
     )
     comp_requirements_72 = _span_value(_find_h3(soup, "7.2.")) or _text_after_h3(_find_h3(soup, "7.2."))
+    comp_submission_deadline = (
+        _span_value(_find_h3(soup, "3.6."))
+        or _text_after_h3(_find_h3(soup, "3.6."))
+        or _span_value(_find_h3(soup, "3.5."))
+        or _text_after_h3(_find_h3(soup, "3.5."))
+    )
 
     return (
         comp_num_awarded_63,
         value_competition_prizes_64,
         value_competition_followon_order_651,
         comp_requirements_72,
+        comp_submission_deadline,
     )
+
+
+def _extract_competition_result_fields(soup: BeautifulSoup) -> str | None:
+    """CompetitionResultNotice: 5.3 approval date of result/cancellation."""
+    raw = _span_value(_find_h3(soup, "5.3.")) or _text_after_h3(_find_h3(soup, "5.3."))
+    if not raw:
+        return None
+    match = re.search(r"(\d{4}-\d{2}-\d{2})", raw)
+    return match.group(1) if match else None
 
 
 _VALUE_EXTRACTORS = {
@@ -1336,6 +1364,8 @@ def parse_html(
     value_competition_prizes_64 = None
     value_competition_followon_order_651 = None
     comp_requirements_72 = None
+    comp_submission_deadline = None
+    comp_result_approval_date_53 = None
     if notice_type == "AgreementIntentionNotice":
         (
             ai_street_512,
@@ -1360,7 +1390,10 @@ def parse_html(
             value_competition_prizes_64,
             value_competition_followon_order_651,
             comp_requirements_72,
+            comp_submission_deadline,
         ) = _extract_competition_notice_fields(soup)
+    if notice_type == "CompetitionResultNotice":
+        comp_result_approval_date_53 = _extract_competition_result_fields(soup)
 
     # Type-aware value extraction
     values = None
@@ -1405,6 +1438,8 @@ def parse_html(
         value_competition_prizes_64=value_competition_prizes_64,
         value_competition_followon_order_651=value_competition_followon_order_651,
         comp_requirements_72=comp_requirements_72,
+        comp_submission_deadline=comp_submission_deadline,
+        comp_result_approval_date_53=comp_result_approval_date_53,
         **details,
     )
 
@@ -1500,7 +1535,7 @@ def parse_html_agreement_intention_light(html: str) -> dict[str, object]:
 
 
 def parse_html_competition_light(html: str) -> dict[str, object]:
-    """Fast targeted extraction for CompetitionNotice."""
+    """Fast targeted extraction for CompetitionNotice/CompetitionResultNotice."""
     ulica = _extract_h3_field_fast(html, "1.5.1.")
     kod_pocztowy = _extract_h3_field_fast(html, "1.5.3.")
     raw_num_awarded = _extract_h3_field_fast(html, "6.3.")
@@ -1515,6 +1550,13 @@ def parse_html_competition_light(html: str) -> dict[str, object]:
     value_competition_prizes_64 = _parse_pln_value(_extract_h3_field_fast(html, "6.4."))
     value_competition_followon_order_651 = _parse_pln_value(_extract_h3_field_fast(html, "6.5.1."))
     comp_requirements_72 = _extract_h3_field_fast(html, "7.2.")
+    comp_submission_deadline = _extract_h3_field_fast(html, "3.6.") or _extract_h3_field_fast(html, "3.5.")
+    comp_result_approval_date_53 = None
+    raw_result_approval = _extract_h3_field_fast(html, "5.3.")
+    if raw_result_approval:
+        match = re.search(r"(\d{4}-\d{2}-\d{2})", raw_result_approval)
+        if match:
+            comp_result_approval_date_53 = match.group(1)
     return {
         "ulica": ulica,
         "kod_pocztowy": kod_pocztowy,
@@ -1522,6 +1564,8 @@ def parse_html_competition_light(html: str) -> dict[str, object]:
         "value_competition_prizes_64": value_competition_prizes_64,
         "value_competition_followon_order_651": value_competition_followon_order_651,
         "comp_requirements_72": comp_requirements_72,
+        "comp_submission_deadline": comp_submission_deadline,
+        "comp_result_approval_date_53": comp_result_approval_date_53,
     }
 
 
@@ -1586,6 +1630,19 @@ def parse_html_contract_performing_light(html: str) -> dict[str, object]:
         if id_type:
             contractor_id_type.append(id_type)
 
+    execution_period_42 = _extract_h3_field_fast(html, "4.2.")
+    execution_period_norm = _normalize_label_text(execution_period_42 or "")
+    if not execution_period_42 or execution_period_norm.startswith("okres realizacji"):
+        # Some CPN variants keep 4.2 value as plain text right after </h3>.
+        # Fast extraction may return only the heading label, so fallback to soup.
+        soup = BeautifulSoup(html, "lxml")
+        h3_execution = _find_h3(soup, "4.2.") or _find_h3_by_label(
+            soup,
+            ["okres realizacji", "zamowienia"],
+        )
+        p_values = _collect_p_values(h3_execution)
+        execution_period_42 = _span_value(h3_execution) or _text_after_h3(h3_execution) or (p_values[0] if p_values else None)
+
     return {
         "ulica": ulica,
         "kod_pocztowy": kod_pocztowy,
@@ -1597,7 +1654,7 @@ def parse_html_contract_performing_light(html: str) -> dict[str, object]:
         "cpn_contractor_provinces_436": _uniq(provinces),
         "cpn_contractor_countries_437": _uniq(countries),
         "cpn_contract_date_41": _extract_h3_field_fast(html, "4.1."),
-        "cpn_execution_period_42": _extract_h3_field_fast(html, "4.2."),
+        "cpn_contract_planned_execution_date_raw": execution_period_42,
         "cpn_execution_end_date_52": _extract_h3_field_fast(html, "5.2."),
         "executed_in_time": _parse_tak_nie(_extract_h3_field_fast(html, "5.3.")),
         "proper_execution": _parse_tak_nie(_extract_h3_field_fast(html, "5.6.")),

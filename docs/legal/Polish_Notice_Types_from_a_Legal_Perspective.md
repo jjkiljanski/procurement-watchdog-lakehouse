@@ -84,14 +84,14 @@ of a concession contract.
 **Notice of Change to Contract Notice** -- Amends the original
 procurement notice (e.g., deadlines, scope, requirements).
 
+## NoticeUpdateConcession
+
+**Notice of Change to Concession Notice** -- Amends a concession notice.
+
 ## AgreementUpdateNotice
 
 **Notice of Change to Contract** -- Refers to modifications of an
 already concluded contract (e.g., amendments under Article 455 Pzp).
-
-## NoticeUpdateConcession
-
-**Notice of Change to Concession Notice** -- Amends a concession notice.
 
 ## ConcessionUpdateAgreementNotice
 
