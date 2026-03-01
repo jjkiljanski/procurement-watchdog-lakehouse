@@ -11,6 +11,7 @@ from procurement.silver.html_parser import (
     _parse_pln_value,
     normalize_tender_result_contractors,
     parse_html_agreement_intention_light,
+    parse_html_competition_light,
     parse_cpv_codes,
     parse_html,
     parse_html_contract_performing_light,
@@ -126,6 +127,7 @@ CONTRACT_NOTICE_PARTS_HTML = """\
 <h3 class="mb-0">Czesc nr 1</h3>
 <h3 class="mb-0">4.2.6.) Główny kod CPV: <span class="normal">45000000-7 (Roboty budowlane)</span></h3>
 <h3 class="mb-0">4.2.7.) Dodatkowy kod CPV: <span class="normal">45100000-8 (Przygotowanie terenu)</span></h3>
+<h3 class="mb-0">4.2.10.) Okres realizacji zamówienia albo umowy ramowej: <span class="normal">do 2025-02-28</span></h3>
 <h3 class="mb-0">4.3.5.) Nazwa kryterium: <span class="normal">Cena</span></h3>
 <h3 class="mb-0">4.3.6.) Waga: <span class="normal">60</span></h3>
 <h3 class="mb-0">4.3.5.) Nazwa kryterium: <span class="normal">Termin realizacji</span></h3>
@@ -134,6 +136,7 @@ CONTRACT_NOTICE_PARTS_HTML = """\
 <h3 class="mb-0">Czesc nr 2</h3>
 <h3 class="mb-0">4.2.6.) Główny kod CPV: <span class="normal">71000000-8 (Usługi architektoniczne)</span></h3>
 <h3 class="mb-0">4.2.7.) Dodatkowy kod CPV: <span class="normal">71200000-0 (Usługi architektoniczne i podobne)</span></h3>
+<h3 class="mb-0">4.2.10.) Okres realizacji zamówienia albo umowy ramowej: <span class="normal">12 miesięcy</span></h3>
 <h3 class="mb-0">4.3.5.) Nazwa kryterium: <span class="normal">Cena</span></h3>
 <h3 class="mb-0">4.3.6.) Waga: <span class="normal">80</span></h3>
 <h3 class="mb-0">4.3.5.) Nazwa kryterium: <span class="normal">Jakosc</span></h3>
@@ -188,6 +191,7 @@ CONTRACT_NOTICE_SINGLE_PART_NO_HEADER_HTML = """\
 <p class="mb-0">Opis jednej części.</p>
 <h3 class="mb-0">4.2.6.) Główny kod CPV: <span class="normal">45200000-9 (Roboty budowlane)</span></h3>
 <h3 class="mb-0">4.2.7.) Dodatkowy kod CPV: <span class="normal">45110000-1 (Roboty ziemne)</span></h3>
+<h3 class="mb-0">4.2.10.) Okres realizacji zamówienia albo umowy ramowej: <span class="normal">do 2025-04-01</span></h3>
 <h3 class="mb-0">4.3.5.) Nazwa kryterium: <span class="normal">Cena</span></h3>
 <h3 class="mb-0">4.3.6.) Waga: <span class="normal">70</span></h3>
 <h3 class="mb-0">4.3.5.) Nazwa kryterium: <span class="normal">Termin</span></h3>
@@ -236,6 +240,21 @@ COMPETITION_NOTICE_NO_PRIZES_HTML = """\
 <h2 class="bg-light p-3 mt-4">SEKCJA VI - WARUNKI KONKURSU</h2>
 <h3 class="mb-0">6.3.) Liczba prac konkursowych, ktore zostana nagrodzone: <span class="normal">1</span></h3>
 <h3 class="mb-0">6.5.1.) Wartosc zamowienia: <span class="normal">80000,00 PLN</span></h3>
+</main></body></html>"""
+
+COMPETITION_NOTICE_SUBMISSION_36_HTML = """\
+<html><head></head><body><main>
+<h3 class="mb-0">3.6.) Termin skladania wnioskow o dopuszczenie do udzialu w konkursie: <span class="normal">2025-06-10 15:00</span></h3>
+</main></body></html>"""
+
+COMPETITION_NOTICE_SUBMISSION_35_HTML = """\
+<html><head></head><body><main>
+<h3 class="mb-0">3.5.) Termin skladania opracowan studialnych: <span class="normal">2025-05-20 10:00</span></h3>
+</main></body></html>"""
+
+COMPETITION_RESULT_NOTICE_HTML = """\
+<html><head></head><body><main>
+<h3 class="mb-0">5.3.) Data zatwierdzenia rozstrzygniecia konkursu/uniewaznienia konkursu: <span class="normal">2025-06-30</span></h3>
 </main></body></html>"""
 
 TENDER_RESULT_ENRICHMENT_HTML = """\
@@ -726,6 +745,11 @@ class TestContractNoticeValues:
         assert part.mainCPV == "45233140-2"
         assert part.secondaryCPV == ["45100000-8", "34922100-7"]
 
+    def test_extracts_contract_planned_execution_date_from_4210(self):
+        r = parse_html(CONTRACT_NOTICE_PARTS_HTML, notice_type="ContractNotice")
+        assert r.contract_notice_parts is not None
+        assert [p.contract_planned_execution_date for p in r.contract_notice_parts] == ["do 2025-02-28", "12 miesięcy"]
+
 
 # --- Value extraction: AgreementUpdateNotice ---
 
@@ -780,6 +804,30 @@ class TestCompetitionNoticeValues:
         assert r.comp_num_awarded_63 == 1
         assert r.value_competition_prizes_64 is None
         assert r.value_competition_followon_order_651 == pytest.approx(80000.0)
+
+    def test_submission_deadline_from_36(self):
+        r = parse_html(COMPETITION_NOTICE_SUBMISSION_36_HTML, notice_type="CompetitionNotice")
+        assert r.comp_submission_deadline == "2025-06-10 15:00"
+
+    def test_submission_deadline_from_35(self):
+        r = parse_html(COMPETITION_NOTICE_SUBMISSION_35_HTML, notice_type="CompetitionNotice")
+        assert r.comp_submission_deadline == "2025-05-20 10:00"
+
+    def test_submission_deadline_light_parser_variants(self):
+        r36 = parse_html_competition_light(COMPETITION_NOTICE_SUBMISSION_36_HTML)
+        r35 = parse_html_competition_light(COMPETITION_NOTICE_SUBMISSION_35_HTML)
+        assert r36["comp_submission_deadline"] == "2025-06-10 15:00"
+        assert r35["comp_submission_deadline"] == "2025-05-20 10:00"
+
+
+class TestCompetitionResultNoticeValues:
+    def test_result_approval_date_53(self):
+        r = parse_html(COMPETITION_RESULT_NOTICE_HTML, notice_type="CompetitionResultNotice")
+        assert r.comp_result_approval_date_53 == "2025-06-30"
+
+    def test_result_approval_date_53_light_parser(self):
+        r = parse_html_competition_light(COMPETITION_RESULT_NOTICE_HTML)
+        assert r["comp_result_approval_date_53"] == "2025-06-30"
 
 
 # --- Value extraction: unsupported types ---
@@ -1000,6 +1048,10 @@ class TestContractExecution:
         assert r["executed_in_time"] is True
         assert r["proper_execution"] is True
 
+    def test_contract_performing_light_extracts_execution_period_value_not_label(self):
+        r = parse_html_contract_performing_light(CONTRACT_PERFORMING_DETAILS_HTML)
+        assert r["cpn_contract_planned_execution_date_raw"] == "56 dni"
+
     def test_contract_performing_light_safe_wrapper_returns_address(self):
         from procurement.silver.spark_transforms import _parse_html_cpn_light_safe
 
@@ -1150,6 +1202,66 @@ class TestSilverDerivedHelpers:
         assert num == 2
         assert price == 60
         assert non_price == 40
+
+    def test_parse_cpn_planned_execution_date_direct_do_date(self):
+        from procurement.silver.spark_transforms import _parse_cpn_contract_planned_execution_date
+
+        assert _parse_cpn_contract_planned_execution_date("do 2025-02-28", "2024-10-04") == "2025-02-28"
+
+    def test_parse_cpn_planned_execution_date_months_from_contract_date(self):
+        from procurement.silver.spark_transforms import _parse_cpn_contract_planned_execution_date
+
+        assert _parse_cpn_contract_planned_execution_date("36 miesiące", "2022-03-21") == "2025-03-21"
+
+    def test_parse_cpn_planned_execution_date_days_from_contract_date(self):
+        from procurement.silver.spark_transforms import _parse_cpn_contract_planned_execution_date
+
+        assert _parse_cpn_contract_planned_execution_date("30 dni", "2025-02-10") == "2025-03-12"
+
+    def test_parse_cpn_planned_execution_date_range_uses_end_date(self):
+        from procurement.silver.spark_transforms import _parse_cpn_contract_planned_execution_date
+
+        assert (
+            _parse_cpn_contract_planned_execution_date(
+                "od 2024-10-04 do 2024-12-20",
+                "2024-10-01",
+            )
+            == "2024-12-20"
+        )
+
+    def test_parse_cn_planned_execution_dates(self):
+        from procurement.silver.spark_transforms import _parse_contract_notice_planned_execution_dates
+
+        parsed = _parse_contract_notice_planned_execution_dates(
+            [
+                "do 2025-02-28",
+                "36 miesiące",
+                "30 dni",
+                "od 2024-10-04 do 2024-12-20",
+            ],
+            "2022-03-21T10:00:00Z",
+        )
+        assert parsed == [
+            "2025-02-28",
+            "2025-03-21",
+            "2022-04-20",
+            "2024-12-20",
+        ]
+
+    def test_parse_organization_national_id_poland_nip(self):
+        from procurement.silver.spark_transforms import _parse_organization_national_id_safe
+
+        assert _parse_organization_national_id_safe("Polska", "NIP: 739-384-34-71") == "7393843471"
+
+    def test_parse_organization_national_id_foreign(self):
+        from procurement.silver.spark_transforms import _parse_organization_national_id_safe
+
+        assert _parse_organization_national_id_safe("Niemcy", "DE-ABC-987654") == "DE-ABC-987654"
+
+    def test_parse_organization_national_id_not_recognized(self):
+        from procurement.silver.spark_transforms import _parse_organization_national_id_safe
+
+        assert _parse_organization_national_id_safe("Polska", "ID-ABCD") is None
 
     def test_update_delta_heuristics(self):
         from procurement.silver.spark_transforms import _classify_notice_change

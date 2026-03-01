@@ -30,9 +30,58 @@ from procurement.bronze.models import BzpNoticeBronze, notice_record_hash
 from procurement.lineage import atomic_write_json, git_commit_sha, now_utc_iso, script_hashes, sha256_file
 from procurement.logging import setup_logging
 from pydantic import ValidationError
+from pyspark.sql.types import (
+    ArrayType,
+    BooleanType,
+    StringType,
+    StructField,
+    StructType,
+)
 
 setup_logging()
 log = logging.getLogger(__name__)
+
+BRONZE_SPARK_SCHEMA = StructType(
+    [
+        StructField("objectId", StringType(), nullable=False),
+        StructField("noticeType", StringType(), nullable=False),
+        StructField("noticeNumber", StringType(), nullable=False),
+        StructField("bzpNumber", StringType(), nullable=False),
+        StructField("publicationDate", StringType(), nullable=False),
+        StructField("isTenderAmountBelowEU", BooleanType(), nullable=False),
+        StructField("orderObject", StringType(), nullable=True),
+        StructField("cpvCode", StringType(), nullable=False),
+        StructField("htmlBody", StringType(), nullable=False),
+        StructField("clientType", StringType(), nullable=True),
+        StructField("orderType", StringType(), nullable=True),
+        StructField("tenderType", StringType(), nullable=True),
+        StructField("submittingOffersDate", StringType(), nullable=True),
+        StructField("procedureResult", StringType(), nullable=True),
+        StructField("organizationName", StringType(), nullable=False),
+        StructField("organizationCity", StringType(), nullable=False),
+        StructField("organizationProvince", StringType(), nullable=True),
+        StructField("organizationCountry", StringType(), nullable=False),
+        StructField("organizationNationalId", StringType(), nullable=False),
+        StructField("organizationId", StringType(), nullable=False),
+        StructField("tenderId", StringType(), nullable=True),
+        StructField(
+            "contractors",
+            ArrayType(
+                StructType(
+                    [
+                        StructField("contractorName", StringType(), nullable=True),
+                        StructField("contractorCity", StringType(), nullable=True),
+                        StructField("contractorProvince", StringType(), nullable=True),
+                        StructField("contractorCountry", StringType(), nullable=True),
+                        StructField("contractorNationalId", StringType(), nullable=True),
+                    ]
+                )
+            ),
+            nullable=True,
+        ),
+        StructField("recordHash", StringType(), nullable=False),
+    ]
+)
 
 
 def _parse_args() -> argparse.Namespace:
@@ -296,7 +345,7 @@ def main() -> None:
             .getOrCreate()
         )
         try:
-            df = spark.createDataFrame(valid_rows).withColumn(
+            df = spark.createDataFrame(valid_rows, schema=BRONZE_SPARK_SCHEMA).withColumn(
                 "publicationDateDay",
                 to_date(col("publicationDate")).cast("string"),
             )

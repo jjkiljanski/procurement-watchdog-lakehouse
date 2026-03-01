@@ -23,6 +23,7 @@ class ContractNoticePart(BaseModel):
     kryteria_oceny: list[EvalCriterion] | None = None
     mainCPV: str | None = None
     secondaryCPV: list[str] | None = None
+    contract_planned_execution_date: str | None = None
     criteria_aspects_4310: str | None = None
     criteria_aspects_4310_flag: bool | None = None
 
@@ -143,6 +144,8 @@ class HtmlExtracted(BaseModel):
     value_competition_prizes_64: float | None = None
     value_competition_followon_order_651: float | None = None
     comp_requirements_72: str | None = None
+    comp_submission_deadline: str | None = None
+    comp_result_approval_date_53: str | None = None
 
 
 class BzpNoticeSilver(BaseModel):
