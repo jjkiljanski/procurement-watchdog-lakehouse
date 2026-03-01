@@ -1107,6 +1107,35 @@ def _build_case_derived(envelope_rows: DataFrame) -> DataFrame:
         array_sort(array_distinct(collect_set(col("noticeType")))).alias("notice_types_set"),
         spark_min(col("publication_date")).alias("first_publication_date"),
         spark_max(col("publication_date")).alias("last_publication_date"),
+        spark_min(
+            when(
+                col("noticeType").isin(
+                    "ContractNotice",
+                    "AgreementIntentionNotice",
+                    "CompetitionNotice",
+                    "SmallContractNotice",
+                    "ConcessionNotice",
+                    "ConcessionIntentionAgreementNotice",
+                ),
+                col("publication_date"),
+            )
+        ).alias("init_date"),
+        spark_min(
+            when(
+                col("noticeType").isin(
+                    "TenderResultNotice",
+                    "CompetitionResultNotice",
+                    "ConcessionAgreementNotice",
+                ),
+                col("publication_date"),
+            )
+        ).alias("result_date"),
+        spark_min(
+            when(
+                col("noticeType") == lit("ContractPerformingNotice"),
+                col("publication_date"),
+            )
+        ).alias("execution_date"),
         count(lit(1)).cast("long").alias("num_notices_total"),
         spark_sum(when(col("noticeType") == lit("NoticeUpdateNotice"), lit(1)).otherwise(lit(0)))
         .cast("long")
