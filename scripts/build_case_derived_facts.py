@@ -481,6 +481,7 @@ def _read_envelope_rows(
         safe_col(envelope_raw, "clientTypeName", "string").alias("clientTypeName"),
         safe_col(envelope_raw, "orderType", "string").alias("orderType"),
         safe_col(envelope_raw, "tenderType", "string").alias("tenderType"),
+        safe_col(envelope_raw, "organizationName", "string").alias("organizationName"),
         safe_col(envelope_raw, "organizationCity", "string").alias("organizationCity"),
         safe_col(envelope_raw, "provinceName", "string").alias("provinceName"),
         safe_col(envelope_raw, "organizationCountry", "string").alias("organizationCountry"),
@@ -536,6 +537,7 @@ def _read_specific_rows(
                 "cn_criteria_aspects_4310_flag array<boolean>, cpvMainCode array<string>, cpvCode string, "
                 "submittingOffersDate string, comp_num_awarded_63 int, value_competition_prizes_64 double, "
                 "value_competition_followon_order_651 double, comp_requirements_72 string, "
+                "trn_value_bid_lowest double, trn_value_bid_highest double, trn_value_winning_offer double, "
                 "cpn_contractor_countries_437 array<string>"
             ),
         )
@@ -581,6 +583,9 @@ def _read_specific_rows(
             safe_col(frame_raw, "comp_requirements_72", "string").alias("comp_requirements_72"),
             safe_col(frame_raw, "procedureResultParsed", "array<string>").alias("procedureResultParsed"),
             safe_col(frame_raw, "trn_notice_concerns", "string").alias("trn_notice_concerns"),
+            safe_col(frame_raw, "trn_value_bid_lowest", "double").alias("trn_value_bid_lowest"),
+            safe_col(frame_raw, "trn_value_bid_highest", "double").alias("trn_value_bid_highest"),
+            safe_col(frame_raw, "trn_value_winning_offer", "double").alias("trn_value_winning_offer"),
             safe_col(frame_raw, "cpn_contract_date_41", "string").alias("cpn_contract_date_41"),
             safe_col(frame_raw, "cpn_execution_end_date_52", "string").alias("cpn_execution_end_date_52"),
             safe_col(frame_raw, "cpn_contractor_countries_437", "array<string>").alias(
@@ -778,6 +783,30 @@ def _build_notice_specific_features(specific_rows: DataFrame) -> DataFrame:
                 "'v', CASE WHEN noticeType='TenderResultNotice' THEN trn_notice_concerns END)"
             )
         ).getField("v").alias("trn_notice_concerns"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='TenderResultNotice' "
+                "THEN CASE WHEN trn_value_bid_lowest IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='TenderResultNotice' THEN trn_value_bid_lowest END)"
+            )
+        ).getField("v").alias("trn_value_bid_lowest"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='TenderResultNotice' "
+                "THEN CASE WHEN trn_value_bid_highest IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='TenderResultNotice' THEN trn_value_bid_highest END)"
+            )
+        ).getField("v").alias("trn_value_bid_highest"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='TenderResultNotice' "
+                "THEN CASE WHEN trn_value_winning_offer IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='TenderResultNotice' THEN trn_value_winning_offer END)"
+            )
+        ).getField("v").alias("trn_value_winning_offer"),
         spark_min(
             expr(
                 "named_struct('is_null', CASE WHEN noticeType='TenderResultNotice' "
@@ -1014,6 +1043,7 @@ def _build_case_derived(envelope_rows: DataFrame) -> DataFrame:
         "clientTypeName",
         "orderType",
         "tenderType",
+        "organizationName",
         "organizationCity",
         "provinceName",
         "organizationCountry",

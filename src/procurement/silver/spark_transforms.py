@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 import re
 import unicodedata
+from calendar import monthrange
+from datetime import datetime, timedelta
 
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import (
@@ -31,6 +33,7 @@ from pyspark.sql.types import (
 
 from procurement.dictionaries import client_type_names, province_names
 from procurement.silver.html_parser import (
+    classify_contractor_id_for_notice,
     normalize_tender_result_contractors,
     parse_cpv_codes,
     parse_html,
@@ -57,6 +60,7 @@ CONTRACT_NOTICE_PART_SCHEMA = StructType(
         StructField("kryteria_oceny", ArrayType(EVAL_CRITERION_SCHEMA)),
         StructField("mainCPV", StringType()),
         StructField("secondaryCPV", ArrayType(StringType())),
+        StructField("contract_planned_execution_date", StringType()),
         StructField("criteria_aspects_4310", StringType()),
         StructField("criteria_aspects_4310_flag", BooleanType()),
     ]
@@ -165,6 +169,8 @@ HTML_EXTRACTED_SCHEMA = StructType(
         StructField("value_competition_prizes_64", DoubleType()),
         StructField("value_competition_followon_order_651", DoubleType()),
         StructField("comp_requirements_72", StringType()),
+        StructField("comp_submission_deadline", StringType()),
+        StructField("comp_result_approval_date_53", StringType()),
     ]
 )
 
@@ -195,6 +201,8 @@ HTML_COMP_LIGHT_SCHEMA = StructType(
         StructField("value_competition_prizes_64", DoubleType()),
         StructField("value_competition_followon_order_651", DoubleType()),
         StructField("comp_requirements_72", StringType()),
+        StructField("comp_submission_deadline", StringType()),
+        StructField("comp_result_approval_date_53", StringType()),
     ]
 )
 
@@ -210,7 +218,7 @@ HTML_CPN_LIGHT_SCHEMA = StructType(
         StructField("cpn_contractor_provinces_436", ArrayType(StringType())),
         StructField("cpn_contractor_countries_437", ArrayType(StringType())),
         StructField("cpn_contract_date_41", StringType()),
-        StructField("cpn_execution_period_42", StringType()),
+        StructField("cpn_contract_planned_execution_date_raw", StringType()),
         StructField("cpn_execution_end_date_52", StringType()),
         StructField("executed_in_time", BooleanType()),
         StructField("proper_execution", BooleanType()),
@@ -281,6 +289,17 @@ def _parse_html_cpn_light_safe(html: str | None) -> dict | None:
         return parse_html_contract_performing_light(html)
     except Exception:
         log.warning("Failed to parse CPN light HTML (len=%d)", len(html), exc_info=True)
+        return None
+
+
+def _parse_organization_national_id_safe(
+    organization_country: str | None,
+    organization_national_id: str | None,
+) -> str | None:
+    try:
+        _, parsed, _ = classify_contractor_id_for_notice(organization_country, organization_national_id)
+        return parsed
+    except Exception:
         return None
 
 
@@ -380,6 +399,107 @@ def _extract_execution_duration_days(execution_period: str | None) -> int | None
     return int(match.group(1))
 
 
+def _add_months(base: datetime, months: int) -> datetime:
+    month_index = (base.month - 1) + months
+    year = base.year + (month_index // 12)
+    month = (month_index % 12) + 1
+    day = min(base.day, monthrange(year, month)[1])
+    return base.replace(year=year, month=month, day=day)
+
+
+def _parse_contract_date(contract_date: str | None) -> datetime | None:
+    if not contract_date:
+        return None
+    match = re.search(r"(\d{4}-\d{2}-\d{2})", contract_date)
+    if match is None:
+        return None
+    try:
+        return datetime.strptime(match.group(1), "%Y-%m-%d")
+    except ValueError:
+        return None
+
+
+def _normalize_period_text(text: str) -> str:
+    replacements = {
+        "Ä…": "a",
+        "Ä‡": "c",
+        "Ä™": "e",
+        "Ĺ‚": "l",
+        "Ĺ„": "n",
+        "Ăł": "o",
+        "Ĺ›": "s",
+        "Ĺş": "z",
+        "ĹĽ": "z",
+    }
+    normalized = text.casefold()
+    for src, dst in replacements.items():
+        normalized = normalized.replace(src, dst)
+    normalized = unicodedata.normalize("NFKD", normalized)
+    normalized = "".join(ch for ch in normalized if not unicodedata.combining(ch))
+    normalized = re.sub(r"\s+", " ", normalized).strip()
+    return normalized
+
+
+def _parse_cpn_contract_planned_execution_date(
+    execution_period_raw: str | None,
+    contract_date_41: str | None,
+) -> str | None:
+    if not execution_period_raw:
+        return None
+
+    raw = execution_period_raw.strip()
+    if not raw:
+        return None
+
+    # Prefer explicit end date when present: "od ... do ..." or "do YYYY-MM-DD"
+    iso_dates = re.findall(r"\b(\d{4}-\d{2}-\d{2})\b", raw)
+    if iso_dates:
+        return iso_dates[-1]
+
+    # Handle DD.MM.YYYY / DD-MM-YYYY variants.
+    dmy_dates = re.findall(r"\b(\d{2})[./-](\d{2})[./-](\d{4})\b", raw)
+    if dmy_dates:
+        dd, mm, yyyy = dmy_dates[-1]
+        try:
+            return datetime(int(yyyy), int(mm), int(dd)).date().isoformat()
+        except ValueError:
+            return None
+
+    base = _parse_contract_date(contract_date_41)
+    if base is None:
+        return None
+
+    normalized = _normalize_period_text(raw)
+    match = re.search(r"\b(\d+)\s*([a-z]+)\b", normalized)
+    if match is None:
+        return None
+
+    amount = int(match.group(1))
+    unit = match.group(2)
+
+    if unit.startswith("dzien") or unit.startswith("dni") or unit.startswith("day"):
+        return (base + timedelta(days=amount)).date().isoformat()
+    if unit.startswith("tyg") or unit.startswith("week"):
+        return (base + timedelta(days=amount * 7)).date().isoformat()
+    if unit.startswith("mies") or unit.startswith("month"):
+        return _add_months(base, amount).date().isoformat()
+    if unit.startswith("rok") or unit.startswith("lat") or unit.startswith("year"):
+        return _add_months(base, amount * 12).date().isoformat()
+    return None
+
+
+def _parse_contract_notice_planned_execution_dates(
+    planned_execution_dates_raw: list[str] | None,
+    publication_date: str | None,
+) -> list[str | None] | None:
+    if not planned_execution_dates_raw:
+        return None
+    parsed: list[str | None] = []
+    for raw in planned_execution_dates_raw:
+        parsed.append(_parse_cpn_contract_planned_execution_date(raw, publication_date))
+    return parsed
+
+
 def _criteria_summary(criteria: list[dict] | None) -> tuple[int | None, int | None, int | None]:
     if not criteria:
         return None, None, None
@@ -424,6 +544,12 @@ normalize_tender_result_contractors_udf = udf(
     _normalize_tender_result_contractors_safe,
     ArrayType(CONTRACTOR_TRN_SCHEMA),
 )
+parse_organization_national_id_udf = udf(_parse_organization_national_id_safe, StringType())
+parse_cpn_contract_planned_execution_date_udf = udf(_parse_cpn_contract_planned_execution_date, StringType())
+parse_contract_notice_planned_execution_dates_udf = udf(
+    _parse_contract_notice_planned_execution_dates,
+    ArrayType(StringType()),
+)
 parse_cpv_udf = udf(_parse_cpv_safe, ArrayType(StringType()))
 normalize_name_udf = udf(_normalize_entity_name, StringType())
 normalize_contractors_udf = udf(_normalize_contractor_names, ArrayType(StringType()))
@@ -446,6 +572,8 @@ HTML_FULL_DERIVED_COLUMNS = {
     "priceWeight",
     "nonPriceWeightSum",
     "cn_notice_concerns",
+    "contract_planned_execution_date",
+    "contract_planned_execution_date_parsed",
     "cn_award_criteria_by_part",
     "cn_criteria_aspects_4310",
     "cn_criteria_aspects_4310_flag",
@@ -454,6 +582,9 @@ HTML_FULL_DERIVED_COLUMNS = {
     "cpvMainCode",
     "cpvSecondaryCode",
     "trn_notice_concerns",
+    "trn_value_bid_lowest",
+    "trn_value_bid_highest",
+    "trn_value_winning_offer",
     "trn_parts",
     "changed_notice_number",
     "changed_notice_version",
@@ -487,10 +618,15 @@ def build_silver_for_notice_type(
         out = out.withColumn("provinceName", province_udf(col("organizationProvince")))
     if "clientTypeName" in required:
         out = out.withColumn("clientTypeName", client_type_udf(col("clientType")))
+    if "organizationNationalId_parsed" in required:
+        out = out.withColumn(
+            "organizationNationalId_parsed",
+            parse_organization_national_id_udf(col("organizationCountry"), col("organizationNationalId")),
+        )
     if "procedureResultParsed" in required:
         out = out.withColumn("procedureResultParsed", split(col("procedureResult"), ";"))
     if "caseId" in required:
-        out = out.withColumn("caseId", coalesce(col("tenderId"), col("noticeNumber")))
+        out = out.withColumn("caseId", coalesce(col("tenderId"), col("objectId")))
     if "noticeStage" in required:
         out = out.withColumn(
             "noticeStage",
@@ -511,7 +647,7 @@ def build_silver_for_notice_type(
 
     need_html_full = bool(required & HTML_FULL_DERIVED_COLUMNS)
     use_ai_light = notice_type == "AgreementIntentionNotice" and not need_html_full
-    use_comp_light = notice_type == "CompetitionNotice" and not need_html_full
+    use_comp_light = notice_type in ("CompetitionNotice", "CompetitionResultNotice") and not need_html_full
     use_cpn_light = notice_type == "ContractPerformingNotice" and not need_html_full
     need_html_address = (
         ("street" in required or "postal_code" in required)
@@ -640,12 +776,20 @@ def build_silver_for_notice_type(
             if need_html_full
             else col("htmlLight.cpn_contract_date_41"),
         )
-    if "cpn_execution_period_42" in required:
+    if "cpn_contract_planned_execution_date_raw" in required:
         out = out.withColumn(
-            "cpn_execution_period_42",
-            col("htmlExtracted.cpn_execution_period_42")
+            "cpn_contract_planned_execution_date_raw",
+            col("htmlExtracted.cpn_contract_planned_execution_date_raw")
             if need_html_full
-            else col("htmlLight.cpn_execution_period_42"),
+            else col("htmlLight.cpn_contract_planned_execution_date_raw"),
+        )
+    if "cpn_contract_planned_execution_date_parsed" in required:
+        out = out.withColumn(
+            "cpn_contract_planned_execution_date_parsed",
+            parse_cpn_contract_planned_execution_date_udf(
+                col("cpn_contract_planned_execution_date_raw"),
+                col("cpn_contract_date_41"),
+            ),
         )
     if "cpn_execution_end_date_52" in required:
         out = out.withColumn(
@@ -703,6 +847,20 @@ def build_silver_for_notice_type(
             if need_html_full
             else col("htmlLight.comp_requirements_72"),
         )
+    if "comp_submission_deadline" in required:
+        out = out.withColumn(
+            "comp_submission_deadline",
+            col("htmlExtracted.comp_submission_deadline")
+            if need_html_full
+            else col("htmlLight.comp_submission_deadline"),
+        )
+    if "comp_result_approval_date_53" in required:
+        out = out.withColumn(
+            "comp_result_approval_date_53",
+            col("htmlExtracted.comp_result_approval_date_53")
+            if need_html_full
+            else col("htmlLight.comp_result_approval_date_53"),
+        )
     if "changed_notice_number" in required:
         out = out.withColumn(
             "changed_notice_number",
@@ -717,10 +875,20 @@ def build_silver_for_notice_type(
         out = out.withColumn("changes", col("htmlExtracted.notice_change.changes"))
     if "trn_notice_concerns" in required:
         out = out.withColumn("trn_notice_concerns", col("htmlExtracted.ogloszenie_dotyczy"))
+    if "trn_value_bid_lowest" in required:
+        out = out.withColumn("trn_value_bid_lowest", col("htmlExtracted.values.value_bid_lowest"))
+    if "trn_value_bid_highest" in required:
+        out = out.withColumn("trn_value_bid_highest", col("htmlExtracted.values.value_bid_highest"))
+    if "trn_value_winning_offer" in required:
+        out = out.withColumn(
+            "trn_value_winning_offer", col("htmlExtracted.values.value_winning_offer")
+        )
     if "trn_parts" in required:
         out = out.withColumn("trn_parts", col("htmlExtracted.tender_result_parts"))
     if required & {
         "cn_notice_concerns",
+        "contract_planned_execution_date",
+        "contract_planned_execution_date_parsed",
         "cn_award_criteria_by_part",
         "cn_criteria_aspects_4310",
         "cn_criteria_aspects_4310_flag",
@@ -743,6 +911,7 @@ def build_silver_for_notice_type(
                 "'kryteria_oceny', htmlExtracted.kryteria_oceny,"
                 "'mainCPV', cast(null as string),"
                 "'secondaryCPV', cast(array() as array<string>),"
+                "'contract_planned_execution_date', cast(null as string),"
                 "'criteria_aspects_4310', htmlExtracted.criteria_aspects_4310,"
                 "'criteria_aspects_4310_flag', htmlExtracted.criteria_aspects_4310_flag"
                 ")) END"
@@ -776,6 +945,19 @@ def build_silver_for_notice_type(
         )
     if "cn_description_by_part" in required:
         out = out.withColumn("cn_description_by_part", expr("transform(cn_parts_normalized, p -> p.opis)"))
+    if "contract_planned_execution_date" in required:
+        out = out.withColumn(
+            "contract_planned_execution_date",
+            expr("transform(cn_parts_normalized, p -> p.contract_planned_execution_date)"),
+        )
+    if "contract_planned_execution_date_parsed" in required:
+        out = out.withColumn(
+            "contract_planned_execution_date_parsed",
+            parse_contract_notice_planned_execution_dates_udf(
+                col("contract_planned_execution_date"),
+                col("publicationDate"),
+            ),
+        )
     if "cpvMainCode" in required:
         out = out.withColumn("cpvMainCode", expr("transform(cn_parts_normalized, p -> p.mainCPV)"))
     if "cpvSecondaryCode" in required:
@@ -879,12 +1061,19 @@ def build_silver(df: DataFrame) -> DataFrame:
         "value_competition_prizes_64",
         "value_competition_followon_order_651",
         "comp_requirements_72",
+        "comp_submission_deadline",
+        "comp_result_approval_date_53",
         "changed_notice_number",
         "changed_notice_version",
         "changes",
         "trn_notice_concerns",
+        "trn_value_bid_lowest",
+        "trn_value_bid_highest",
+        "trn_value_winning_offer",
         "trn_parts",
         "cn_notice_concerns",
+        "contract_planned_execution_date",
+        "contract_planned_execution_date_parsed",
         "cn_award_criteria_by_part",
         "cn_criteria_aspects_4310",
         "cn_criteria_aspects_4310_flag",

@@ -1,4 +1,4 @@
-# Silver Notice-Type Definitions (Observed)
+﻿# Silver Notice-Type Definitions (Observed)
 
 Source of truth for field structure: `src/procurement/silver/notice_types/definitions.py`.
 Examples and observed types below were read from real Silver parquets in `E:/git_projects/procurement-watchdog-api-exploration/data/silver`.
@@ -37,8 +37,8 @@ Generated at: 2026-02-20T21:25:29.278334Z
 | `caseId` | Case key used for cross-notice linking. | `string` | `ocds-148610-e213f724-877a-4483-9fa6-7d4106c3dcbb` | yes |
 | `cpvCode` | Raw CPV source string (legacy; not materialized currently). | `-` | `NULL` | no |
 | `cpvCodes` | Parsed CPV code list (canonical code format). | `array<string>` | `['50232100-1', '09300000-2']` | yes |
-| `contractors` | Contractor list from metadata (array of structs/maps). | `array<map<string,string>>` | `[{'contractorNationalId': '85262912', 'contractorName': 'ENEA Oświetlenie sp. z o.o', 'contractorCountry': 'PL', 'contractorCity': 'Szczecin', 'contractorProvince': 'PL32'}]` | yes |
-| `ai_street_512` | AgreementIntentionNotice field 5.1.2 street value. | `string` | `Ku Słońcu 34` | yes |
+| `contractors` | Contractor list from metadata (array of structs/maps). | `array<map<string,string>>` | `[{'contractorNationalId': '85262912', 'contractorName': 'ENEA OĹ›wietlenie sp. z o.o', 'contractorCountry': 'PL', 'contractorCity': 'Szczecin', 'contractorProvince': 'PL32'}]` | yes |
+| `ai_street_512` | AgreementIntentionNotice field 5.1.2 street value. | `string` | `Ku SĹ‚oĹ„cu 34` | yes |
 | `value_estimated_procurement_ai_35` | AgreementIntentionNotice field 3.5 estimated procurement value. | `double` | `24390.24` | yes |
 | `ai_prior_market_consultation_31` | AgreementIntentionNotice field 3.1 consultation flag/text. | `string` | `Nie` | yes |Ok, 
 
@@ -91,7 +91,7 @@ Generated at: 2026-02-20T21:25:29.278334Z
 | `caseId` | Case key used for cross-notice linking. | `string` | `ocds-148610-4d025651-4654-11ee-a60c-9ec5599dddc1` | yes |
 | `cpvCode` | Raw CPV source string (legacy; not materialized currently). | `-` | `NULL` | no |
 | `cpvCodes` | Parsed CPV code list (canonical code format). | `array<string>` | `['45233220-7']` | yes |
-| `contractors` | Contractor list from metadata (array of structs/maps). | `array<map<string,string>>` | `[{'contractorNationalId': '7692220795', 'contractorName': 'Przediębiorstwo Komunikacji, Transportu i Usług Komunalnych Gminy Belchatów Sp. z o.o.', 'contractorCountry': 'PL', 'contractorCity': 'Bełchatów', 'contractorPro` | yes |
+| `contractors` | Contractor list from metadata (array of structs/maps). | `array<map<string,string>>` | `[{'contractorNationalId': '7692220795', 'contractorName': 'PrzediÄ™biorstwo Komunikacji, Transportu i UsĹ‚ug Komunalnych Gminy BelchatĂłw Sp. z o.o.', 'contractorCountry': 'PL', 'contractorCity': 'BeĹ‚chatĂłw', 'contractorPro` | yes |
 
 ## CompetitionNotice
 
@@ -145,11 +145,11 @@ Generated at: 2026-02-20T21:25:29.278334Z
 | `numCriteria` | Number of evaluation criteria parsed (ContractNotice logic). | `int` | `2` | yes |
 | `priceWeight` | Sum of price-related criterion weights. | `int` | `60` | yes |
 | `nonPriceWeightSum` | Sum of non-price criterion weights. | `int` | `40` | yes |
-| `cn_notice_concerns` | ContractNotice field 2.1 scope (what notice concerns). | `string` | `Zamówienia publicznego` | yes |
-| `cn_award_criteria_by_part` | ContractNotice criteria-by-part map list (criterion -> weight). | `array<map<string,int>>` | `[{'Czas reakcji na zgłoszoną reklamację, tj. usuniecie zgłoszonych nieprawidłowości w wykonaniu usługi sprzątania': 40, 'Cena': 60}]` | yes |
+| `cn_notice_concerns` | ContractNotice field 2.1 scope (what notice concerns). | `string` | `ZamĂłwienia publicznego` | yes |
+| `cn_award_criteria_by_part` | ContractNotice criteria-by-part map list (criterion -> weight). | `array<map<string,int>>` | `[{'Czas reakcji na zgĹ‚oszonÄ… reklamacjÄ™, tj. usuniecie zgĹ‚oszonych nieprawidĹ‚owoĹ›ci w wykonaniu usĹ‚ugi sprzÄ…tania': 40, 'Cena': 60}]` | yes |
 | `cn_criteria_aspects_4310` | ContractNotice field 4.3.10 text by part. | `array<string>` | `['Nie']` | yes |
 | `cn_criteria_aspects_4310_flag` | Parsed boolean from 4.3.10 by part. | `array<boolean>` | `[False]` | yes |
-| `cn_description_by_part` | ContractNotice short description(s) by part. | `array<string>` | `['1.\tUsługa codziennego sprzątania budynku polega na wykonywaniu następujących czynności: 1)\tsprzątaniu pomieszczeń biurowych i korytarzy z użyciem środków chemicznych adekwatnych do czyszczonych powierzchni, w tym: a)` | yes |
+| `cn_description_by_part` | ContractNotice short description(s) by part. | `array<string>` | `['1.\tUsĹ‚uga codziennego sprzÄ…tania budynku polega na wykonywaniu nastÄ™pujÄ…cych czynnoĹ›ci: 1)\tsprzÄ…taniu pomieszczeĹ„ biurowych i korytarzy z uĹĽyciem Ĺ›rodkĂłw chemicznych adekwatnych do czyszczonych powierzchni, w tym: a)` | yes |
 | `submittingOffersDate` | Offer submission deadline timestamp. | `string` | `2025-11-13T09:00:00Z` | yes |
 
 ## ContractPerformingNotice
@@ -192,7 +192,7 @@ Generated at: 2026-02-20T21:25:29.278334Z
 | `cpvCode` | Raw CPV source string (legacy; not materialized currently). | `-` | `NULL` | no |
 | `changed_notice_number` | NoticeUpdateNotice: referenced changed notice number. | `string` | `2025/BZP 00453384` | yes |
 | `changed_notice_version` | NoticeUpdateNotice: referenced changed notice version. | `string` | `01` | yes |
-| `changes` | NoticeUpdateNotice flattened change entries. | `array<struct<changed_section:string,change_description:string>>` | `[Row(changed_section='SEKCJA V - KWALIFIKACJA WYKONAWCÓW', change_description='Przed zmianą: Zamawiający żąda złożenia przedmiotowych środków dowodowych: 1.1. ISO 9001:2015 lub dokument równoważny wystawiony na producent` | yes |
+| `changes` | NoticeUpdateNotice flattened change entries. | `array<struct<changed_section:string,change_description:string>>` | `[Row(changed_section='SEKCJA V - KWALIFIKACJA WYKONAWCĂ“W', change_description='Przed zmianÄ…: ZamawiajÄ…cy ĹĽÄ…da zĹ‚oĹĽenia przedmiotowych Ĺ›rodkĂłw dowodowych: 1.1. ISO 9001:2015 lub dokument rĂłwnowaĹĽny wystawiony na producent` | yes |
 
 ## SmallContractNotice
 
@@ -226,5 +226,9 @@ Generated at: 2026-02-20T21:25:29.278334Z
 | `contractors` | Contractor list from metadata (array of structs/maps). | `array<map<string,string>>` | `[{'contractorNationalId': '8132743570', 'contractorName': 'P.P.H.U. ITALIA Migut Dariusz', 'contractorCountry': 'PL', 'contractorCity': 'Malawa', 'contractorProvince': None}]` | yes |
 | `procedureResult` | TenderResultNotice procedure result text. | `string` | `zawarcieUmowy` | yes |
 | `procedureResultParsed` | Parsed procedureResult list. | `array<string>` | `['zawarcieUmowy']` | yes |
-| `trn_notice_concerns` | TenderResultNotice field 2.1 scope. | `string` | `Zamówienia publicznego` | yes |
-| `trn_parts` | TenderResultNotice part-level parsed struct list. | `array<struct<part_id:string,opis:string,mainCPV:string,secondaryCPV:array<string>,value_estimated_procurement:double>>` | `[Row(part_id=None, opis='1.\tPrzedmiotem zamówienia jest remont segmentów mieszkalnych w D.S. „HILTON”      . 2. Szczegółowy opis oraz sposób realizacji zamówienia zawiera Opis przedmiotu zamówienia (OPZ), stanowiący Zał` | yes |
+| `trn_notice_concerns` | TenderResultNotice field 2.1 scope. | `string` | `ZamĂłwienia publicznego` | yes |
+| 	rn_value_bid_lowest | TenderResultNotice lowest bid value (field 6.2). | double | 400000.0 | yes |
+| 	rn_value_bid_highest | TenderResultNotice highest bid value (field 6.3). | double | 550000.0 | yes |
+| 	rn_value_winning_offer | TenderResultNotice winning offer value (field 6.4). | double | 465163.88 | yes |
+| 	rn_parts | TenderResultNotice part-level parsed struct list. | `array<struct<part_id:string,opis:string,mainCPV:string,secondaryCPV:array<string>,value_estimated_procurement:double>>` | `[Row(part_id=None, opis='1.\tPrzedmiotem zamĂłwienia jest remont segmentĂłw mieszkalnych w D.S. â€žHILTONâ€ť      . 2. SzczegĂłĹ‚owy opis oraz sposĂłb realizacji zamĂłwienia zawiera Opis przedmiotu zamĂłwienia (OPZ), stanowiÄ…cy ZaĹ‚` | yes |
+

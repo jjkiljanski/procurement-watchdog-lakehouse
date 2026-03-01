@@ -43,7 +43,7 @@ Core transformation module:
 
 Key semantics:
 
-- `caseId` as canonical case key (`tenderId` fallback to `noticeNumber`).
+- `caseId` as canonical case key (`tenderId` fallback to `objectId`).
 - `noticeStage` classification (`INIT`, `UPDATE`, `RESULT`, `EXECUTION`).
 - `htmlExtracted` nested struct for parsed values/lots/execution/change fields.
 - derived operational fields (`biddingWindowDays`, `priceWeight`, `paidRatio`, change flags, execution risk flags).

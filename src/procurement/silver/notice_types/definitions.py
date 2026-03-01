@@ -99,6 +99,23 @@ COMPETITION_NOTICE_SPECIFIC_COLUMNS = [
     "value_competition_prizes_64",
     "value_competition_followon_order_651",
     "comp_requirements_72",
+    "comp_submission_deadline",
+]
+
+COMPETITION_RESULT_NOTICE_SPECIFIC_COLUMNS = [
+    c
+    for c in BASE_SPECIFIC_COLUMNS
+    if c
+    not in {
+        "contractors",
+        "numCriteria",
+        "priceWeight",
+        "nonPriceWeightSum",
+        "contractorNameNormalized",
+        "htmlExtracted",
+    }
+] + [
+    "comp_result_approval_date_53",
 ]
 
 CONCESSION_NOTICE_SPECIFIC_COLUMNS = [
@@ -123,6 +140,8 @@ CONTRACT_NOTICE_SPECIFIC_COLUMNS = [
     if c not in {"contractors", "contractorNameNormalized", "htmlExtracted"}
 ] + [
     "cn_notice_concerns",
+    "contract_planned_execution_date",
+    "contract_planned_execution_date_parsed",
     "criteria",
     "cn_award_criteria_by_part",
     "cn_criteria_aspects_4310",
@@ -153,7 +172,8 @@ CONTRACT_PERFORMING_SPECIFIC_COLUMNS = [
     "cpn_contractor_provinces_436",
     "cpn_contractor_countries_437",
     "cpn_contract_date_41",
-    "cpn_execution_period_42",
+    "cpn_contract_planned_execution_date_raw",
+    "cpn_contract_planned_execution_date_parsed",
     "cpn_execution_end_date_52",
     "executed_in_time",
     "proper_execution",
@@ -176,6 +196,9 @@ TENDER_RESULT_SPECIFIC_COLUMNS = [
     "procedureResult",
     "procedureResultParsed",
     "trn_notice_concerns",
+    "trn_value_bid_lowest",
+    "trn_value_bid_highest",
+    "trn_value_winning_offer",
     "trn_parts",
 ]
 
@@ -309,6 +332,11 @@ _NOTICE_TYPE_DEFINITIONS: dict[str | None, NoticeTypeDefinition] = {
     "CompetitionNotice": NoticeTypeDefinition(
         notice_type="CompetitionNotice",
         specific_columns=tuple(COMPETITION_NOTICE_SPECIFIC_COLUMNS),
+        html_extracted_fields=tuple(),
+    ),
+    "CompetitionResultNotice": NoticeTypeDefinition(
+        notice_type="CompetitionResultNotice",
+        specific_columns=tuple(COMPETITION_RESULT_NOTICE_SPECIFIC_COLUMNS),
         html_extracted_fields=tuple(),
     ),
     "ConcessionNotice": NoticeTypeDefinition(
