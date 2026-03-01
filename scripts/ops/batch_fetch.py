@@ -18,7 +18,7 @@ from pathlib import Path
 SCRIPTS_DIR = Path(__file__).resolve().parent
 PIPELINE_DIR = SCRIPTS_DIR.parent / "pipeline"
 
-sys.path.insert(0, str(SCRIPTS_DIR.parent / "src"))
+sys.path.insert(0, str(SCRIPTS_DIR.parent.parent / "src"))
 from procurement.logging import setup_logging
 
 setup_logging()

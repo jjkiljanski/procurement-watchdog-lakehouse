@@ -20,7 +20,7 @@ from datetime import date, timedelta
 from pathlib import Path
 
 # Allow imports from project root / src
-_src = str(Path(__file__).resolve().parent.parent / "src")
+_src = str(Path(__file__).resolve().parent.parent.parent / "src")
 sys.path.insert(0, _src)
 # Also propagate to Spark worker processes via PYTHONPATH
 os.environ["PYTHONPATH"] = _src + os.pathsep + os.environ.get("PYTHONPATH", "")
@@ -539,7 +539,7 @@ def main() -> None:
         else:
             log.info("Profile summary: %s", profile)
 
-        repo_root = Path(__file__).resolve().parent.parent
+        repo_root = Path(__file__).resolve().parent.parent.parent
         input_manifest: dict
         if use_bronze:
             input_manifest = {

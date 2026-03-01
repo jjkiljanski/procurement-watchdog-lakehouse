@@ -68,7 +68,7 @@ from pyspark.sql.functions import (
 from pyspark.sql.types import ArrayType, DataType, StructType
 
 # Allow imports from project root / src
-_src = str(Path(__file__).resolve().parent.parent / "src")
+_src = str(Path(__file__).resolve().parent.parent.parent / "src")
 sys.path.insert(0, _src)
 os.environ["PYTHONPATH"] = _src + os.pathsep + os.environ.get("PYTHONPATH", "")
 os.environ["PYSPARK_PYTHON"] = sys.executable

@@ -19,7 +19,7 @@ from datetime import date, timedelta
 from pathlib import Path
 
 # Allow imports from project root / src
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
 
 import pyarrow.dataset as ds
 

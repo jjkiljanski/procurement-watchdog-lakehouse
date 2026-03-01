@@ -22,7 +22,7 @@ from datetime import date, timedelta
 from pathlib import Path
 
 # Allow imports from project root / src
-_src = str(Path(__file__).resolve().parent.parent / "src")
+_src = str(Path(__file__).resolve().parent.parent.parent / "src")
 sys.path.insert(0, _src)
 os.environ["PYTHONPATH"] = _src + os.pathsep + os.environ.get("PYTHONPATH", "")
 
@@ -389,7 +389,7 @@ def main() -> None:
         for (nt, day), cnt in sorted(partition_counter.items(), key=lambda x: (x[0][1], x[0][0]))
     ]
 
-    repo_root = Path(__file__).resolve().parent.parent
+    repo_root = Path(__file__).resolve().parent.parent.parent
     meta_path = bronze_dir / "_meta" / f"day={target_date}.json"
     inserted_seen = _update_seen_index(
         index_db_path=index_db_path,

@@ -23,7 +23,7 @@ from pyspark.sql.functions import avg, coalesce, col, expr, lit, size, struct, w
 from pyspark.sql.types import ArrayType, MapType
 
 # Allow imports from project root / src
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
 
 from procurement.gold.spark_transforms import (  # noqa: E402
     build_gold_buyer_mart,

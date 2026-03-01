@@ -12,3 +12,4 @@ Quick links:
 - `docs/runbooks/OPERATING_MODES.md`
 - `docs/runbooks/CASE_DERIVED_CONCURRENCY.md`
 - `docs/deployment/ENV_REQUIREMENTS.md`
+- `CONTRIBUTING.md`

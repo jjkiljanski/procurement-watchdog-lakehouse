@@ -24,7 +24,7 @@ import time
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
-_src = str(Path(__file__).resolve().parent.parent / "src")
+_src = str(Path(__file__).resolve().parent.parent.parent / "src")
 sys.path.insert(0, _src)
 os.environ["PYTHONPATH"] = _src + os.pathsep + os.environ.get("PYTHONPATH", "")
 os.environ["PYSPARK_PYTHON"] = sys.executable
@@ -537,7 +537,7 @@ def main() -> None:
     try:
         failed: list[str] = []
         run_started = now_utc_iso()
-        repo_root = Path(__file__).resolve().parent.parent
+        repo_root = Path(__file__).resolve().parent.parent.parent
         common_script_hashes = script_hashes(
             [
                 Path(__file__).resolve(),

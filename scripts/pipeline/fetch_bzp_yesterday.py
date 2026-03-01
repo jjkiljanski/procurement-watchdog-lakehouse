@@ -12,7 +12,7 @@ from pathlib import Path
 import requests
 
 # Allow imports from project root / src
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
 
 from procurement.lineage import atomic_write_json, git_commit_sha, now_utc_iso, script_hashes, sha256_file
 from procurement.logging import setup_logging
@@ -176,7 +176,7 @@ def main() -> None:
     output_path.write_text(json.dumps(filtered_notices, ensure_ascii=False, indent=2), encoding="utf-8")
     log.info("Saved to %s", output_path)
 
-    repo_root = Path(__file__).resolve().parent.parent
+    repo_root = Path(__file__).resolve().parent.parent.parent
     meta_path = output_dir / "_meta" / f"fetch_day={target_date.isoformat()}.json"
     manifest = {
         "layer": "bronze_raw",
@@ -209,4 +209,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

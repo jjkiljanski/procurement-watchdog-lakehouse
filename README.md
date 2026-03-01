@@ -110,6 +110,10 @@ Direct Python runs are also possible if local Spark/PySpark is configured.
 pytest -q
 ```
 
+## Contributing
+
+See `CONTRIBUTING.md` for repository structure, naming conventions, artifact policy, and documentation update rules.
+
 ## Repository Structure
 
 ```text
