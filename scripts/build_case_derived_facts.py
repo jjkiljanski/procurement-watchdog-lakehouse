@@ -233,22 +233,30 @@ def _add_cpv_features(
 def _flatten_enum_items(items: list[dict]) -> list[tuple[str, str]]:
     out: list[tuple[str, str]] = []
 
-    def _walk(node: dict) -> None:
+    def _join_labels(parts: list[str]) -> str:
+        cleaned = [p.strip() for p in parts if p and p.strip()]
+        if not cleaned:
+            return ""
+        return " ".join(cleaned)
+
+    def _walk(node: dict, path_labels: list[str]) -> None:
         identifier = node.get("identifier")
         key = node.get("key")
+        key_label = str(key).strip() if key is not None else ""
+        full_label = _join_labels([*path_labels, key_label])
         if identifier is not None and key is not None:
-            out.append((str(identifier), str(key)))
+            out.append((str(identifier), full_label))
         children = node.get("items")
         if children is None:
             children = node.get("Items")
         if isinstance(children, list):
             for child in children:
                 if isinstance(child, dict):
-                    _walk(child)
+                    _walk(child, [*path_labels, key_label])
 
     for item in items:
         if isinstance(item, dict):
-            _walk(item)
+            _walk(item, [])
     return out
 
 
