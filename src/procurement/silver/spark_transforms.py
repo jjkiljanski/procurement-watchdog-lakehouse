@@ -31,7 +31,7 @@ from pyspark.sql.types import (
     StructType,
 )
 
-from procurement.dictionaries import client_type_names, province_names
+from procurement.dictionaries import client_type_names, order_type_names, province_names
 from procurement.silver.html_parser import (
     classify_contractor_id_for_notice,
     normalize_tender_result_contractors,
@@ -601,6 +601,7 @@ def build_silver_for_notice_type(
     required = set(required_columns or [])
     province_udf = _make_lookup_udf(province_names())
     client_type_udf = _make_lookup_udf(client_type_names())
+    order_type_udf = _make_lookup_udf(order_type_names())
     out = df.filter(col("htmlBody").endswith("</html>"))
 
     need_contractors = "contractors" in required or "contractorNameNormalized" in required
@@ -618,6 +619,10 @@ def build_silver_for_notice_type(
         out = out.withColumn("provinceName", province_udf(col("organizationProvince")))
     if "clientTypeName" in required:
         out = out.withColumn("clientTypeName", client_type_udf(col("clientType")))
+    if "orderType" in required:
+        # Normalize ENUM.002 identifier to Polish label
+        # (e.g. Delivery -> Dostawy), preserving unknown values.
+        out = out.withColumn("orderType", coalesce(order_type_udf(col("orderType")), col("orderType")))
     if "organizationNationalId_parsed" in required:
         out = out.withColumn(
             "organizationNationalId_parsed",

@@ -1,7 +1,7 @@
-"""Load official BZP dictionary files from refs/bzp_api/.
+﻿"""Load official BZP dictionary files from refs/bzp_api/.
 
 Each dictionary JSON has a nested tree structure with {key, identifier, Items}.
-This module flattens them into simple identifier → key mappings.
+This module flattens them into simple identifier â†’ key mappings.
 """
 
 from __future__ import annotations
@@ -35,17 +35,19 @@ def _load_dict(filename: str) -> dict[str, str]:
 
 @lru_cache(maxsize=1)
 def province_names() -> dict[str, str]:
-    """Map province code → name (e.g. 'PL14' → 'mazowieckie')."""
+    """Map province code â†’ name (e.g. 'PL14' â†’ 'mazowieckie')."""
     return _load_dict("SL.MT.007.json")
 
 
 @lru_cache(maxsize=1)
 def client_type_names() -> dict[str, str]:
-    """Map clientType code → description (e.g. '1.1.2' → 'jednostka samorządu terytorialnego')."""
+    """Map clientType code â†’ description (e.g. '1.1.2' â†’ 'jednostka samorzÄ…du terytorialnego')."""
     return _load_dict("SL.MO.013.json")
 
 
 @lru_cache(maxsize=1)
 def order_type_names() -> dict[str, str]:
-    """Map orderType code → Polish name (e.g. 'Delivery' → 'Dostawy')."""
+    """Map orderType code â†’ Polish name (e.g. 'Delivery' â†’ 'Dostawy')."""
     return _load_dict("ENUM.002.json")
+
+
