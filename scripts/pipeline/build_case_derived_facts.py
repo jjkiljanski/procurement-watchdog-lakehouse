@@ -818,6 +818,24 @@ def _build_notice_specific_features(specific_rows: DataFrame) -> DataFrame:
         spark_min(
             expr(
                 "named_struct('is_null', CASE WHEN noticeType='TenderResultNotice' "
+                "THEN CASE WHEN trn_value_bid_lowest IS NOT NULL AND trn_value_bid_highest IS NOT NULL THEN 0 ELSE 1 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='TenderResultNotice' AND trn_value_bid_lowest IS NOT NULL AND trn_value_bid_highest IS NOT NULL "
+                "THEN trn_value_bid_highest - trn_value_bid_lowest END)"
+            )
+        ).getField("v").alias("offers_value_spread"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='TenderResultNotice' "
+                "THEN CASE WHEN trn_value_bid_lowest IS NOT NULL AND trn_value_bid_highest IS NOT NULL AND trn_value_winning_offer IS NOT NULL AND trn_value_winning_offer <> 0 THEN 0 ELSE 1 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='TenderResultNotice' AND trn_value_bid_lowest IS NOT NULL AND trn_value_bid_highest IS NOT NULL AND trn_value_winning_offer IS NOT NULL AND trn_value_winning_offer <> 0 "
+                "THEN (trn_value_bid_highest - trn_value_bid_lowest) / trn_value_winning_offer END)"
+            )
+        ).getField("v").alias("offers_value_spread_standardized"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='TenderResultNotice' "
                 "THEN CASE WHEN coalesce(element_at(cpvMainCode, 1), cpvCode, element_at(cpvCodes, 1)) IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
                 "'ts', publication_ts, "
                 "'v', CASE WHEN noticeType='TenderResultNotice' THEN coalesce(element_at(cpvMainCode, 1), cpvCode, element_at(cpvCodes, 1)) END)"
