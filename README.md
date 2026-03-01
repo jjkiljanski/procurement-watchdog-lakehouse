@@ -85,9 +85,29 @@ Built by `scripts/pipeline/build_gold.py`:
 - `scripts/pipeline/build_gold.py` - Gold marts/signals
 - `scripts/pipeline/build_run_stats.py` - run-level reporting artifacts
 - `scripts/ops/run_pipeline.py` - local orchestrator wrapper
+- `scripts/ops/run_transforms_for_day.py` - bronze/silver/case-derived/gold stack (without fetch)
+- `scripts/ops/run_backfill_finalize.py` - full finalize for backfill (`case_derived` + `gold --scope asof`)
 - `scripts/ops/backfill_parallel.py` - bounded parallel backfill runner
 - `scripts/dev/*` - exploratory one-off tools (non-prod)
 - `docs/runbooks/OPERATING_MODES.md` - operational runbook (daily vs backfill + restart semantics)
+
+## GCP Runtime Images
+
+This repo provides three deployable runtime adapters that reuse the same core scripts as local runs:
+
+- `downloader`: job adapter for API fetch (`apps/downloader/main.py`)
+- `dispatcher`: HTTP service that picks next backfill date and triggers downloader (`apps/dispatcher/main.py`)
+- `launcher`: HTTP service that triggers pipeline launch command (`apps/launcher/main.py`)
+
+Build commands:
+
+```bash
+docker build -t procurement-downloader -f Dockerfile.downloader .
+docker build -t procurement-dispatcher -f Dockerfile.dispatcher .
+docker build -t procurement-launcher -f Dockerfile.launcher .
+```
+
+Runtime env contracts are documented in `docs/deployment/RUNTIME_CONTRACTS.md`.
 
 ## Local Execution
 
@@ -126,6 +146,11 @@ scripts/
   pipeline/
   ops/
   dev/
+apps/
+  downloader/
+  dispatcher/
+  launcher/
+  common/
 tests/
 docs/
 examples/
