@@ -744,7 +744,18 @@ def _build_contract_notice_core_model(soup: BeautifulSoup) -> ContractNoticeCore
         return None
 
 
-def _extract_contract_notice_parts(soup: BeautifulSoup) -> list[ContractNoticePart] | None:
+def _stringify_section_dict(payload: dict) -> dict[str, str]:
+    out: dict[str, str] = {}
+    for key, value in payload.items():
+        if value is None:
+            continue
+        out[str(key)] = str(value)
+    return out
+
+
+def _extract_contract_notice_parts(
+    soup: BeautifulSoup,
+) -> tuple[list[ContractNoticePart] | None, list[dict[str, str]] | None]:
     """Extract per-part criteria + CPV blocks from ContractNotice SEKCJA IV.
 
     This path is section-first: chunk sections by part, validate/normalize via
@@ -756,6 +767,7 @@ def _extract_contract_notice_parts(soup: BeautifulSoup) -> list[ContractNoticePa
         return None
 
     parts: list[ContractNoticePart] = []
+    parts_raw_sections: list[dict[str, str]] = []
     chunks = _extract_contract_notice_part_chunks(h3s)
     part_field_names = {
         name for name in ContractNoticePartRaw.model_fields.keys() if name.startswith("cn_section_")
@@ -793,6 +805,7 @@ def _extract_contract_notice_parts(soup: BeautifulSoup) -> list[ContractNoticePa
             part_raw = ContractNoticePartRaw(**section_payload)
         except ValidationError:
             part_raw = ContractNoticePartRaw()
+        part_raw_map = _stringify_section_dict(part_raw.model_dump(exclude_none=True))
 
         criteria: list[EvalCriterion] = []
         opis: str | None = part_raw.cn_section_4_2_2
@@ -842,8 +855,9 @@ def _extract_contract_notice_parts(soup: BeautifulSoup) -> list[ContractNoticePa
                 criteria_aspects_4310_flag=aspects_flag if aspects_flag is not None else part_raw.cn_section_8_5_flag,
             )
         )
+        parts_raw_sections.append(part_raw_map)
 
-    return parts or None
+    return parts or None, parts_raw_sections or None
 
 
 # --- Type-specific value extraction ---
@@ -1429,9 +1443,10 @@ def parse_html(
         opis = _extract_description(soup)
         kryteria = _extract_criteria(soup)
         criteria_aspects_4310, criteria_aspects_4310_flag = _extract_criteria_aspects_4310(soup)
-    contract_notice_parts = (
-        _extract_contract_notice_parts(soup) if notice_type == "ContractNotice" else None
-    )
+    contract_notice_parts = None
+    contract_notice_parts_sections = None
+    if notice_type == "ContractNotice":
+        contract_notice_parts, contract_notice_parts_sections = _extract_contract_notice_parts(soup)
     if notice_type == "ContractNotice" and contract_notice_parts:
         first_part = contract_notice_parts[0]
         opis = first_part.opis or opis
@@ -1501,6 +1516,10 @@ def parse_html(
         )
         cn_offers_scope_4110 = _map_cn_offers_scope(raw_4110) if raw_4110 is not None else _extract_cn_offers_scope_4110(soup)
 
+    contract_notice_core_sections = None
+    if notice_type == "ContractNotice" and core_model is not None:
+        contract_notice_core_sections = _stringify_section_dict(core_model.model_dump(exclude_none=True))
+
     # Type-aware value extraction
     values = None
     if notice_type and notice_type in _VALUE_EXTRACTORS:
@@ -1525,6 +1544,8 @@ def parse_html(
         criteria_aspects_4310=criteria_aspects_4310,
         criteria_aspects_4310_flag=criteria_aspects_4310_flag,
         contract_notice_parts=contract_notice_parts,
+        contract_notice_core_sections=contract_notice_core_sections,
+        contract_notice_parts_sections=contract_notice_parts_sections,
         values=values,
         lots=lots,
         tender_result_parts=tender_result_parts,

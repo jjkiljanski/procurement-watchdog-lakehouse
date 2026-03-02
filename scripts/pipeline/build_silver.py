@@ -481,8 +481,13 @@ def main() -> None:
                         .parquet(quarantine_root)
                     )
 
-                specific_df = _select_existing(valid_batch, ["caseId_shard", *specific_columns])
-                specific_df = _compact_html_extracted(specific_df, html_fields)
+                if notice_type == "ContractNotice":
+                    # ContractNotice uses section-driven parsing model; keep full output.
+                    specific_df = valid_batch
+                else:
+                    # Other notice types still use selective schema projection.
+                    specific_df = _select_existing(valid_batch, ["caseId_shard", *specific_columns])
+                    specific_df = _compact_html_extracted(specific_df, html_fields)
                 specific_out = str(specific_root / f"noticeType={notice_type_token}")
                 specific_day_dir = specific_root / f"noticeType={notice_type_token}" / f"publicationDateDay={target_date}"
                 if specific_day_dir.exists():

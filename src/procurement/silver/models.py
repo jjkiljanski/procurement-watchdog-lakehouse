@@ -122,6 +122,8 @@ class HtmlExtracted(BaseModel):
     criteria_aspects_4310: str | None = None
     criteria_aspects_4310_flag: bool | None = None
     contract_notice_parts: list[ContractNoticePart] | None = None
+    contract_notice_core_sections: dict[str, str] | None = None
+    contract_notice_parts_sections: list[dict[str, str]] | None = None
     values: ExtractedValues | None = None
     lots: list[TenderResultLot] | None = None
     tender_result_parts: list[TenderResultPart] | None = None

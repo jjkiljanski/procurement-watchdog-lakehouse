@@ -28,6 +28,7 @@ from pyspark.sql.types import (
     BooleanType,
     DoubleType,
     IntegerType,
+    MapType,
     StringType,
     StructField,
     StructType,
@@ -43,6 +44,10 @@ from procurement.silver.html_parser import (
     parse_html_agreement_intention_light,
     parse_html_competition_light,
     parse_html_contract_performing_light,
+)
+from procurement.silver.notice_types.contract_notice_split_models import (
+    ContractNoticeCoreRaw,
+    ContractNoticePartRaw,
 )
 
 log = logging.getLogger(__name__)
@@ -149,6 +154,11 @@ HTML_EXTRACTED_SCHEMA = StructType(
         StructField("criteria_aspects_4310", StringType()),
         StructField("criteria_aspects_4310_flag", BooleanType()),
         StructField("contract_notice_parts", ArrayType(CONTRACT_NOTICE_PART_SCHEMA)),
+        StructField("contract_notice_core_sections", MapType(StringType(), StringType())),
+        StructField(
+            "contract_notice_parts_sections",
+            ArrayType(MapType(StringType(), StringType())),
+        ),
         StructField("values", EXTRACTED_VALUES_SCHEMA),
         StructField("lots", ArrayType(TENDER_RESULT_LOT_SCHEMA)),
         StructField("tender_result_parts", ArrayType(TENDER_RESULT_PART_SCHEMA)),
@@ -1052,6 +1062,14 @@ def build_silver_for_notice_type(
                 ),
             )
 
+    if notice_type == "ContractNotice" and "htmlExtracted" in out.columns:
+        # Expose all ContractNotice core sections as first-class columns.
+        for section_col in ContractNoticeCoreRaw.model_fields.keys():
+            out = out.withColumn(
+                section_col,
+                col("htmlExtracted.contract_notice_core_sections").getItem(section_col),
+            )
+
     drop_cols = ["htmlBody", "cpvCode"]
     if "htmlAddress" in out.columns:
         drop_cols.append("htmlAddress")
@@ -1137,10 +1155,15 @@ def build_contract_notice_parts_table(df: DataFrame) -> DataFrame:
             col("caseId_shard"),
             col("tenderId"),
             col("organizationId"),
+            col("htmlExtracted.contract_notice_parts_sections").alias("parts_sections_raw_arr"),
             posexplode_outer(col("htmlExtracted.contract_notice_parts")).alias("part_ordinal0", "part"),
         )
         .where(col("part").isNotNull())
         .withColumn("part_ordinal", col("part_ordinal0") + lit(1))
+        .withColumn(
+            "part_sections_raw",
+            expr("element_at(parts_sections_raw_arr, part_ordinal0 + 1)"),
+        )
         .withColumn("part_id", coalesce(col("part.part_id"), col("part_ordinal").cast("string")))
         .withColumn("part_description", col("part.opis"))
         .withColumn("part_main_cpv", col("part.mainCPV"))
@@ -1185,7 +1208,13 @@ def build_contract_notice_parts_table(df: DataFrame) -> DataFrame:
         )
         .withColumn("part_criteria_aspects_4310", col("part.criteria_aspects_4310"))
         .withColumn("part_criteria_aspects_4310_flag", col("part.criteria_aspects_4310_flag"))
-        .drop("part_ordinal0", "part")
+        .drop("part_ordinal0", "parts_sections_raw_arr", "part")
     )
+    for section_col in ContractNoticePartRaw.model_fields.keys():
+        parts = parts.withColumn(
+            section_col,
+            col("part_sections_raw").getItem(section_col),
+        )
+
     return parts
 

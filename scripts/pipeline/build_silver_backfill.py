@@ -383,8 +383,13 @@ def _process_day(
                 batch_valid_rows = batch_silver_rows - batch_invalid_rows
                 total_invalid_rows += batch_invalid_rows
 
-                specific_df = _select_existing(valid_batch, ["caseId_shard", *specific_columns])
-                specific_df = _compact_html_extracted(specific_df, html_fields)
+                if notice_type == "ContractNotice":
+                    # ContractNotice uses section-driven parsing model; keep full output.
+                    specific_df = valid_batch
+                else:
+                    # Other notice types still use selective schema projection.
+                    specific_df = _select_existing(valid_batch, ["caseId_shard", *specific_columns])
+                    specific_df = _compact_html_extracted(specific_df, html_fields)
                 specific_day_dir = silver_dir / "notice_type_tables" / f"noticeType={notice_token}" / f"publicationDateDay={day}"
                 _safe_rmtree(specific_day_dir, f"specific day dir noticeType={notice_token}")
                 (
