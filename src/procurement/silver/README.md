@@ -59,7 +59,7 @@ Key semantics:
 - and without criteria/weight/contractor-normalization fields that are null for this type).
 - `AgreementUpdateNotice` specific table drops `numCriteria`, `priceWeight`, `nonPriceWeightSum`, `contractorNameNormalized`, and `htmlExtracted`.
 - `ContractNotice` specific table drops `contractors`, `contractorNameNormalized`, and `htmlExtracted`, and emits:
-- `cn_notice_concerns`, `cn_award_criteria_by_part`, `cn_criteria_aspects_4310`,
+- `cn_notice_concerns`, `cn_partial_offers_allowed_418`, `cn_award_criteria_by_part`, `cn_criteria_aspects_4310`,
 - `cn_criteria_aspects_4310_flag`, `cn_description_by_part`.
 - `ContractPerformingNotice` specific table drops `htmlExtracted`, `numCriteria`, `priceWeight`, `nonPriceWeightSum`,
 - `contractorNameNormalized`,

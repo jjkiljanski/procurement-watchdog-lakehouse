@@ -631,6 +631,13 @@ def _extract_criteria_aspects_4310(soup: BeautifulSoup) -> tuple[str | None, boo
     return raw, _parse_tak_nie(raw)
 
 
+def _extract_cn_partial_offers_allowed_418(soup: BeautifulSoup) -> bool | None:
+    """Extract ContractNotice field 4.1.8 as boolean Tak/Nie/null."""
+    h3 = _find_h3(soup, "4.1.8.")
+    raw = _span_value(h3) or _text_after_h3(h3)
+    return _parse_tak_nie(raw)
+
+
 def _extract_part_id_from_header(text: str) -> str | None:
     """Extract part identifier from headers like 'Czesc/Czesc nr/Czesc 1'."""
     lowered = text.lower()
@@ -1366,6 +1373,7 @@ def parse_html(
     comp_requirements_72 = None
     comp_submission_deadline = None
     comp_result_approval_date_53 = None
+    cn_partial_offers_allowed_418 = None
     if notice_type == "AgreementIntentionNotice":
         (
             ai_street_512,
@@ -1394,6 +1402,8 @@ def parse_html(
         ) = _extract_competition_notice_fields(soup)
     if notice_type == "CompetitionResultNotice":
         comp_result_approval_date_53 = _extract_competition_result_fields(soup)
+    if notice_type == "ContractNotice":
+        cn_partial_offers_allowed_418 = _extract_cn_partial_offers_allowed_418(soup)
 
     # Type-aware value extraction
     values = None
@@ -1440,6 +1450,7 @@ def parse_html(
         comp_requirements_72=comp_requirements_72,
         comp_submission_deadline=comp_submission_deadline,
         comp_result_approval_date_53=comp_result_approval_date_53,
+        cn_partial_offers_allowed_418=cn_partial_offers_allowed_418,
         **details,
     )
 

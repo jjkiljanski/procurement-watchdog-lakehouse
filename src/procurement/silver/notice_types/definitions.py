@@ -140,6 +140,7 @@ CONTRACT_NOTICE_SPECIFIC_COLUMNS = [
     if c not in {"contractors", "contractorNameNormalized", "htmlExtracted"}
 ] + [
     "cn_notice_concerns",
+    "cn_partial_offers_allowed_418",
     "contract_planned_execution_date",
     "contract_planned_execution_date_parsed",
     "criteria",

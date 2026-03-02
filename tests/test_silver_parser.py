@@ -121,6 +121,16 @@ CONTRACT_NOTICE_VAT_HTML = """\
 <h3 class="mb-0">4.1.6.) WartoĹ›Ä‡ zamĂłwienia (bez VAT): <span class="normal">570513,92                PLN</span></h3>
 </main></body></html>"""
 
+CONTRACT_NOTICE_PARTIAL_OFFERS_YES_HTML = """\
+<html><head></head><body><main>
+<h3 class="mb-0">4.1.8.) Możliwe jest składanie ofert częściowych: <span class="normal">Tak</span></h3>
+</main></body></html>"""
+
+CONTRACT_NOTICE_PARTIAL_OFFERS_NO_HTML = """\
+<html><head></head><body><main>
+<h3 class="mb-0">4.1.8.) Możliwe jest składanie ofert częściowych: <span class="normal">Nie</span></h3>
+</main></body></html>"""
+
 CONTRACT_NOTICE_PARTS_HTML = """\
 <html><head></head><body><main>
 <h2 class="bg-light p-3 mt-4">SEKCJA IV - PRZEDMIOT ZAMOWIENIA</h2>
@@ -680,6 +690,18 @@ class TestContractNoticeValues:
     def test_no_value_returns_none(self):
         r = parse_html(MINIMAL_HTML, notice_type="ContractNotice")
         assert r.values is None
+
+    def test_extracts_partial_offers_allowed_true(self):
+        r = parse_html(CONTRACT_NOTICE_PARTIAL_OFFERS_YES_HTML, notice_type="ContractNotice")
+        assert r.cn_partial_offers_allowed_418 is True
+
+    def test_extracts_partial_offers_allowed_false(self):
+        r = parse_html(CONTRACT_NOTICE_PARTIAL_OFFERS_NO_HTML, notice_type="ContractNotice")
+        assert r.cn_partial_offers_allowed_418 is False
+
+    def test_extracts_partial_offers_allowed_null_when_missing(self):
+        r = parse_html(CONTRACT_NOTICE_HTML, notice_type="ContractNotice")
+        assert r.cn_partial_offers_allowed_418 is None
 
     def test_extracts_4310_top_level(self):
         r = parse_html(CONTRACT_NOTICE_PARTS_HTML, notice_type="ContractNotice")

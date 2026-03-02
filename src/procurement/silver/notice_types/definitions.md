@@ -146,6 +146,7 @@ Generated at: 2026-02-20T21:25:29.278334Z
 | `priceWeight` | Sum of price-related criterion weights. | `int` | `60` | yes |
 | `nonPriceWeightSum` | Sum of non-price criterion weights. | `int` | `40` | yes |
 | `cn_notice_concerns` | ContractNotice field 2.1 scope (what notice concerns). | `string` | `ZamĂłwienia publicznego` | yes |
+| `cn_partial_offers_allowed_418` | ContractNotice field 4.1.8 parsed to boolean (`Tak`/`Nie`/null). | `boolean` | `true` | yes |
 | `cn_award_criteria_by_part` | ContractNotice criteria-by-part map list (criterion -> weight). | `array<map<string,int>>` | `[{'Czas reakcji na zgĹ‚oszonÄ… reklamacjÄ™, tj. usuniecie zgĹ‚oszonych nieprawidĹ‚owoĹ›ci w wykonaniu usĹ‚ugi sprzÄ…tania': 40, 'Cena': 60}]` | yes |
 | `cn_criteria_aspects_4310` | ContractNotice field 4.3.10 text by part. | `array<string>` | `['Nie']` | yes |
 | `cn_criteria_aspects_4310_flag` | Parsed boolean from 4.3.10 by part. | `array<boolean>` | `[False]` | yes |
