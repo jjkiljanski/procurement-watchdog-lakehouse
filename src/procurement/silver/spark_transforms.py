@@ -15,6 +15,7 @@ from pyspark.sql.functions import (
     datediff,
     expr,
     lit,
+    posexplode_outer,
     size,
     split,
     to_date,
@@ -921,18 +922,16 @@ def build_silver_for_notice_type(
         out = out.withColumn(
             "cn_parts_normalized",
             expr(
-                "CASE WHEN htmlExtracted.contract_notice_parts IS NOT NULL AND size(htmlExtracted.contract_notice_parts) > 0 "
-                "THEN htmlExtracted.contract_notice_parts "
-                "ELSE array(named_struct("
-                "'part_id', cast(null as string),"
-                "'opis', htmlExtracted.opis,"
-                "'kryteria_oceny', htmlExtracted.kryteria_oceny,"
-                "'mainCPV', cast(null as string),"
-                "'secondaryCPV', cast(array() as array<string>),"
-                "'contract_planned_execution_date', cast(null as string),"
-                "'criteria_aspects_4310', htmlExtracted.criteria_aspects_4310,"
-                "'criteria_aspects_4310_flag', htmlExtracted.criteria_aspects_4310_flag"
-                ")) END"
+                "coalesce(htmlExtracted.contract_notice_parts, cast(array() as array<struct<"
+                "part_id:string,"
+                "opis:string,"
+                "kryteria_oceny:array<struct<no:int,str:string,weight:int>>,"
+                "mainCPV:string,"
+                "secondaryCPV:array<string>,"
+                "contract_planned_execution_date:string,"
+                "criteria_aspects_4310:string,"
+                "criteria_aspects_4310_flag:boolean"
+                ">>))"
             ),
         )
     if "cn_notice_concerns" in required:
@@ -1120,4 +1119,73 @@ def build_silver(df: DataFrame) -> DataFrame:
         "nonPriceWeightSum",
     }
     return build_silver_for_notice_type(df, notice_type=None, required_columns=legacy_required)
+
+
+def build_contract_notice_parts_table(df: DataFrame) -> DataFrame:
+    """Build one-row-per-part ContractNotice table from validated Silver rows.
+
+    Expected input: `valid_batch` from build_silver scripts, with `htmlExtracted`
+    present for ContractNotice records.
+    """
+    parts = (
+        df.select(
+            col("objectId"),
+            col("publicationDateDay"),
+            col("publicationDate"),
+            col("noticeType"),
+            col("caseId"),
+            col("caseId_shard"),
+            col("tenderId"),
+            col("organizationId"),
+            posexplode_outer(col("htmlExtracted.contract_notice_parts")).alias("part_ordinal0", "part"),
+        )
+        .where(col("part").isNotNull())
+        .withColumn("part_ordinal", col("part_ordinal0") + lit(1))
+        .withColumn("part_id", coalesce(col("part.part_id"), col("part_ordinal").cast("string")))
+        .withColumn("part_description", col("part.opis"))
+        .withColumn("part_main_cpv", col("part.mainCPV"))
+        .withColumn(
+            "part_secondary_cpv",
+            coalesce(col("part.secondaryCPV"), expr("cast(array() as array<string>)")),
+        )
+        .withColumn("part_contract_planned_execution_date_raw", col("part.contract_planned_execution_date"))
+        .withColumn(
+            "part_contract_planned_execution_date_parsed",
+            to_date(
+                parse_cpn_contract_planned_execution_date_udf(
+                    col("part.contract_planned_execution_date"),
+                    col("publicationDate"),
+                )
+            ),
+        )
+        .withColumn(
+            "part_criteria",
+            coalesce(
+                col("part.kryteria_oceny"),
+                expr("cast(array() as array<struct<no:int,str:string,weight:int>>)"),
+            ),
+        )
+        .withColumn("part_num_criteria", size(col("part_criteria")))
+        .withColumn(
+            "part_price_weight",
+            expr(
+                "aggregate("
+                "filter(part_criteria, x -> lower(coalesce(x.str, '')) like '%cena%'),"
+                "0,"
+                "(acc, x) -> acc + coalesce(x.weight, 0)"
+                ")"
+            ),
+        )
+        .withColumn(
+            "part_non_price_weight_sum",
+            expr(
+                "aggregate(part_criteria, 0, (acc, x) -> acc + coalesce(x.weight, 0)) "
+                "- aggregate(filter(part_criteria, x -> lower(coalesce(x.str, '')) like '%cena%'), 0, (acc, x) -> acc + coalesce(x.weight, 0))"
+            ),
+        )
+        .withColumn("part_criteria_aspects_4310", col("part.criteria_aspects_4310"))
+        .withColumn("part_criteria_aspects_4310_flag", col("part.criteria_aspects_4310_flag"))
+        .drop("part_ordinal0", "part")
+    )
+    return parts
 

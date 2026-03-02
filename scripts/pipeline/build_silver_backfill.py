@@ -39,6 +39,7 @@ from procurement.silver.notice_types import (
     specific_columns_for_notice_type,
 )
 from procurement.silver.spark_transforms import build_silver_for_notice_type
+from procurement.silver.spark_transforms import build_contract_notice_parts_table
 from procurement.silver.validation import (
     summarize_notice_validation,
     validate_common_envelope,
@@ -390,6 +391,15 @@ def _process_day(
                     specific_df.write.mode("overwrite")
                     .parquet(str(specific_day_dir))
                 )
+                if notice_type == "ContractNotice":
+                    parts_token = "ContractNotice_parts"
+                    parts_df = build_contract_notice_parts_table(valid_batch)
+                    parts_day_dir = silver_dir / "notice_type_tables" / f"noticeType={parts_token}" / f"publicationDateDay={day}"
+                    _safe_rmtree(parts_day_dir, f"specific day dir noticeType={parts_token}")
+                    (
+                        parts_df.write.mode("overwrite")
+                        .parquet(str(parts_day_dir))
+                    )
 
                 envelope_df = _select_existing(valid_batch, ENVELOPE_COLUMNS)
                 envelope_df.write.mode("append").parquet(str(envelope_tmp))

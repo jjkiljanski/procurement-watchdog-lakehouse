@@ -13,6 +13,7 @@ from datetime import date
 from html import unescape
 
 from bs4 import BeautifulSoup, Tag
+from pydantic import ValidationError
 
 from procurement.silver.models import (
     ChangeEntry,
@@ -25,6 +26,10 @@ from procurement.silver.models import (
     TenderResultLot,
     TenderResultPart,
     TenderResultEnrichment,
+)
+from procurement.silver.notice_types.contract_notice_split_models import (
+    ContractNoticeCoreRaw,
+    ContractNoticePartRaw,
 )
 
 # Regex for parsing "1234,56 PLN" style values from span text
@@ -644,6 +649,13 @@ def _extract_cn_offers_scope_4110(soup: BeautifulSoup) -> str | None:
     if h3 is None:
         return None
     raw = _span_value(h3) or _text_after_h3(h3) or h3.get_text(separator=" ", strip=True)
+    return _map_cn_offers_scope(raw)
+
+
+def _map_cn_offers_scope(raw: str | None) -> str | None:
+    """Map raw 4.1.10 content to canonical categories."""
+    if not raw:
+        return None
     normalized = _normalize_label_text(raw or "")
     normalized = re.sub(r"^\s*4\.1\.10\.\)\s*", "", normalized).strip()
     if not normalized:
@@ -673,12 +685,29 @@ def _extract_part_id_from_header(text: str) -> str | None:
     return None
 
 
-def _extract_contract_notice_parts(soup: BeautifulSoup) -> list[ContractNoticePart] | None:
-    """Extract per-part criteria + CPV blocks from ContractNotice SEKCJA IV."""
-    h3s = soup.find_all("h3")
-    if not h3s:
-        return None
+def _extract_contract_notice_section_number(h3_text: str) -> str | None:
+    match = re.search(r"(?<![\d.])(\d+\.\d+(?:\.\d+)?)\.?\)\s*", h3_text)
+    return match.group(1) if match else None
 
+
+def _extract_contract_notice_section_value(h3: Tag) -> str | None:
+    value = _span_value(h3)
+    if value:
+        return value
+    value = _text_after_h3(h3)
+    if value:
+        return value
+    p_values = _collect_p_values(h3)
+    if p_values:
+        return " ".join(p_values)
+    return None
+
+
+def _cn_section_to_field_name(section_number: str) -> str:
+    return f"cn_section_{section_number.replace('.', '_')}"
+
+
+def _extract_contract_notice_part_chunks(h3s: list[Tag]) -> list[tuple[str | None, list[Tag]]]:
     part_headers: list[tuple[int, str]] = []
     for idx, h3 in enumerate(h3s):
         text = h3.get_text(separator=" ", strip=True)
@@ -686,72 +715,94 @@ def _extract_contract_notice_parts(soup: BeautifulSoup) -> list[ContractNoticePa
         if part_id:
             part_headers.append((idx, part_id))
 
-    parts: list[ContractNoticePart] = []
     chunks: list[tuple[str | None, list[Tag]]] = []
     if part_headers:
         for i, (start_idx, part_id) in enumerate(part_headers):
             end_idx = part_headers[i + 1][0] if i + 1 < len(part_headers) else len(h3s)
             chunks.append((part_id, h3s[start_idx:end_idx]))
     else:
-        # Single-part notices often don't include explicit "Czesc nr ..." headers.
         chunks.append((None, h3s))
+    return chunks
+
+
+def _build_contract_notice_core_model(soup: BeautifulSoup) -> ContractNoticeCoreRaw | None:
+    field_names = set(ContractNoticeCoreRaw.model_fields.keys())
+    payload: dict[str, str] = {}
+    for h3 in soup.find_all("h3"):
+        section_number = _extract_contract_notice_section_number(h3.get_text(separator=" ", strip=True))
+        if not section_number:
+            continue
+        field_name = _cn_section_to_field_name(section_number)
+        if field_name not in field_names or field_name in payload:
+            continue
+        value = _extract_contract_notice_section_value(h3)
+        if value:
+            payload[field_name] = value
+    try:
+        return ContractNoticeCoreRaw(**payload)
+    except ValidationError:
+        return None
+
+
+def _extract_contract_notice_parts(soup: BeautifulSoup) -> list[ContractNoticePart] | None:
+    """Extract per-part criteria + CPV blocks from ContractNotice SEKCJA IV.
+
+    This path is section-first: chunk sections by part, validate/normalize via
+    ContractNoticePartRaw, and then apply existing production parsing rules
+    for derived outputs.
+    """
+    h3s = soup.find_all("h3")
+    if not h3s:
+        return None
+
+    parts: list[ContractNoticePart] = []
+    chunks = _extract_contract_notice_part_chunks(h3s)
+    part_field_names = {
+        name for name in ContractNoticePartRaw.model_fields.keys() if name.startswith("cn_section_")
+    }
 
     for part_id, chunk in chunks:
+        section_payload: dict[str, str] = {}
+        for h3 in chunk:
+            section_number = _extract_contract_notice_section_number(h3.get_text(separator=" ", strip=True))
+            if not section_number:
+                continue
+            field_name = _cn_section_to_field_name(section_number)
+            if field_name not in part_field_names or field_name in section_payload:
+                continue
+            value = _extract_contract_notice_section_value(h3)
+            if value:
+                section_payload[field_name] = value
+
         has_marker = any(
-            any(
-                marker in h3.get_text()
-                for marker in ("4.2.2.)", "4.2.6.)", "4.2.7.)", "4.2.10.)", "4.3.5.)", "4.3.6.)", "4.3.10.)")
+            field_name in section_payload
+            for field_name in (
+                "cn_section_4_2_2",
+                "cn_section_4_2_6",
+                "cn_section_4_2_7",
+                "cn_section_4_2_10",
+                "cn_section_4_3_5",
+                "cn_section_4_3_6",
+                "cn_section_4_3_10",
             )
-            for h3 in chunk
         )
         if not has_marker:
             continue
 
+        try:
+            part_raw = ContractNoticePartRaw(**section_payload)
+        except ValidationError:
+            part_raw = ContractNoticePartRaw()
+
         criteria: list[EvalCriterion] = []
-        opis: str | None = None
+        opis: str | None = part_raw.cn_section_4_2_2
         main_cpv: str | None = None
         secondary_cpv: list[str] = []
-        contract_planned_execution_date: str | None = None
+        contract_planned_execution_date: str | None = part_raw.cn_section_4_2_10
         ordinal = 1
         j = 0
         while j < len(chunk):
             text = chunk[j].get_text()
-            if "4.2.2.)" in text:
-                p = chunk[j].find_next_sibling("p")
-                if p is not None:
-                    opis_text = p.get_text(separator=" ", strip=True)
-                    if opis_text:
-                        opis = opis_text
-            if "4.2.6.)" in text:
-                raw = _span_value(chunk[j]) or _text_after_h3(chunk[j])
-                if not raw:
-                    p_values = _collect_p_values(chunk[j])
-                    raw = p_values[0] if p_values else None
-                if raw:
-                    parsed = parse_cpv_codes(raw)
-                    main_cpv = parsed[0] if parsed else raw
-            if "4.2.7.)" in text:
-                raw = _span_value(chunk[j]) or _text_after_h3(chunk[j])
-                p_values = _collect_p_values(chunk[j])
-                candidates: list[str] = []
-                if raw:
-                    candidates.append(raw)
-                candidates.extend(p_values)
-                for candidate in candidates:
-                    if not candidate:
-                        continue
-                    parsed = parse_cpv_codes(candidate)
-                    if parsed:
-                        secondary_cpv.extend(parsed)
-                    else:
-                        secondary_cpv.append(candidate)
-            if "4.2.10.)" in text:
-                raw = _span_value(chunk[j]) or _text_after_h3(chunk[j])
-                if not raw:
-                    p_values = _collect_p_values(chunk[j])
-                    raw = p_values[0] if p_values else None
-                if raw:
-                    contract_planned_execution_date = raw
             if "4.3.5.)" in text:
                 criterion_text = _span_value(chunk[j])
                 weight = None
@@ -763,13 +814,21 @@ def _extract_contract_notice_parts(soup: BeautifulSoup) -> list[ContractNoticePa
                     ordinal += 1
             j += 1
 
-        aspects_raw = None
-        aspects_flag = None
-        for h3 in chunk:
-            if "4.3.10.)" in h3.get_text():
-                aspects_raw = _span_value(h3) or _text_after_h3(h3)
-                aspects_flag = _parse_tak_nie(aspects_raw)
-                break
+        raw_main_cpv = part_raw.cn_section_4_2_6
+        if raw_main_cpv:
+            parsed = parse_cpv_codes(raw_main_cpv)
+            main_cpv = parsed[0] if parsed else raw_main_cpv
+
+        raw_secondary_cpv = part_raw.cn_section_4_2_7
+        if raw_secondary_cpv:
+            parsed = parse_cpv_codes(raw_secondary_cpv)
+            if parsed:
+                secondary_cpv.extend(parsed)
+            else:
+                secondary_cpv.append(raw_secondary_cpv)
+
+        aspects_raw = part_raw.cn_section_4_3_10
+        aspects_flag = _parse_tak_nie(aspects_raw)
 
         parts.append(
             ContractNoticePart(
@@ -780,7 +839,7 @@ def _extract_contract_notice_parts(soup: BeautifulSoup) -> list[ContractNoticePa
                 secondaryCPV=list(dict.fromkeys(secondary_cpv)),
                 contract_planned_execution_date=contract_planned_execution_date,
                 criteria_aspects_4310=aspects_raw,
-                criteria_aspects_4310_flag=aspects_flag,
+                criteria_aspects_4310_flag=aspects_flag if aspects_flag is not None else part_raw.cn_section_8_5_flag,
             )
         )
 
@@ -1355,7 +1414,12 @@ def parse_html(
     """
     soup = BeautifulSoup(html, "lxml")
 
-    ogloszenie_dotyczy = _extract_ogloszenie_dotyczy(soup)
+    core_model = _build_contract_notice_core_model(soup) if notice_type == "ContractNotice" else None
+    ogloszenie_dotyczy = (
+        core_model.cn_section_2_1
+        if core_model and core_model.cn_section_2_1
+        else _extract_ogloszenie_dotyczy(soup)
+    )
     address = _extract_address(soup, notice_type=notice_type)
     opis = None
     kryteria = None
@@ -1368,6 +1432,13 @@ def parse_html(
     contract_notice_parts = (
         _extract_contract_notice_parts(soup) if notice_type == "ContractNotice" else None
     )
+    if notice_type == "ContractNotice" and contract_notice_parts:
+        first_part = contract_notice_parts[0]
+        opis = first_part.opis or opis
+        kryteria = first_part.kryteria_oceny or kryteria
+        criteria_aspects_4310 = first_part.criteria_aspects_4310 or criteria_aspects_4310
+        if criteria_aspects_4310_flag is None:
+            criteria_aspects_4310_flag = first_part.criteria_aspects_4310_flag
     lots = _extract_tender_result_lots(soup) if notice_type == "TenderResultNotice" else None
     tender_result_parts = (
         _extract_tender_result_parts(soup) if notice_type == "TenderResultNotice" else None
@@ -1423,8 +1494,12 @@ def parse_html(
     if notice_type == "CompetitionResultNotice":
         comp_result_approval_date_53 = _extract_competition_result_fields(soup)
     if notice_type == "ContractNotice":
-        cn_partial_offers_allowed_418 = _extract_cn_partial_offers_allowed_418(soup)
-        cn_offers_scope_4110 = _extract_cn_offers_scope_4110(soup)
+        raw_418 = core_model.cn_section_4_1_8 if core_model else None
+        raw_4110 = core_model.cn_section_4_1_10 if core_model else None
+        cn_partial_offers_allowed_418 = (
+            _parse_tak_nie(raw_418) if raw_418 is not None else _extract_cn_partial_offers_allowed_418(soup)
+        )
+        cn_offers_scope_4110 = _map_cn_offers_scope(raw_4110) if raw_4110 is not None else _extract_cn_offers_scope_4110(soup)
 
     # Type-aware value extraction
     values = None

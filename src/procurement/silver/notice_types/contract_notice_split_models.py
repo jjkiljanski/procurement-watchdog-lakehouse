@@ -14,7 +14,7 @@ import re
 from pydantic import BaseModel, model_validator
 
 
-class ContractNoticePartRawV1(BaseModel):
+class ContractNoticePartRaw(BaseModel):
     """Repeated section block mapped to one ContractNotice part."""
     cn_section_4_2_2: str | None = None  # 4.2.2) type=KrĂłtki opis przedmiotu zamĂłwienia | examples=Przedmiotem zamĂłwienia jest remont istniejÄ…cej nawierzchni bitumicznej od km 0+000 do km 0+413 poprzez frezowanie istniejÄ…cej nawierzchni, regulacjÄ™ studni kanalizacyjnych i zasuw wodociÄ…gowych, wykonanie nowej warstwy wiÄ…ĹĽÄ…cej gruboĹ›ci 4cm i warstwy Ĺ›cieralnej gruboĹ›ci 4cm, wykonanie obustronnie poboczy z kruszywa, oczyszczenie rowĂłw i przepustĂłw z namuĹ‚u, wykonanie oznaczeĹ„ organizacji ruchu. SzczegĂłĹ‚owy opis przyjÄ™tych rozwiÄ…zaĹ„ technicznych zostaĹ‚ zawarty w dokumentacji budowlanej i technicznej oraz specyfikacji wykonania robĂłt budowlanych stanowiÄ…cej zaĹ‚Ä…cznik nr 5 do SWZ; Przedmiotem zamĂłwienia jest dostawa fabrycznie nowych mebli biurowych i krzeseĹ‚ obrotowych do OddziaĹ‚u ZUS w Chrzanowie i InspektoratĂłw ZUS w Wadowicach i Suchej Beskidzkiej. Miejsce realizacji zamĂłwienia: ChrzanĂłw, ul. OĹ›wiÄ™cimska 14; Wadowice, ul. Teatralna 3; Sucha Beskidzka, Rynek 12.; 4.1. Przedmiotem zamĂłwienia jest dostawa masztu oĹ›wietleniowego LED z agregatem, dostawa trzech fabrycznie nowych, stacjonarnych agregatĂłw prÄ…dotwĂłrczych wraz z ich montaĹĽem, uruchomieniem oraz przeszkoleniem obsĹ‚ugi w ramach przedsiÄ™wziÄ™cia pn. â€žZakup masztu oĹ›wietleniowego LED z agregatem, dostawa i montaĹĽ agregatĂłw prÄ…dotwĂłrczych stacjonarnych dla Gminy Ĺ»ĂłĹ‚kiewkaâ€ť. Agregaty bÄ™dÄ… stanowiĹ‚y ĹşrĂłdĹ‚o awaryjnego zasilania dla hydroforni. Minimalne wymagania techniczne okreĹ›lone zostaĹ‚y w zaĹ‚Ä…czniku nr 6 Wymagania techniczne, opis przedmiotu zamĂłwienia i przedmiary | oct2025_presence=100.0%
     cn_section_4_2_6: str | None = None  # 4.2.6) type=GĹ‚Ăłwny kod CPV | examples=45233140-2 - Roboty drogowe; 39130000-2 - Meble biurowe; 31122000-7 - Jednostki prÄ…dotwĂłrcze | oct2025_presence=100.0%
@@ -34,7 +34,7 @@ class ContractNoticePartRawV1(BaseModel):
     cn_section_8_5_flag: bool | None = None  # parsed from cn_section_8_5; supports "Czesc N : Tak/Nie"
 
     @model_validator(mode="after")
-    def parse_cn_section_8_5_flag(self) -> "ContractNoticePartRawV1":
+    def parse_cn_section_8_5_flag(self) -> "ContractNoticePartRaw":
         """Parse section 8.5 into a part-level boolean when possible.
 
         Accepted variants:
@@ -80,10 +80,10 @@ class ContractNoticePartRawV1(BaseModel):
         return None
 
 
-class ContractNoticeCoreRawV1(BaseModel):
+class ContractNoticeCoreRaw(BaseModel):
     """Non-repeating ContractNotice sections (notice-level envelope)."""
     @model_validator(mode="after")
-    def validate_multi_part_fields(self) -> "ContractNoticeCoreRawV1":
+    def validate_multi_part_fields(self) -> "ContractNoticeCoreRaw":
         """Multi-part-only fields can be present only when section 4.1.9 indicates >1 parts."""
         if self._has_text(self.cn_section_4_1_9):
             parts_count_self = self._extract_parts_count(self.cn_section_4_1_9)

@@ -58,10 +58,14 @@ def _load_parquet_rows(path: Path) -> list[dict]:
 
 def _silver_daily_paths(target_date: str) -> tuple[str, list[Path], list[Path]]:
     silver_dir = Path("data/silver")
+    def _include(path: Path) -> bool:
+        notice_token = path.parent.name.replace("noticeType=", "")
+        return notice_token != "ContractNotice_parts"
+
     specific = sorted(
         p
         for p in silver_dir.glob(f"notice_type_tables/noticeType=*/publicationDateDay={target_date}")
-        if p.is_dir()
+        if p.is_dir() and _include(p)
     )
     envelope_path = silver_dir / "common_envelope" / f"publicationDateDay={target_date}"
     envelope = [envelope_path] if envelope_path.is_dir() else []

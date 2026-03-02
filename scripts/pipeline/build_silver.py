@@ -283,7 +283,10 @@ def main() -> None:
 
     from pyspark.sql import SparkSession
     from pyspark.storagelevel import StorageLevel
-    from procurement.silver.spark_transforms import build_silver_for_notice_type
+    from procurement.silver.spark_transforms import (
+        build_contract_notice_parts_table,
+        build_silver_for_notice_type,
+    )
 
     spark = (
         SparkSession.builder.appName("bzp-silver")
@@ -492,6 +495,22 @@ def main() -> None:
                     .parquet(specific_out)
                 )
                 batch_profile["write_specific_sec"] = round(time.perf_counter() - t4, 3)
+
+                if notice_type == "ContractNotice":
+                    contract_parts_df = build_contract_notice_parts_table(valid_batch)
+                    parts_token = "ContractNotice_parts"
+                    parts_out = str(specific_root / f"noticeType={parts_token}")
+                    parts_day_dir = specific_root / f"noticeType={parts_token}" / f"publicationDateDay={target_date}"
+                    if parts_day_dir.exists():
+                        shutil.rmtree(parts_day_dir, ignore_errors=False)
+                        log.info("Cleared existing specific day partition: %s", parts_day_dir)
+                    t4b = time.perf_counter()
+                    (
+                        contract_parts_df.write.mode("overwrite")
+                        .partitionBy("publicationDateDay")
+                        .parquet(parts_out)
+                    )
+                    batch_profile["write_specific_parts_sec"] = round(time.perf_counter() - t4b, 3)
 
                 envelope_batch = _select_existing(valid_batch, ENVELOPE_COLUMNS)
                 t5 = time.perf_counter()

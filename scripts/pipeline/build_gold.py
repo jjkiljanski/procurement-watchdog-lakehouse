@@ -39,10 +39,14 @@ log = logging.getLogger(__name__)
 
 
 def _silver_partition_daily_paths(silver_dir: Path, target_date: str) -> list[str]:
+    def _include(path: Path) -> bool:
+        notice_token = path.parent.name.replace("noticeType=", "")
+        return notice_token != "ContractNotice_parts"
+
     return sorted(
         str(p)
         for p in silver_dir.glob(f"notice_type_tables/noticeType=*/publicationDateDay={target_date}")
-        if p.is_dir()
+        if p.is_dir() and _include(p)
     )
 
 
@@ -50,6 +54,9 @@ def _silver_partition_asof_paths(silver_dir: Path, target_date: str) -> list[str
     out: list[str] = []
     for p in sorted(silver_dir.glob("notice_type_tables/noticeType=*/publicationDateDay=*")):
         if not p.is_dir():
+            continue
+        notice_token = p.parent.name.replace("noticeType=", "")
+        if notice_token == "ContractNotice_parts":
             continue
         token = p.name.replace("publicationDateDay=", "")
         if token <= target_date:

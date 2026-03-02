@@ -25,6 +25,7 @@ class SectionField:
     section_name: str
     mandatory: str
     examples: list[str]
+    oct2025_presence: str
 
 
 FIELD_RE = re.compile(
@@ -64,7 +65,7 @@ def parse_model_sections(text: str) -> tuple[list[SectionField], set[str], set[s
         section_name = meta_match.group(2).strip()
 
         mandatory = "YES" if "| None" not in annotation else "NO"
-        examples = _split_examples(raw_examples)
+        examples, oct2025_presence = _split_examples_and_presence(raw_examples)
 
         fields.append(
             SectionField(
@@ -74,13 +75,14 @@ def parse_model_sections(text: str) -> tuple[list[SectionField], set[str], set[s
                 section_name=section_name,
                 mandatory=mandatory,
                 examples=examples,
+                oct2025_presence=oct2025_presence,
             )
         )
 
     part_dependent = {
         f.field_name
         for f in fields
-        if f.class_name == "ContractNoticeCoreRawV1"
+        if f.class_name == "ContractNoticeCoreRaw"
         and _looks_part_dependent_label(f.section_name)
     }
     return fields, multi_only_fields, part_dependent
@@ -124,9 +126,12 @@ def _extract_between(text: str, start_marker: str, end_marker: str) -> str:
     return text[start : end + 1]
 
 
-def _split_examples(raw_examples: str) -> list[str]:
+def _split_examples_and_presence(raw_examples: str) -> tuple[list[str], str]:
+    oct_match = re.search(r"\|\s*oct2025_presence=([^|]+)\s*$", raw_examples)
+    oct2025_presence = oct_match.group(1).strip() if oct_match else "n/a"
+    raw_examples = re.sub(r"\s*\|\s*oct2025_presence=.*$", "", raw_examples).strip()
     values = [x.strip() for x in raw_examples.split(";") if x.strip()]
-    return values[:3]
+    return values[:3], oct2025_presence
 
 
 def _normalize_ascii(text: str) -> str:
@@ -183,6 +188,7 @@ def enrich_from_profiles(
                 section_name=section_name,
                 mandatory=f.mandatory,
                 examples=final_examples,
+                oct2025_presence=f.oct2025_presence,
             )
         )
     return enriched
@@ -190,21 +196,21 @@ def enrich_from_profiles(
 
 def render_table_core(fields: list[SectionField]) -> str:
     header = (
-        "| Section | Section Name | Is Mandatory | Example Values |\n"
-        "|---|---|---|---|\n"
+        "| Section | Section Name | Is Mandatory | Oct 2025 Presence | Example Values |\n"
+        "|---|---|---|---|---|\n"
     )
     rows: list[str] = []
     for f in sorted(fields, key=lambda x: _section_sort_key(x.section)):
         rows.append(
-            f"| `{f.section}` | {_md_escape(f.section_name)} | {f.mandatory} | {_examples_text(f.examples)} |"
+            f"| `{f.section}` | {_md_escape(f.section_name)} | {f.mandatory} | {_md_escape(f.oct2025_presence)} | {_examples_text(f.examples)} |"
         )
     return header + "\n".join(rows) + "\n"
 
 
 def render_table_special(fields: list[SectionField], multi_only: set[str]) -> str:
     header = (
-        "| Section | Section Name | Mandatory for Singlepart | Mandatory for MultiPart | Examples |\n"
-        "|---|---|---|---|---|\n"
+        "| Section | Section Name | Mandatory for Singlepart | Mandatory for MultiPart | Oct 2025 Presence | Examples |\n"
+        "|---|---|---|---|---|---|\n"
     )
     rows: list[str] = []
     for f in sorted(fields, key=lambda x: _section_sort_key(x.section)):
@@ -215,7 +221,7 @@ def render_table_special(fields: list[SectionField], multi_only: set[str]) -> st
             mandatory_single = "YES"
             mandatory_multi = "YES"
         rows.append(
-            f"| `{f.section}` | {_md_escape(f.section_name)} | {mandatory_single} | {mandatory_multi} | {_examples_text(f.examples)} |"
+            f"| `{f.section}` | {_md_escape(f.section_name)} | {mandatory_single} | {mandatory_multi} | {_md_escape(f.oct2025_presence)} | {_examples_text(f.examples)} |"
         )
     return header + "\n".join(rows) + "\n"
 
@@ -226,8 +232,8 @@ def main() -> None:
     section_to_names, section_to_examples = load_profile_maps()
     fields = enrich_from_profiles(fields, section_to_names, section_to_examples)
 
-    core_fields = [f for f in fields if f.class_name == "ContractNoticeCoreRawV1"]
-    part_fields = [f for f in fields if f.class_name == "ContractNoticePartRawV1"]
+    core_fields = [f for f in fields if f.class_name == "ContractNoticeCoreRaw"]
+    part_fields = [f for f in fields if f.class_name == "ContractNoticePartRaw"]
 
     special_set = multi_only | part_dependent
     core_regular = [f for f in core_fields if f.field_name not in special_set]
@@ -263,4 +269,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

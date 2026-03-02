@@ -61,6 +61,9 @@ Key semantics:
 - `ContractNotice` specific table drops `contractors`, `contractorNameNormalized`, and `htmlExtracted`, and emits:
 - `cn_notice_concerns`, `cn_partial_offers_allowed_418`, `cn_offers_scope_4110`, `cn_award_criteria_by_part`, `cn_criteria_aspects_4310`,
 - `cn_criteria_aspects_4310_flag`, `cn_description_by_part`.
+- ContractNotice is also written in split form:
+- core rows in `noticeType=ContractNotice` (one row per notice),
+- part rows in `noticeType=ContractNotice_parts` (one row per part, linked by `objectId`).
 - `ContractPerformingNotice` specific table drops `htmlExtracted`, `numCriteria`, `priceWeight`, `nonPriceWeightSum`,
 - `contractorNameNormalized`,
 - and emits contractor HTML fallback fields:
