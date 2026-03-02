@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from pathlib import Path
 import sys
@@ -12,35 +12,38 @@ from procurement.silver.notice_types.contract_notice_split_models import (  # no
 )
 
 
-def test_multi_part_fields_allowed_when_section_4_1_9_gt_1() -> None:
+def test_multi_part_fields_allowed_when_cn_section_4_1_9_gt_1() -> None:
     model = ContractNoticeCoreRawV1(
-        section_4_1_9="2",
-        section_4_1_10="Ofertę można składać na wszystkie części",
-        section_4_2_5="184430,40 PLN",
+        cn_section_4_1_9="2",
+        cn_section_4_1_10="OfertÄ™ moĹĽna skĹ‚adaÄ‡ na wszystkie czÄ™Ĺ›ci",
+        cn_section_4_2_5="184430,40 PLN",
     )
-    assert model.section_4_1_9 == "2"
+    assert model.cn_section_4_1_9 == "2"
 
 
 def test_multi_part_fields_rejected_when_single_part() -> None:
     with pytest.raises(ValueError):
         ContractNoticeCoreRawV1(
-            section_4_1_9="1",
-            section_4_1_10="Ofertę można składać na wszystkie części",
+            cn_section_4_1_9="1",
+            cn_section_4_1_10="OfertÄ™ moĹĽna skĹ‚adaÄ‡ na wszystkie czÄ™Ĺ›ci",
         )
 
 
-def test_multi_part_fields_rejected_when_section_4_1_9_missing() -> None:
+def test_multi_part_fields_rejected_when_cn_section_4_1_9_missing() -> None:
     with pytest.raises(ValueError):
         ContractNoticeCoreRawV1(
-            section_4_1_10="Ofertę można składać na wszystkie części",
+            cn_section_4_1_10="OfertÄ™ moĹĽna skĹ‚adaÄ‡ na wszystkie czÄ™Ĺ›ci",
         )
 
 
 def test_single_part_without_multi_only_fields_is_valid() -> None:
-    model = ContractNoticeCoreRawV1(section_2_1="Zamówienia publicznego")
-    assert model.section_2_1 == "Zamówienia publicznego"
+    model = ContractNoticeCoreRawV1(cn_section_2_1="ZamĂłwienia publicznego")
+    assert model.cn_section_2_1 == "ZamĂłwienia publicznego"
 
 
-def test_section_4_1_9_present_with_1_is_rejected() -> None:
+def test_cn_section_4_1_9_present_with_1_is_rejected() -> None:
     with pytest.raises(ValueError):
-        ContractNoticeCoreRawV1(section_4_1_9="1")
+        ContractNoticeCoreRawV1(cn_section_4_1_9="1")
+
+
+
