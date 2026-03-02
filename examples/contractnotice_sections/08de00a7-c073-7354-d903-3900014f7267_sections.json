@@ -1,0 +1,476 @@
+[
+  {
+    "section_number": "1.1",
+    "section_type": "Rola zamawiającego",
+    "value": "Postępowanie prowadzone jest samodzielnie przez zamawiającego",
+    "raw_h3_text": "1.1.) Rola zamawiającego"
+  },
+  {
+    "section_number": "1.2",
+    "section_type": "Nazwa zamawiającego",
+    "value": "Gmina Bodzechów",
+    "raw_h3_text": "1.2.) Nazwa zamawiającego: Gmina Bodzechów"
+  },
+  {
+    "section_number": "1.5.1",
+    "section_type": "Ulica",
+    "value": "Mikołaja Reja 10",
+    "raw_h3_text": "1.5.1.) Ulica: Mikołaja Reja 10"
+  },
+  {
+    "section_number": "1.5.2",
+    "section_type": "Miejscowość",
+    "value": "Ostrowiec Świętokrzyski",
+    "raw_h3_text": "1.5.2.) Miejscowość: Ostrowiec Świętokrzyski"
+  },
+  {
+    "section_number": "1.5.3",
+    "section_type": "Kod pocztowy",
+    "value": "27-400",
+    "raw_h3_text": "1.5.3.) Kod pocztowy: 27-400"
+  },
+  {
+    "section_number": "1.5.4",
+    "section_type": "Województwo",
+    "value": "świętokrzyskie",
+    "raw_h3_text": "1.5.4.) Województwo: świętokrzyskie"
+  },
+  {
+    "section_number": "1.5.5",
+    "section_type": "Kraj",
+    "value": "Polska",
+    "raw_h3_text": "1.5.5.) Kraj: Polska"
+  },
+  {
+    "section_number": "1.5.6",
+    "section_type": "Lokalizacja NUTS 3",
+    "value": "PL721 - Kielecki",
+    "raw_h3_text": "1.5.6.) Lokalizacja NUTS 3: PL721 - Kielecki"
+  },
+  {
+    "section_number": "1.5.9",
+    "section_type": "Adres poczty elektronicznej",
+    "value": "przetargi@ugb.pl",
+    "raw_h3_text": "1.5.9.) Adres poczty elektronicznej: przetargi@ugb.pl"
+  },
+  {
+    "section_number": "1.5.10",
+    "section_type": "Adres strony internetowej zamawiającego",
+    "value": "https://samorzad.gov.pl/gmina-bodzechow",
+    "raw_h3_text": "1.5.10.) Adres strony internetowej zamawiającego: https://samorzad.gov.pl/gmina-bodzechow"
+  },
+  {
+    "section_number": "1.6",
+    "section_type": "Rodzaj zamawiającego",
+    "value": "Zamawiający publiczny - jednostka sektora finansów publicznych - jednostka samorządu terytorialnego",
+    "raw_h3_text": "1.6.) Rodzaj zamawiającego: Zamawiający publiczny - jednostka sektora finansów publicznych - jednostka samorządu terytorialnego"
+  },
+  {
+    "section_number": "1.7",
+    "section_type": "Przedmiot działalności zamawiającego",
+    "value": "Ogólne usługi publiczne",
+    "raw_h3_text": "1.7.) Przedmiot działalności zamawiającego: Ogólne usługi publiczne"
+  },
+  {
+    "section_number": "2.1",
+    "section_type": "Ogłoszenie dotyczy",
+    "value": "Zamówienia publicznego",
+    "raw_h3_text": "2.1.) Ogłoszenie dotyczy:"
+  },
+  {
+    "section_number": "2.2",
+    "section_type": "Ogłoszenie dotyczy usług społecznych i innych szczególnych usług",
+    "value": "Nie",
+    "raw_h3_text": "2.2.) Ogłoszenie dotyczy usług społecznych i innych szczególnych usług: Nie"
+  },
+  {
+    "section_number": "2.3",
+    "section_type": "Nazwa zamówienia albo umowy ramowej",
+    "value": "Remont drogi gminnej nr 310037T od km 0+000 do km 0+413 ul. Polna w miejscowości Bodzechów",
+    "raw_h3_text": "2.3.) Nazwa zamówienia albo umowy ramowej:"
+  },
+  {
+    "section_number": "2.4",
+    "section_type": "Identyfikator postępowania",
+    "value": "ocds-148610-6bbd9159-cf41-440b-b409-022c8a01e2e4",
+    "raw_h3_text": "2.4.) Identyfikator postępowania: ocds-148610-6bbd9159-cf41-440b-b409-022c8a01e2e4"
+  },
+  {
+    "section_number": "2.5",
+    "section_type": "Numer ogłoszenia",
+    "value": "2025/BZP 00449953",
+    "raw_h3_text": "2.5.) Numer ogłoszenia: 2025/BZP 00449953"
+  },
+  {
+    "section_number": "2.6",
+    "section_type": "Wersja ogłoszenia",
+    "value": "01",
+    "raw_h3_text": "2.6.) Wersja ogłoszenia: 01"
+  },
+  {
+    "section_number": "2.7",
+    "section_type": "Data ogłoszenia",
+    "value": "2025-10-01",
+    "raw_h3_text": "2.7.) Data ogłoszenia: 2025-10-01"
+  },
+  {
+    "section_number": "2.8",
+    "section_type": "Zamówienie albo umowa ramowa zostały ujęte w planie postępowań",
+    "value": "Tak",
+    "raw_h3_text": "2.8.) Zamówienie albo umowa ramowa zostały ujęte w planie postępowań: Tak"
+  },
+  {
+    "section_number": "2.9",
+    "section_type": "Numer planu postępowań w BZP",
+    "value": "2025/BZP 00012022/09/P",
+    "raw_h3_text": "2.9.) Numer planu postępowań w BZP: 2025/BZP 00012022/09/P"
+  },
+  {
+    "section_number": "2.10",
+    "section_type": "Identyfikator pozycji planu postępowań",
+    "value": "1.1.14 Remont drogi gminnej nr 310037T od km 0+000 do km 0+413 ul. Polna w miejscowości Bodzechów",
+    "raw_h3_text": "2.10.) Identyfikator pozycji planu postępowań:"
+  },
+  {
+    "section_number": "2.11",
+    "section_type": "O udzielenie zamówienia mogą ubiegać się wyłącznie wykonawcy, o których mowa w art. 94 ustawy",
+    "value": "Nie",
+    "raw_h3_text": "2.11.) O udzielenie zamówienia mogą ubiegać się wyłącznie wykonawcy, o których mowa w art. 94 ustawy: Nie"
+  },
+  {
+    "section_number": "2.14",
+    "section_type": "Czy zamówienie albo umowa ramowa dotyczy projektu lub programu współfinansowanego ze środków Unii Europejskiej",
+    "value": "Nie",
+    "raw_h3_text": "2.14.) Czy zamówienie albo umowa ramowa dotyczy projektu lub programu współfinansowanego ze środków Unii Europejskiej: Nie"
+  },
+  {
+    "section_number": "2.16",
+    "section_type": "Tryb udzielenia zamówienia wraz z podstawą prawną",
+    "value": "Zamówienie udzielane jest w trybie podstawowym na podstawie: art. 275 pkt 1 ustawy",
+    "raw_h3_text": "2.16.) Tryb udzielenia zamówienia wraz z podstawą prawną"
+  },
+  {
+    "section_number": "3.1",
+    "section_type": "Adres strony internetowej prowadzonego postępowania",
+    "value": "https://ezamowienia.gov.pl/mp-client/search/list/ocds-148610-6bbd9159-cf41-440b-b409-022c8a01e2e4",
+    "raw_h3_text": "3.1.) Adres strony internetowej prowadzonego postępowania"
+  },
+  {
+    "section_number": "3.2",
+    "section_type": "Zamawiający zastrzega dostęp do dokumentów zamówienia",
+    "value": "Nie",
+    "raw_h3_text": "3.2.) Zamawiający zastrzega dostęp do dokumentów zamówienia: Nie"
+  },
+  {
+    "section_number": "3.4",
+    "section_type": "Wykonawcy zobowiązani są do składania ofert, wniosków o dopuszczenie do udziału w postępowaniu, oświadczeń oraz innych dokumentów wyłącznie przy użyciu środków komunikacji elektronicznej",
+    "value": "Tak",
+    "raw_h3_text": "3.4.) Wykonawcy zobowiązani są do składania ofert, wniosków o dopuszczenie do udziału w postępowaniu, oświadczeń oraz innych dokumentów wyłącznie przy użyciu środków komunikacji elektronicznej: Tak"
+  },
+  {
+    "section_number": "3.5",
+    "section_type": "Informacje o środkach komunikacji elektronicznej, przy użyciu których zamawiający będzie komunikował się z wykonawcami - adres strony internetowej",
+    "value": "https://ezamowienia.gov.pl/mp-client/tenders/ocds-148610-6bbd9159-cf41-440b-b409-022c8a01e2e4",
+    "raw_h3_text": "3.5.) Informacje o środkach komunikacji elektronicznej, przy użyciu których zamawiający będzie komunikował się z wykonawcami - adres strony internetowej: https://ezamowienia.gov.pl/mp-client/tenders/ocds-148610-6bbd9159-cf41-440b-b409-022c8a01e2e4"
+  },
+  {
+    "section_number": "3.6",
+    "section_type": "Wymagania techniczne i organizacyjne dotyczące korespondencji elektronicznej",
+    "value": "W postępowaniu o udzielenie zamówienia publicznego komunikacja między Zamawiającym a wykonawcami odbywa się przy użyciu Platformy e-Zamówienia, która jest dostępna pod adresem https://ezamowienia.gov.pl Szczegółowe informacje - Rozdział 11 SWZ",
+    "raw_h3_text": "3.6.) Wymagania techniczne i organizacyjne dotyczące korespondencji elektronicznej: W postępowaniu o udzielenie zamówienia publicznego komunikacja między Zamawiającym a wykonawcami odbywa się przy użyciu Platformy e-Zamówienia, która jest dostępna pod adresem https://ezamowienia.gov.pl Szczegółowe informacje - Rozdział 11 SWZ"
+  },
+  {
+    "section_number": "3.8",
+    "section_type": "Zamawiający wymaga sporządzenia i przedstawienia ofert przy użyciu narzędzi elektronicznego modelowania danych budowlanych lub innych podobnych narzędzi, które nie są ogólnie dostępne",
+    "value": "Nie",
+    "raw_h3_text": "3.8.) Zamawiający wymaga sporządzenia i przedstawienia ofert przy użyciu narzędzi elektronicznego modelowania danych budowlanych lub innych podobnych narzędzi, które nie są ogólnie dostępne: Nie"
+  },
+  {
+    "section_number": "3.12",
+    "section_type": "Oferta - katalog elektroniczny",
+    "value": "Nie dotyczy",
+    "raw_h3_text": "3.12.) Oferta - katalog elektroniczny: Nie dotyczy"
+  },
+  {
+    "section_number": "3.14",
+    "section_type": "Języki, w jakich mogą być sporządzane dokumenty składane w postępowaniu",
+    "value": "polski",
+    "raw_h3_text": "3.14.) Języki, w jakich mogą być sporządzane dokumenty składane w postępowaniu:"
+  },
+  {
+    "section_number": "3.15",
+    "section_type": "RODO (obowiązek informacyjny)",
+    "value": "Zgodnie z art. 13 ust. 1 i 2 rozporządzenia Parlamentu Europejskiego i Rady (UE) 2016/679 z dnia 27 kwietnia 2016 r. w sprawie ochrony osób fizycznych w związku z przetwarzaniem danych osobowych i w sprawie swobodnego przepływu takich danych oraz uchylenia dyrektywy 95/46/WE (ogólne rozporządzenie o ochronie danych) (Dz. Urz. UE L 119 z 04.05.2016, str. 1), dalej „RODO”, Zamawiający informuje, że: Jest administratorem danych osobowych Wykonawcy oraz osób, których dane Wykonawca przekazał w niniejszym postępowaniu; dane osobowe Wykonawcy przetwarzane będą na podstawie art. 6 ust. 1 lit. c RODO w celu związanym z postępowaniem o udzielenie zamówienia publicznego na zadanie pn.: „Remont drogi gminnej nr 310037T od km 0+000 do km 0+413 ul. Polna w miejscowości Bodzechów”; 1) odbiorcami danych osobowych Wykonawcy będą osoby lub podmioty, którym udostępniona zostanie dokumentacja postępowania w oparciu o art. 8 oraz art. 96 ust. 3 ustawy z dnia 29 stycznia 2004 r. – Prawo zamówień publicznych (Dz. U. z 2019 r. poz. 2019 z późn. zm.), dalej „ustawa Pzp”; 2) dane osobowe Wykonawcy będą przechowywane, zgodnie z art. 97 ust. 1 ustawy Pzp, przez okres 4 lat od dnia zakończenia postępowania o udzielenie zamówienia, a jeżeli czas trwania umowy przekracza 4 lata, okres przechowywania obejmuje cały czas trwania umowy; 3) obowiązek podania przez Wykonawcę danych osobowych bezpośrednio go dotyczących jest wymogiem ustawowym określonym w przepisach ustawy Pzp, związanym z udziałem w postępowaniu o udzielenie zamówienia publicznego; konsekwencje niepodania określonych danych wynikają z ustawy Pzp; 4) w odniesieniu do danych osobowych Wykonawcy decyzje nie będą podejmowane w sposób zautomatyzowany, stosowanie do art. 22 RODO; 5) Wykonawca posiada: − na podstawie art. 15 RODO prawo dostępu do danych osobowych dotyczących Wykonawcy; − na podstawie art. 16 RODO prawo do sprostowania danych osobowych, o ile ich zmiana nie skutkuje zmianą wyniku postępowania o udzielenie zamówienia publicznego ani zmianą postanowień umowy w zakresie niezgodnym z ustawą Pzp oraz nie narusza integralności protokołu oraz jego załączników; − na podstawie art. 18 RODO prawo żądania od administratora ograniczenia przetwarzania danych osobowych z zastrzeżeniem przypadków, o których mowa w art. 18 ust. 2 RODO; − prawo do wniesienia skargi do Prezesa Urzędu Ochrony Danych Osobowych, gdy Wykonawca uzna, że przetwarzanie jego danych osobowych narusza przepisy RODO; 6) Wykonawcy nie przysługuje: − w związku z art. 17 ust. 3 lit. b, d lub e RODO prawo do usunięcia danych osobowych; − prawo do przenoszenia danych osobowych, o którym mowa w art. 20 RODO; − na podstawie art. 21 RODO prawo sprzeciwu, wobec przetwarzania danych osobowych, gdyż podstawą prawną przetwarzania danych osobowych Wykonawcy jest art. 6 ust. 1 lit. c RODO. W przypadku, gdy wykonanie obowiązków, o których mowa w art. 15 ust. 1-3 rozporządzenia 2016/679, wymagałoby niewspółmiernie dużego wysiłku, Zamawiający może żądać od osoby, której dane dotyczą, wskazania dodatkowych informacji mających na celu sprecyzowanie żądania, w szczególności podania nazwy lub daty postępowania o udzielenie zamówienia publicznego lub konkursu. Skorzystanie przez osobę, której dane dotyczą, z uprawnienia do sprostowania lub uzupełnienia danych osobowych, o którym mowa w art. 16 rozporządzenia 2016/679, nie może skutkować zmianą wyniku postępowania o udzielenie zamówienia publicznego lub konkursu ani zmianą postanowień umowy w zakresie niezgodnym z ustawą. Wystąpienie z żądaniem, o którym mowa w art. 18 ust. 1 rozporządzenia 2016/679, nie ogranicza przetwarzania danych osobowych do czasu zakończenia postępowania o udzielenie zamówienia publicznego lub konkursu. W przypadku danych osobowych zamieszczonych przez Zamawiającego w Biuletynie Zamówień Publicznych, prawa, o których mowa w art. 15 i art. 16 rozporządzenia 2016/679, są wykonywane w drodze żądania skierowanego do Zamawiającego.",
+    "raw_h3_text": "3.15.) RODO (obowiązek informacyjny): Zgodnie z art. 13 ust. 1 i 2 rozporządzenia Parlamentu Europejskiego i Rady (UE) 2016/679 z dnia 27 kwietnia 2016 r. w sprawie ochrony osób fizycznych w związku z przetwarzaniem danych osobowych i w sprawie swobodnego przepływu takich danych oraz uchylenia dyrektywy 95/46/WE (ogólne rozporządzenie o ochronie danych) (Dz. Urz. UE L 119 z 04.05.2016, str. 1), dalej „RODO”, Zamawiający informuje, że: Jest administratorem danych osobowych Wykonawcy oraz osób, których dane Wykonawca przekazał w niniejszym postępowaniu; dane osobowe Wykonawcy przetwarzane będą na podstawie art. 6 ust. 1 lit. c RODO w celu związanym z postępowaniem o udzielenie zamówienia publicznego na zadanie pn.: „Remont drogi gminnej nr 310037T od km 0+000 do km 0+413 ul. Polna w miejscowości Bodzechów”; 1) odbiorcami danych osobowych Wykonawcy będą osoby lub podmioty, którym udostępniona zostanie dokumentacja postępowania w oparciu o art. 8 oraz art. 96 ust. 3 ustawy z dnia 29 stycznia 2004 r. – Prawo zamówień publicznych (Dz. U. z 2019 r. poz. 2019 z późn. zm.), dalej „ustawa Pzp”; 2) dane osobowe Wykonawcy będą przechowywane, zgodnie z art. 97 ust. 1 ustawy Pzp, przez okres 4 lat od dnia zakończenia postępowania o udzielenie zamówienia, a jeżeli czas trwania umowy przekracza 4 lata, okres przechowywania obejmuje cały czas trwania umowy; 3) obowiązek podania przez Wykonawcę danych osobowych bezpośrednio go dotyczących jest wymogiem ustawowym określonym w przepisach ustawy Pzp, związanym z udziałem w postępowaniu o udzielenie zamówienia publicznego; konsekwencje niepodania określonych danych wynikają z ustawy Pzp; 4) w odniesieniu do danych osobowych Wykonawcy decyzje nie będą podejmowane w sposób zautomatyzowany, stosowanie do art. 22 RODO; 5) Wykonawca posiada: − na podstawie art. 15 RODO prawo dostępu do danych osobowych dotyczących Wykonawcy; − na podstawie art. 16 RODO prawo do sprostowania danych osobowych, o ile ich zmiana nie skutkuje zmianą wyniku postępowania o udzielenie zamówienia publicznego ani zmianą postanowień umowy w zakresie niezgodnym z ustawą Pzp oraz nie narusza integralności protokołu oraz jego załączników; − na podstawie art. 18 RODO prawo żądania od administratora ograniczenia przetwarzania danych osobowych z zastrzeżeniem przypadków, o których mowa w art. 18 ust. 2 RODO; − prawo do wniesienia skargi do Prezesa Urzędu Ochrony Danych Osobowych, gdy Wykonawca uzna, że przetwarzanie jego danych osobowych narusza przepisy RODO; 6) Wykonawcy nie przysługuje: − w związku z art. 17 ust. 3 lit. b, d lub e RODO prawo do usunięcia danych osobowych; − prawo do przenoszenia danych osobowych, o którym mowa w art. 20 RODO; − na podstawie art. 21 RODO prawo sprzeciwu, wobec przetwarzania danych osobowych, gdyż podstawą prawną przetwarzania danych osobowych Wykonawcy jest art. 6 ust. 1 lit. c RODO. W przypadku, gdy wykonanie obowiązków, o których mowa w art. 15 ust. 1-3 rozporządzenia 2016/679, wymagałoby niewspółmiernie dużego wysiłku, Zamawiający może żądać od osoby, której dane dotyczą, wskazania dodatkowych informacji mających na celu sprecyzowanie żądania, w szczególności podania nazwy lub daty postępowania o udzielenie zamówienia publicznego lub konkursu. Skorzystanie przez osobę, której dane dotyczą, z uprawnienia do sprostowania lub uzupełnienia danych osobowych, o którym mowa w art. 16 rozporządzenia 2016/679, nie może skutkować zmianą wyniku postępowania o udzielenie zamówienia publicznego lub konkursu ani zmianą postanowień umowy w zakresie niezgodnym z ustawą. Wystąpienie z żądaniem, o którym mowa w art. 18 ust. 1 rozporządzenia 2016/679, nie ogranicza przetwarzania danych osobowych do czasu zakończenia postępowania o udzielenie zamówienia publicznego lub konkursu. W przypadku danych osobowych zamieszczonych przez Zamawiającego w Biuletynie Zamówień Publicznych, prawa, o których mowa w art. 15 i art. 16 rozporządzenia 2016/679, są wykonywane w drodze żądania skierowanego do Zamawiającego."
+  },
+  {
+    "section_number": "4.1",
+    "section_type": "Informacje ogólne odnoszące się do przedmiotu zamówienia.",
+    "value": null,
+    "raw_h3_text": "4.1.) Informacje ogólne odnoszące się do przedmiotu zamówienia."
+  },
+  {
+    "section_number": "4.1.1",
+    "section_type": "Przed wszczęciem postępowania przeprowadzono konsultacje rynkowe",
+    "value": "Nie",
+    "raw_h3_text": "4.1.1.) Przed wszczęciem postępowania przeprowadzono konsultacje rynkowe: Nie"
+  },
+  {
+    "section_number": "4.1.2",
+    "section_type": "Numer referencyjny",
+    "value": "ZP.271.13.2025",
+    "raw_h3_text": "4.1.2.) Numer referencyjny: ZP.271.13.2025"
+  },
+  {
+    "section_number": "4.1.3",
+    "section_type": "Rodzaj zamówienia",
+    "value": "Roboty budowlane",
+    "raw_h3_text": "4.1.3.) Rodzaj zamówienia: Roboty budowlane"
+  },
+  {
+    "section_number": "4.1.4",
+    "section_type": "Zamawiający udziela zamówienia w częściach, z których każda stanowi przedmiot odrębnego postępowania",
+    "value": "Nie",
+    "raw_h3_text": "4.1.4.) Zamawiający udziela zamówienia w częściach, z których każda stanowi przedmiot odrębnego postępowania: Nie"
+  },
+  {
+    "section_number": "4.1.8",
+    "section_type": "Możliwe jest składanie ofert częściowych",
+    "value": "Nie",
+    "raw_h3_text": "4.1.8.) Możliwe jest składanie ofert częściowych: Nie"
+  },
+  {
+    "section_number": "4.1.13",
+    "section_type": "Zamawiający uwzględnia aspekty społeczne, środowiskowe lub etykiety w opisie przedmiotu zamówienia",
+    "value": "Tak",
+    "raw_h3_text": "4.1.13.) Zamawiający uwzględnia aspekty społeczne, środowiskowe lub etykiety w opisie przedmiotu zamówienia: Tak"
+  },
+  {
+    "section_number": "4.1.14",
+    "section_type": "Określenie aspektów społecznych, środowiskowych lub etykiet w opisie przedmiotu zamówienia",
+    "value": "Zamawiający uwzględnił wymagania w zakresie dostępności dla osób niepełnosprawnych oraz projektowania z przeznaczeniem dla wszystkich użytkowników, zgodnie z art. 100 ust. 1 ustawy",
+    "raw_h3_text": "4.1.14.) Określenie aspektów społecznych, środowiskowych lub etykiet w opisie przedmiotu zamówienia:"
+  },
+  {
+    "section_number": "4.2.2",
+    "section_type": "Krótki opis przedmiotu zamówienia",
+    "value": "Przedmiotem zamówienia jest remont istniejącej nawierzchni bitumicznej od km 0+000 do km 0+413 poprzez frezowanie istniejącej nawierzchni, regulację studni kanalizacyjnych i zasuw wodociągowych, wykonanie nowej warstwy wiążącej grubości 4cm i warstwy ścieralnej grubości 4cm, wykonanie obustronnie poboczy z kruszywa, oczyszczenie rowów i przepustów z namułu, wykonanie oznaczeń organizacji ruchu. Szczegółowy opis przyjętych rozwiązań technicznych został zawarty w dokumentacji budowlanej i technicznej oraz specyfikacji wykonania robót budowlanych stanowiącej załącznik nr 5 do SWZ",
+    "raw_h3_text": "4.2.2.) Krótki opis przedmiotu zamówienia"
+  },
+  {
+    "section_number": "4.2.6",
+    "section_type": "Główny kod CPV",
+    "value": "45233140-2 - Roboty drogowe",
+    "raw_h3_text": "4.2.6.) Główny kod CPV: 45233140-2 - Roboty drogowe"
+  },
+  {
+    "section_number": "4.2.7",
+    "section_type": "Dodatkowy kod CPV",
+    "value": "45233220-7 - Roboty w zakresie nawierzchni dróg 45100000-8 - Przygotowanie terenu pod budowę 34922100-7 - Oznakowanie drogowe",
+    "raw_h3_text": "4.2.7.) Dodatkowy kod CPV:"
+  },
+  {
+    "section_number": "4.2.8",
+    "section_type": "Zamówienie obejmuje opcje",
+    "value": "Nie",
+    "raw_h3_text": "4.2.8.) Zamówienie obejmuje opcje: Nie"
+  },
+  {
+    "section_number": "4.2.10",
+    "section_type": "Okres realizacji zamówienia albo umowy ramowej",
+    "value": "6 miesiące",
+    "raw_h3_text": "4.2.10.) Okres realizacji zamówienia albo umowy ramowej: 6 miesiące"
+  },
+  {
+    "section_number": "4.2.11",
+    "section_type": "Zamawiający przewiduje wznowienia",
+    "value": "Nie",
+    "raw_h3_text": "4.2.11.) Zamawiający przewiduje wznowienia: Nie"
+  },
+  {
+    "section_number": "4.2.13",
+    "section_type": "Zamawiający przewiduje udzielenie dotychczasowemu wykonawcy zamówień na podobne usługi lub roboty budowlane",
+    "value": "Nie",
+    "raw_h3_text": "4.2.13.) Zamawiający przewiduje udzielenie dotychczasowemu wykonawcy zamówień na podobne usługi lub roboty budowlane: Nie"
+  },
+  {
+    "section_number": "4.3",
+    "section_type": "Kryteria oceny ofert",
+    "value": null,
+    "raw_h3_text": "4.3.) Kryteria oceny ofert"
+  },
+  {
+    "section_number": "4.3.1",
+    "section_type": "Sposób oceny ofert",
+    "value": "według kryteriów określonych w Rozdziale 17 SWZ",
+    "raw_h3_text": "4.3.1.) Sposób oceny ofert: według kryteriów określonych w Rozdziale 17 SWZ"
+  },
+  {
+    "section_number": "4.3.2",
+    "section_type": "Sposób określania wagi kryteriów oceny ofert",
+    "value": "Procentowo",
+    "raw_h3_text": "4.3.2.) Sposób określania wagi kryteriów oceny ofert: Procentowo"
+  },
+  {
+    "section_number": "4.3.3",
+    "section_type": "Stosowane kryteria oceny ofert",
+    "value": "Kryterium ceny oraz kryteria jakościowe",
+    "raw_h3_text": "4.3.3.) Stosowane kryteria oceny ofert: Kryterium ceny oraz kryteria jakościowe"
+  },
+  {
+    "section_number": "4.3.5",
+    "section_type": "Nazwa kryterium",
+    "value": "Cena",
+    "raw_h3_text": "4.3.5.) Nazwa kryterium: Cena"
+  },
+  {
+    "section_number": "4.3.6",
+    "section_type": "Waga",
+    "value": "60,00",
+    "raw_h3_text": "4.3.6.) Waga: 60,00"
+  },
+  {
+    "section_number": "4.3.4",
+    "section_type": "Rodzaj kryterium",
+    "value": "inne.",
+    "raw_h3_text": "4.3.4.) Rodzaj kryterium:"
+  },
+  {
+    "section_number": "4.3.5",
+    "section_type": "Nazwa kryterium",
+    "value": "Okres gwarancji",
+    "raw_h3_text": "4.3.5.) Nazwa kryterium: Okres gwarancji"
+  },
+  {
+    "section_number": "4.3.6",
+    "section_type": "Waga",
+    "value": "40",
+    "raw_h3_text": "4.3.6.) Waga: 40"
+  },
+  {
+    "section_number": "4.3.10",
+    "section_type": "Zamawiający określa aspekty społeczne, środowiskowe lub innowacyjne, żąda etykiet lub stosuje rachunek kosztów cyklu życia w odniesieniu do kryterium oceny ofert",
+    "value": "Nie",
+    "raw_h3_text": "4.3.10.) Zamawiający określa aspekty społeczne, środowiskowe lub innowacyjne, żąda etykiet lub stosuje rachunek kosztów cyklu życia w odniesieniu do kryterium oceny ofert: Nie"
+  },
+  {
+    "section_number": "5.1",
+    "section_type": "Zamawiający przewiduje fakultatywne podstawy wykluczenia",
+    "value": "Tak",
+    "raw_h3_text": "5.1.) Zamawiający przewiduje fakultatywne podstawy wykluczenia: Tak"
+  },
+  {
+    "section_number": "5.2",
+    "section_type": "Fakultatywne podstawy wykluczenia",
+    "value": "Art. 109 ust. 1 pkt 4",
+    "raw_h3_text": "5.2.) Fakultatywne podstawy wykluczenia:"
+  },
+  {
+    "section_number": "5.3",
+    "section_type": "Warunki udziału w postępowaniu",
+    "value": "Nie",
+    "raw_h3_text": "5.3.) Warunki udziału w postępowaniu: Nie"
+  },
+  {
+    "section_number": "5.5",
+    "section_type": "Zamawiający wymaga złożenia oświadczenia, o którym mowa w art.125 ust. 1 ustawy",
+    "value": "Tak",
+    "raw_h3_text": "5.5.) Zamawiający wymaga złożenia oświadczenia, o którym mowa w art.125 ust. 1 ustawy: Tak"
+  },
+  {
+    "section_number": "5.11",
+    "section_type": "Wykaz innych wymaganych oświadczeń lub dokumentów",
+    "value": "Załącznik Nr 3 – Wzór oświadczenia wykonawcy o niepodleganiu wykluczeniu Załącznik Nr 4 – Wzór oświadczenia wykonawców wspólnie ubiegających się o udzielenie zamówienia",
+    "raw_h3_text": "5.11.) Wykaz innych wymaganych oświadczeń lub dokumentów:"
+  },
+  {
+    "section_number": "6.1",
+    "section_type": "Zamawiający wymaga albo dopuszcza oferty wariantowe",
+    "value": "Nie",
+    "raw_h3_text": "6.1.) Zamawiający wymaga albo dopuszcza oferty wariantowe: Nie"
+  },
+  {
+    "section_number": "6.3",
+    "section_type": "Zamawiający przewiduje aukcję elektroniczną",
+    "value": "Nie",
+    "raw_h3_text": "6.3.) Zamawiający przewiduje aukcję elektroniczną: Nie"
+  },
+  {
+    "section_number": "6.4",
+    "section_type": "Zamawiający wymaga wadium",
+    "value": "Tak",
+    "raw_h3_text": "6.4.) Zamawiający wymaga wadium: Tak"
+  },
+  {
+    "section_number": "6.5",
+    "section_type": "Zamawiający wymaga zabezpieczenia należytego wykonania umowy",
+    "value": "Tak",
+    "raw_h3_text": "6.5.) Zamawiający wymaga zabezpieczenia należytego wykonania umowy: Tak"
+  },
+  {
+    "section_number": "6.6",
+    "section_type": "Wymagania dotyczące składania oferty przez wykonawców wspólnie ubiegających się o udzielenie zamówienia",
+    "value": "1. Wykonawcy mogą wspólnie ubiegać się o udzielenie zamówienia. W takim przypadku, wykonawcy ustanawiają pełnomocnika do reprezentowania ich w postępowaniu o udzielenie zamówienia albo do reprezentowania w postępowaniu i zawarcia umowy w sprawie zamówienia publicznego. Pełnomocnictwo winno być załączone do oferty. 2. W przypadku Wykonawców wspólnie ubiegających się o udzielenie zamówienia: a) oświadczenie o którym mowa w pkt. 8.1 SWZ składa z ofertą każdy z Wykonawców wspólnie ubiegających się o zamówienie. Oświadczenia te potwierdzają brak podstaw wykluczenia. b) wykonawcy wspólnie ubiegający się o udzielenie zamówienia dołączają do oferty oświadczenie, z którego wynika, które roboty budowlane, dostawy lub usługi wykonają poszczególni wykonawcy. Oświadczenie należy złożyć wg wymogów załącznika nr 4 do SWZ. 3. Jeżeli została wybrana oferta wykonawców wspólnie ubiegających się o udzielenie zamówienia, zamawiający żąda przed zawarciem umowy w sprawie zamówienia publicznego przedłożenia kopii umowy regulującej współpracę tych wykonawców.",
+    "raw_h3_text": "6.6.) Wymagania dotyczące składania oferty przez wykonawców wspólnie ubiegających się o udzielenie zamówienia:"
+  },
+  {
+    "section_number": "6.7",
+    "section_type": "Zamawiający przewiduje unieważnienie postępowania, jeśli środki publiczne, które zamierzał przeznaczyć na sfinansowanie całości lub części zamówienia nie zostały przyznane",
+    "value": "Nie",
+    "raw_h3_text": "6.7.) Zamawiający przewiduje unieważnienie postępowania, jeśli środki publiczne, które zamierzał przeznaczyć na sfinansowanie całości lub części zamówienia nie zostały przyznane: Nie"
+  },
+  {
+    "section_number": "7.1",
+    "section_type": "Zamawiający przewiduje udzielenia zaliczek",
+    "value": "Nie",
+    "raw_h3_text": "7.1.) Zamawiający przewiduje udzielenia zaliczek: Nie"
+  },
+  {
+    "section_number": "7.3",
+    "section_type": "Zamawiający przewiduje zmiany umowy",
+    "value": "Tak",
+    "raw_h3_text": "7.3.) Zamawiający przewiduje zmiany umowy: Tak"
+  },
+  {
+    "section_number": "7.4",
+    "section_type": "Rodzaj i zakres zmian umowy oraz warunki ich wprowadzenia",
+    "value": "Zamawiający przewiduje możliwości wprowadzenia zmian do zawartej umowy, na podstawie art. 454-455 ustawy Pzp oraz postanowień Projektu Umowy",
+    "raw_h3_text": "7.4.) Rodzaj i zakres zmian umowy oraz warunki ich wprowadzenia:"
+  },
+  {
+    "section_number": "7.5",
+    "section_type": "Zamawiający uwzględnił aspekty społeczne, środowiskowe, innowacyjne lub etykiety związane z realizacją zamówienia",
+    "value": "Tak",
+    "raw_h3_text": "7.5.) Zamawiający uwzględnił aspekty społeczne, środowiskowe, innowacyjne lub etykiety związane z realizacją zamówienia: Tak"
+  },
+  {
+    "section_number": "7.6",
+    "section_type": "Zamawiający przewiduje następujące wymagania związane z realizacją zamówienia",
+    "value": "w zakresie zatrudnienia na podstawie stosunku pracy, w okolicznościach, o których mowa w art. 95 ustawy",
+    "raw_h3_text": "7.6.) Zamawiający przewiduje następujące wymagania związane z realizacją zamówienia:"
+  },
+  {
+    "section_number": "8.1",
+    "section_type": "Termin składania ofert",
+    "value": "2025-10-17 10:00",
+    "raw_h3_text": "8.1.) Termin składania ofert: 2025-10-17 10:00"
+  },
+  {
+    "section_number": "8.2",
+    "section_type": "Miejsce składania ofert",
+    "value": "Wykonawca składa ofertę poprzez platformę e-Zamówienia na stronach UZP",
+    "raw_h3_text": "8.2.) Miejsce składania ofert: Wykonawca składa ofertę poprzez platformę e-Zamówienia na stronach UZP"
+  },
+  {
+    "section_number": "8.3",
+    "section_type": "Termin otwarcia ofert",
+    "value": "2025-10-17 10:15",
+    "raw_h3_text": "8.3.) Termin otwarcia ofert: 2025-10-17 10:15"
+  },
+  {
+    "section_number": "8.4",
+    "section_type": "Termin związania ofertą",
+    "value": "do 2025-11-15",
+    "raw_h3_text": "8.4.) Termin związania ofertą: do 2025-11-15"
+  }
+]
