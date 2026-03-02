@@ -131,6 +131,21 @@ CONTRACT_NOTICE_PARTIAL_OFFERS_NO_HTML = """\
 <h3 class="mb-0">4.1.8.) Możliwe jest składanie ofert częściowych: <span class="normal">Nie</span></h3>
 </main></body></html>"""
 
+CONTRACT_NOTICE_OFFERS_SCOPE_ALL_HTML = """\
+<html><head></head><body><main>
+<h3 class="mb-0">4.1.10.) Ofertę można składać na wszystkie części</h3>
+</main></body></html>"""
+
+CONTRACT_NOTICE_OFFERS_SCOPE_SEVERAL_HTML = """\
+<html><head></head><body><main>
+<h3 class="mb-0">4.1.10.) Ofertę można składać na kilka części</h3>
+</main></body></html>"""
+
+CONTRACT_NOTICE_OFFERS_SCOPE_ONE_HTML = """\
+<html><head></head><body><main>
+<h3 class="mb-0">4.1.10.) Ofertę można składać na jedną część</h3>
+</main></body></html>"""
+
 CONTRACT_NOTICE_PARTS_HTML = """\
 <html><head></head><body><main>
 <h2 class="bg-light p-3 mt-4">SEKCJA IV - PRZEDMIOT ZAMOWIENIA</h2>
@@ -702,6 +717,22 @@ class TestContractNoticeValues:
     def test_extracts_partial_offers_allowed_null_when_missing(self):
         r = parse_html(CONTRACT_NOTICE_HTML, notice_type="ContractNotice")
         assert r.cn_partial_offers_allowed_418 is None
+
+    def test_extracts_offers_scope_all(self):
+        r = parse_html(CONTRACT_NOTICE_OFFERS_SCOPE_ALL_HTML, notice_type="ContractNotice")
+        assert r.cn_offers_scope_4110 == "wszystkie"
+
+    def test_extracts_offers_scope_several(self):
+        r = parse_html(CONTRACT_NOTICE_OFFERS_SCOPE_SEVERAL_HTML, notice_type="ContractNotice")
+        assert r.cn_offers_scope_4110 == "kilka"
+
+    def test_extracts_offers_scope_one(self):
+        r = parse_html(CONTRACT_NOTICE_OFFERS_SCOPE_ONE_HTML, notice_type="ContractNotice")
+        assert r.cn_offers_scope_4110 == "jedna"
+
+    def test_extracts_offers_scope_null_when_missing(self):
+        r = parse_html(CONTRACT_NOTICE_HTML, notice_type="ContractNotice")
+        assert r.cn_offers_scope_4110 is None
 
     def test_extracts_4310_top_level(self):
         r = parse_html(CONTRACT_NOTICE_PARTS_HTML, notice_type="ContractNotice")

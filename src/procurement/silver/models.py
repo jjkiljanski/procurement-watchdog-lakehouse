@@ -147,6 +147,7 @@ class HtmlExtracted(BaseModel):
     comp_submission_deadline: str | None = None
     comp_result_approval_date_53: str | None = None
     cn_partial_offers_allowed_418: bool | None = None
+    cn_offers_scope_4110: str | None = None
 
 
 class BzpNoticeSilver(BaseModel):

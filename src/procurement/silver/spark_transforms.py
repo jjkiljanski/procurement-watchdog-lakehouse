@@ -173,6 +173,7 @@ HTML_EXTRACTED_SCHEMA = StructType(
         StructField("comp_submission_deadline", StringType()),
         StructField("comp_result_approval_date_53", StringType()),
         StructField("cn_partial_offers_allowed_418", BooleanType()),
+        StructField("cn_offers_scope_4110", StringType()),
     ]
 )
 
@@ -575,6 +576,7 @@ HTML_FULL_DERIVED_COLUMNS = {
     "nonPriceWeightSum",
     "cn_notice_concerns",
     "cn_partial_offers_allowed_418",
+    "cn_offers_scope_4110",
     "contract_planned_execution_date",
     "contract_planned_execution_date_parsed",
     "cn_award_criteria_by_part",
@@ -902,6 +904,7 @@ def build_silver_for_notice_type(
     if required & {
         "cn_notice_concerns",
         "cn_partial_offers_allowed_418",
+        "cn_offers_scope_4110",
         "contract_planned_execution_date",
         "contract_planned_execution_date_parsed",
         "cn_award_criteria_by_part",
@@ -938,6 +941,11 @@ def build_silver_for_notice_type(
         out = out.withColumn(
             "cn_partial_offers_allowed_418",
             col("htmlExtracted.cn_partial_offers_allowed_418"),
+        )
+    if "cn_offers_scope_4110" in required:
+        out = out.withColumn(
+            "cn_offers_scope_4110",
+            col("htmlExtracted.cn_offers_scope_4110"),
         )
     if "cn_award_criteria_by_part" in required:
         out = out.withColumn(

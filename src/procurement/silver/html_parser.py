@@ -638,6 +638,25 @@ def _extract_cn_partial_offers_allowed_418(soup: BeautifulSoup) -> bool | None:
     return _parse_tak_nie(raw)
 
 
+def _extract_cn_offers_scope_4110(soup: BeautifulSoup) -> str | None:
+    """Extract ContractNotice field 4.1.10 and map to: wszystkie/kilka/jedna."""
+    h3 = _find_h3(soup, "4.1.10.")
+    if h3 is None:
+        return None
+    raw = _span_value(h3) or _text_after_h3(h3) or h3.get_text(separator=" ", strip=True)
+    normalized = _normalize_label_text(raw or "")
+    normalized = re.sub(r"^\s*4\.1\.10\.\)\s*", "", normalized).strip()
+    if not normalized:
+        return None
+    if "wszystkie" in normalized:
+        return "wszystkie"
+    if "kilka" in normalized:
+        return "kilka"
+    if "jedna" in normalized:
+        return "jedna"
+    return None
+
+
 def _extract_part_id_from_header(text: str) -> str | None:
     """Extract part identifier from headers like 'Czesc/Czesc nr/Czesc 1'."""
     lowered = text.lower()
@@ -1374,6 +1393,7 @@ def parse_html(
     comp_submission_deadline = None
     comp_result_approval_date_53 = None
     cn_partial_offers_allowed_418 = None
+    cn_offers_scope_4110 = None
     if notice_type == "AgreementIntentionNotice":
         (
             ai_street_512,
@@ -1404,6 +1424,7 @@ def parse_html(
         comp_result_approval_date_53 = _extract_competition_result_fields(soup)
     if notice_type == "ContractNotice":
         cn_partial_offers_allowed_418 = _extract_cn_partial_offers_allowed_418(soup)
+        cn_offers_scope_4110 = _extract_cn_offers_scope_4110(soup)
 
     # Type-aware value extraction
     values = None
@@ -1451,6 +1472,7 @@ def parse_html(
         comp_submission_deadline=comp_submission_deadline,
         comp_result_approval_date_53=comp_result_approval_date_53,
         cn_partial_offers_allowed_418=cn_partial_offers_allowed_418,
+        cn_offers_scope_4110=cn_offers_scope_4110,
         **details,
     )
 

@@ -141,6 +141,7 @@ CONTRACT_NOTICE_SPECIFIC_COLUMNS = [
 ] + [
     "cn_notice_concerns",
     "cn_partial_offers_allowed_418",
+    "cn_offers_scope_4110",
     "contract_planned_execution_date",
     "contract_planned_execution_date_parsed",
     "criteria",
