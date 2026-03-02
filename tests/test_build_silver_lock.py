@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import importlib.util
+import importlib
 import json
 from pathlib import Path
 
@@ -8,12 +8,7 @@ import pytest
 
 
 def _load_build_silver_module():
-    module_path = Path(__file__).resolve().parents[1] / "scripts" / "build_silver.py"
-    spec = importlib.util.spec_from_file_location("build_silver_module", module_path)
-    assert spec is not None and spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    return importlib.import_module("procurement.silver.build_core")
 
 
 def test_acquire_day_lock_creates_owner_file(tmp_path: Path):
@@ -21,7 +16,7 @@ def test_acquire_day_lock_creates_owner_file(tmp_path: Path):
 
     lock_dir = module._acquire_day_lock(
         silver_dir=tmp_path,
-        target_date="2025-10-01",
+        day="2025-10-01",
         run_id="run-abc",
         stale_minutes=60,
     )
@@ -39,7 +34,7 @@ def test_acquire_day_lock_blocks_when_lock_is_fresh(tmp_path: Path):
 
     first_lock = module._acquire_day_lock(
         silver_dir=tmp_path,
-        target_date="2025-10-01",
+        day="2025-10-01",
         run_id="run-owner",
         stale_minutes=60,
     )
@@ -48,7 +43,7 @@ def test_acquire_day_lock_blocks_when_lock_is_fresh(tmp_path: Path):
     with pytest.raises(RuntimeError, match="Silver day lock already exists"):
         module._acquire_day_lock(
             silver_dir=tmp_path,
-            target_date="2025-10-01",
+            day="2025-10-01",
             run_id="run-second",
             stale_minutes=60,
         )
@@ -75,7 +70,7 @@ def test_acquire_day_lock_replaces_stale_lock(tmp_path: Path):
 
     new_lock = module._acquire_day_lock(
         silver_dir=tmp_path,
-        target_date="2025-10-01",
+        day="2025-10-01",
         run_id="fresh-run",
         stale_minutes=1,
     )
