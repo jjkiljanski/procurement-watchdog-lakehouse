@@ -17,6 +17,7 @@ from pyspark.sql.functions import (
     lit,
     size,
     split,
+    to_date,
     to_timestamp,
     udf,
     when,
@@ -777,9 +778,11 @@ def build_silver_for_notice_type(
     if "cpn_contract_date_41" in required:
         out = out.withColumn(
             "cpn_contract_date_41",
-            col("htmlExtracted.cpn_contract_date_41")
-            if need_html_full
-            else col("htmlLight.cpn_contract_date_41"),
+            to_date(
+                col("htmlExtracted.cpn_contract_date_41")
+                if need_html_full
+                else col("htmlLight.cpn_contract_date_41")
+            ),
         )
     if "cpn_contract_planned_execution_date_raw" in required:
         out = out.withColumn(
@@ -791,17 +794,21 @@ def build_silver_for_notice_type(
     if "cpn_contract_planned_execution_date_parsed" in required:
         out = out.withColumn(
             "cpn_contract_planned_execution_date_parsed",
-            parse_cpn_contract_planned_execution_date_udf(
-                col("cpn_contract_planned_execution_date_raw"),
-                col("cpn_contract_date_41"),
+            to_date(
+                parse_cpn_contract_planned_execution_date_udf(
+                    col("cpn_contract_planned_execution_date_raw"),
+                    col("cpn_contract_date_41").cast("string"),
+                )
             ),
         )
     if "cpn_execution_end_date_52" in required:
         out = out.withColumn(
             "cpn_execution_end_date_52",
-            col("htmlExtracted.cpn_execution_end_date_52")
-            if need_html_full
-            else col("htmlLight.cpn_execution_end_date_52"),
+            to_date(
+                col("htmlExtracted.cpn_execution_end_date_52")
+                if need_html_full
+                else col("htmlLight.cpn_execution_end_date_52")
+            ),
         )
     if "executed_in_time" in required:
         out = out.withColumn(

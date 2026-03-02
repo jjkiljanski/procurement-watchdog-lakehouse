@@ -546,6 +546,7 @@ def _read_specific_rows(
                 "submittingOffersDate string, comp_num_awarded_63 int, value_competition_prizes_64 double, "
                 "value_competition_followon_order_651 double, comp_requirements_72 string, "
                 "trn_value_bid_lowest double, trn_value_bid_highest double, trn_value_winning_offer double, "
+                "cpn_contract_date_41 date, cpn_contract_planned_execution_date_parsed date, cpn_execution_end_date_52 date, "
                 "cpn_contractor_countries_437 array<string>"
             ),
         )
@@ -594,8 +595,13 @@ def _read_specific_rows(
             safe_col(frame_raw, "trn_value_bid_lowest", "double").alias("trn_value_bid_lowest"),
             safe_col(frame_raw, "trn_value_bid_highest", "double").alias("trn_value_bid_highest"),
             safe_col(frame_raw, "trn_value_winning_offer", "double").alias("trn_value_winning_offer"),
-            safe_col(frame_raw, "cpn_contract_date_41", "string").alias("cpn_contract_date_41"),
-            safe_col(frame_raw, "cpn_execution_end_date_52", "string").alias("cpn_execution_end_date_52"),
+            to_date(safe_col(frame_raw, "cpn_contract_date_41", "string")).alias("cpn_contract_date_41"),
+            to_date(
+                safe_col(frame_raw, "cpn_contract_planned_execution_date_parsed", "string")
+            ).alias("cpn_contract_planned_execution_date_parsed"),
+            to_date(safe_col(frame_raw, "cpn_execution_end_date_52", "string")).alias(
+                "cpn_execution_end_date_52"
+            ),
             safe_col(frame_raw, "cpn_contractor_countries_437", "array<string>").alias(
                 "cpn_contractor_countries_437"
             ),
@@ -884,17 +890,25 @@ def _build_notice_specific_features(specific_rows: DataFrame) -> DataFrame:
         spark_min(
             expr(
                 "named_struct('is_null', CASE WHEN noticeType='ContractPerformingNotice' "
-                "THEN CASE WHEN cpn_contract_date_41 IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "THEN CASE WHEN to_date(cpn_contract_date_41) IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
                 "'ts', publication_ts, "
-                "'v', CASE WHEN noticeType='ContractPerformingNotice' THEN cpn_contract_date_41 END)"
+                "'v', CASE WHEN noticeType='ContractPerformingNotice' THEN to_date(cpn_contract_date_41) END)"
             )
         ).getField("v").alias("cpn_contract_date_41"),
         spark_min(
             expr(
                 "named_struct('is_null', CASE WHEN noticeType='ContractPerformingNotice' "
-                "THEN CASE WHEN cpn_execution_end_date_52 IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "THEN CASE WHEN to_date(cpn_contract_planned_execution_date_parsed) IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
                 "'ts', publication_ts, "
-                "'v', CASE WHEN noticeType='ContractPerformingNotice' THEN cpn_execution_end_date_52 END)"
+                "'v', CASE WHEN noticeType='ContractPerformingNotice' THEN to_date(cpn_contract_planned_execution_date_parsed) END)"
+            )
+        ).getField("v").alias("cpn_contract_planned_execution_date_parsed"),
+        spark_min(
+            expr(
+                "named_struct('is_null', CASE WHEN noticeType='ContractPerformingNotice' "
+                "THEN CASE WHEN to_date(cpn_execution_end_date_52) IS NULL THEN 1 ELSE 0 END ELSE 1 END, "
+                "'ts', publication_ts, "
+                "'v', CASE WHEN noticeType='ContractPerformingNotice' THEN to_date(cpn_execution_end_date_52) END)"
             )
         ).getField("v").alias("cpn_execution_end_date"),
         spark_min(
