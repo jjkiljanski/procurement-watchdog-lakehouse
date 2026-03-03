@@ -31,6 +31,7 @@ from procurement.silver.notice_types.contract_notice_split_models import (
     ContractNoticeCoreRaw,
     ContractNoticePartRaw,
 )
+from procurement.silver.notice_types.section_models_registry import NOTICE_TYPE_SECTION_MODELS
 
 # Regex for parsing "1234,56 PLN" style values from span text
 _PLN_NUM_RE = re.compile(r"([\d\s\xa0,.]+?)\s*(?:\xa0)?\s*(?:PLN|EUR|USD|GBP|CHF)?$")
@@ -703,8 +704,12 @@ def _extract_contract_notice_section_value(h3: Tag) -> str | None:
     return None
 
 
-def _cn_section_to_field_name(section_number: str) -> str:
+def _section_to_field_name(section_number: str) -> str:
     return f"cn_section_{section_number.replace('.', '_')}"
+
+
+def _section_number_key(section_number: str) -> tuple[int, ...]:
+    return tuple(int(token) for token in section_number.split("."))
 
 
 def _extract_contract_notice_part_chunks(h3s: list[Tag]) -> list[tuple[str | None, list[Tag]]]:
@@ -725,21 +730,172 @@ def _extract_contract_notice_part_chunks(h3s: list[Tag]) -> list[tuple[str | Non
     return chunks
 
 
-def _build_contract_notice_core_model(soup: BeautifulSoup) -> ContractNoticeCoreRaw | None:
-    field_names = set(ContractNoticeCoreRaw.model_fields.keys())
-    payload: dict[str, str] = {}
+def _build_notice_sections_model(soup: BeautifulSoup, notice_type: str | None, notice_dicts):
+    notice_sections = notice_dicts.get(notice_type or "", {})
+    model_types = {section_dict["data_model"] for section_dict in notice_sections.values() if section_dict.get("data_model")}
+    model_values = {"core": {}}
+    non_core_values = {model_type:[{}] for model_type in model_types if model_type != "core"}
+    model_values.update(non_core_values)
+    mode = "core"
+    last_section_number = None
+    n_current_part = 0
     for h3 in soup.find_all("h3"):
         section_number = _extract_contract_notice_section_number(h3.get_text(separator=" ", strip=True))
         if not section_number:
             continue
-        field_name = _cn_section_to_field_name(section_number)
-        if field_name not in field_names or field_name in payload:
+        value = _extract_contract_notice_section_value(h3)
+        if not value:
+            continue
+        section_cfg = notice_sections.get(section_number)
+        section_model = section_cfg.get("data_model") if section_cfg else None
+        if section_model is None:
+            continue
+        if mode=="core": # Standard mode, not currently in a non-core section
+            if section_model == "core":
+                model_values["core"][_section_to_field_name(section_number)] = value
+            else:
+                mode = section_model
+                model_values[mode][n_current_part][_section_to_field_name(section_number)] = value
+        else: # Currently in a non-core section, check if we should switch to a different model or back to core
+            if section_model != mode:
+                n_current_part = 0
+                mode = section_model
+                if mode=="core":
+                    model_values["core"][_section_to_field_name(section_number)] = value
+                else:
+                    model_values[mode][n_current_part][_section_to_field_name(section_number)] = value
+            else:
+                if last_section_number is not None and _section_number_key(section_number) > _section_number_key(last_section_number):
+                    field_name = _section_to_field_name(section_number)
+                    if field_name not in model_values[mode][n_current_part]:
+                        model_values[mode][n_current_part][field_name] = value
+                else:
+                    n_current_part += 1
+                    if len(model_values[mode])<=n_current_part:
+                        model_values[mode].append({_section_to_field_name(section_number): value})
+                    else:
+                        model_values[mode][n_current_part][_section_to_field_name(section_number)] = value
+
+        last_section_number = section_number
+        
+    return model_values
+
+def _build_tender_result_notice_sections_model(soup: BeautifulSoup, model_cls):
+    """Build nested TenderResultNotice sections model with repeating buyers/parts."""
+    h3_entries: list[tuple[str, str]] = []
+    for h3 in soup.find_all("h3"):
+        section_number = _extract_contract_notice_section_number(h3.get_text(separator=" ", strip=True))
+        if not section_number:
             continue
         value = _extract_contract_notice_section_value(h3)
-        if value:
+        if not value:
+            continue
+        h3_entries.append((_section_to_field_name(section_number), value))
+
+    buyer_fields = {
+        "cn_section_1_2",
+        "cn_section_1_3",
+        "cn_section_1_4",
+        "cn_section_1_5",
+        "cn_section_1_5_1",
+        "cn_section_1_5_2",
+        "cn_section_1_5_3",
+        "cn_section_1_5_4",
+        "cn_section_1_5_5",
+        "cn_section_1_5_6",
+        "cn_section_1_5_7",
+        "cn_section_1_5_8",
+        "cn_section_1_5_9",
+        "cn_section_1_5_10",
+    }
+    part_fields = {
+        "cn_section_4_5_1",
+        "cn_section_4_5_3",
+        "cn_section_4_5_4",
+        "cn_section_4_5_5",
+        "cn_section_5_1",
+        "cn_section_5_2",
+        "cn_section_5_2_1",
+        "cn_section_6_1",
+        "cn_section_6_1_1",
+        "cn_section_6_1_2",
+        "cn_section_6_1_3",
+        "cn_section_6_1_4",
+        "cn_section_6_1_5",
+        "cn_section_6_1_6",
+        "cn_section_6_1_7",
+        "cn_section_6_2",
+        "cn_section_6_3",
+        "cn_section_6_4",
+        "cn_section_6_5",
+        "cn_section_6_6",
+        "cn_section_6_7",
+        "cn_section_7_1",
+        "cn_section_7_2",
+        "cn_section_7_3_1",
+        "cn_section_7_3_2",
+        "cn_section_7_3_3",
+        "cn_section_7_3_4",
+        "cn_section_7_3_5",
+        "cn_section_7_3_6",
+        "cn_section_7_3_7",
+        "cn_section_7_3_8",
+        "cn_section_7_3_9",
+        "cn_section_7_4",
+        "cn_section_7_4_1",
+        "cn_section_8_1",
+        "cn_section_8_2",
+        "cn_section_8_3",
+        "cn_section_8_4",
+    }
+
+    buyers: list[dict[str, str]] = []
+    current_buyer: dict[str, str] | None = None
+    for field_name, value in h3_entries:
+        if field_name == "cn_section_1_2":
+            if current_buyer:
+                buyers.append(current_buyer)
+            current_buyer = {field_name: value}
+            continue
+        if current_buyer is not None:
+            if field_name in buyer_fields:
+                current_buyer.setdefault(field_name, value)
+                continue
+            buyers.append(current_buyer)
+            current_buyer = None
+    if current_buyer:
+        buyers.append(current_buyer)
+
+    parts: list[dict[str, str]] = []
+    current_part: dict[str, str] | None = None
+    for field_name, value in h3_entries:
+        if field_name == "cn_section_4_5_1":
+            if current_part:
+                parts.append(current_part)
+            current_part = {field_name: value}
+            continue
+        if current_part is not None:
+            if field_name in part_fields:
+                current_part.setdefault(field_name, value)
+                continue
+            parts.append(current_part)
+            current_part = None
+    if current_part:
+        parts.append(current_part)
+
+    field_names = set(model_cls.model_fields.keys())
+    payload: dict[str, object] = {}
+    scalar_fields = field_names - {"buyers", "parts"}
+    for field_name, value in h3_entries:
+        if field_name in scalar_fields and field_name not in payload:
             payload[field_name] = value
+    if "buyers" in field_names and buyers:
+        payload["buyers"] = buyers
+    if "parts" in field_names and parts:
+        payload["parts"] = parts
+
     try:
-        return ContractNoticeCoreRaw(**payload)
+        return model_cls(**payload)
     except ValidationError:
         return None
 
@@ -779,7 +935,7 @@ def _extract_contract_notice_parts(
             section_number = _extract_contract_notice_section_number(h3.get_text(separator=" ", strip=True))
             if not section_number:
                 continue
-            field_name = _cn_section_to_field_name(section_number)
+            field_name = _section_to_field_name(section_number)
             if field_name not in part_field_names or field_name in section_payload:
                 continue
             value = _extract_contract_notice_section_value(h3)
@@ -1428,7 +1584,8 @@ def parse_html(
     """
     soup = BeautifulSoup(html, "lxml")
 
-    core_model = _build_contract_notice_core_model(soup) if notice_type == "ContractNotice" else None
+    sections_model = _build_notice_sections_model(soup, notice_type=notice_type)
+    core_model = sections_model if isinstance(sections_model, ContractNoticeCoreRaw) else None
     ogloszenie_dotyczy = (
         core_model.cn_section_2_1
         if core_model and core_model.cn_section_2_1

@@ -1,0 +1,589 @@
+{
+  "1.1": {
+    "col_name": "cn_section_1_1",
+    "section_header": "Rola zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Postępowanie prowadzone jest samodzielnie przez zamawiającego",
+      "Postępowanie prowadzi zamawiający centralny",
+      "Postępowanie prowadzi podmiot, któremu powierzono przeprowadzenie postępowania"
+    ]
+  },
+  "1.2": {
+    "col_name": "cn_section_1_2",
+    "section_header": "Nazwa zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Gmina Trzebinia",
+      "Narodowe Centrum Badań Jądrowych",
+      "Narodowe Centrum Badań i Rozwoju"
+    ]
+  },
+  "1.3": {
+    "col_name": "cn_section_1_3",
+    "section_header": "Oddział zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Straż Miejska m.st. Warszawy",
+      "Wrocławski Tor Wyścigów Konnych - Partynice",
+      "Dział Zakupów i Zamówień Publicznych"
+    ]
+  },
+  "1.4": {
+    "col_name": "cn_section_1_4",
+    "section_header": "Krajowy Numer Identyfikacyjny",
+    "data_model": "core",
+    "example_values": [
+      "REGON 276258032",
+      "REGON 001024043",
+      "REGON 141032404"
+    ]
+  },
+  "1.5.1": {
+    "col_name": "cn_section_1_5_1",
+    "section_header": "Ulica",
+    "data_model": "core",
+    "example_values": [
+      "Marszałka Piłsudskiego 14",
+      "Andrzeja Sołtana 7",
+      "Chmielna 69"
+    ]
+  },
+  "1.5.2": {
+    "col_name": "cn_section_1_5_2",
+    "section_header": "Miejscowość",
+    "data_model": "core",
+    "example_values": [
+      "Trzebinia",
+      "Otwock",
+      "Warszawa"
+    ]
+  },
+  "1.5.3": {
+    "col_name": "cn_section_1_5_3",
+    "section_header": "Kod pocztowy",
+    "data_model": "core",
+    "example_values": [
+      "32-540",
+      "05-400",
+      "00-801"
+    ]
+  },
+  "1.5.4": {
+    "col_name": "cn_section_1_5_4",
+    "section_header": "Województwo",
+    "data_model": "core",
+    "example_values": [
+      "małopolskie",
+      "mazowieckie",
+      "pomorskie"
+    ]
+  },
+  "1.5.5": {
+    "col_name": "cn_section_1_5_5",
+    "section_header": "Kraj",
+    "data_model": "core",
+    "example_values": [
+      "Polska",
+      "Chiny",
+      "Stany Zjedn. Ameryki"
+    ]
+  },
+  "1.5.6": {
+    "col_name": "cn_section_1_5_6",
+    "section_header": "Lokalizacja NUTS 3",
+    "data_model": "core",
+    "example_values": [
+      "PL21A - Oświęcimski",
+      "PL912 - Warszawski wschodni",
+      "PL911 - Miasto Warszawa"
+    ]
+  },
+  "1.5.7": {
+    "col_name": "cn_section_1_5_7",
+    "section_header": "Numer telefonu",
+    "data_model": "core",
+    "example_values": [
+      "32 7111045, 32 7111046",
+      "222731630",
+      "58 5514419"
+    ]
+  },
+  "1.5.8": {
+    "col_name": "cn_section_1_5_8",
+    "section_header": "Adres poczty elektronicznej",
+    "data_model": "core",
+    "example_values": [
+      "przetargi@um.trzebinia.pl",
+      "magdalena.kruk@ncbj.gov.pl",
+      "przetargi@ncbr.gov.pl"
+    ]
+  },
+  "1.5.9": {
+    "col_name": "cn_section_1_5_9",
+    "section_header": "Adres strony internetowej zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "www.trzebinia.pl",
+      "https://www.ncbj.gov.pl/",
+      "https://www.gov.pl/web/ncbr"
+    ]
+  },
+  "1.5.10": {
+    "col_name": "cn_section_1_5_10",
+    "section_header": "Adres strony internetowej zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "http://www.powiat.pszczyna.pl",
+      "http://pzs1.pszczyna.edu.pl",
+      "https://pzs2pszczyna.pl"
+    ]
+  },
+  "1.6": {
+    "col_name": "cn_section_1_6",
+    "section_header": "Rodzaj zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Zamawiający publiczny - jednostka sektora finansów publicznych - jednostka samorządu terytorialnego",
+      "Zamawiający publiczny - osoba prawna, o której mowa w art. 4 pkt 3 ustawy (podmiot prawa publicznego)",
+      "Zamawiający publiczny - jednostka sektora finansów publicznych - agencja wykonawcza"
+    ]
+  },
+  "1.7": {
+    "col_name": "cn_section_1_7",
+    "section_header": "Przedmiot działalności zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Ogólne usługi publiczne",
+      "Inna działalność",
+      "Ochrona socjalna"
+    ]
+  },
+  "1.9.1": {
+    "col_name": "cn_section_1_9_1",
+    "section_header": "Nazwa podmiotu prowadzącego postępowanie",
+    "data_model": "core",
+    "example_values": [
+      "Gmina Sosnowiec - miasto posiadające prawa powiatu",
+      "Supra Brokers S.A",
+      "Grudziądzki Park Przemysłowy Sp. z o.o."
+    ]
+  },
+  "1.9.2": {
+    "col_name": "cn_section_1_9_2",
+    "section_header": "Krajowy Numer Identyfikacyjny",
+    "data_model": "core",
+    "example_values": [
+      "REGON: 000515885",
+      "021916234",
+      "8762272847"
+    ]
+  },
+  "1.9.3": {
+    "col_name": "cn_section_1_9_3",
+    "section_header": "Ulica",
+    "data_model": "core",
+    "example_values": [
+      "Aleja Zwycięstwa 20",
+      "Aleja Śląska 1",
+      "Waryńskiego 32-36"
+    ]
+  },
+  "1.9.4": {
+    "col_name": "cn_section_1_9_4",
+    "section_header": "Miejscowość",
+    "data_model": "core",
+    "example_values": [
+      "Sosnowiec",
+      "Wrocław",
+      "Grudziądz"
+    ]
+  },
+  "1.9.5": {
+    "col_name": "cn_section_1_9_5",
+    "section_header": "Kod pocztowy",
+    "data_model": "core",
+    "example_values": [
+      "41-200",
+      "54-118",
+      "86-300"
+    ]
+  },
+  "1.9.6": {
+    "col_name": "cn_section_1_9_6",
+    "section_header": "Województwo",
+    "data_model": "core",
+    "example_values": [
+      "śląskie",
+      "dolnośląskie",
+      "kujawsko-pomorskie"
+    ]
+  },
+  "1.9.7": {
+    "col_name": "cn_section_1_9_7",
+    "section_header": "Kraj",
+    "data_model": "core",
+    "example_values": [
+      "Polska"
+    ]
+  },
+  "1.9.8": {
+    "col_name": "cn_section_1_9_8",
+    "section_header": "Lokalizacja NUTS 3",
+    "data_model": "core",
+    "example_values": [
+      "PL22B - Sosnowiecki",
+      "PL518 - Wrocławski",
+      "PL616 - Grudziądzki"
+    ]
+  },
+  "1.9.9": {
+    "col_name": "cn_section_1_9_9",
+    "section_header": "Numer telefonu",
+    "data_model": "core",
+    "example_values": [
+      "+48 32 296 07 77",
+      "+ 48 32 296 07 77",
+      "32 2960721"
+    ]
+  },
+  "1.9.10": {
+    "col_name": "cn_section_1_9_10",
+    "section_header": "Numer faksu",
+    "data_model": "core",
+    "example_values": [
+      "12 278 68 60"
+    ]
+  },
+  "1.9.11": {
+    "col_name": "cn_section_1_9_11",
+    "section_header": "Adres poczty elektronicznej",
+    "data_model": "core",
+    "example_values": [
+      "u.mysior@um.sosnowiec.pl",
+      "centrala@suprabrokers.pl",
+      "gz@gpp.grudziadz.pl"
+    ]
+  },
+  "1.9.12": {
+    "col_name": "cn_section_1_9_12",
+    "section_header": "Adres strony internetowej",
+    "data_model": "core",
+    "example_values": [
+      "https://umsosnowiec.logintrade.net/zapytania_email,187171,aefc865e685bf024cc6fd4108dba5586.html",
+      "www.suprabrokers.pl",
+      "https://umsosnowiec.logintrade.net/zapytania_email,188986,79140e866356e47e33a983393edd5c79.html"
+    ]
+  },
+  "2.1": {
+    "col_name": "cn_section_2_1",
+    "section_header": "Nazwa zamówienia",
+    "data_model": "core",
+    "example_values": [
+      "Serwis i nadzór autorski nad prawidłowością funkcjonowania oprogramowania RATUSZ w roku 2025.",
+      "Dostawa w podziale na 2 części:",
+      "Zakup dostępu do bazy EMIS gromadzących dane o spółkach/ sektorach i gospodarkach wraz z raportami branżowymi i modułem analizy danych."
+    ]
+  },
+  "2.2": {
+    "col_name": "cn_section_2_2",
+    "section_header": "Identyfikator postępowania",
+    "data_model": "core",
+    "example_values": [
+      "ocds-148610-7a309614-65a1-48d3-9094-99839273ec85",
+      "ocds-148610-3b747f4b-b894-46c0-bedd-8af8454f27f9",
+      "ocds-148610-ee86f2ee-d989-4201-bcb0-30867efa983c"
+    ]
+  },
+  "2.3": {
+    "col_name": "cn_section_2_3",
+    "section_header": "Numer ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "2025/BZP 00001085",
+      "2025/BZP 00001625",
+      "2025/BZP 00002261"
+    ]
+  },
+  "2.4": {
+    "col_name": "cn_section_2_4",
+    "section_header": "Wersja ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "01"
+    ]
+  },
+  "2.5": {
+    "col_name": "cn_section_2_5",
+    "section_header": "Data ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "2025-01-02",
+      "2025-01-03",
+      "2025-01-07"
+    ]
+  },
+  "2.6": {
+    "col_name": "cn_section_2_6",
+    "section_header": "Zamówienie zostało ujęte w planie postępowań",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "2.7": {
+    "col_name": "cn_section_2_7",
+    "section_header": "Numer planu postępowań w BZP",
+    "data_model": "core",
+    "example_values": [
+      "2024/BZP 00087665/02/P",
+      "2024/BZP 00661770/01/P",
+      "2024/BZP 00037170/17/P"
+    ]
+  },
+  "2.8": {
+    "col_name": "cn_section_2_8",
+    "section_header": "Identyfikator pozycji planu postępowań",
+    "data_model": "core",
+    "example_values": [
+      "1.2.32 Dostawa poliglikolu etylenowego",
+      "1.2.1 Dostawa oraz przesył czynnika grzewczego na potrzeby centralnego ogrzewania do obiektu Zespołu Szkół Nr 9 im. R. Traugutta w Koszalinie przy ul. Wańkowicza 26",
+      "1.3.3 Opieka serwisowa, nadzór autorski, producenta oprogramowania systemu ERP MAAT wraz z modułami oraz kosztami modyfikacji dostosowania aplikacji do zmian przepisów prawa"
+    ]
+  },
+  "2.9": {
+    "col_name": "cn_section_2_9",
+    "section_header": "Ogłoszenie dotyczy usług społecznych i innych szczególnych usług",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "2.10": {
+    "col_name": "cn_section_2_10",
+    "section_header": "Czy zamówienie dotyczy projektu lub programu współfinansowanego ze środków Unii Europejskiej",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "2.11": {
+    "col_name": "cn_section_2_11",
+    "section_header": "Nazwa projektu lub programu",
+    "data_model": "core",
+    "example_values": [
+      "Projekt: PolFEL – Polski Laser na Swobodnych Elektronach, faza 1.1, Finansowanie Projektu: Krajowy Plan Odbudowy i Zwiększania Odporności.",
+      "Plan Strategiczny dla Wspólnej Polityki Rolnej na lata 2023-2027",
+      "projekcie „Zbudowanie systemu koordynacji i monitorowania regionalnych działań na rzecz kształcenia zawodowego, szkolnictwa wyższego oraz uczenia się przez całe życie, w tym uczenia się dorosłych”, który finansowany jest ze środków Krajowego Planu Odbudowy i Zwiększania Odporności."
+    ]
+  },
+  "3.1": {
+    "col_name": "cn_section_3_1",
+    "section_header": "Przed wszczęciem postępowania przeprowadzono konsultacje rynkowe",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "3.2": {
+    "col_name": "cn_section_3_2",
+    "section_header": "Numer referencyjny",
+    "data_model": "core",
+    "example_values": [
+      "SIA.271.1.2025",
+      "EZP.270.83.2024",
+      "39/24/WR"
+    ]
+  },
+  "3.3": {
+    "col_name": "cn_section_3_3",
+    "section_header": "Rodzaj zamówienia",
+    "data_model": "core",
+    "example_values": [
+      "Usługi",
+      "Dostawy",
+      "Roboty budowlane"
+    ]
+  },
+  "3.4": {
+    "col_name": "cn_section_3_4",
+    "section_header": "Zamawiający udziela zamówienia w częściach, z których każda stanowi przedmiot odrębnego postępowania",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "3.5": {
+    "col_name": "cn_section_3_5",
+    "section_header": "Wartość zamówienia",
+    "data_model": "core",
+    "example_values": [
+      "190080,00                     PLN",
+      "322116,41                     PLN",
+      "126072,49                     PLN"
+    ]
+  },
+  "3.5.1": {
+    "col_name": "cn_section_3_5_1",
+    "section_header": "Wartość zamówienia stanowiącego przedmiot tego postępowania (bez VAT)",
+    "data_model": "core",
+    "example_values": [
+      "90000                 PLN",
+      "171000                 PLN",
+      "10078,05                 PLN"
+    ]
+  },
+  "3.6": {
+    "col_name": "cn_section_3_6",
+    "section_header": "Możliwe jest składanie ofert częściowych",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "3.7": {
+    "col_name": "cn_section_3_7",
+    "section_header": "Liczba części",
+    "data_model": "core",
+    "example_values": [
+      "5",
+      "6"
+    ]
+  },
+  "3.8": {
+    "col_name": "cn_section_3_8",
+    "section_header": "Krótki opis przedmiotu zamówienia",
+    "data_model": "core",
+    "example_values": [
+      "Serwis i nadzór autorski nad prawidłowością funkcjonowania oprogramowania RATUSZ w roku 2025r.",
+      "1.\tGUROBI - subskrypcja roczna 2 szt. licencji solvera GUROBI (w tym 1x Multi-Use License, 1x Single-Use License)",
+      "Przedmiotem zamówienia jest zakup dostępu do bazy EMIS gromadzących dane o spółkach/ sektorach i gospodarkach wraz z raportami branżowymi i modułem analizy danych"
+    ]
+  },
+  "3.9": {
+    "col_name": "cn_section_3_9",
+    "section_header": "Wartość części",
+    "data_model": "core",
+    "example_values": [
+      "1219512,20                            PLN",
+      "7601626,02                            PLN",
+      "569105,69                            PLN"
+    ]
+  },
+  "3.10": {
+    "col_name": "cn_section_3_10",
+    "section_header": "Główny kod CPV",
+    "data_model": "core",
+    "example_values": [
+      "48000000-8 - Pakiety oprogramowania i systemy informatyczne",
+      "85311000-2 - Usługi opieki społecznej obejmujące miejsca noclegowe",
+      "24322310-3 - Glikol etylenu"
+    ]
+  },
+  "3.11": {
+    "col_name": "cn_section_3_11",
+    "section_header": "Dodatkowy kod CPV",
+    "data_model": "core",
+    "example_values": [
+      "03114100-4 - Słoma",
+      "50700000-2 - Usługi w zakresie napraw i konserwacji instalacji budynkowych 50800000-3 - Różne usługi w zakresie napraw i konserwacji 90610000-6 - Usługi sprzątania i zamiatania ulic 90620000-9 - Usługi odśnieżania 90630000-2 - Usługi usuwania oblodzeń 90911200-8 - Usługi sprzątania budynków 90914000-7 - Usługi sprzątania parkingów",
+      "90919200-4 - Usługi sprzątania biur 33761000-2 - Papier toaletowy 33711900-6 - Mydło"
+    ]
+  },
+  "4.1": {
+    "col_name": "cn_section_4_1",
+    "section_header": "Tryb udzielenia zamówienia/ wraz z podstawą prawną",
+    "data_model": "core",
+    "example_values": [
+      "Zamówienie udzielane jest w trybie zamówienia z wolnej ręki na podstawie: art. 305 pkt 1 ustawy w zw. z art. 214 ust. 1 pkt 1 ustawy",
+      "Zamówienie udzielane jest w trybie zamówienia z wolnej ręki na podstawie: art. 305 pkt 2 ustawy",
+      "Zamówienie udzielane jest w trybie zamówienia z wolnej ręki na podstawie: art. 305 pkt 1 ustawy w zw. z art. 214 ust. 1 pkt 5 ustawy"
+    ]
+  },
+  "4.2": {
+    "col_name": "cn_section_4_2",
+    "section_header": "Uzasadnienie faktyczne i prawne wyboru trybu negocjacji bez ogłoszenia albo zamówienia z wolnej ręki",
+    "data_model": "core",
+    "example_values": [
+      "Wyjaśnienie: oprogramowanie firmy REKORD użytkowane jest w Urzędzie od 2005 roku, firma REKORD jest producentem oprogramowania. Posiada wyłączne prawo do sprzedaży i serwisowania oprogramowania.",
+      "art. 305 ust. 1 w zw. z art. 214 ust. 1 pkt. 1 lit. a",
+      "Art. 305 pkt 1 ustawy w zw. z art. 214 ust. 1 pkt 1."
+    ]
+  },
+  "4.3": {
+    "col_name": "cn_section_4_3",
+    "section_header": "Identyfikator wcześniejszego postępowania lub konkursu",
+    "data_model": "core",
+    "example_values": [
+      "DzPS.271.2.7.2024",
+      "ocds-148610-c084b742-8888-4d83-b9ee-c631d9c97c54",
+      "ocds-148610-2e65e74f-fb81-44a2-8e09-14aa82b5430d"
+    ]
+  },
+  "5.1.1": {
+    "col_name": "cn_section_5_1_1",
+    "section_header": "Nazwa (firma) wykonawcy, któremu Zamawiający zamierza udzielić zamówienia (w przypadku wykonawców ubiegających się wspólnie o udzielenie zamówienia – dotyczy pełnomocnika, o którym mowa w art. 58 ust. 2 ustawy)",
+    "data_model": "core",
+    "example_values": [
+      "REKORD SI",
+      "Gurobi GmbH",
+      "ISI Emerging Markets Polska Sp. z o.o."
+    ]
+  },
+  "5.1.2": {
+    "col_name": "cn_section_5_1_2",
+    "section_header": "Ulica",
+    "data_model": "core",
+    "example_values": [
+      "Kasprowicza",
+      "Geschäftsanschrift: Sandstraße 104",
+      "Krucza 50"
+    ]
+  },
+  "5.1.3": {
+    "col_name": "cn_section_5_1_3",
+    "section_header": "Miejscowość",
+    "data_model": "core",
+    "example_values": [
+      "Bielsko-Biała",
+      "Monheim am Rhein",
+      "Warszawa"
+    ]
+  },
+  "5.1.4": {
+    "col_name": "cn_section_5_1_4",
+    "section_header": "Kod pocztowy",
+    "data_model": "core",
+    "example_values": [
+      "43-300",
+      "40789",
+      "00-025"
+    ]
+  },
+  "5.1.5": {
+    "col_name": "cn_section_5_1_5",
+    "section_header": "Województwo",
+    "data_model": "core",
+    "example_values": [
+      "śląskie",
+      "mazowieckie",
+      "pomorskie"
+    ]
+  },
+  "5.1.6": {
+    "col_name": "cn_section_5_1_6",
+    "section_header": "Kraj",
+    "data_model": "core",
+    "example_values": [
+      "Polska",
+      "Niemcy",
+      "Francja"
+    ]
+  }
+}

@@ -1,0 +1,766 @@
+{
+  "1.1": {
+    "col_name": "cn_section_1_1",
+    "section_header": "Nazwa zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "GMINA GÓROWO IŁAWECKIE",
+      "GMINA DOBROSZYCE",
+      "Mogileńskie Przedsiębiorstwo Gospodarki Komunalnej sp. z o.o."
+    ]
+  },
+  "1.3": {
+    "col_name": "cn_section_1_3",
+    "section_header": "Krajowy Numer Identyfikacyjny",
+    "data_model": "core",
+    "example_values": [
+      "REGON 510742913",
+      "REGON 931934779",
+      "REGON 340433075"
+    ]
+  },
+  "1.4.1": {
+    "col_name": "cn_section_1_4_1",
+    "section_header": "Ulica",
+    "data_model": "core",
+    "example_values": [
+      "ul. T. Kościuszki 17",
+      "Rynek 16",
+      "Witosa 6"
+    ]
+  },
+  "1.4.2": {
+    "col_name": "cn_section_1_4_2",
+    "section_header": "Miejscowość",
+    "data_model": "core",
+    "example_values": [
+      "Górowo Iławeckie",
+      "Dobroszyce",
+      "Mogilno"
+    ]
+  },
+  "1.4.3": {
+    "col_name": "cn_section_1_4_3",
+    "section_header": "Kod pocztowy",
+    "data_model": "core",
+    "example_values": [
+      "11-220",
+      "56-410",
+      "88-300"
+    ]
+  },
+  "1.4.4": {
+    "col_name": "cn_section_1_4_4",
+    "section_header": "Województwo",
+    "data_model": "core",
+    "example_values": [
+      "warmińsko-mazurskie",
+      "dolnośląskie",
+      "kujawsko-pomorskie"
+    ]
+  },
+  "1.4.5": {
+    "col_name": "cn_section_1_4_5",
+    "section_header": "Kraj",
+    "data_model": "core",
+    "example_values": [
+      "Polska"
+    ]
+  },
+  "1.4.6": {
+    "col_name": "cn_section_1_4_6",
+    "section_header": "Lokalizacja NUTS 3",
+    "data_model": "core",
+    "example_values": [
+      "PL622 - Olsztyński",
+      "PL518 - Wrocławski",
+      "PL617 - Inowrocławski"
+    ]
+  },
+  "1.4.7": {
+    "col_name": "cn_section_1_4_7",
+    "section_header": "Numer telefonu",
+    "data_model": "core",
+    "example_values": [
+      "897611322",
+      "052 315 22 35"
+    ]
+  },
+  "1.4.8": {
+    "col_name": "cn_section_1_4_8",
+    "section_header": "Numer faksu",
+    "data_model": "core",
+    "example_values": [
+      "897611530",
+      "052 315 12 33"
+    ]
+  },
+  "1.4.9": {
+    "col_name": "cn_section_1_4_9",
+    "section_header": "Adres poczty elektronicznej",
+    "data_model": "core",
+    "example_values": [
+      "sekretariat@uggorowo.pl",
+      "zamowieniapubliczne@dobroszyce.pl",
+      "mpgk@mpgk.mogilno.pl"
+    ]
+  },
+  "1.4.10": {
+    "col_name": "cn_section_1_4_10",
+    "section_header": "Adres strony internetowej zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "http://gorowoil-ug.bip-wm.pl",
+      "https://www.dobroszyce.pl/",
+      "mpgk.mogilno.pl"
+    ]
+  },
+  "1.5": {
+    "col_name": "cn_section_1_5",
+    "section_header": "Rodzaj zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Zamawiający publiczny - jednostka sektora finansów publicznych - jednostka samorządu terytorialnego",
+      "Zamawiający publiczny - osoba prawna, o której mowa w art. 4 pkt 3 ustawy (podmiot prawa publicznego)"
+    ]
+  },
+  "1.6": {
+    "col_name": "cn_section_1_6",
+    "section_header": "Przedmiot działalności zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Ogólne usługi publiczne"
+    ]
+  },
+  "1.7": {
+    "col_name": "cn_section_1_7",
+    "section_header": "Czy postępowanie przeprowadza podmiot, któremu zamawiający powierzył prowadzenie postępowania",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ]
+  },
+  "2.1": {
+    "col_name": "cn_section_2_1",
+    "section_header": "Nazwa umowy koncesji",
+    "data_model": "core",
+    "example_values": [
+      "Koncesja na usługi utrzymania i zarządzania Zakładem Przyrodoleczniczym wraz z infrastrukturą techniczną w Nowej Wsi Iławeckiej",
+      "Pełnienie funkcji operatora i zarządcy dobroszyckiej sieci telekomunikacyjnej, będącej własnością Gminy Dobroszyce.",
+      "Zamknięcie i rekultywacja gminnego składowiska odpadów innych niż niebezpieczne i obojętne w m. Szerzawy gmina Mogilno"
+    ]
+  },
+  "2.2": {
+    "col_name": "cn_section_2_2",
+    "section_header": "Identyfikator postępowania",
+    "data_model": "core",
+    "example_values": [
+      "ocds-148610-5413c682-6a59-475d-ae71-7c7ca279d501",
+      "ocds-148610-47759500-b03d-4691-ba11-f9f4ea15cb6f",
+      "ocds-148610-bb9b885f-8e8a-4c74-bace-9cd51c90bad9"
+    ]
+  },
+  "2.3": {
+    "col_name": "cn_section_2_3",
+    "section_header": "Numer ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "2025/BZP 00063366",
+      "2025/BZP 00091122",
+      "2025/BZP 00185905"
+    ]
+  },
+  "2.4": {
+    "col_name": "cn_section_2_4",
+    "section_header": "Wersja ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "01"
+    ]
+  },
+  "2.5": {
+    "col_name": "cn_section_2_5",
+    "section_header": "Data ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "2025-01-24",
+      "2025-02-05",
+      "2025-04-10"
+    ]
+  },
+  "2.6.1": {
+    "col_name": "cn_section_2_6_1",
+    "section_header": "O zawarcie umowy koncesji mogą się ubiegać wyłącznie wykonawcy, o których mowa w art. 34 ustawy",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ]
+  },
+  "2.7": {
+    "col_name": "cn_section_2_7",
+    "section_header": "Czy umowa koncesji dotyczy projektu lub programu współfinansowanego ze środków Unii Europejskiej",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ]
+  },
+  "3.1": {
+    "col_name": "cn_section_3_1",
+    "section_header": "Adres strony internetowej prowadzonego postępowania",
+    "data_model": "core",
+    "example_values": [
+      "http://gorowoil-ug.bip-wm.pl",
+      "https://bip.dobroszyce.pl/m,516,zamowienia-publiczne.html",
+      "bip.mpgk.mogilno.pl"
+    ]
+  },
+  "3.2": {
+    "col_name": "cn_section_3_2",
+    "section_header": "Zamawiający zastrzega dostęp do dokumentów koncesji",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "3.3": {
+    "col_name": "cn_section_3_3",
+    "section_header": "Uzasadnienie zastrzeżenia części dokumentów koncesji, sposób przekazywania zastrzeżonej częsci dokumentów oraz wymagania związane z ochroną poufnego charakteru informacji",
+    "data_model": "core",
+    "example_values": [
+      "4.\tZamawiający działając na podstawie art. 13 ust. 4 ustawy o koncesji informuje, iż ustanawia wymagania dotyczące zachowania poufnego charakteru niżej wymienionych informacji stanowiących element opisu przedmiotu umowy koncesji:  Inwentaryzacja dobroszyckiej gminnej sieci światłowodowej, zawierająca: - określenie rzeczywistego przebiegu gminnej sieci światłowodowej; - mapę przebiegu sieci gminnej wskazującej punkty styku i studnie; - określenie stanu technicznego włókien światłowodowych; - ustalenie miejsc, w których są zamontowane i / lub działają urządzenia stanowiące własność Gminy; - ustalenie stanu technicznego urządzeń stanowiących własność Gminy. 5.\tZamawiający nie udostępnia ww. dokumentów do publicznej wiadomości, z powodu ochrony ich poufnego charakteru. Zamawiający udostępni rzeczone dokumenty wyłącznie zainteresowanym wykonawcom, którzy zwrócą się do Zamawiającego o ich udostępnienie i przekażą Zamawiającemu podpisaną klauzuli poufności, zgodnie z wzorem stanowiącym załącznik nr 9 do OWK. Zamawiający wymaga przekazania klauzuli poufności w oryginale, tj. w formie elektronicznej, tj. przy użyciu kwalifikowanego podpisu elektronicznego przekazanej na adres zamowieniapubliczne@dobroszyce.pl albo w postaci „papierowej” - w formie pisemnej przekazanej do siedziby Zamawiającego (zgodnie z danymi w rozdziale I OWK). Wymagane jest złożenie oświadczenia przez osoby uprawnione do reprezentacji Wykonawcy (uprawnienie to musi wynikać z dokumentów rejestrowych lub pełnomocnictwa, przekazanemu Zamawiającemu). Zamawiający przekaże dokumenty w wybrany sposób na adres mailowy wskazany przez Wykonawcę."
+    ]
+  },
+  "3.4": {
+    "col_name": "cn_section_3_4",
+    "section_header": "Sposób albo sposoby komunikowania się z wykonawcami w postępowaniu",
+    "data_model": "core",
+    "example_values": [
+      "przy użyciu środków komunikacji elektronicznej",
+      "za pośrednictwem operatora pocztowego, w rozumieniu ustawy z dnia 23 listopada 2012 r. – Prawo pocztowe osobiście przez posłańca przy użyciu środków komunikacji elektronicznej",
+      "za pośrednictwem operatora pocztowego, w rozumieniu ustawy z dnia 23 listopada 2012 r. – Prawo pocztowe"
+    ]
+  },
+  "3.5": {
+    "col_name": "cn_section_3_5",
+    "section_header": "Wymagania techniczne i organizacyjne dot. korespondencji elektronicznej",
+    "data_model": "core",
+    "example_values": [
+      "Postępowanie prowadzone jest w języku polskim. Komunikacja w postępowaniu odbywa się w formie elektronicznej za pośrednictwem platformazakupowa.pl pod adresem: https://platformazakupowa.pl/pn/gorowoilaweckie (w zakładce dedykowanej postępowaniu)",
+      "1.\tW postępowaniu o zawarcie umowy koncesji komunikacja między Zamawiającym i Wykonawcami, w tym przekazywanie ofert, oświadczeń i zawiadomień, odbywa się wyłącznie przy użyciu środków komunikacji elektronicznej wskazanych w niniejszej OWK. Ofertę oraz wszelkie oświadczenia i dokumenty, w ramach postępowania składa się pod rygorem nieważności, w formie elektronicznej lub w postaci elektronicznej opatrzonej podpisem zaufanym lub podpisem osobistym. 2.\tKomunikacja w postępowaniu o zawarcie umowy koncesji odbywa się za pośrednictwem wiadomości mailowych na adres zamowieniapubliczne@dobroszyce.pl. Zamawiający informuje, iż korespondencję w ramach postępowania kierował będzie z adresu e-mail: zamowieniapubliczne@dobroszyce.pl. Zamawiający wskazuje, iż rzeczona forma komunikacji gwarantuje zachowanie integralności, autentyczności oraz poufności danych.",
+      "e-mail: mpgk@mpgk.mogilno.pl. Wymagania zgodnie z Rozdziałem I OPZUK - Instrukcja dla Wykonawców (IDW), a w szczególności zgodnie z punktem 2 IDW."
+    ]
+  },
+  "3.6": {
+    "col_name": "cn_section_3_6",
+    "section_header": "Informacje o środkach komunikacji elektronicznej, przy użyciu których zamawiający będzie komunikował się z wykonawcami - adres strony internetowej",
+    "data_model": "core",
+    "example_values": [
+      "https://platformazakupowa.pl/pn/gorowoilaweckie",
+      "https://bip.dobroszyce.pl/m,516,zamowienia-publiczne.html",
+      "bip.mpgk.mogilno.pl"
+    ]
+  },
+  "3.7": {
+    "col_name": "cn_section_3_7",
+    "section_header": "Zamawiający dopuszcza składanie ofert albo wniosków o dopuszczenie do udziału w postępowaniu o zawarcie umowy koncesji oraz oświadczeń",
+    "data_model": "core",
+    "example_values": [
+      "w formie pisemnej lub w postaci elektronicznej opatrzonej podpisem zaufanym lub podpisem osobistym",
+      "wyłącznie w formie pisemnej"
+    ]
+  },
+  "3.8": {
+    "col_name": "cn_section_3_8",
+    "section_header": "Zamawiający dopuszcza sporządzenie i przedstawienie ofert przy użyciu narzędzi elektronicznego modelowania danych budowlanych lub innych podobnych narzędzi, które nie są ogólnie dostępne",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ]
+  },
+  "3.10": {
+    "col_name": "cn_section_3_10",
+    "section_header": "Język ofert, wniosków oraz dokumentów potwierdzających spełnianie kryteriów kwalifikacji oraz braku podstaw wykluczena",
+    "data_model": "core",
+    "example_values": [
+      "polski"
+    ]
+  },
+  "3.11": {
+    "col_name": "cn_section_3_11",
+    "section_header": "RODO (obowiązek informacyjny)",
+    "data_model": "core",
+    "example_values": [
+      "1. Zgodnie z art. 13 ust. 1 i 2 rozporządzenia Parlamentu Europejskiego i Rady (UE) 2016/679 z dnia 27 kwietnia 2016 r. w sprawie ochrony osób fizycznych w związku z przetwarzaniem danych osobowych i w sprawie swobodnego przepływu takich danych oraz uchylenia dyrektywy 95/46/WE (ogólne rozporządzenie o ochronie danych) (Dz. Urz. UE L 119 z 04.05.2016, str. 1), dalej „RODO”, informuję, że: a) administratorem Pani/Pana danych osobowych przetwarzanych w związku z prowadzeniem postępowania o zawarcie umowy koncesji jest Wójt Gminy Górowo Iławeckie, ul. Tadeusza Kościuszki 17, 11-220 Górowo Iławeckie, tel. 89 761 13 22, e-mail: sekretariat@uggorowo.pl; b) administrator wyznaczył Inspektora Danych Osobowych, z którym można się kontaktować pod adresem e-mail: iod@uggorowo.pl. Do IOD należy kierować wyłącznie sprawy dotyczące przetwarzania danych osobowych, w tym realizacji Pani/Pana praw wynikających z RODO. c) Pani/Pana dane osobowe przetwarzane będą na podstawie art. 6 ust. 1 lit. c RODO w celu związanym z realizacją w/w zadania; d) w odniesieniu do Pani/Pana danych osobowych decyzje nie będą podejmowane w sposób zautomatyzowany, stosowanie do art. 22 RODO; e) posiada Pani/Pan: - na podstawie art. 15 RODO prawo dostępu do danych osobowych Pani/Pana dotyczących; - na podstawie art. 16 RODO prawo do sprostowania Pani/Pana danych osobowych; - na podstawie art. 18 RODO prawo żądania od administratora ograniczenia przetwarzania danych osobowych z zastrzeżeniem przypadków, o których mowa w art. 18 ust. 2 RODO. 2. Przysługuje Pani/Panu prawo do wniesienia skargi do Prezesa Urzędu Ochrony Danych Osobowych, gdy uzna Pani/Pan, że przetwarzanie danych osobowych Pani/Pana dotyczących narusza przepisy RODO. 3. Nie przysługuje Pani/Panu: a) w związku z art. 17 ust. 3 lit. b, d lub e RODO prawo do usunięcia danych osobowych; b) prawo do przenoszenia danych osobowych, o którym mowa w art. 20 RODO; c) na podstawie art. 21 RODO prawo sprzeciwu, wobec przetwarzania danych osobowych, gdyż podstawą prawną przetwarzania Pani/Pana danych osobowych jest art. 6 ust. 1 lit. c RODO. 4. W przypadku gdy wykonanie obowiązków, o których mowa w art. 15 ust. 1-3 rozporządzenia Parlamentu Europejskiego i Rady (UE) 2016/679 z dnia 27 kwietnia 2016 r., wymagałoby niewspółmiernie dużego wysiłku, Zamawiający może żądać od osoby, której dane dotyczą, wskazania dodatkowych informacji mających na celu sprecyzowanie żądania, w szczególności podania nazwy lub daty postępowania o zawarcie umowy koncesji. 5. Wystąpienie z żądaniem, o którym mowa w art. 18 ust 1 rozporządzenia Parlamentu Europejskiego i Rady (UE) 2016/679 z dnia 27 kwietnia 2016 r., nie ogranicza przetwarzania danych osobowych do czasu zakończenia postępowania o zawarcie umowy koncesji",
+      "Zgodnie z punktem 25 IDW.",
+      "Zgodnie z punktem 13 OPZUK."
+    ]
+  },
+  "3.12": {
+    "col_name": "cn_section_3_12",
+    "section_header": "RODO (ograniczenia stosowania)",
+    "data_model": "core",
+    "example_values": [
+      "Zgodnie z punktem 25 IDW.",
+      "Zgodnie z punktem 13 OPZUK."
+    ]
+  },
+  "4.1": {
+    "col_name": "cn_section_4_1",
+    "section_header": "Numer referencyjny postępowania",
+    "data_model": "core",
+    "example_values": [
+      "RIZ.271.1.2.2025",
+      "ZP.271.8.2025",
+      "03/UK/2025"
+    ]
+  },
+  "4.2": {
+    "col_name": "cn_section_4_2",
+    "section_header": "Rodzaj koncesji",
+    "data_model": "core",
+    "example_values": [
+      "usługi",
+      "roboty budowlane"
+    ]
+  },
+  "4.3": {
+    "col_name": "cn_section_4_3",
+    "section_header": "Zamawiający udziela koncesji w częściach, z których każda stanowi przedmiot odrębnego postępowania",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ]
+  },
+  "4.5": {
+    "col_name": "cn_section_4_5",
+    "section_header": "Koncesja jest podzielona na części",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ]
+  },
+  "4.6": {
+    "col_name": "cn_section_4_6",
+    "section_header": "Krótki opis przedmiotu umowy koncesji",
+    "data_model": "core",
+    "example_values": [
+      "Przedmiotem koncesji są usługi utrzymania i zarządzania infrastrukturą powstałą w wyniku realizacji projektu pn. „Budowa Zakładu Przyrodoleczniczego wraz z infrastrukturą techniczną w Nowej Wsi Iławeckiej” współfinansowanego ze środków Europejskiego Funduszu Rozwoju Regionalnego – Regionalnego Programu Operacyjnego Województwa Warmińsko-Mazurskiego na lata 2014-2020. Powierzenie infrastruktury nastąpi z zastrzeżeniem braku możliwości zmiany sposobu wykorzystania i przeznaczenia obiektów powstałych w wyniku realizacji projektu, zachowania wszelkich wskaźników realizacji projektu oraz wypełniania wszelkich założeń projektu – w okresie trwałości projektu, tj. przez okres 5 lat od otrzymania przez Gminę Górowo Iławeckie płatności końcowej.",
+      "1.\tSzczegółowe warunki realizacji umowy koncesji, wraz z przedmiotem koncesji oraz obowiązkami przyszłego Koncesjonariusza, ujęte zostały we wzorze umowy, stanowiącym załącznik nr 2 do OWK. 2.\tZamawiający wskazuje, iż w każdym przypadku, gdzie w niniejszym OWK użyto definicji z dużej litery, należy jej nadać znaczenie jak w ramach wzoru umowy, który stanowi załącznik nr 2 do OWK.",
+      "Zamknięcie i rekultywacja gminnego składowiska odpadów innych niż niebezpieczne i obojętne w m. Szerzawy gmina Mogilno. Opis przedmiotu koncesji zgodnie punktem 4 IDW."
+    ]
+  },
+  "4.7": {
+    "col_name": "cn_section_4_7",
+    "section_header": "Głowny kod CPV",
+    "data_model": "core",
+    "example_values": [
+      "79993000-1 - Usługi zarządzania obiektami budowlanymi i urządzeniami",
+      "64200000-8 - Usługi telekomunikacyjne",
+      "45112330-7 - Rekultywacja terenu"
+    ]
+  },
+  "4.8": {
+    "col_name": "cn_section_4_8",
+    "section_header": "Dodatkowy kod CPV",
+    "data_model": "core",
+    "example_values": [
+      "45112700-2 - Roboty w zakresie kształtowania terenu 45112710-5 - Roboty w zakresie kształtowania terenów zielonych 45222110-3 - Roboty budowlane w zakresie składowisk odpadów",
+      "65111000-4 - Przesył wody pitnej 65130000-3 - Obsługa stacji wody 90000000-7 - Usługi odbioru ścieków, usuwania odpadów, czyszczenia/sprzątania i usługi ekologiczne",
+      "45233253-7 - Roboty w zakresie nawierzchni dróg dla pieszych 45111200-0 - Roboty w zakresie przygotowania terenu pod budowę i roboty ziemne"
+    ]
+  },
+  "4.9": {
+    "col_name": "cn_section_4_9",
+    "section_header": "Opis potrzeb, oczekiwań i wymagań zamawiającego, które powinny zostać spełnione w ramach danego postępowania o zawarcie umowy koncesji albo w ramach danej części postępowania",
+    "data_model": "core",
+    "example_values": [
+      "1. Utrzymanie wskaźników rezultatu określonych w Projekcie obejmujących: a) realizację oczekiwanej liczby osób korzystających ze wspartej infrastruktury [osoby/rok] – 1665 na każdy obiekt (razem 3330), b) utworzenie 14 nowych miejsc pracy [EPC] dedykowanych projektowi i ich utrzymanie w okresie trwałości projektu. Od końca listopada 2025 r. 2. Do zakresu obowiązków Koncesjonariusza należeć będzie: a) utrzymanie i zarządzanie powierzoną infrastrukturą przez cały okres trwania umowy zgodnie z zasadami wynikającymi z przepisów prawa i zgodnie ze standardami zawodowymi ze szczególną starannością właściwą dla ich zawodowego charakteru; b) administrowanie gospodarcze (techniczne) w zakresie utrzymania obiektów i wyposażenia w stanie nie gorszym niż w dniu przejęcia uwzględniając normalne zużycie techniczne wynikające z właściwie prowadzonej eksploatacji; c) prowadzenie dokumentacji technicznej i eksploatacyjnej oraz ich aktualizowanie; d) konserwację bieżącą instalacji i urządzeń znajdujących się w obiektach przez autoryzowane firmy serwisowe lub pracowników posiadających odpowiednie uprawnienia; e) coroczne sporządzanie inwentaryzacji wszystkich mebli, wyposażenia, sprzętów znajdujących się na wyposażeniu obiektów; f) niezwłoczne informowanie o wszelkich awariach, uszkodzeniach zaistniałych na terenie obiektów w szczególności z informacją czy dana awaria lub uszkodzenie może być naprawione w ramach posiadanych gwarancji lub rękojmi; g) przygotowanie i przeprowadzanie wszelkich przeglądów serwisowych, napraw, remontów wszelkich urządzeń znajdujących się na terenie obiektów przez autoryzowane firmy serwisowe lub pracowników posiadających odpowiednie uprawnienia; h) bieżący monitoring i naprawy wszystkich elementów infrastruktury nie podlegającej gwarancji; i) przeprowadzanie przeglądów technicznych wymaganych przepisami Prawa budowlanego i wykonywanie zaleceń z nich wynikających; j) utrzymanie w należytym porządku powierzonej infrastruktury; k) ubezpieczenie infrastruktury i wyposażenia; l) zapewnienie bezpieczeństwa użytkowania i właściwej eksploatacji nieruchomości; m) zawieranie umów z dostawcami mediów i terminowe opłacanie rachunków; n) archiwizowanie i przechowywanie dokumentów związanych z administrowanymi obiektami, z obowiązującymi przepisami; o) prowadzenie obsługi księgowej z dostępem dla Zamawiającego w każdym czasie trwania umowy; p) udostępnianie infrastruktury na równych i niedyskryminujących zasadach wszystkim zainteresowanym; q) prowadzenie działalności uzdrowiskowej i leczniczej z wykorzystaniem przekazanej infrastruktury; r) ponoszenia wszelkich kosztów w związku ze świadczeniem usług operatorskich; s) przedstawiania Zamawiającemu kwartalnych i rocznych sprawozdań z działalności w okresie trwania umowy; t) przekazania Zamawiającemu infrastruktury w stanie niepogorszonym, z uwzględnieniem jej zużycia wskutek prawidłowego używania, po zakończeniu umowy z zastrzeżeniem, że w przypadku zużycia ponad poziom prawidłowy, za zgodą Zamawiającego Koncesjonariusz wymieni zużyte rzeczy/elementy na nowe o takich samych lub lepszych parametrach. 3. Po przejęciu majątku Koncesjonariusz będzie musiał umieścić w obiekcie na widocznym miejscu: a) nazwę oraz siedzibę lub imię i nazwisko, a także adres przedsiębiorcy świadczącego usługi w tym obiekcie; b) informacje o zakresie świadczonych usług wraz z cenami; c) informacje o przystosowaniu obiektu dla osób niepełnosprawnych. 4. Koncesjonariusz będzie odpowiedzialny za wszelkie naprawy wynikające z eksploatacji obiektu oraz uzupełnienie drobnego wyposażenia ruchomego wynikającego ze skutków eksploatacji. 5. Koncesjonariusz będzie ponosił koszty podatku od nieruchomości zgodnie z obowiązującą uchwałą w sprawie określenia wysokości stawek podatku od nieruchomości",
+      "1.\tW postępowaniu na zawarcie umowy koncesji mogą brać udział Wykonawcy, którzy: a)\tnie podlegają wykluczeniu; b)\tspełniają poniższe kryteria kwalifikacji w postępowaniu. 2.\tZamawiający określa następujące kryteria kwalifikacji: a)\tzgodnie z art. 33 ust. 1 pkt. 1 ustawy o koncesji, dotyczące sytuacji ekonomicznej lub finansowej - Wykonawca spełni kryteria kwalifikacji, jeżeli wykaże, że posiada aktualne ubezpieczenie od odpowiedzialności cywilnej w zakresie prowadzonej działalności związanej z przedmiotem umowy koncesji na kwotę nie niższą niż 300 000,00 zł (słownie: trzysta tysięcy złotych); b)\tzgodnie z art. 33 ust. 1 pkt. 2 ustawy o koncesji, dotyczące zdolności technicznej lub zawodowej - Wykonawca spełni kryteria kwalifikacji, jeżeli wykaże, że w jednym z ostatnich 3 lat kalendarzowych począwszy od 1.01.2022 r. włącznie, świadczył usługi w zakresie dostępu do Internetu  w publicznej, stacjonarnej sieci telekomunikacyjnej dla co najmniej 75 użytkowników końcowych bądź abonentów lub  świadczył usługi lokalnego dostępu do sieci w stałej lokalizacji (usługi LLU)  w co  najmniej 75 lokalizacjach lub też, że zarządzał stacjonarną siecią telekomunikacyjną obejmującą co najmniej 75 adresów zakończenia sieci w rozumieniu art. 2 pkt 89 ustawy z 12 lipca 2024 roku Prawo komunikacji elektronicznej (Dz. U. z 2024 roku poz. 1221). W przypadku wspólnego ubiegania się o zawarcie umowy koncesji, Zamawiający wymaga aby kryterium kwalifikacji ujęte w ust. 2 lit. b) powyżej, spełniał w pełni co najmniej jeden z wykonawców wspólnie ubiegających się o zawarcie umowy koncesji (konsorcjum). W przypadku polegania na zasobach podmiotu trzeciego, Zamawiający wymaga aby kryterium kwalifikacji ujęte w ust. 2 lit. b) spełniał co najmniej wykonawca, albo podmiot udostępniający zasoby. 3.\tZamawiający informuje, iż: a)\tkryteria kwalifikacji muszą być spełnione przez Wykonawcę w dniu składania ofert przez cały pozostały czas postępowania o zawarcie umowy koncesji; b)\twykonawca nie może podlegać wykluczeniu z postępowania w dniu składania ofert przez cały pozostały czas postępowania o zawarcie umowy koncesji.",
+      "Zgodnie z IDW."
+    ]
+  },
+  "4.10": {
+    "col_name": "cn_section_4_10",
+    "section_header": "Umowa koncesji obejmuje opcje",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ]
+  },
+  "4.11": {
+    "col_name": "cn_section_4_11",
+    "section_header": "Zamawiający przewiduje przedłużenie umowy koncesji",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "4.11.1": {
+    "col_name": "cn_section_4_11_1",
+    "section_header": "Opis umowy koncesji w przedłużonym okresie jej obowiązywania",
+    "data_model": "core",
+    "example_values": [
+      "Terminy  mogą być zmieniane zgodnie z z postanowieniami § 9 Umowy (ROZDZIAŁ IV OPZUK Umowa wraz z załącznikami)"
+    ]
+  },
+  "4.12": {
+    "col_name": "cn_section_4_12",
+    "section_header": "Przewidywany okres obowiązywania umowy koncesji",
+    "data_model": "core",
+    "example_values": [
+      "60 miesiące",
+      "od 2026-01-01 do 2028-12-31",
+      "3932 dni"
+    ]
+  },
+  "4.13": {
+    "col_name": "cn_section_4_13",
+    "section_header": "Czy w odniesieniu do opisu przedmiotu umowy koncesji zamawiający uwzględnił wymagania dotyczące poziomów oddziaływania na środowisko i klimat lub wymagania dostosowania do określonych potrzeb (projektowania z przeznaczeniem dla wszystkich użytkowników), w tym potrzeb osób niepełnosprawnych",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "5.1": {
+    "col_name": "cn_section_5_1",
+    "section_header": "Etapy przebiegu postępowania o zawarcie umowy koncesji",
+    "data_model": "core",
+    "example_values": [
+      "Postępowanie o zawarcie umowy koncesji prowadzone jest w trybie art. 29 ust. 1 pkt 1 ustawy z dnia 21 października 2016 roku o umowie koncesji na roboty budowlane lub usługi (t.j. Dz. U. z 2023 r. poz. 140), tj. w  odpowiedzi na ogłoszenie o koncesji wszyscy zainteresowani wykonawcy składają oferty wraz z  informacjami na potrzeby oceny spełniania kryteriów kwalifikacji."
+    ]
+  },
+  "5.2": {
+    "col_name": "cn_section_5_2",
+    "section_header": "Zamawiający zaprasza do",
+    "data_model": "core",
+    "example_values": [
+      "składania ofert"
+    ]
+  },
+  "5.3": {
+    "col_name": "cn_section_5_3",
+    "section_header": "Warunki, jakim ma odpowiadać wniosek o dopuszczenie do udziału w postępowaniu o zawarcie umowy koncesji albo oferta pod rygorem ich odrzucenia",
+    "data_model": "core",
+    "example_values": [
+      "1. O udzielenie koncesji mogą ubiegać się podmioty zainteresowane udziałem w postępowaniu, które spełniają następujące kryteria kwalifikacji w zakresie sytuacji ekonomicznej lub finansowej: 1) Wykonawca posiada polisę ubezpieczeniową od odpowiedzialności cywilnej w zakresie prowadzonej działalności na łączną kwotę co najmniej 500 000,00 zł (słownie: pięćset tysięcy złotych 00/100). Zamawiający uzna, że warunek został spełniony jeżeli Wykonawca, którego oferta uznana zostanie za najkorzystniejszą, złoży w wyznaczonym przez Zamawiającego terminie polisę ubezpieczeniową lub inny dokument ubezpieczenia potwierdzającą, że Wykonawca jest ubezpieczony od odpowiedzialności cywilnej w zakresie prowadzonej działalności na łączną kwotę co najmniej 500 000,00 zł lub równowartość tej kwoty w innej walucie przeliczonej według kursu średniego NBP danej waluty z dnia, w którym ukazało się Ogłoszenie o koncesji na usługi w Biuletynie Zamówień Publicznych; 2) Wykonawca posiada środki finansowe lub zdolność kredytową nie mniejszą niż 180 000,00 zł (słownie: sto osiemdziesiąt tysięcy złotych 00/100)",
+      "1.\tOferta powinna być sporządzona w języku polskim, w postaci elektronicznej opatrzonej kwalifikowanym podpisem elektronicznym, podpisem zaufanym lub podpisem osobistym. Złożenie oferty na nośniku danych lub w innej formie niż przewidziana powyżej jest niedopuszczalne, nie stanowi bowiem jej złożenia przy użyciu środków komunikacji elektronicznej. 2.\tOferta wraz ze stanowiącymi jej integralną część załącznikami musi być sporządzona przez Wykonawcę według postanowień niniejszej OWK. 3.\tOferta wraz z załącznikami musi być podpisana przez osobę upoważnioną do reprezentowania Wykonawcy. Upoważnienie winno być dołączone do oferty, o ile nie wynika z innych dokumentów załączonych przez Wykonawcę. Do przygotowania oferty konieczne jest posiadanie przez osobę upoważnioną do reprezentowania Wykonawcy kwalifikowanego podpisu elektronicznego, podpisu osobistego lub podpisu zaufanego. 4.\tW przypadku gdy wymagane w niniejszym postępowaniu dokumenty, zostały wystawione przez upoważnione podmioty jako dokument w postaci papierowej, przekazuje się cyfrowe odwzorowanie tego dokumentu opatrzone kwalifikowanym podpisem elektronicznym, podpisem zaufanym lub podpisem osobistym, poświadczające zgodność cyfrowego odwzorowania z dokumentem w postaci papierowej. Poświadczenia zgodności cyfrowego odwzorowania z dokumentem w postaci papierowej, może dokonać również notariusz. 5.\tDo oferty sporządzonej na formularzu ofertowym, którego wzór stanowi załącznik nr 1 do OWK, należy załączyć: a)\toświadczenie Wykonawcy, składane na podstawie art. 35 ust. 1 ustawy o koncesji o spełnieniu kryteriów kwalifikacji i braku podstaw wykluczenia, aktualne na dzień składania ofert – wg wzoru stanowiącego załącznik nr 3 do OWK; b)\taktualne na dzień składania ofert oświadczenie na załączniku nr 4 do OWK (jeżeli dotyczy); c)\tzobowiązanie innego podmiotu – załącznik nr 5 do OWK (jeżeli dotyczy); d)\toświadczenie wykonawców wspólnie ubiegających się o zawarcie umowy koncesji – załącznik nr 6 do OWK (jeżeli dotyczy); e)\tpełnomocnictwo upoważniające do złożenia oferty, o ile ofertę składa pełnomocnik; f)\tpełnomocnictwo dla pełnomocnika do reprezentowania w postępowaniu Wykonawców wspólnie ubiegających się o zawarcie umowy koncesji – dotyczy ofert składanych przez Wykonawców wspólnie ubiegających się o zawarcie umowy koncesji. Zamawiający przypomina, że zgodnie z art. 97 § 1 kodeksu cywilnego, jeżeli do ważności czynności prawnej potrzebna jest szczególna forma, pełnomocnictwo do dokonania tej czynności powinno być udzielone w tej samej formie. Dopuszcza się także złożenie elektronicznej kopii (skanu) pełnomocnictwa sporządzonego uprzednio w formie pisemnej, w formie elektronicznego poświadczenia sporządzonego stosownie do art. 97 § 2 ustawy z dnia 14 lutego 1991 r. Prawo o notariacie, które to poświadczenie notariusz opatruje kwalifikowanym podpisem elektronicznym, bądź też poprzez opatrzenie skanu pełnomocnictwa sporządzonego uprzednio w formie pisemnej kwalifikowanym podpisem, podpisem zaufanym lub podpisem osobistym mocodawcy. Elektroniczna kopia pełnomocnictwa nie może być uwierzytelniona przez umocowanego. g)\todpis lub informację z Krajowego Rejestru Sądowego, Centralnej Ewidencji i Informacji o Działalności Gospodarczej lub innego właściwego rejestru.",
+      "Zgodnie z OPZUK, a w szczególności zgodnie z punktem 7 i 8 IDW."
+    ]
+  },
+  "5.4": {
+    "col_name": "cn_section_5_4",
+    "section_header": "Czy zamawiający przewiduje ograniczenie liczby wykonawców, którzy zostaną zaproszeni do udziału w postępowaniu",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ]
+  },
+  "5.6": {
+    "col_name": "cn_section_5_6",
+    "section_header": "Zamawiający dopuszcza składanie ofert wariantowych",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ]
+  },
+  "5.8": {
+    "col_name": "cn_section_5_8",
+    "section_header": "Zamawiający wymaga złożenia wraz z ofertami oferty wariantowej",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ]
+  },
+  "5.9.2": {
+    "col_name": "cn_section_5_9_2",
+    "section_header": "Termin składania ofert",
+    "data_model": "core",
+    "example_values": [
+      "2025-03-04 13:00",
+      "2025-02-21 09:00",
+      "2025-05-07 13:00"
+    ]
+  },
+  "5.9.3": {
+    "col_name": "cn_section_5_9_3",
+    "section_header": "Miejsce składania wniosków/ofert",
+    "data_model": "core",
+    "example_values": [
+      "https://platformazakupowa.pl/pn/gorowoilaweckie",
+      "Ofertę należy złożyć przed upływem terminu składania ofert na maila Zamawiającego zamowieniapubliczne@dobroszyce.pl",
+      "Mogileńskiego Przedsiębiorstwa Gospodarki Komunalnej Sp. z o.o., ul. W. Witosa 6, 88-300 Mogilno"
+    ]
+  },
+  "5.12": {
+    "col_name": "cn_section_5_12",
+    "section_header": "Zamawiający wymaga wadium",
+    "data_model": "core",
+    "example_values": [
+      "Tak",
+      "Nie"
+    ]
+  },
+  "5.12.1": {
+    "col_name": "cn_section_5_12_1",
+    "section_header": "Wysokość wadium oraz dopuszczalne formy, w jakich wadium może być składane",
+    "data_model": "core",
+    "example_values": [
+      "1. Wykonawca zobowiązany jest do zabezpieczenia swojej oferty wadium w wysokości 20 000,00 zł (słownie: dwadzieścia tysięcy złotych 00/100 złotych). 2. Wadium wnosi się przed upływem terminu składania ofert. 3. Wadium może być wnoszone w jednej lub kilku następujących formach: 1) pieniądzu; 2) gwarancjach bankowych; 3) gwarancjach ubezpieczeniowych; 4) poręczeniach udzielanych przez podmioty, o których mowa w art. 6b ust. 5 pkt 2 ustawy z dnia 9 listopada 2000 r. o utworzeniu Polskiej Agencji Rozwoju Przedsiębiorczości (Dz.U. z 2023 r. poz. 462). 4. Wadium w formie pieniądza należy wnieść przelewem na nr rachunku 18 8855 0004 2003 0013 0015 0005 z dopiskiem \"Wadium - Koncesja na usługi utrzymania i zarządzania Zakładem Przyrodoleczniczym”. UWAGA: Za termin wniesienia wadium w formie pieniężnej zostanie przyjęty termin uznania rachunku Zamawiającego.",
+      "10 000,00 zł (słownie: dziesięć tysięcy złotych 00/100). Wadium musi być wniesione przed upływem terminu składania ofert wyłącznie w pieniądzu, przelewem na rachunek bankowy w Banku: BS Gniezno o/Mogilno na nr rachunku: 74  9065  0006 0060 0615 3940 0001, z dopiskiem na przelewie: wadium za udział w postępowaniu na: „Zamknięcie i  rekultywację gminnego składowiska odpadów innych niż niebezpieczne i obojętne w m. Szerzawy gmina Mogilno”."
+    ]
+  },
+  "5.13.1": {
+    "col_name": "cn_section_5_13_1",
+    "section_header": "Sposób określania wagi kryteriów oceny ofert",
+    "data_model": "core",
+    "example_values": [
+      "Punktowo",
+      "Procentowo"
+    ]
+  },
+  "5.13.2": {
+    "col_name": "cn_section_5_13_2",
+    "section_header": "Rodzaj kryterium",
+    "data_model": "core",
+    "example_values": [
+      "inne"
+    ]
+  },
+  "5.13.3": {
+    "col_name": "cn_section_5_13_3",
+    "section_header": "Nazwa kryterium",
+    "data_model": "core",
+    "example_values": [
+      "Cena",
+      "Utworzenie dodatkowych miejsc pracy",
+      "Cena miesięcznego czynszu dzierżawnego"
+    ]
+  },
+  "5.13.4": {
+    "col_name": "cn_section_5_13_4",
+    "section_header": "Waga",
+    "data_model": "core",
+    "example_values": [
+      "90",
+      "10",
+      "100"
+    ]
+  },
+  "5.13.6": {
+    "col_name": "cn_section_5_13_6",
+    "section_header": "Wzór matematyczny lub opis ważenia kryterium",
+    "data_model": "core",
+    "example_values": [
+      "(Najniższa płatność brutto spośród ofert nieodrzuconych/Płatność brutto badanej oferty) x 100 pkt = liczba punktów.",
+      "M=M_bad/M_max ×10",
+      "Zgodnie z punktem 21 IDW."
+    ]
+  },
+  "5.13.7": {
+    "col_name": "cn_section_5_13_7",
+    "section_header": "Opis kryterium",
+    "data_model": "core",
+    "example_values": [
+      "Do obliczenia punktów za wskazane kryterium Zamawiający przyjmie wysokość płatności brutto podaną w ofercie. Uzyskane w ten sposób punkty będą przemnożone przez wagę kryterium 90 %. W kryterium \"Wysokość płatności brutto Zamawiającego na rzecz Koncesjonariusza\" oferta może uzyskać maksymalnie 90 punktów.",
+      "M\t– ocena punktowa oferty w kryterium „utworzenie dodatkowych miejsc pracy” Mmax\t– oferta z największą ilością dodatkowych miejsc pracy Mbad\t– ilość dodatkowych miejsc pracy w badanej ofercie",
+      "„Cena miesięcznego czynszu dzierżawnego brutto” – [C] – wyrażona brutto wysokość czynszu uiszczanego przez Wykonawcę każdego miesiąca kalendarzowego na rzecz Zamawiającego, zgodnie z zasadami ujętymi w § 11 wzoru umowy."
+    ]
+  },
+  "5.14": {
+    "col_name": "cn_section_5_14",
+    "section_header": "Informacja, czy zamawiający przewiduje zastosowanie aukcji elektronicznej",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ]
+  },
+  "5.15": {
+    "col_name": "cn_section_5_15",
+    "section_header": "Zamawiający przewiduje unieważnienie postępowania o zawarcie umowy koncesji, jeżeli środki, które zamierzał przeznaczyć na sfinansowanie całości lub części umowy koncesji nie zostaną mu przyznane",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "6.1.1": {
+    "col_name": "cn_section_6_1_1",
+    "section_header": "Rodzaj kryterium kwalifikacji",
+    "data_model": "core",
+    "example_values": [
+      "kryteria dotyczące sytuacji ekonomicznej finansowej",
+      "kryteria dotyczące sytuacji ekonomicznej",
+      "kryteria dotyczące zdolności technicznej"
+    ]
+  },
+  "6.1.2": {
+    "col_name": "cn_section_6_1_2",
+    "section_header": "Nazwa kryterium kwalifikacji",
+    "data_model": "core",
+    "example_values": [
+      "Sytuacja ekonimiczna",
+      "dotyczące sytuacji ekonomicznej lub finansowej",
+      "dotyczące zdolności technicznej lub zawodowej"
+    ]
+  },
+  "6.1.3": {
+    "col_name": "cn_section_6_1_3",
+    "section_header": "Krótki opis kryterium kwalifikacji, w tym wymagania minimalne dotyczące oczekiwanego przez zamawiającego poziomu spełnienia kryterium",
+    "data_model": "core",
+    "example_values": [
+      "1) Wykonawca posiada polisę ubezpieczeniową od odpowiedzialności cywilnej w zakresie prowadzonej działalności na łączną kwotę co najmniej 500 000,00 zł (słownie: pięćset tysięcy złotych 00/100). Zamawiający uzna, że warunek został spełniony jeżeli Wykonawca, którego oferta uznana zostanie za najkorzystniejszą, złoży w wyznaczonym przez Zamawiającego terminie polisę ubezpieczeniową lub inny dokument ubezpieczenia potwierdzającą, że Wykonawca jest ubezpieczony od odpowiedzialności cywilnej w zakresie prowadzonej działalności na łączną kwotę co najmniej 500 000,00 zł lub równowartość tej kwoty w innej walucie przeliczonej według kursu średniego NBP danej waluty z dnia, w którym ukazało się Ogłoszenie o koncesji na usługi w Biuletynie Zamówień Publicznych;",
+      "Wykonawca spełni kryteria kwalifikacji, jeżeli wykaże, że posiada aktualne ubezpieczenie od odpowiedzialności cywilnej w zakresie prowadzonej działalności związanej z przedmiotem umowy koncesji na kwotę nie niższą niż 300 000,00 zł (słownie: trzysta tysięcy złotych);",
+      "Wykonawca spełni kryteria kwalifikacji, jeżeli wykaże, że w jednym z ostatnich 3 lat kalendarzowych począwszy od 1.01.2022 r. włącznie, świadczył usługi w zakresie dostępu do Internetu  w publicznej, stacjonarnej sieci telekomunikacyjnej dla co najmniej 75 użytkowników końcowych bądź abonentów lub  świadczył usługi lokalnego dostępu do sieci w stałej lokalizacji (usługi LLU)  w co  najmniej 75 lokalizacjach lub też, że zarządzał stacjonarną siecią telekomunikacyjną obejmującą co najmniej 75 adresów zakończenia sieci w rozumieniu art. 2 pkt 89 ustawy z 12 lipca 2024 roku Prawo komunikacji elektronicznej (Dz. U. z 2024 roku poz. 1221)."
+    ]
+  },
+  "6.1.4": {
+    "col_name": "cn_section_6_1_4",
+    "section_header": "Krótki opis sposobu zastosowania kryterium",
+    "data_model": "core",
+    "example_values": [
+      "Wykonawca posiada środki finansowe lub zdolność kredytową nie mniejszą niż 180 000,00 zł (słownie: sto osiemdziesiąt tysięcy złotych 00/100)",
+      "5.\tZgodnie z art. 35 ust. 2 ustawy o koncesji, Zamawiający wezwie Wykonawcę, którego oferta została najwyżej oceniona, do złożenia w wyznaczonym, nie krótszym niż 5 dni terminie, aktualnych na dzień złożenia następujących oświadczeń lub dokumentów potwierdzających okoliczności, o których mowa w art. 33 ust. 1 pkt 1 i 2 ustawy koncesji",
+      "Spełnia/nie spełnia."
+    ]
+  },
+  "6.1.5": {
+    "col_name": "cn_section_6_1_5",
+    "section_header": "Zamawiający wymaga przedłożenia dokumentów na potwierdzenie kryterium kwalifikacji",
+    "data_model": "core",
+    "example_values": [
+      "Tak"
+    ]
+  },
+  "6.1.6": {
+    "col_name": "cn_section_6_1_6",
+    "section_header": "Dokumenty wymagane na potwierdzenie kryterium kwalifikacji, sposób ich przedłożenia oraz zakres",
+    "data_model": "core",
+    "example_values": [
+      "a) polisę lub inny dokument ubezpieczenia potwierdzającą, że Wykonawca jest ubezpieczony od odpowiedzialności cywilnej w zakresie prowadzonej działalności na roczną kwotę co najmniej 500 000,00 zł lub równowartość tej kwoty w innej walucie przeliczonej według kursu średniego NBP danej waluty z dnia, w którym ukazało się Ogłoszenie o koncesji na usługi w Biuletynie Zamówień Publicznych, b) informację banku lub spółdzielczej kasy oszczędnościowo-kredytowej potwierdzającej wysokość posiadanych środków finansowych lub zdolność kredytową Wykonawcy nie mniejszą niż 180 000,00 zł, w okresie nie wcześniejszym niż 3 miesiące przed jej złożeniem,",
+      "a)\tdokument potwierdzający, że wykonawca posiada aktualne ubezpieczenie od odpowiedzialności cywilnej w zakresie prowadzonej działalności związanej z przedmiotem umowy koncesji na kwotę nie niższą niż 300 000,00 zł (słownie: trzysta tysięcy złotych)",
+      "b)\tdokument potwierdzający  że w jednym z ostatnich trzech lat kalendarzowych począwszy od 1.01.2022 r. włącznie, Wykonawca świadczył usługi w zakresie dostępu do Internetu  w publicznej, stacjonarnej sieci telekomunikacyjnej dla co najmniej 75 użytkowników końcowych  bądź abonentów lub  świadczył usługi lokalnego dostępu do sieci w stałej lokalizacji (usługi LLU)  w co  najmniej 75 lokalizacjach bądź też, że zarządzał stacjonarną siecią telekomunikacyjną obejmującą co najmniej 75 adresów zakończenia sieci w rozumieniu art. 2 pkt 89 ustawy z 12 lipca 2024 roku Prawo komunikacji elektronicznej (Dz. U. z 2024 roku poz. 1221)."
+    ]
+  },
+  "6.2": {
+    "col_name": "cn_section_6_2",
+    "section_header": "Zasady przedkładania zobowiązań innych podmiotów, na których zdolnościach polega wykonawca w celu spełniania kryteriów kwalifikacji",
+    "data_model": "core",
+    "example_values": [
+      "1. W celu spełnienia kryteriów kwalifikacji Wykonawca może, w stosownych przypadkach i w odniesieniu do konkretnej umowy koncesji, polegać na zdolnościach innych podmiotów, bez względu na charakter prawny związków łączących go z tymi podmiotami. 2. W przypadku gdy Wykonawca chce korzystać ze zdolności innych podmiotów, jest obowiązany udowodnić Zamawiającemu, że będzie dysponował niezbędnymi zasobami w ciągu całego okresu wykonywania umowy koncesji, w szczególności przedstawiając w tym celu stosowne zobowiązanie takich podmiotów (oryginał). 3. Wykonawca, który polega na zdolności innych podmiotów w odniesieniu do kryteriów dotyczących sytuacji finansowej, odpowiada solidarnie z podmiotem, który zobowiązał się do udostępnienia zasobów, za szkodę zamawiającego powstałą wskutek nieudostępnienia tych zasobów, chyba że za nieudostępnienie zasobów nie ponosi winy.",
+      "1.\tZgodnie z art. 36 ust. 1 ustawy o koncesji, w celu spełnienia kryteriów kwalifikacji, Wykonawca może w stosownych przypadkach oraz w odniesieniu do konkretnej umowy koncesji, polegać na zdolnościach innych podmiotów, bez względu na charakter prawny związków łączących go z tymi podmiotami. 2.\tZgodnie z art. 36 ust. 2 ustawy o koncesji, w przypadku, gdy Wykonawca chce korzystać ze zdolności innych podmiotów, jest obowiązany udowodnić Zamawiającemu, że będzie dysponował niezbędnymi zasobami w ciągu całego okresu wykonywania umowy koncesji, w szczególności przedstawiając w tym celu stosowne zobowiązanie takich podmiotów. 3.\tZ dokumentu zobowiązania innych podmiotów, o którym mowa w ust. 2 musi bezspornie i jednoznacznie wynikać, że Wykonawca będzie dysponował niezbędnymi zasobami w stopniu umożliwiającym należyte wykonanie umowy koncesji oraz, że stosunek łączący Wykonawcę z tymi podmiotami gwarantuje rzeczywisty dostęp do ich zasobów, w szczególności: a)\tzakres dostępnych wykonawcy zasobów podmiotu udostępniającego zasoby; b)\tsposób i okres udostępnienia wykonawcy i wykorzystania przez niego zasobów podmiotu udostępniającego te zasoby przy wykonywaniu umowy koncesji; c)\tczy i w jakim zakresie podmiot udostępniający zasoby, na zdolnościach którego wykonawca polega w odniesieniu do wykonywania umowy koncesji, dotyczących wykształcenia, kwalifikacji zawodowych lub doświadczenia, zrealizuje usługi, których wskazane zdolności dotyczą. 4.\tZgodnie z art. 36 ust. 3 ustawy o koncesji, Wykonawca, który polega na zdolności innych podmiotów w odniesieniu do kryteriów dotyczących sytuacji finansowej, odpowiada solidarnie z podmiotem, który zobowiązał się do udostępnienia zasobów, za szkodę Zamawiającego powstałą wskutek nieudostępnienia tych zasobów, chyba że za nieudostępnienie zasobów nie ponosi winy. 5.\tZamawiający oceni, czy udostępniana Wykonawcy przez inne podmioty sytuacja ekonomiczna lub finansowa, pozwalają na wykazanie przez Wykonawcę spełniania kryteriów kwalifikacji oraz zbada, czy nie zachodzą, wobec tego podmiotu podstawy wykluczenia, o których mowa w art. 32 ust. 1, art. 32 ust. 2 pkt. 4 ustawy o koncesji. 6.\tJeżeli zdolności techniczne lub zawodowe, sytuacja ekonomiczna lub finansowa podmiotu udostępniającego zasoby nie potwierdzają spełniania przez wykonawcę kryteriów kwalifikacji lub zachodzą wobec tego podmiotu podstawy wykluczenia, zamawiający żąda, aby wykonawca w terminie określonym przez zamawiającego zastąpił ten podmiot innym podmiotem lub podmiotami albo wykazał, że samodzielnie spełnia kryteria kwalifikacji. 7.\tWykonawca, który polega na zdolnościach lub sytuacji podmiotów udostępniających zasoby, składa wraz z ofertą, zobowiązanie podmiotu udostępniającego zasoby do oddania mu do dyspozycji niezbędnych zasobów na potrzeby realizacji umowy koncesji lub inny podmiotowy środek dowodowy potwierdzający, że Wykonawca realizując umowę koncesji, będzie dysponował niezbędnymi zasobami tych podmiotów – zgodnie z Załącznikiem nr 5 do OWK. 8.\tWykonawca, w przypadku polegania na zdolnościach lub sytuacji podmiotów udostępniających zasoby, składa, wraz z zobowiązaniem, stanowiącym załącznik nr 5 do OWK, także oświadczenie podmiotu udostępniającego zasoby, potwierdzające brak podstaw wykluczenia tego podmiotu oraz odpowiednio spełnianie kryteriów kwalifikacji w zakresie w jakim Wykonawca powołuje się na jego zasoby – zgodnie z Załącznikiem 4 do OWK.",
+      "Zgodnie z OPZUK, a w szczególności zgodnie z punktem 13 IDW."
+    ]
+  },
+  "6.3": {
+    "col_name": "cn_section_6_3",
+    "section_header": "Podstawy wykluczenia wykonawcy w oparciu o art. 32 ust. 1 ustawy o umowie koncesji na roboty budowlane lub usługi",
+    "data_model": "core",
+    "example_values": [
+      "Art. 32 ust. 1 pkt 1 lit. a) Art. 32 ust. 1 pkt 1 lit. b) Art. 32 ust. 1 pkt 1 lit. c) Art. 32 ust. 1 pkt 1 lit. d) Art. 32 ust. 1 pkt 1 lit. e) Art. 32 ust. 1 pkt 1 lit. f) Art. 32 ust. 1 pkt 1 lit. g) Art. 32 ust. 1 pkt 1 lit. h) Art. 32 ust. 1 pkt 2 Art. 32 ust. 1 pkt 3 Art. 32 ust. 1 pkt 4 Art. 32 ust. 1 pkt 5 Art. 32 ust. 1 pkt 6"
+    ]
+  },
+  "6.3.1": {
+    "col_name": "cn_section_6_3_1",
+    "section_header": "Dokumenty wymagane na potwierdzenie braku podstaw wykluczenia, sposób ich sporządzenia oraz zakres",
+    "data_model": "core",
+    "example_values": [
+      "1. Wraz z ofertą Wykonawca składa aktualne na dzień jej złożenia, dokumenty i oświadczenia potwierdzające, że Wykonawca spełnia warunki udziału w postępowaniu (kryteria kwalifikacji). W tym celu Wykonawca przedkłada następujące dokumenty: a) polisę lub inny dokument ubezpieczenia potwierdzającą, że Wykonawca jest ubezpieczony od odpowiedzialności cywilnej w zakresie prowadzonej działalności na roczną kwotę co najmniej 500 000,00 zł lub równowartość tej kwoty w innej walucie przeliczonej według kursu średniego NBP danej waluty z dnia, w którym ukazało się Ogłoszenie o koncesji na usługi w Biuletynie Zamówień Publicznych, b) informację banku lub spółdzielczej kasy oszczędnościowo-kredytowej potwierdzającej wysokość posiadanych środków finansowych lub zdolność kredytową Wykonawcy nie mniejszą niż 180 000,00 zł, w okresie nie wcześniejszym niż 3 miesiące przed jej złożeniem, c) informację z Krajowego Rejestru Karnego w zakresie określonym w art. 32 ust. 1 pkt 1, 2 i 4 ustawy o umowie koncesji na roboty budowlane lub usługi, sporządzoną nie wcześniej niż 6 miesięcy przed upływem terminu składania wniosków, w tym dla urzędującego członka organu zarządzającego lub nadzorczego Wykonawcy, wspólnika spółki w spółce jawnej lub partnerskiej albo komplementariusza w spółce komandytowej lub komandytowo-akcyjnej lub prokurenta, o ile dotyczy; d) zaświadczenie właściwego naczelnika urzędu skarbowego potwierdzające, że wykonawca nie zalega z opłacaniem podatków i opłat, w zakresie art. 32 ust. 1 pkt 3 ustawy o umowie koncesji na roboty budowlane lub usługi, wystawione nie wcześniej niż 3 miesiące przed jego złożeniem, a w przypadku zalegania z opłacaniem podatków lub opłat wraz z zaświadczeniem zamawiający żąda złożenia dokumentów potwierdzających, że przed upływem terminu składania ofert Wykonawca dokonał płatności należnych podatków lub opłat wraz z odsetkami lub grzywnami lub zawarł wiążące porozumienie w sprawie spłat tych należności; e) zaświadczenie albo inny dokument właściwej terenowej jednostki organizacyjnej Zakładu Ubezpieczeń Społecznych lub właściwego oddziału regionalnego lub właściwej placówki terenowej Kasy Rolniczego Ubezpieczenia Społecznego potwierdzające, że wykonawca nie zalega z opłacaniem składek na ubezpieczenia społeczne i zdrowotne, w zakresie art. 32 ust. 1 pkt 3 ustawy o umowie koncesji na roboty budowlane lub usługi, wystawionego nie wcześniej niż 3 miesiące przed jego złożeniem, a w przypadku zalegania z opłacaniem składek na ubezpieczenia społeczne lub zdrowotne wraz z zaświadczeniem albo innym dokumentem zamawiający żąda złożenia dokumentów potwierdzających, że przed upływem terminu składania ofert Wykonawca dokonał płatności należnych składek na ubezpieczenia społeczne lub zdrowotne wraz z odsetkami lub grzywnami lub zawarł wiążące porozumienie w sprawie spłat tych należności; f) odpis lub informację z Krajowego Rejestru Sądowego lub z Centralnej Ewidencji i Informacji o Działalności Gospodarczej, w zakresie art. 32 ust. 2 pkt 4 ustawy o umowie koncesji na roboty budowlane lub usługi, sporządzone nie wcześniej niż 3 miesiące przed jej złożeniem, jeżeli odrębne przepisy wymagają wpisu do rejestru lub ewidencji. g) oświadczenie Wykonawcy dotyczące przesłanek wykluczenia z art. 5K Rozporządzenia 833/2014 - Załącznik nr 5a do Opisu. h) oświadczenie podmiotu udostępniającego zasoby dotyczące przesłanek wykluczenia z art. 5K Rozporządzenia 833/2014 (jeżeli dotyczy) - Załącznik nr 5b do Opisu. 2. Dokumenty, o których mowa w ust. 1 lit. c) – g), Wykonawca składa również w odniesieniu do bezpośrednich podwykonawców.",
+      "Zgodnie z OPZUK, a w szczególności zgodnie z punktem 8 IDW.",
+      "Zgodnie z OPZUK, a w szczególności zgodnie z punktem 8."
+    ]
+  },
+  "6.4": {
+    "col_name": "cn_section_6_4",
+    "section_header": "Czy zamawiający przewiduje podstawy wykluczenia z art. 32 ust. 2 ustawy o umowie koncesji na roboty budowlane lub usługi?",
+    "data_model": "core",
+    "example_values": [
+      "Tak",
+      "Nie"
+    ]
+  },
+  "6.4.1": {
+    "col_name": "cn_section_6_4_1",
+    "section_header": "Wykaz podstaw wykluczenia",
+    "data_model": "core",
+    "example_values": [
+      "Art. 32 ust. 2 pkt 1 Art. 32 ust. 2 pkt 3 Art. 32 ust. 2 pkt 4",
+      "Art. 32 ust. 2 pkt 4"
+    ]
+  },
+  "6.4.2": {
+    "col_name": "cn_section_6_4_2",
+    "section_header": "Dokumenty wymagane na potwierdzenie braku podstaw wykluczenia, sposób ich sporządzenia oraz zakres",
+    "data_model": "core",
+    "example_values": [
+      "a) informację z Krajowego Rejestru Karnego w zakresie określonym w art. 32 ust. 1 pkt 1, 2 i 4 ustawy o umowie koncesji na roboty budowlane lub usługi, sporządzoną nie wcześniej niż 6 miesięcy przed upływem terminu składania wniosków, w tym dla urzędującego członka organu zarządzającego lub nadzorczego Wykonawcy, wspólnika spółki w spółce jawnej lub partnerskiej albo komplementariusza w spółce komandytowej lub komandytowo-akcyjnej lub prokurenta, o ile dotyczy; b) zaświadczenie właściwego naczelnika urzędu skarbowego potwierdzające, że wykonawca nie zalega z opłacaniem podatków i opłat, w zakresie art. 32 ust. 1 pkt 3 ustawy o umowie koncesji na roboty budowlane lub usługi, wystawione nie wcześniej niż 3 miesiące przed jego złożeniem, a w przypadku zalegania z opłacaniem podatków lub opłat wraz z zaświadczeniem zamawiający żąda złożenia dokumentów potwierdzających, że przed upływem terminu składania ofert Wykonawca dokonał płatności należnych podatków lub opłat wraz z odsetkami lub grzywnami lub zawarł wiążące porozumienie w sprawie spłat tych należności; c) zaświadczenie albo inny dokument właściwej terenowej jednostki organizacyjnej Zakładu Ubezpieczeń Społecznych lub właściwego oddziału regionalnego lub właściwej placówki terenowej Kasy Rolniczego Ubezpieczenia Społecznego potwierdzające, że wykonawca nie zalega z opłacaniem składek na ubezpieczenia społeczne i zdrowotne, w zakresie art. 32 ust. 1 pkt 3 ustawy o umowie koncesji na roboty budowlane lub usługi, wystawionego nie wcześniej niż 3 miesiące przed jego złożeniem, a w przypadku zalegania z opłacaniem składek na ubezpieczenia społeczne lub zdrowotne wraz z zaświadczeniem albo innym dokumentem zamawiający żąda złożenia dokumentów potwierdzających, że przed upływem terminu składania ofert Wykonawca dokonał płatności należnych składek na ubezpieczenia społeczne lub zdrowotne wraz z odsetkami lub grzywnami lub zawarł wiążące porozumienie w sprawie spłat tych należności; d) odpis lub informację z Krajowego Rejestru Sądowego lub z Centralnej Ewidencji i Informacji o Działalności Gospodarczej, w zakresie art. 32 ust. 2 pkt 4 ustawy o umowie koncesji na roboty budowlane lub usługi, sporządzone nie wcześniej niż 3 miesiące przed jej złożeniem, jeżeli odrębne przepisy wymagają wpisu do rejestru lub ewidencji. e) oświadczenie Wykonawcy dotyczące przesłanek wykluczenia z art. 5K Rozporządzenia 833/2014 - Załącznik nr 5a do Opisu. f) oświadczenie podmiotu udostępniającego zasoby dotyczące przesłanek wykluczenia z art. 5K Rozporządzenia 833/2014 (jeżeli dotyczy) - Załącznik nr 5b do Opisu",
+      "Zgodnie z OPZUK, a w szczególności zgodnie z punktem 8.1.2. i 8.1.3. IDW.",
+      "Zgodnie z OPZUK, a w szczególności zgodnie z punktem 8.1.2. i 8.1.3."
+    ]
+  },
+  "6.5": {
+    "col_name": "cn_section_6_5",
+    "section_header": "Zasady składania przez wykonawców oświadczeń o spełnieniu kryterium kwalifikacji oraz braku podstaw wykluczenia",
+    "data_model": "core",
+    "example_values": [
+      "Wraz z ofertą Wykonawca składa aktualne na dzień jej złożenia, dokumenty i oświadczenia potwierdzające, że Wykonawca spełnia warunki udziału w postępowaniu (kryteria kwalifikacji). Dokumenty należy złożyć w formie oryginału lub poświadczonej za zgodność z oryginałem przez notariusza kopii. Dokumenty sporządzone w języku obcym składa się z tłumaczeniem przysięgłym z języka obcego na język polski, zaopatrzone w apostille, o ile wymagają tego odpowiednie przepisy.",
+      "a)\toświadczenie Wykonawcy, składane na podstawie art. 35 ust. 1 ustawy o koncesji o spełnieniu kryteriów kwalifikacji i braku podstaw wykluczenia, aktualne na dzień składania ofert – wg wzoru stanowiącego załącznik nr 3 do OWK",
+      "Zgodnie z OPZUK, a w szczególności zgodnie z punktem 8 IDW."
+    ]
+  },
+  "7.1": {
+    "col_name": "cn_section_7_1",
+    "section_header": "Podstawowe informacje na temat realizacji umowy koncesji (np.rezultaty pośrednie, rekompensata za szkody, prawa własności intelektualnej)",
+    "data_model": "core",
+    "example_values": [
+      "Zgodnie z  ROZDZIAŁEM IV OPZUK - Umowa wraz z załącznikami (wzór).",
+      "Zgodnie z punktem 4 OPZUK."
+    ]
+  },
+  "7.2": {
+    "col_name": "cn_section_7_2",
+    "section_header": "Czy zamawiający wymaga, żeby grupa koncesjonariuszy, z którą zostanie zawarta umowa koncesji przyjęła określoną formę prawną?",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "7.3": {
+    "col_name": "cn_section_7_3",
+    "section_header": "Główne informacje na temat finansowania i płatności realizowanych przez zamawiającego lub wskazanie podstaw prawnych, na podstawie których się one odbywają",
+    "data_model": "core",
+    "example_values": [
+      "Zgodnie z  ROZDZIAŁEM IV OPZUK - Umowa wraz z załącznikami (wzór)."
+    ]
+  },
+  "7.4": {
+    "col_name": "cn_section_7_4",
+    "section_header": "Zamawiający przewiduje możliwość zmian umowy koncesji",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "7.5": {
+    "col_name": "cn_section_7_5",
+    "section_header": "Informacje na temat zakresu i charakteru oraz warunków wprowadzenia zmian umowy",
+    "data_model": "core",
+    "example_values": [
+      "zgodnie z umową stanowiącą załącznik nr 2 do OWK",
+      "Zgodnie z  ROZDZIAŁEM IV OPZUK - Umowa wraz z załącznikami (wzór), a w szczególności zgodnie z § 9 Umowy.",
+      "Zgodnie z projektem umowy stanowiącym załącznik nr 5 do OPZUK."
+    ]
+  },
+  "7.6": {
+    "col_name": "cn_section_7_6",
+    "section_header": "Zamawiający przewiduje następujące wymagania związane z realizacją umowy koncesji",
+    "data_model": "core",
+    "example_values": [
+      "zatrudnienie przez koncesjonariusza lub jego podwykonawcę na podstawie umowy o pracę osób wykonujących czynności wskazane przez zamawiającego w zakresie realizacji umowy koncesji"
+    ]
+  }
+}

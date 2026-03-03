@@ -1,0 +1,485 @@
+{
+  "1.1": {
+    "col_name": "cn_section_1_1",
+    "section_header": "Nazwa zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Gmina Waganiec",
+      "PEDAGOGICZNA BIBLIOTEKA WOJEWÓDZKA W NOWYM SĄCZU",
+      "Samodzielny Publiczny Zakład Opieki Zdrowotnej w Augustowie"
+    ]
+  },
+  "1.2": {
+    "col_name": "cn_section_1_2",
+    "section_header": "Oddział zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "PBW Nowy Sącz",
+      "Starostwo Powiatowe w Świdnicy",
+      "Urząd Miasta Ruda Śląska"
+    ]
+  },
+  "1.3": {
+    "col_name": "cn_section_1_3",
+    "section_header": "Krajowy Numer Identyfikacyjny",
+    "data_model": "core",
+    "example_values": [
+      "REGON 910866459",
+      "REGON 000714952",
+      "REGON 790317038"
+    ]
+  },
+  "1.4.1": {
+    "col_name": "cn_section_1_4_1",
+    "section_header": "Ulica",
+    "data_model": "core",
+    "example_values": [
+      "Dworcowa 11",
+      "ul. Jagiellońska 61",
+      "Szpitalna 12"
+    ]
+  },
+  "1.4.2": {
+    "col_name": "cn_section_1_4_2",
+    "section_header": "Miejscowość",
+    "data_model": "core",
+    "example_values": [
+      "Waganiec",
+      "Nowy Sącz",
+      "Augustów"
+    ]
+  },
+  "1.4.3": {
+    "col_name": "cn_section_1_4_3",
+    "section_header": "Kod pocztowy",
+    "data_model": "core",
+    "example_values": [
+      "87-731",
+      "33-300",
+      "16-300"
+    ]
+  },
+  "1.4.4": {
+    "col_name": "cn_section_1_4_4",
+    "section_header": "Województwo",
+    "data_model": "core",
+    "example_values": [
+      "kujawsko-pomorskie",
+      "małopolskie",
+      "podlaskie"
+    ]
+  },
+  "1.4.5": {
+    "col_name": "cn_section_1_4_5",
+    "section_header": "Kraj",
+    "data_model": "core",
+    "example_values": [
+      "Polska"
+    ]
+  },
+  "1.4.6": {
+    "col_name": "cn_section_1_4_6",
+    "section_header": "Lokalizacja NUTS 3",
+    "data_model": "core",
+    "example_values": [
+      "PL619 - Włocławski",
+      "PL218 - Nowosądecki",
+      "PL843 - Suwalski"
+    ]
+  },
+  "1.4.7": {
+    "col_name": "cn_section_1_4_7",
+    "section_header": "Numer telefonu",
+    "data_model": "core",
+    "example_values": [
+      "(+48) 18 443 70 67",
+      "876444284",
+      "748500400"
+    ]
+  },
+  "1.4.8": {
+    "col_name": "cn_section_1_4_8",
+    "section_header": "Numer faksu",
+    "data_model": "core",
+    "example_values": [
+      "nie dotyczy",
+      "(84) 639-30-54",
+      "33 8792092"
+    ]
+  },
+  "1.4.9": {
+    "col_name": "cn_section_1_4_9",
+    "section_header": "Adres poczty elektronicznej",
+    "data_model": "core",
+    "example_values": [
+      "ug.waganiec@wlo.pl",
+      "biuro@pbwnowysacz.pl",
+      "anna.liszewska@spzoz.augustow.pl"
+    ]
+  },
+  "1.4.10": {
+    "col_name": "cn_section_1_4_10",
+    "section_header": "Adres strony internetowej zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "www.waganiec.biuletyn.net",
+      "pbwnowysacz.pl",
+      "www.spzoz.augustow"
+    ]
+  },
+  "1.5": {
+    "col_name": "cn_section_1_5",
+    "section_header": "Rodzaj zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Zamawiający publiczny - jednostka sektora finansów publicznych - jednostka samorządu terytorialnego",
+      "Zamawiający publiczny - jednostka sektora finansów publicznych - samodzielny publiczny zakład opieki zdrowotnej",
+      "Zamawiający publiczny - jednostka sektora finansów publicznych - organ władzy publicznej - organ administracji rządowej (centralnej lub terenowej)"
+    ]
+  },
+  "2.1": {
+    "col_name": "cn_section_2_1",
+    "section_header": "Ogłoszenie dotyczy zmiany",
+    "data_model": "core",
+    "example_values": [
+      "Umowy"
+    ]
+  },
+  "2.2": {
+    "col_name": "cn_section_2_2",
+    "section_header": "Identyfikator postępowania",
+    "data_model": "core",
+    "example_values": [
+      "ocds-148610-ad091ae7-ec39-11ee-b4e0-4ac387c144e3",
+      "ocds-148610-2a6c7f16-9942-4217-9004-0c6ca10851f3",
+      "ocds-148610-a33d8738-f72f-45d9-a422-1a40d17177a4"
+    ]
+  },
+  "2.3": {
+    "col_name": "cn_section_2_3",
+    "section_header": "Numer ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "2025/BZP 00000007",
+      "2025/BZP 00000022",
+      "2025/BZP 00000057"
+    ]
+  },
+  "2.4": {
+    "col_name": "cn_section_2_4",
+    "section_header": "Wersja ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "01"
+    ]
+  },
+  "2.5": {
+    "col_name": "cn_section_2_5",
+    "section_header": "Data ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "2025-01-01",
+      "2025-01-02",
+      "2025-01-03"
+    ]
+  },
+  "3.1": {
+    "col_name": "cn_section_3_1",
+    "section_header": "Zamówienie/umowa ramowa było poprzedzone ogłoszeniem o zamówieniu/ogłoszeniem o zamiarze zawarcia umowy",
+    "data_model": "core",
+    "example_values": [
+      "Tak",
+      "Nie"
+    ]
+  },
+  "3.1.1": {
+    "col_name": "cn_section_3_1_1",
+    "section_header": "Numer ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "2024/BZP 00262865",
+      "2024/BZP 00529922",
+      "2024/BZP 00531944"
+    ]
+  },
+  "3.2": {
+    "col_name": "cn_section_3_2",
+    "section_header": "Czy zamówienie albo umowa ramowa dotyczy projektu lub programu współfinansowanego ze środków Unii Europejskiej",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "3.3": {
+    "col_name": "cn_section_3_3",
+    "section_header": "Nazwa projektu lub programu",
+    "data_model": "core",
+    "example_values": [
+      "Zamówienie współfinansowane jest w ramach Programu rozwoju instytucji opieki nad dziećmi w wieku do lat 3 „MALUCH+” na lata 2022-2029",
+      "Program rozwoju instytucji opieki nad dziećmi w wieku do lat 3 \"MALUCH+ 2022-2029\"",
+      "Zakup współfinansowany jest w ramach inwestycji A2.4.1 inwestycje w rozbudowę potencjału badawczego, części inwestycji: budowa lub modernizacja laboratoriów instytutów nadzorowanych przez Ministra Rolnictwa i Rozwoju Wsi z KRAJOWEGO PLANU ODBUDOWYI ZWIĘKSZENIA ODPORNOŚCI (KPO)."
+    ]
+  },
+  "3.4": {
+    "col_name": "cn_section_3_4",
+    "section_header": "Tryb udzielenia zamówienia/zawarcia umowy ramowej wraz z podstawą prawną",
+    "data_model": "core",
+    "example_values": [
+      "Zamówienie udzielane jest w trybie podstawowym na podstawie: art. 275 pkt 1 ustawy",
+      "Zamówienie udzielane jest w trybie podstawowym na podstawie: art. 275 pkt 2 ustawy",
+      "Zamówienie udzielane jest w trybie zamówienia z wolnej ręki na podstawie: art. 305 pkt 1 ustawy w zw. z art. 214 ust. 1 pkt 11 ustawy"
+    ]
+  },
+  "3.5": {
+    "col_name": "cn_section_3_5",
+    "section_header": "Rodzaj zamówienia",
+    "data_model": "core",
+    "example_values": [
+      "Usługi",
+      "Roboty budowlane",
+      "Dostawy"
+    ]
+  },
+  "3.6": {
+    "col_name": "cn_section_3_6",
+    "section_header": "Nazwa zamówienia albo umowy ramowej",
+    "data_model": "core",
+    "example_values": [
+      "„Opracowanie dokumentacji projektowej dla odbudowy dworu potomków Marcello Bacciarellego - malarza ostatniego Króla Polski Stanisława Augusta Poniatowskiego”",
+      "Modernizacja pomieszczeń Pedagogicznej Biblioteki Wojewódzkiej w Nowym Sączu Filia w Nowym Targu",
+      "Świadczenie kompleksowej całodziennej usługi żywienia pacjentów Samodzielnego Publicznego Zakładu Opieki Zdrowotnej w Augustowie wraz z dzierżawą pomieszczeń kuchni i bufetu"
+    ]
+  },
+  "3.7": {
+    "col_name": "cn_section_3_7",
+    "section_header": "Krótki opis przedmiotu zamówienia",
+    "data_model": "core",
+    "example_values": [
+      "1.\tPrzedmiotem zamówienia jest „Opracowanie dokumentacji projektowej dla odbudowy dworu potomków Marcello Bacciarellego - malarza ostatniego Króla Polski Stanisława Augusta Poniatowskiego”. 2.\tZakres rzeczowy zamówienia obejmuje wszystkie prace i czynności konieczne dla wykonania zamówienia publicznego. 3.\tSzczegółowy zakres zamówienia oraz warunki realizacji zostały określone w Opisie przedmiotu zamówienia, stanowiącym załącznik nr 7 do SWZ. Pozostałe warunki realizacji zamówienia zostały określone w Projektowanych postanowieniach umowy w sprawie zamówienia publicznego, stanowiących załącznik nr 8 do SWZ. 4.\tPonadto, o ile dla wykonania zamówienia publicznego będzie konieczne wykonanie niewymienionych opracowań projektowych a związanych z wymaganiami jednostek opiniujących, niewykraczających jednak poza przedmiot umowy, to wykonawca wykona te opracowania własnym kosztem i staraniem. 5.\tWspólny Słownik Zamówień (CPV). Główny kod CPV: 71000000-8. 6.\tZamówienie współfinansowane jest ze środków pochodzących z budżetu Państwa w ramach Rządowego Programu Odbudowy Zabytków.",
+      "1. \tNazwa zamówienia: Modernizacja i dostosowanie pomieszczeń Pedagogicznej Biblioteki Wojewódzkiej w Nowym Sączu Filia w Nowym Targu. 2. \tPrzedmiot zamówienia obejmuje wykonanie następujących robót budowlanych: 2.1.\twykonanie posadzek, 2.2.\twykonanie wykończenia ścian, 2.3.\twykonanie wykończenia sufitów, 2.4.\tmontaż lamp oświetleniowych, 2.5.\tmontaż drzwi i wydzieleni szklanych, 2.6.\twywóz gruzu i roboty zabezpieczające. 3. \tSzczegółowy zakres zamówienia został określony w załączniku nr 4 do SWZ - dokumentacja techniczna składająca się z następujących opracowań: 3.1.\tDokumentacja projektowa, 3.2.\tSpecyfikacje techniczne wykonania i odbioru robót, 3.3.\tPrzedmiar robót.",
+      "1.\tPrzedmiotem zamówienia jest świadczenie kompleksowej całodziennej usługi żywienia pacjentów Samodzielnego Publicznego Zakładu Opieki Zdrowotnej w Augustowie wraz z dzierżawą pomieszczeń kuchni i bufetu. 2.\tWykonawca realizuje przedmiot umowy z wykorzystaniem pomieszczeń Zamawiającego na podstawie odrębnej umowy dzierżawy – Załącznik nr 2a do SWZ. 3.\tWykonawca zapewni wyposażenie pomieszczeń kuchni i bufetu gwarantujące prawidłowe wykonanie przedmiotu umowy. 4.\tDobór składników pokarmowych dla poszczególnych diet będzie dokonywany przez zatrudnionego u Wykonawcy dietetyka, o potwierdzonych kwalifikacjach, który odpowiedzialny będzie za właściwą zawartość substancji odżywczych oraz kaloryczność przygotowywanych posiłków. 5.\tPosiłki powinny być przygotowywane z wysokiej jakości, świeżych produktów uwzględniające aktualne normy żywienia, odpowiednio dla dzieci i dorosłych. 6.\tWykonawca musi posiadać i mieć wdrożony system HACAP, GMP, GHP, zgodnie z  obowiązującą ustawą o bezpieczeństwie żywności i żywienia z dnia 25 sierpnia 2006 (Dz. U. 2023 poz. 1448), zobowiązującą wszystkie zakłady żywienia zbiorowego do wdrożenia wyżej wymienionego systemu. Zamawiający może żądać od Wykonawcy okazania właściwych dokumentów potwierdzających posiadanie ww systemu. 7.\tWykonawca zobowiązuje się do prowadzenia bufetu przez co najmniej 6 godzin od poniedziałku do piątku. 8.\tZamawiający ustala minimalną wysokość czynszu dzierżawnego w wysokości 17,00 zł miesięcznie brutto za 1 m2 powierzchni pomieszczeń kuchennych i 43,00 zł miesięcznie brutto za 1 m2 powierzchni bufetu. 9.\tZamawiający nie wymaga przeprowadzenie wizji lokalnej. W celu zapoznania się z przedmiotem umowy, Wykonawca może umówić się na przeprowadzenie wizji lokalnej, w dni powszednie od poniedziałku do piątku, w godz. 8.00-14.00, pod nr tel. 87 644 4261. 10.\tW okresie od 01-11-2024 r. do 31-12-2024 r. pacjenci Samodzielnego Publicznego Zakładu Opieki Zdrowotnej w Augustowie są objęci programem pilotażowym w zakresie edukacji żywieniowej oraz poprawy jakości żywienia w szpitalach – „Dobry posiłek w szpitalu”, zgodnie z przepisami Rozporządzenia Ministra Zdrowia z dnia 25 września 2023 roku w sprawie programu pilotażowego w zakresie edukacji żywieniowej oraz poprawy jakości żywienia w szpitalach - „Dobry posiłek w szpitalu\" (Dz.U. z 2023 r poz. 2021). 11.\tWykonawca zobowiązany będzie do  realizacji programu pilotażowego w powyższym terminie, w zakresie edukacji żywieniowej oraz poprawy jakości żywienia w szpitalach – „Dobry posiłek w szpitalu” poprzez zapewnienie wyżywienia odpowiedniego do stanu zdrowia pacjentów, na podstawie zaleceń opublikowanych przez ministra właściwego do spraw zdrowia na stronie internetowej urzędu obsługującego ministra właściwego do spraw zdrowia; 12.\tWykonawca powinien uwzględnić realizację programu przy  wycenie oferty. 13.\tW ramach programu posiłki będą przygotowywane na podstawie opracowanego przez osobę planującą dietę jadłospisu zapewniającego urozmaicenie potraw i zbilansowanie wartości składników odżywczych w diecie, które akceptuje dietetyk Szpitala. 14.\tJadłospis zawiera co najmniej informacje o: 1)\trodzaju posiłku i jego składzie; 2)\tdobowych sumach wartości energetycznej (kaloryczności) i wartości odżywczej diet z podaniem ilości białka, węglowodanów, w tym cukrów, tłuszczu, w tym nasyconych kwasów tłuszczowych, błonnika i soli; 3)\tsposobie obróbki posiłku; 4)\tobecności alergenów. 15.\tW uzasadnionych przypadkach, dopuszcza się wymianę zaplanowanych w jadłospisie produktów na produkty równoważne pod względem energetycznym i wartości odżywczych. 16.\tPonadto zakres realizacji świadczonej usługi obejmuje: 1)\topracowywanie jadłospisów na co najmniej 7 dni, a także przesyłanie ich w formie elektronicznej wraz ze zdjęciami posiłków, na adres email: edyta.rozynska@spzoz.augustow.pl nie później niż w pierwszym dniu tygodnia(tj. każdy poniedziałek) do godziny 7:00 2)\tzapewnienie regularności posiłków, w tym zapewnienie, że przerwa pomiędzy posiłkami nie powinna być dłuższa niż 12 godzin; 17.\tSzczegółowy opis przedmiotu zamówienia zawiera projekt umowy - Załączniki nr 2 i 2a do SWZ."
+    ]
+  },
+  "3.8": {
+    "col_name": "cn_section_3_8",
+    "section_header": "Główny kod CPV",
+    "data_model": "core",
+    "example_values": [
+      "71000000-8 - Usługi architektoniczne, budowlane, inżynieryjne i kontrolne",
+      "45212330-8 - Roboty budowlane w zakresie bibliotek",
+      "55321000-6 - Usługi przygotowywania posiłków"
+    ]
+  },
+  "3.9": {
+    "col_name": "cn_section_3_9",
+    "section_header": "Dodatkowy kod CPV",
+    "data_model": "core",
+    "example_values": [
+      "45400000-1 - Roboty wykończeniowe w zakresie obiektów budowlanych 45111300-1 - Roboty rozbiórkowe 45300000-0 - Roboty instalacyjne w budynkach",
+      "55322000-3 - Usługi gotowania posiłków 55320000-9 - Usługi podawania posiłków",
+      "71355000-1 - Usługi pomiarowe 71250000-5 - Usługi architektoniczne, inżynieryjne i pomiarowe 71330000-0 - Różne usługi inżynieryjne"
+    ]
+  },
+  "4.1": {
+    "col_name": "cn_section_4_1",
+    "section_header": "Data zawarcia umowy/umowy ramowej",
+    "data_model": "core",
+    "example_values": [
+      "2024-04-23",
+      "2024-11-04",
+      "2024-02-01"
+    ]
+  },
+  "4.2": {
+    "col_name": "cn_section_4_2",
+    "section_header": "Okres realizacji zamówienia/umowy ramowej",
+    "data_model": "core",
+    "example_values": [
+      "238 dni",
+      "do 2024-12-13",
+      "12 miesiące"
+    ]
+  },
+  "4.3": {
+    "col_name": "cn_section_4_3",
+    "section_header": "Dane wykonawcy, z którym zawarto umowę/umowę ramową",
+    "data_model": "core",
+    "example_values": [
+      "Wykonawca 0"
+    ]
+  },
+  "4.3.1": {
+    "col_name": "cn_section_4_3_1",
+    "section_header": "Nazwa (firma) wykonawcy, któremu udzielono zamówienia (w przypadku wykonawców ubiegających się wspólnie o udzielenie zamówienia – dotyczy pełnomocnika, o którym mowa w art. 58 ust. 2 ustawy)",
+    "data_model": "core",
+    "example_values": [
+      "BIURO OBSŁUGI ARCHITEKTONICZNEJ „ARCHI-GRAF” SP. Z O.O.",
+      "Mateusz Kopta MK0BUD",
+      "Firma Cateringowa Ireneusz Andrejczyk"
+    ]
+  },
+  "4.3.2": {
+    "col_name": "cn_section_4_3_2",
+    "section_header": "Krajowy Numer Identyfikacyjny",
+    "data_model": "core",
+    "example_values": [
+      "7642304113",
+      "REGON: 363160478",
+      "8581199070"
+    ]
+  },
+  "4.3.3": {
+    "col_name": "cn_section_4_3_3",
+    "section_header": "Ulica",
+    "data_model": "core",
+    "example_values": [
+      "UL. KOSSAKA 110",
+      "11 Listopada 82/6",
+      "Skotnicka 210"
+    ]
+  },
+  "4.3.4": {
+    "col_name": "cn_section_4_3_4",
+    "section_header": "Miejscowość",
+    "data_model": "core",
+    "example_values": [
+      "PIŁA",
+      "Chorowice",
+      "Gryfino"
+    ]
+  },
+  "4.3.5": {
+    "col_name": "cn_section_4_3_5",
+    "section_header": "Kod pocztowy",
+    "data_model": "core",
+    "example_values": [
+      "64-920",
+      "32-031",
+      "74-100"
+    ]
+  },
+  "4.3.6": {
+    "col_name": "cn_section_4_3_6",
+    "section_header": "Województwo",
+    "data_model": "core",
+    "example_values": [
+      "wielkopolskie",
+      "małopolskie",
+      "zachodniopomorskie"
+    ]
+  },
+  "4.3.7": {
+    "col_name": "cn_section_4_3_7",
+    "section_header": "Kraj",
+    "data_model": "core",
+    "example_values": [
+      "Polska"
+    ]
+  },
+  "4.4": {
+    "col_name": "cn_section_4_4",
+    "section_header": "Wartość umowy/umowy ramowej",
+    "data_model": "core",
+    "example_values": [
+      "197599,50                PLN",
+      "256767,41                PLN",
+      "867181,68                PLN"
+    ]
+  },
+  "4.5": {
+    "col_name": "cn_section_4_5",
+    "section_header": "Numer ogłoszenia o wyniku postępowania w BZP",
+    "data_model": "core",
+    "example_values": [
+      "2024/BZP 00302520/01",
+      "2024/BZP 00580768/01",
+      "2024/BZP 00622191/01"
+    ]
+  },
+  "5.1": {
+    "col_name": "cn_section_5_1",
+    "section_header": "Data zmiany umowy/umowy ramowej)",
+    "data_model": "core",
+    "example_values": [
+      "2024-11-15",
+      "2024-12-30",
+      "2024-12-31"
+    ]
+  },
+  "5.2": {
+    "col_name": "cn_section_5_2",
+    "section_header": "Podstawa prawna zmiany umowy/umowy ramowej",
+    "data_model": "core",
+    "example_values": [
+      "art. 455 ust. 1 pkt 4 ustawy",
+      "art. 455 ust. 1 pkt 3 ustawy"
+    ]
+  },
+  "5.3": {
+    "col_name": "cn_section_5_3",
+    "section_header": "Przyczyny dokonania zmian umowy/umowy ramowej",
+    "data_model": "core",
+    "example_values": [
+      "Wydłużenie terminu realizacji prac",
+      "Konieczność wykonania robót dodatkowych, których Zamawiający nie mógł przewidzieć na etapie przygotowania postępowania i zawierania umowy (roboty dotyczą lub wynikają z elementów zakrytych).",
+      "Zmiana treści umowy wynika z konieczności realizacji przez dotychczasowego Wykonawcę dodatkowych usług polegających na realizacji programu pilotażowego określonego w ust. 4, których nie uwzględniono w zamówieniu podstawowym, a ich realizacja jest niezbędna i zostały spełnione łącznie następujące warunki:"
+    ]
+  },
+  "5.4": {
+    "col_name": "cn_section_5_4",
+    "section_header": "Krótki opis zmiany umowy/umowy ramowej",
+    "data_model": "core",
+    "example_values": [
+      "Wydłużenie terminu realizacji prac",
+      "Zakres robót dodatkowych obejmuje:",
+      "W związku z przystąpieniem przez Samodzielny Publiczny Zakład Opieki Zdrowotnej w Augustowie do realizacji programu pilotażowego w zakresie edukacji żywieniowej oraz poprawy jakości żywienia w szpitalach – „Dobry posiłek w szpitalu”, Strony zgodnie postanawiły wprowadzić zmiany do umowy nr 20/ZP/2024 zawartej w dniu 04.11.2024 r. w sprawie realizacji zadania pn.: „Świadczenie kompleksowej całodziennej usługi żywienia pacjentów Samodzielnego Publicznego Zakładu Opieki Zdrowotnej w Augustowie wraz z dzierżawą pomieszczeń kuchni i bufetu” ."
+    ]
+  },
+  "5.5.1": {
+    "col_name": "cn_section_5_5_1",
+    "section_header": "Wartość zmiany",
+    "data_model": "core",
+    "example_values": [
+      "97628,86",
+      "258315,00",
+      "1628,00"
+    ]
+  },
+  "5.5.2": {
+    "col_name": "cn_section_5_5_2",
+    "section_header": "Kod waluty",
+    "data_model": "core",
+    "example_values": [
+      "PLN"
+    ]
+  },
+  "5.5.3": {
+    "col_name": "cn_section_5_5_3",
+    "section_header": "Wzrost ceny w związku ze zmianą umowy/umowy ramowej",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "5.6": {
+    "col_name": "cn_section_5_6",
+    "section_header": "Wcześniejsze zmiany umowy/umowy ramowej, obligujące do zamieszczenia ogłoszenia o zmianie umowy",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "5.7": {
+    "col_name": "cn_section_5_7",
+    "section_header": "Numer ogłoszenia w BZP o zmianie umowy",
+    "data_model": "core",
+    "example_values": [
+      "2025/BZP 00000007/01",
+      "2024/BZP 00292609/01",
+      "2024/BZP 00301305/01,                2024/BZP 00588862/01"
+    ]
+  }
+}

@@ -1,0 +1,769 @@
+{
+  "1.1": {
+    "col_name": "cn_section_1_1",
+    "section_header": "Rola zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Postępowanie prowadzone jest samodzielnie przez zamawiającego",
+      "Postępowanie prowadzi zamawiający centralny",
+      "Postępowanie prowadzi podmiot, któremu powierzono przeprowadzenie postępowania"
+    ]
+  },
+  "1.2": {
+    "col_name": "cn_section_1_2",
+    "section_header": "Nazwa zamawiającego",
+    "data_model": "client",
+    "example_values": [
+      "Gmina Międzybórz",
+      "Gmina Malechowo",
+      "Związek Międzygminny Gospodarka Odpadami Aglomeracji Poznańskiej w likwidacji"
+    ]
+  },
+  "1.3": {
+    "col_name": "cn_section_1_3",
+    "section_header": "Oddział zamawiającego",
+    "data_model": "client",
+    "example_values": [
+      "Centrum Projektów Europejskich",
+      "Powiat Górowski",
+      "Józefów nad Wisłą"
+    ]
+  },
+  "1.4": {
+    "col_name": "cn_section_1_4",
+    "section_header": "Krajowy Numer Identyfikacyjny",
+    "data_model": "client",
+    "example_values": [
+      "REGON 250854889",
+      "REGON 330920920",
+      "REGON 302156406"
+    ]
+  },
+  "1.5.1": {
+    "col_name": "cn_section_1_5_1",
+    "section_header": "Ulica",
+    "data_model": "client",
+    "example_values": [
+      "Kolejowa 13",
+      "Malechowo",
+      "Św. Michała 43"
+    ]
+  },
+  "1.5.2": {
+    "col_name": "cn_section_1_5_2",
+    "section_header": "Miejscowość",
+    "data_model": "client",
+    "example_values": [
+      "Międzybórz",
+      "Malechowo",
+      "Poznań"
+    ]
+  },
+  "1.5.3": {
+    "col_name": "cn_section_1_5_3",
+    "section_header": "Kod pocztowy",
+    "data_model": "client",
+    "example_values": [
+      "56-513",
+      "76-142",
+      "61-119"
+    ]
+  },
+  "1.5.4": {
+    "col_name": "cn_section_1_5_4",
+    "section_header": "Województwo",
+    "data_model": "client",
+    "example_values": [
+      "dolnośląskie",
+      "zachodniopomorskie",
+      "wielkopolskie"
+    ]
+  },
+  "1.5.5": {
+    "col_name": "cn_section_1_5_5",
+    "section_header": "Kraj",
+    "data_model": "client",
+    "example_values": [
+      "Polska",
+      "Białoruś",
+      "Republika Czeska"
+    ]
+  },
+  "1.5.6": {
+    "col_name": "cn_section_1_5_6",
+    "section_header": "Lokalizacja NUTS 3",
+    "data_model": "client",
+    "example_values": [
+      "PL518 - Wrocławski",
+      "PL426 - Koszaliński",
+      "PL415 - Miasto Poznań"
+    ]
+  },
+  "1.5.7": {
+    "col_name": "cn_section_1_5_7",
+    "section_header": "Numer telefonu",
+    "data_model": "client",
+    "example_values": [
+      "94 31 84 213, 214, 092",
+      "(94) 31 – 40 – 561",
+      "+48 627413039"
+    ]
+  },
+  "1.5.8": {
+    "col_name": "cn_section_1_5_8",
+    "section_header": "Numer faksu",
+    "data_model": "client",
+    "example_values": [
+      "94 31 84 305",
+      "(94) 31 – 40 – 594",
+      "857221441"
+    ]
+  },
+  "1.5.9": {
+    "col_name": "cn_section_1_5_9",
+    "section_header": "Adres poczty elektronicznej",
+    "data_model": "client",
+    "example_values": [
+      "umig@miedzyborz.pl",
+      "urzad@malechowo.pl",
+      "zm@goap.org.pl"
+    ]
+  },
+  "1.5.10": {
+    "col_name": "cn_section_1_5_10",
+    "section_header": "Adres strony internetowej zamawiającego",
+    "data_model": "client",
+    "example_values": [
+      "http://www.bip.miedzyborz.pl/",
+      "www.malechowo.pl",
+      "https://www.goap.poznan.pl/"
+    ]
+  },
+  "1.6": {
+    "col_name": "cn_section_1_6",
+    "section_header": "Adres strony internetowej prowadzonego postępowania",
+    "data_model": "core",
+    "example_values": [
+      "https://ezamowienia.gov.pl/mp-client/search/list/ocds-148610-9c3ebce8-3944-4b4c-b577-2c7bfafea341",
+      "https://platformazakupowa.pl/pn/malechowo",
+      "https://platformazakupowa.pl/transakcja/1019572"
+    ]
+  },
+  "1.7": {
+    "col_name": "cn_section_1_7",
+    "section_header": "Rodzaj zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Zamawiający publiczny - jednostka sektora finansów publicznych - jednostka samorządu terytorialnego",
+      "Zamawiający publiczny - jednostka sektora finansów publicznych - związek jednostek samorządu terytorialnego",
+      "Zamawiający publiczny - inny zamawiający"
+    ]
+  },
+  "1.8": {
+    "col_name": "cn_section_1_8",
+    "section_header": "Przedmiot działalności zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Ogólne usługi publiczne",
+      "Środowisko",
+      "Inna działalność"
+    ]
+  },
+  "2.1": {
+    "col_name": "cn_section_2_1",
+    "section_header": "Ogłoszenie dotyczy",
+    "data_model": "core",
+    "example_values": [
+      "Zamówienia publicznego",
+      "Umowy ramowej"
+    ]
+  },
+  "2.2": {
+    "col_name": "cn_section_2_2",
+    "section_header": "Ogłoszenie dotyczy usług społecznych i innych szczególnych usług",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "2.3": {
+    "col_name": "cn_section_2_3",
+    "section_header": "Nazwa zamówienia albo umowy ramowej",
+    "data_model": "core",
+    "example_values": [
+      "Odbieranie i transport odpadów komunalnych powstających na terenie nieruchomości zamieszkałych na obszarze Gminy Międzybórz",
+      "Opracowanie projektu planu ogólnego gminy Malechowo",
+      "Świadczenie usług pocztowych dla Związku Międzygminnego \"Gospodarka Odpadami Aglomeracji Poznańskiej\" w likwidacji w roku 2025"
+    ]
+  },
+  "2.4": {
+    "col_name": "cn_section_2_4",
+    "section_header": "Identyfikator postępowania",
+    "data_model": "core",
+    "example_values": [
+      "ocds-148610-9c3ebce8-3944-4b4c-b577-2c7bfafea341",
+      "ocds-148610-b42106bb-fc6d-4e92-8e6d-eee22abee768",
+      "ocds-148610-04972aaf-f2c8-4f77-a5dd-16535ce4aaea"
+    ]
+  },
+  "2.5": {
+    "col_name": "cn_section_2_5",
+    "section_header": "Numer ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "2025/BZP 00000001",
+      "2025/BZP 00000002",
+      "2025/BZP 00000004"
+    ]
+  },
+  "2.6": {
+    "col_name": "cn_section_2_6",
+    "section_header": "Wersja ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "01"
+    ]
+  },
+  "2.7": {
+    "col_name": "cn_section_2_7",
+    "section_header": "Data ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "2025-01-01",
+      "2025-01-02",
+      "2025-01-03"
+    ]
+  },
+  "2.8": {
+    "col_name": "cn_section_2_8",
+    "section_header": "Zamówienie albo umowa ramowa zostały ujęte w planie postępowań",
+    "data_model": "core",
+    "example_values": [
+      "Tak",
+      "Nie"
+    ]
+  },
+  "2.9": {
+    "col_name": "cn_section_2_9",
+    "section_header": "Numer planu postępowań w BZP",
+    "data_model": "core",
+    "example_values": [
+      "2024/BZP 00221173/03/P",
+      "2024/BZP 00070604/05/P",
+      "2024/BZP 00011163/01/P"
+    ]
+  },
+  "2.10": {
+    "col_name": "cn_section_2_10",
+    "section_header": "Identyfikator pozycji planu postępowań",
+    "data_model": "core",
+    "example_values": [
+      "1.3.2 Odbieranie i transport odpadów komunalnych powstających na terenie nieruchomości zamieszkałych na obszarze Gminy Międzybórz",
+      "1.3.3 Wykonanie projektu planu ogólnego gminy Malechowo",
+      "1.3.1 Świadczenie usług pocztowych"
+    ]
+  },
+  "2.11": {
+    "col_name": "cn_section_2_11",
+    "section_header": "Czy zamówienie albo umowa ramowa dotyczy projektu lub programu współfinansowanego ze środków        Unii Europejskiej",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "2.12": {
+    "col_name": "cn_section_2_12",
+    "section_header": "Nazwa projektu lub programu",
+    "data_model": "core",
+    "example_values": [
+      "Program Operacyjny Pomoc Techniczna dla Funduszy Europejskich 2021-2027",
+      "Cyberbezpieczny Powiat Górowski”. Projekt realizowany jest w ramach Programu Fundusze Europejskie na Rozwój Cyfrowy 2021-2027 (FERC)",
+      "4. Zamówienie realizowane jest w ramach projektu pn. Integralny Program Wsparcia Kompetencji Kluczowych dla Gospodarki 4.0 studentów i kadry UMK w Toruniu\" , Numer Projektu: FERS.01.05-IP.08-0265/23, Działanie: 01.05 Umiejętności w szkolnictwie wyższym , Program Fundusze Europejskie dla Rozwoju Społecznego w ramach Europejskiego Funduszu Społecznego Plus"
+    ]
+  },
+  "2.13": {
+    "col_name": "cn_section_2_13",
+    "section_header": "Zamówienie/umowa ramowa było poprzedzone ogłoszeniem o zamówieniu/ogłoszeniem o zamiarze        zawarcia umowy",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "2.14": {
+    "col_name": "cn_section_2_14",
+    "section_header": "Numer ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "2024/BZP 00522198",
+      "2024/BZP 00623010",
+      "2024/BZP 00532931"
+    ]
+  },
+  "3.1": {
+    "col_name": "cn_section_3_1",
+    "section_header": "Tryb udzielenia zamówienia wraz z podstawą prawną Zamówienie udzielane jest w trybie zamówienia z wolnej ręki na podstawie",
+    "data_model": "core",
+    "example_values": [
+      "Zamówienie udzielane jest w trybie zamówienia z wolnej ręki na podstawie: art. 305 pkt 1 ustawy w zw. z art. 214 ust. 1 pkt 11 ustawy",
+      "Zamówienie udzielane jest w trybie podstawowym na podstawie: art. 275 pkt 1 ustawy",
+      "Zamówienie udzielane jest w trybie podstawowym na podstawie: art. 275 pkt 2 ustawy"
+    ]
+  },
+  "3.1.1": {
+    "col_name": "cn_section_3_1_1",
+    "section_header": "Uzasadnienie faktyczne i prawne wyboru trybu negocjacji bez ogłoszenia albo zamówienia        z wolnej ręki",
+    "data_model": "core",
+    "example_values": [
+      "Postępowanie o udzielenie zamówienia publicznego, którego przedmiotem jest: „Odbieranie i transport odpadów komunalnych powstających na terenie nieruchomości zamieszkałych na obszarze Gminy Międzybórz”, prowadzone jest w trybie zamówienia z wolnej ręki. Gmina zamierza udzielić zamówienia publicznego w trybie zamówienia z wolnej ręki ZGKiM Sp. z o.o. z siedzibą w Międzyborzu (dalej jako ZGKiM sp. z o.o.). Zaproszony do negocjacji Wykonawca tj. ZGKiM sp. z o.o. jest osobą prawną, prowadzącą działalność gospodarczą w formie spółki prawa handlowego tj. spółki z ograniczoną odpowiedzialnością ze 100% udziałem kapitału jednostki samorządu terytorialnego - Gminy . ZGKiM sp. z o.o. nie posiada bezpośredniego udziału kapitału prywatnego. ZGKiM Sp. z o.o. jest w pełni nadzorowana przez Gminę  - jedynego udziałowca. W związku z powyższym, jedyny udziałowiec wskazanej spółki tj. Gmina sprawuje kontrolę, odpowiadającą kontroli sprawowanej nad własnymi jednostkami, pozostałe zapisy w protokole",
+      "Organem założycielskim dla Przedsiębiorstwa Usług Komunalnych Sp. z o.o. jest Gmina Józefów nad Wisłą ze 100% udziałem. W okresie trzech lat roboty i usługi wykonywane były na rzecz Gminy Józefów nad Wisłą są wyższe jak 90% ogólnej wartości robót i usług art. 67 ust. pkt 12 lit. b",
+      "Zaproponowany trybu wyboru wykonawcy wynika z przesłanek określonych w art. 214 ust. 1. pkt 1) PZP. Przyjęto tryb wyboru wykonawcy „z wolnej ręki” i zaproponowano, aby realizację zadania powierzyć firmie Esri Polska Sp. z o.o. z siedzibą w Warszawie, Plac Konesera 9, 03-736 Warszawa. Firma Esri Polska Sp. z o.o. jest jedy-nym autoryzowanym dystrybutorem oprogramowania Esri w Polsce."
+    ]
+  },
+  "3.1.2": {
+    "col_name": "cn_section_3_1_2",
+    "section_header": "Identyfikator wcześniejszego postępowania",
+    "data_model": "core",
+    "example_values": [
+      "ocds-148610-f71e8f59-0ccc-11ed-8000-d680d39e541a",
+      "ocds-148610-3cd756b0-692e-48a0-9ea2-cf161e3db770",
+      "ocds-148610-f7fbbb62-6db2-11ee-a60c-9ec5599dddc1"
+    ]
+  },
+  "4.1": {
+    "col_name": "cn_section_4_1",
+    "section_header": "Numer referencyjny",
+    "data_model": "core",
+    "example_values": [
+      "1.3.2/2024",
+      "RIGP.2710.8.2024",
+      "DO.271.41.2024.MK"
+    ]
+  },
+  "4.2": {
+    "col_name": "cn_section_4_2",
+    "section_header": "Zamawiający udziela zamówienia w częściach, z których każda stanowi przedmiot odrębnego postępowania",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "4.3": {
+    "col_name": "cn_section_4_3",
+    "section_header": "Wartość zamówienia",
+    "data_model": "core",
+    "example_values": [
+      "160000,00                PLN",
+      "224031,50                PLN",
+      "753070,36                PLN"
+    ]
+  },
+  "4.3.1": {
+    "col_name": "cn_section_4_3_1",
+    "section_header": "Wartość zamówienia stanowiącego przedmiot tego postępowania (bez VAT)",
+    "data_model": "core",
+    "example_values": [
+      "305452,54                PLN",
+      "205260,16                PLN",
+      "160874,40                PLN"
+    ]
+  },
+  "4.3.2": {
+    "col_name": "cn_section_4_3_2",
+    "section_header": "Szacunkowa maksymalna wartość umowy ramowej (bez VAT)",
+    "data_model": "core",
+    "example_values": [
+      "62562,33",
+      "159169,82",
+      "513009,63"
+    ]
+  },
+  "4.4": {
+    "col_name": "cn_section_4_4",
+    "section_header": "Rodzaj zamówienia",
+    "data_model": "core",
+    "example_values": [
+      "Usługi",
+      "Roboty budowlane",
+      "Dostawy"
+    ]
+  },
+  "4.5.1": {
+    "col_name": "cn_section_4_5_1",
+    "section_header": "Krótki opis przedmiotu zamówienia",
+    "data_model": "part",
+    "example_values": [
+      "a)\tŚwiadczenie usług odbioru i transportu odpadów komunalnych od właścicieli nieruchomości zamieszkałych na terenie Gminy w sposób zapewniający osiągnięcie odpowiednich poziomów recyklingu, przygotowania do ponownego użycia i odzysku innymi metodami oraz ograniczenie masy odpadów ulegających biodegradacji przekazywanych do składowania, zgodnie z zapisami ustawy z dnia 13 września 1996 r. o utrzymaniu czystości i porządku w gminach (t.j. Dz. U. z 2020 r., poz. 1439), zapisami Planu Gospodarki Odpadami dla Województwa Dolnośląskiego, Uchwały Nr  XXII/157/2020  Rady Miejskiej w Międzyborzu UCHWAŁA RADY MIEJSKIEJ W MIĘDZYBORZU z dnia 26 listopada 2020 r. w sprawie szczegółowego sposobu i zakresu świadczenia usług w zakresie odbierania odpadów komunalnych od właścicieli nieruchomości i zagospodarowania tych odpadów, w zamian za uiszczoną przez właściciela nieruchomości opłatę za gospodarowanie odpadami komunalnymi.; UCHWAŁĄ NR XXII/156/2020 RADY MIEJSKIEJ W MIĘDZYBORZU z dnia 26 listopada 2020 r. w sprawie uchwalenia regulaminu utrzymania czystości i porządku na terenie Miasta i Gminy Międzybórz",
+      "1.\tPrzedmiotem zamówienia jest opracowanie projektu planu ogólnego gminy Malechowo o którym jest mowa w art. 13a ustawy o planowaniu i zagospodarowaniu przestrzennym (t. j. Dz. U. z 2023 r., poz. 977 ze zm.) oraz udział w czynnościach związanych ze sporządzeniem i uchwaleniem planu ogólnego. Powierzchnia opracowania obejmuje obszar Gminy Malechowo – ok. 22 663 ha. 2.\tProjekt wykonany będzie: 1)\tzgodnie z zapisami uchwały Nr LVIII/477/2024 Rady Gminy Malechowo z dnia 28 marca 2024 r. w sprawie przystąpienia do sporządzenia planu ogólnego gminy Malechowo stanowiącej załącznik nr 8 do SWZ, 2)\tz zachowaniem wymogów oraz procedury określonej w ustawie z dnia 27 marca 2003 r. o planowaniu i zagospodarowaniu przestrzennym (Dz. U. z 2023 r. poz. 977, z późn. zm.), 3)\tz zachowaniem wymogów oraz procedury określonej w rozporządzeniu Ministra Rozwoju i Technologii z dnia 8 grudnia 2023r. w sprawie sposobu przygotowania projektu planu ogólnego gminy, dokumentowania prac planistycznych w zakresie tego planu oraz wydawania z niego wypisów i wyrysów (Dz. U. z 2023r, poz. 2758), 4)\tz uwzględnieniem uwag zgłaszanych przez Zamawiającego w trakcie realizacji umowy i aktualnego orzecznictwa sądowego dotyczącego zagospodarowania przestrzennego. 3.\tSzczegółowe obowiązki Wykonawcy oraz wymagania dotyczące opracowania określa projekt umowy (zał. nr 4 do SWZ) wraz z harmonogramem  rzeczowo – finansowym realizacji przedmiotu umowy. 4.\tWykaz  materiałów dostarczanych  przez  Zamawiającego określa załącznik nr 2 do „Projektu Umowy”. 5.\tZakres usług został określony w załączniku nr 7 do SWZ.",
+      "Przedmiotem zamówienia jest świadczenie usług pocztowych dla Związku Międzygminnego „Gospodarka Odpadami Aglomeracji Poznańskiej” w likwidacji w okresie od 1 stycznia 2025 r. do 31 grudnia 2025 r."
+    ]
+  },
+  "4.5.3": {
+    "col_name": "cn_section_4_5_3",
+    "section_header": "Główny kod CPV",
+    "data_model": "part",
+    "example_values": [
+      "90500000-2 - Usługi związane z odpadami",
+      "71410000-5 - Usługi planowania przestrzennego",
+      "64110000-0 - Usługi pocztowe"
+    ]
+  },
+  "4.5.4": {
+    "col_name": "cn_section_4_5_4",
+    "section_header": "Dodatkowy kod CPV",
+    "data_model": "part",
+    "example_values": [
+      "03222000-3 - Owoce i orzechy",
+      "15600000-4 - Produkty przemiału ziarna, skrobi i produktów skrobiowych 15400000-2 - Oleje i tłuszcze zwierzęce lub roślinne",
+      "15540000-5 - Produkty serowarskie"
+    ]
+  },
+  "4.5.5": {
+    "col_name": "cn_section_4_5_5",
+    "section_header": "Wartość części",
+    "data_model": "part",
+    "example_values": [
+      "60987,74                        PLN",
+      "111984,60                        PLN",
+      "53171,00                        PLN"
+    ]
+  },
+  "5.1": {
+    "col_name": "cn_section_5_1",
+    "section_header": "Postępowanie zakończyło się zawarciem umowy albo unieważnieniem postępowania",
+    "data_model": "part",
+    "example_values": [
+      "Postępowanie/cześć postępowania zakończyła się zawarciem umowy",
+      "Postępowanie/cześć postępowania zakończyła się unieważnieniem",
+      "Nie rozstrzygnięto"
+    ]
+  },
+  "5.2": {
+    "col_name": "cn_section_5_2",
+    "section_header": "Podstawa prawna unieważnienia postępowania",
+    "data_model": "part",
+    "example_values": [
+      "art. 255 pkt 2 ustawy",
+      "art. 255 pkt 1 ustawy",
+      "art. 255 pkt 3 ustawy"
+    ]
+  },
+  "5.2.1": {
+    "col_name": "cn_section_5_2_1",
+    "section_header": "Przyczyna unieważnienia postępowania",
+    "data_model": "part",
+    "example_values": [
+      "Uzasadnienie faktyczne: w prowadzonym postępowaniu w części IV w terminie wskazanym na złożenie ofert wpłynęła jedna oferta, do której Wykonawca załączył dowody podpisu elektronicznego pomijając dokumenty, których te podpisy dotyczą. Formularz ofertowy z wymaganymi dokumentami został załączony przez Wykonawcę po otwarciu ofert przy wykorzystaniu zakładki do komunikacji (komunikaty, pytania). Zgodnie z art. 226 ust. 1 pkt 6 ustawy Pzp Zamawiający odrzuca ofertę, jeżeli nie została sporządzona lub przekazana  w sposób zgodny z wymaganiami technicznymi oraz organizacyjnymi sporządzania lub przekazywania ofert przy użyciu środków komunikacji elektronicznej określonymi  przez Zamawiającego. Uzasadnienie prawne: Zgodnie z art. 255 pkt 2 ustawy Pzp Zamawiający unieważnia  postępowanie o udzielenie zamówienia, jeżeli wszystkie złożone wnioski o dopuszczenie  do udziału w postępowaniu albo oferty podlegały odrzuceniu.",
+      "nie złożono żadnego wniosku o dopuszczenie do udziału w",
+      "Oferta Wykonawcy: Agencja Naukowo-Techniczna SYMICO Sp z o.o podlega  odrzuceniu na podstawie art. 226 ust. 1 pkt 5 prawo zamówień publicznych,  ponieważ jej treść jest niezgodna   z warunkami zamówienia."
+    ]
+  },
+  "6.1": {
+    "col_name": "cn_section_6_1",
+    "section_header": "Liczba otrzymanych ofert lub wniosków",
+    "data_model": "part",
+    "example_values": [
+      "1",
+      "4",
+      "2"
+    ]
+  },
+  "6.1.1": {
+    "col_name": "cn_section_6_1_1",
+    "section_header": "Liczba otrzymanych ofert wariantowych",
+    "data_model": "part",
+    "example_values": [
+      "0",
+      "1",
+      "7"
+    ]
+  },
+  "6.1.2": {
+    "col_name": "cn_section_6_1_2",
+    "section_header": "Liczba ofert dodatkowych",
+    "data_model": "part",
+    "example_values": [
+      "1",
+      "0",
+      "3"
+    ]
+  },
+  "6.1.3": {
+    "col_name": "cn_section_6_1_3",
+    "section_header": "Liczba otrzymanych od MŚP",
+    "data_model": "part",
+    "example_values": [
+      "1",
+      "0",
+      "4"
+    ]
+  },
+  "6.1.4": {
+    "col_name": "cn_section_6_1_4",
+    "section_header": "Liczba ofert wykonawców z siedzibą w państwach EOG innych niż państwo zamawiającego",
+    "data_model": "part",
+    "example_values": [
+      "0",
+      "1",
+      "2"
+    ]
+  },
+  "6.1.5": {
+    "col_name": "cn_section_6_1_5",
+    "section_header": "Liczba ofert wykonawców z siedzibą w państwie spoza EOG",
+    "data_model": "part",
+    "example_values": [
+      "0",
+      "2",
+      "1"
+    ]
+  },
+  "6.1.6": {
+    "col_name": "cn_section_6_1_6",
+    "section_header": "Liczba ofert odrzuconych, w tym liczba ofert zawierających rażąco niską cenę lub koszt",
+    "data_model": "part",
+    "example_values": [
+      "0",
+      "1",
+      "2"
+    ]
+  },
+  "6.1.7": {
+    "col_name": "cn_section_6_1_7",
+    "section_header": "Liczba ofert zawierających rażąco niską cenę lub koszt",
+    "data_model": "part",
+    "example_values": [
+      "0",
+      "1",
+      "2"
+    ]
+  },
+  "6.2": {
+    "col_name": "cn_section_6_2",
+    "section_header": "Cena lub koszt oferty z najniższą ceną lub kosztem",
+    "data_model": "part",
+    "example_values": [
+      "643946,72 PLN",
+      "364000,00 PLN",
+      "192976,04 PLN"
+    ]
+  },
+  "6.3": {
+    "col_name": "cn_section_6_3",
+    "section_header": "Cena lub koszt oferty z najwyższą ceną lub kosztem",
+    "data_model": "part",
+    "example_values": [
+      "643946,72 PLN",
+      "364000,00 PLN",
+      "192976,04 PLN"
+    ]
+  },
+  "6.4": {
+    "col_name": "cn_section_6_4",
+    "section_header": "Cena lub koszt oferty wykonawcy, któremu udzielono zamówienia",
+    "data_model": "part",
+    "example_values": [
+      "643946,72 PLN",
+      "364000,00 PLN",
+      "192976,04 PLN"
+    ]
+  },
+  "6.5": {
+    "col_name": "cn_section_6_5",
+    "section_header": "Do wyboru najkorzystniejszej oferty zastosowano aukcję elektroniczną",
+    "data_model": "part",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "6.6": {
+    "col_name": "cn_section_6_6",
+    "section_header": "Oferta wybranego wykonawcy jest ofertą wariantową",
+    "data_model": "part",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "6.7": {
+    "col_name": "cn_section_6_7",
+    "section_header": "Wskazanie, czy najkorzystniejsza oferta wykonawcy, któremu udzielono zamówienia uwzględnia określone w kryteriach",
+    "data_model": "part",
+    "example_values": [
+      "zgodnie z art. 242 ust. 2 ustawy - aspekty społeczne",
+      "zgodnie z art. 242 ust. 2 ustawy - aspekty środowiskowe",
+      "zgodnie z art. 242 ust. 2 ustawy - aspekty społeczne zgodnie z art. 242 ust. 2 ustawy - aspekty środowiskowe"
+    ]
+  },
+  "7.1": {
+    "col_name": "cn_section_7_1",
+    "section_header": "Czy zamówienie zostało udzielone wykonawcom wspólnie ubiegającym się o udzielenie        zamówienia",
+    "data_model": "part",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "7.2": {
+    "col_name": "cn_section_7_2",
+    "section_header": "Wielkość przedsiębiorstwa wykonawcy",
+    "data_model": "part",
+    "example_values": [
+      "Mały przedsiębiorca",
+      "Mikro przedsiębiorca",
+      "Średni przedsiębiorca"
+    ]
+  },
+  "7.3.1": {
+    "col_name": "cn_section_7_3_1",
+    "section_header": "Nazwa (firma) wykonawcy, któremu udzielono zamówienia",
+    "data_model": "part",
+    "example_values": [
+      "Zakład Gospodarki Komunalnej i Mieszkaniowej Sp. z o.o.",
+      "UrbanConsulting Filip Sokołowski",
+      "Poczta Polska S.A."
+    ]
+  },
+  "7.3.2": {
+    "col_name": "cn_section_7_3_2",
+    "section_header": "Krajowy Numer Identyfikacyjny",
+    "data_model": "part",
+    "example_values": [
+      "9112008135",
+      "5751762894",
+      "5250007313"
+    ]
+  },
+  "7.3.3": {
+    "col_name": "cn_section_7_3_3",
+    "section_header": "Ulica",
+    "data_model": "part",
+    "example_values": [
+      "Kolejowa 9",
+      "ul. Strzelców 46/35",
+      "Rodziny Hiszpańskich 8"
+    ]
+  },
+  "7.3.4": {
+    "col_name": "cn_section_7_3_4",
+    "section_header": "Miejscowość",
+    "data_model": "part",
+    "example_values": [
+      "Międzybórz",
+      "Gdynia",
+      "Warszawa"
+    ]
+  },
+  "7.3.5": {
+    "col_name": "cn_section_7_3_5",
+    "section_header": "Kod pocztowy",
+    "data_model": "part",
+    "example_values": [
+      "56-513",
+      "81-586",
+      "00-940"
+    ]
+  },
+  "7.3.6": {
+    "col_name": "cn_section_7_3_6",
+    "section_header": "Województwo",
+    "data_model": "part",
+    "example_values": [
+      "wielkopolskie",
+      "pomorskie",
+      "mazowieckie"
+    ]
+  },
+  "7.3.7": {
+    "col_name": "cn_section_7_3_7",
+    "section_header": "Kraj",
+    "data_model": "part",
+    "example_values": [
+      "Polska",
+      "Niemcy",
+      "Republika Czeska"
+    ]
+  },
+  "7.3.8": {
+    "col_name": "cn_section_7_3_8",
+    "section_header": "Czy wykonawca przewiduje powierzenie wykonania części zamówienia podwykonawcom?",
+    "data_model": "part",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "7.3.9": {
+    "col_name": "cn_section_7_3_9",
+    "section_header": "Informacja o częściach zamówienia, których wykonanie zamierza powierzyć podwykonawcom, oraz nazwy ewentualnych podwykonawców, jeżeli są już znani",
+    "data_model": "part",
+    "example_values": [
+      "dostawy do 80%, podwykonawca nie znany na etapie składania ofert",
+      "Ręczne odśnieżanie chodników, placów, schodów, parkingów, działek gminnych na terenie miasta Dzierzgoń; Wzgórza Verde sp. z o.o., ul. Słowackiego 30, 82-440 Dzierzgoń",
+      "Ręczna likwidacja śliskości chodników, placów, schodów, parkingów, działek gminnych na terenie miasta Dzierzgoń; Wzgórza Verde sp. z o.o., ul. Słowackiego 30, 82-440 Dzierzgoń"
+    ]
+  },
+  "7.4": {
+    "col_name": "cn_section_7_4",
+    "section_header": "Czy wykonawca przewiduje powierzenie wykonania części zamówienia podwykonawcom?",
+    "data_model": "part",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "7.4.1": {
+    "col_name": "cn_section_7_4_1",
+    "section_header": "Informacja o częściach zamówienia, których wykonanie zamierza powierzyć podwykonawcom, oraz nazwy ewentualnych podwykonawców, jeżeli są już znani",
+    "data_model": "part",
+    "example_values": [
+      "KACPRZAK ESTRADA Obsłucha techniczna KAMZA Obsługa cateringowa",
+      "Obsługa kadrowa - ALFA SECURITY Sp. z o.o.",
+      "1)\tALFA SECURITY SERVICE SP. Z O.O. UL. OLESKA 20, 42-700 LUBLINIEC w zakresie obsługi kadrowej, 2)    NOVA WD Sp. z o.o. Sp. K., ul. Świeradowska 51-57, 50-559 Wrocław  w  zakresie podjazdów grupy interwencyjnej."
+    ]
+  },
+  "8.1": {
+    "col_name": "cn_section_8_1",
+    "section_header": "Data zawarcia umowy",
+    "data_model": "part",
+    "example_values": [
+      "2024-12-27",
+      "2024-12-09",
+      "2024-12-19"
+    ]
+  },
+  "8.2": {
+    "col_name": "cn_section_8_2",
+    "section_header": "Wartość umowy/umowy ramowej",
+    "data_model": "part",
+    "example_values": [
+      "643946,72 PLN",
+      "364000,00 PLN",
+      "192976,04 PLN"
+    ]
+  },
+  "8.3": {
+    "col_name": "cn_section_8_3",
+    "section_header": "Okres realizacji zamówienia albo umowy ramowej",
+    "data_model": "part",
+    "example_values": [
+      "12 miesiące",
+      "14 miesiące",
+      "10 miesiące"
+    ]
+  },
+  "8.4": {
+    "col_name": "cn_section_8_4",
+    "section_header": "Zamawiający przewiduje następujące wymagania związane z realizacją zamówienia",
+    "data_model": "part",
+    "example_values": [
+      "w zakresie zatrudnienia na podstawie stosunku pracy, w okolicznościach, o których mowa w art. 95 ustawy",
+      "w zakresie zatrudnienia na podstawie stosunku pracy, w okolicznościach, o których mowa w art. 95 ustawy obejmujące, zgodnie z art. 96 ustawy: - aspekty społeczne",
+      "w zakresie żądania określonej etykiety lub wskazania mającego zastosowanie wymagania określonej etykiety, zgodnie z art. 104 ustawy: - etykiety  środowiskowej (tzw. Ekoetykieta)"
+    ]
+  }
+}

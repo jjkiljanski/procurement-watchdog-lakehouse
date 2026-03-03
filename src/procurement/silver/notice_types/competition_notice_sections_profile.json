@@ -1,0 +1,710 @@
+{
+  "1.1": {
+    "col_name": "cn_section_1_1",
+    "section_header": "Rola zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Konkurs organizuje podmiot, któremu powierzono organizowanie konkursu",
+      "Konkurs prowadzony samodzielnie"
+    ]
+  },
+  "1.2": {
+    "col_name": "cn_section_1_2",
+    "section_header": "Nazwa zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Sądeckie Towarzystwo Budownictwa Społecznego",
+      "Izba Administracji Skarbowej w Łodzi",
+      "Zespół Opieki Zdrowotnej w Szczytnie"
+    ]
+  },
+  "1.3": {
+    "col_name": "cn_section_1_3",
+    "section_header": "Oddział zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "sp. z o.o.",
+      "ZOZ Szczytno",
+      "Zarząd Zieleni m.st. Warszawy"
+    ]
+  },
+  "1.4": {
+    "col_name": "cn_section_1_4",
+    "section_header": "Krajowy Numer Identyfikacyjny",
+    "data_model": "core",
+    "example_values": [
+      "REGON 490781058",
+      "REGON 001022890",
+      "REGON 519483005"
+    ]
+  },
+  "1.5.1": {
+    "col_name": "cn_section_1_5_1",
+    "section_header": "Ulica",
+    "data_model": "core",
+    "example_values": [
+      "ul. Janusza Kusocińskiego 4A",
+      "Al. Kościuszki 83",
+      "ul. M.C. Skłodowskiej12"
+    ]
+  },
+  "1.5.2": {
+    "col_name": "cn_section_1_5_2",
+    "section_header": "Miejscowość",
+    "data_model": "core",
+    "example_values": [
+      "Nowy Sącz",
+      "Łódź",
+      "Szczytno"
+    ]
+  },
+  "1.5.3": {
+    "col_name": "cn_section_1_5_3",
+    "section_header": "Kod pocztowy",
+    "data_model": "core",
+    "example_values": [
+      "33-300",
+      "90-436",
+      "12-100"
+    ]
+  },
+  "1.5.4": {
+    "col_name": "cn_section_1_5_4",
+    "section_header": "Województwo",
+    "data_model": "core",
+    "example_values": [
+      "małopolskie",
+      "łódzkie",
+      "warmińsko-mazurskie"
+    ]
+  },
+  "1.5.5": {
+    "col_name": "cn_section_1_5_5",
+    "section_header": "Kraj",
+    "data_model": "core",
+    "example_values": [
+      "Polska"
+    ]
+  },
+  "1.5.6": {
+    "col_name": "cn_section_1_5_6",
+    "section_header": "Lokalizacja NUTS 3",
+    "data_model": "core",
+    "example_values": [
+      "PL218 - Nowosądecki",
+      "PL711 - Miasto Łódź",
+      "PL622 - Olsztyński"
+    ]
+  },
+  "1.5.7": {
+    "col_name": "cn_section_1_5_7",
+    "section_header": "Numer telefonu",
+    "data_model": "core",
+    "example_values": [
+      "422899764",
+      "+48 539 218 444",
+      "22 211 90 01/02"
+    ]
+  },
+  "1.5.8": {
+    "col_name": "cn_section_1_5_8",
+    "section_header": "Numer faksu",
+    "data_model": "core",
+    "example_values": [
+      "825713003",
+      "91 38 53 207",
+      "brak"
+    ]
+  },
+  "1.5.9": {
+    "col_name": "cn_section_1_5_9",
+    "section_header": "Adres poczty elektronicznej",
+    "data_model": "core",
+    "example_values": [
+      "przetargi@stbs-nowysacz.pl",
+      "przetargi.ias.lodz@mf.gov.pl",
+      "bdiakow@szpital.szczytno"
+    ]
+  },
+  "1.5.10": {
+    "col_name": "cn_section_1_5_10",
+    "section_header": "Adres strony internetowej zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "https://www.stbs-nowysacz.pl",
+      "www.gov.pl/ias-lodz",
+      "http://szpital.szczytno.pl"
+    ]
+  },
+  "1.6": {
+    "col_name": "cn_section_1_6",
+    "section_header": "Rodzaj zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Zamawiający publiczny - jednostka sektora finansów publicznych - inne państwowe i samorządowe osoby prawne utworzone na podstawie odrębnych ustaw w celu wykonywania zadań publicznych",
+      "Zamawiający publiczny - jednostka sektora finansów publicznych - organ władzy publicznej - organ administracji rządowej (centralnej lub terenowej)",
+      "Zamawiający publiczny - jednostka sektora finansów publicznych - samodzielny publiczny zakład opieki zdrowotnej"
+    ]
+  },
+  "1.7": {
+    "col_name": "cn_section_1_7",
+    "section_header": "Przedmiot działalności zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Budownictwo i obiekty komunalne",
+      "Ogólne usługi publiczne",
+      "Zdrowie"
+    ]
+  },
+  "1.9.1": {
+    "col_name": "cn_section_1_9_1",
+    "section_header": "Nazwa podmiotu prowadzącego postępowanie",
+    "data_model": "core",
+    "example_values": [
+      "Grzegorz Modrzejewski",
+      "Kancelaria Adwokacja Joanna Marczewska",
+      "Stowarzyszenie Architektów Polskich Oddział Katowice"
+    ]
+  },
+  "1.9.2": {
+    "col_name": "cn_section_1_9_2",
+    "section_header": "Krajowy Numer Identyfikacyjny",
+    "data_model": "core",
+    "example_values": [
+      "8761026980",
+      "5342201170",
+      "9540016305"
+    ]
+  },
+  "1.9.3": {
+    "col_name": "cn_section_1_9_3",
+    "section_header": "Ulica",
+    "data_model": "core",
+    "example_values": [
+      "Dębowa 31",
+      "Chrzanów Mały 20A",
+      "Dyrekcyjna 9"
+    ]
+  },
+  "1.9.4": {
+    "col_name": "cn_section_1_9_4",
+    "section_header": "Miejscowość",
+    "data_model": "core",
+    "example_values": [
+      "Grudziądz",
+      "Grudziadz",
+      "Chrzanów Mały"
+    ]
+  },
+  "1.9.5": {
+    "col_name": "cn_section_1_9_5",
+    "section_header": "Kod pocztowy",
+    "data_model": "core",
+    "example_values": [
+      "86-300",
+      "05-825",
+      "40-013"
+    ]
+  },
+  "1.9.6": {
+    "col_name": "cn_section_1_9_6",
+    "section_header": "Województwo",
+    "data_model": "core",
+    "example_values": [
+      "kujawsko-pomorskie",
+      "mazowieckie",
+      "śląskie"
+    ]
+  },
+  "1.9.7": {
+    "col_name": "cn_section_1_9_7",
+    "section_header": "Kraj",
+    "data_model": "core",
+    "example_values": [
+      "Polska"
+    ]
+  },
+  "1.9.8": {
+    "col_name": "cn_section_1_9_8",
+    "section_header": "Numer telefonu",
+    "data_model": "core",
+    "example_values": [
+      "602535142",
+      "322539774",
+      "94 342 64 90"
+    ]
+  },
+  "1.9.9": {
+    "col_name": "cn_section_1_9_9",
+    "section_header": "Numer faksu",
+    "data_model": "core",
+    "example_values": [
+      "94 342 64 90"
+    ]
+  },
+  "1.9.10": {
+    "col_name": "cn_section_1_9_10",
+    "section_header": "Adres poczty elektronicznej",
+    "data_model": "core",
+    "example_values": [
+      "modrzej244@wp.pl",
+      "joanna@marczewska.com.pl",
+      "biuro@sarp.katowice.pl"
+    ]
+  },
+  "1.9.11": {
+    "col_name": "cn_section_1_9_11",
+    "section_header": "Adres strony internetowej",
+    "data_model": "core",
+    "example_values": [
+      "http://stbs-nowysacz.pl",
+      "https://marczewska.com.pl/",
+      "https://sarp.katowice.pl/"
+    ]
+  },
+  "2.1": {
+    "col_name": "cn_section_2_1",
+    "section_header": "Nazwa konkursu",
+    "data_model": "core",
+    "example_values": [
+      "Przedmiotem niniejszego postępowania jest pracowanie pracykonkursowej w zakresie koncepcji architektoniczno - przestrzennejzadania pod nazwą „Budowa budynków mieszkalnychwielorodzinnych z lokala.....",
+      "opracowanie pracy konkursowej w zakresie koncepcji architektoniczno - przestrzennejzadania pod nazwą „Budowa budynków mieszkalnychwielorodzinnych z lokalami usługowym..gment C",
+      "Konkurs na opracowanie koncepcji architektonicznej budynku Izby Administracji Skarbowej w Łodzi zlokalizowanego w Łodzi przy ul. Gibalskiego 2/4"
+    ]
+  },
+  "2.2": {
+    "col_name": "cn_section_2_2",
+    "section_header": "Identyfikator konkursu",
+    "data_model": "core",
+    "example_values": [
+      "ocds-148610-faa12b32-41e8-4621-a021-98e70e6624d5",
+      "ocds-148610-8e43f362-919e-470d-a959-7a03eb0a51bc",
+      "ocds-148610-721eb266-2fb7-402c-8350-53c97fbc1439"
+    ]
+  },
+  "2.3": {
+    "col_name": "cn_section_2_3",
+    "section_header": "Numer ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "2025/BZP 00020216",
+      "2025/BZP 00020225",
+      "2025/BZP 00059563"
+    ]
+  },
+  "2.4": {
+    "col_name": "cn_section_2_4",
+    "section_header": "Wersja ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "01"
+    ]
+  },
+  "2.5": {
+    "col_name": "cn_section_2_5",
+    "section_header": "Data ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "2025-01-09",
+      "2025-01-23",
+      "2025-02-05"
+    ]
+  },
+  "2.7": {
+    "col_name": "cn_section_2_7",
+    "section_header": "Konkurs dotyczy projektu lub programu współfinansowanego ze środków Unii Europejskiej",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "2.8": {
+    "col_name": "cn_section_2_8",
+    "section_header": "Nazwa projektu lub programu",
+    "data_model": "core",
+    "example_values": [
+      "Zamówienie, będące nagrodą w konkursie, jest współfinansowane ze środków Unii Europejskiej z programu/ w ramach projektu 2.23. FEPZ pn.”Pomorze Zachodnie – Zielony Region- etap II”",
+      "Konkurs dotyczy planowanego projektu w ramach programu Fundusze Europejskie dla Świętokrzyskiego 2021-2027",
+      "Program Fundusze Europejskie dla Śląskiego 2021-2027 r."
+    ]
+  },
+  "3.1": {
+    "col_name": "cn_section_3_1",
+    "section_header": "Procedura konkursu",
+    "data_model": "core",
+    "example_values": [
+      "Konkurs - nieograniczony",
+      "Konkurs - ograniczony"
+    ]
+  },
+  "3.2": {
+    "col_name": "cn_section_3_2",
+    "section_header": "Rodzaj konkursu",
+    "data_model": "core",
+    "example_values": [
+      "Konkurs jednoetapowy",
+      "Konkurs dwuetapowy"
+    ]
+  },
+  "3.3": {
+    "col_name": "cn_section_3_3",
+    "section_header": "Termin składania prac konkursowych",
+    "data_model": "core",
+    "example_values": [
+      "2025-01-20 13:00",
+      "2025-01-21 09:00",
+      "2025-02-17 10:00"
+    ]
+  },
+  "3.4": {
+    "col_name": "cn_section_3_4",
+    "section_header": "Czy Zamawiający przewiduje ograniczenie liczby uczestników konkursu, którzy zostaną zaproszeni do drugiego etapu konkursu",
+    "data_model": "core",
+    "example_values": [
+      "Tak"
+    ]
+  },
+  "3.4.1": {
+    "col_name": "cn_section_3_4_1",
+    "section_header": "Liczba uczestników konkursu, którzy zostaną zaproszeni do drugiego etapu konkursu oraz kryteria oceny opracowań studialnych wraz z podaniem znaczenia tych kryteriów",
+    "data_model": "core",
+    "example_values": [
+      "2",
+      "3-6, Kryteria I etapu: Kryterium: Adekwatność propozycji pisemnej do założeń klucza multisensorycznego – wga: 40 , kryterium: Doświadczenie w realizacji podobnych inwestycji (obiekty kultury ze szczególnym wskazaniem na galerie i muzea) – waga: 30, kryterium: Punkty za udział w procesie projektowym osób artystycznych dziedzin szeroko rozumianych sztuk wizualnych – waga- 30"
+    ]
+  },
+  "3.5": {
+    "col_name": "cn_section_3_5",
+    "section_header": "Termin składania opracowań studialnych",
+    "data_model": "core",
+    "example_values": [
+      "2025-02-20 10:00",
+      "2025-05-20 10:00"
+    ]
+  },
+  "3.6": {
+    "col_name": "cn_section_3_6",
+    "section_header": "Termin składania wniosków o dopuszczenie do udziału w konkursie",
+    "data_model": "core",
+    "example_values": [
+      "2025-04-04 11:30",
+      "2025-05-16 12:00",
+      "2025-04-23 09:00"
+    ]
+  },
+  "3.7": {
+    "col_name": "cn_section_3_7",
+    "section_header": "Informacja o obiektywnych wymaganiach",
+    "data_model": "core",
+    "example_values": [
+      "1.\tUczestnikiem Konkursu może być:",
+      "Sąd Konkursowy dokonuje oceny prac konkursowych w zakresie zgodności prac konkursowych z obligatoryjnymi wymaganiami, co do zakresu opracowania i kryteriami oceny prac konkursowych, ustalonymi w Regulaminie konkursu.",
+      "Z udziału w konkursie  wyklucza się Uczestnika Konkursu na podstawie art. 108 ust.1 i 109 ust. 1 pkt 4) ustawy Prawo zamówień Publicznych oraz art. 7 ust. 1 ustawy z dnia 13 kwietnia 2022 r. o szczególnych rozwiązaniach w zakresie przeciwdziałania wspieraniu agresji na Ukrainę oraz służących ochronie bezpieczeństwa narodowego."
+    ]
+  },
+  "4.1": {
+    "col_name": "cn_section_4_1",
+    "section_header": "Adres strony internetowej prowadzonego konkursu",
+    "data_model": "core",
+    "example_values": [
+      "https://ezamowienia.gov.pl/mp-client/search/list/ocds-148610-faa12b32-41e8-4621-a021-98e70e6624d5",
+      "https://ezamowienia.gov.pl/mp-client/search/list/ocds-148610-8e43f362-919e-470d-a959-7a03eb0a51bc",
+      "https://ias-lodz.ezamawiajacy.pl"
+    ]
+  },
+  "4.2": {
+    "col_name": "cn_section_4_2",
+    "section_header": "Informacje na temat sposobu udostępnienia zastrzeżonych dokumentów konkursu",
+    "data_model": "core",
+    "example_values": [
+      "Wszystkie niezbędne do sporządzenia pracy konkursowej informacje zawarte są na stronie prowadzonego konkursu.",
+      "nie dotyczy"
+    ]
+  },
+  "4.3": {
+    "col_name": "cn_section_4_3",
+    "section_header": "Komunikacja w konkursie wyłącznie elektroniczna",
+    "data_model": "core",
+    "example_values": [
+      "Tak",
+      "Nie"
+    ]
+  },
+  "4.4": {
+    "col_name": "cn_section_4_4",
+    "section_header": "Adres WWW środka służącego do komunikacji w konkursie",
+    "data_model": "core",
+    "example_values": [
+      "https:https://ezamowienia.gov.pl/",
+      "https://ias-lodz.ezamawiajacy.pl",
+      "https://ezamowienia.gov.pl"
+    ]
+  },
+  "4.5": {
+    "col_name": "cn_section_4_5",
+    "section_header": "Wymagania techniczne i organizacyjne dotyczące korespondencji elektronicznej",
+    "data_model": "core",
+    "example_values": [
+      "3.\tInformacje o wymaganiach technicznych i organizacyjnych sporządzania, wysyłania i odbierania korespondencji elektronicznej:",
+      "1.\tNiniejszy konkurs prowadzony jest w języku polskim.",
+      "1. Komunikacja między Zamawiającym a uczestnikami konkursu odbywa się wyłącznie przy użyciu środków komunikacji elektronicznej w rozumieniu ustawy z dnia 18 lipca 2002 r. o świadczeniu usług drogą elektroniczną (Dz. U. z 2020 r. poz.344)."
+    ]
+  },
+  "4.6": {
+    "col_name": "cn_section_4_6",
+    "section_header": "Adres strony internetowej, pod którym są dostępne narzędzia, urządzenia lub formaty plików, które nie są ogólnie dostępne",
+    "data_model": "core",
+    "example_values": [
+      "https://ezamowienia.gov.pl"
+    ]
+  },
+  "4.7": {
+    "col_name": "cn_section_4_7",
+    "section_header": "Narzędzia elektronicznego modelowania danych budowlanych",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ]
+  },
+  "4.9": {
+    "col_name": "cn_section_4_9",
+    "section_header": "Przyczyny odstąpienia od komunikacji elektronicznej",
+    "data_model": "core",
+    "example_values": [
+      "użycie środków komunikacji elektronicznej wymaga pozyskania przez zamawiającego specjalistycznego sprzętu biurowego (art. 65 ust. 1 pkt 3 ustawy) zamawiający wymaga przedstawienia modelu fizycznego, modelu w skali lub próbki, których nie można przekazać przy użyciu środków komunikacji elektronicznej (art. 65 ust. 1 pkt 4 ustawy)",
+      "zamawiający wymaga przedstawienia modelu fizycznego, modelu w skali lub próbki, których nie można przekazać przy użyciu środków komunikacji elektronicznej (art. 65 ust. 1 pkt 4 ustawy)"
+    ]
+  },
+  "4.10": {
+    "col_name": "cn_section_4_10",
+    "section_header": "Sposób nieelektronicznego składania prac konkursowych i wniosków",
+    "data_model": "core",
+    "example_values": [
+      "Postać fizyczna Pracy konkursowej musi zawierać:",
+      "w zakresie, gdy wymaga tego forma dokumentu (papierowa forma pracy konkursowej) oraz w zakresie dopuszczalnym przez Pzp – doręczenie adresatowi wszelkich pism (wszelkiego rodzaju oświadczeń, wniosków, zawiadomień i innych informacji) za pośrednictwem operatora pocztowego w rozumieniu ustawy z dnia 23 listopada 2012 r. - Prawo pocztowe, osobiście lub za pośrednictwem posłańca, o ile doręczenie pisma w ten sposób nastąpi przed upływem terminu przewidzianego w ustawie, bądź wyznaczonego przez Zamawiającego.",
+      "Al. Niepodległości 218, 00-911 Warszawa. Kancelaria jawna wejście od ulicy Filtrowej"
+    ]
+  },
+  "4.11": {
+    "col_name": "cn_section_4_11",
+    "section_header": "Język prac konkursowych i wniosków",
+    "data_model": "core",
+    "example_values": [
+      "polski",
+      "polski angielski"
+    ]
+  },
+  "4.12": {
+    "col_name": "cn_section_4_12",
+    "section_header": "RODO (obowiązek informacyjny)",
+    "data_model": "core",
+    "example_values": [
+      "jak w Regulaminie",
+      "Zgodnie z art. 13 ust. 1 i 2 rozporządzenia Parlamentu Europejskiego i Rady (UE) 2016/679 z dnia 27 kwietnia 2016 r. w sprawie ochrony osób fizycznych w związku z przetwarzaniem danych osobowych i w sprawie swobodnego przepływu takich danych oraz uchylenia dyrektywy 95/46/WE (ogólne rozporządzenie o danych) (Dz. U. UE L119 z dnia 4 maja 2016 r., str.1; zwanym dalej „RODO”) informujemy, że: 1)administratorem Pani/Pana danych osobowych jest Dyrektor Izby Administracji Skarbowej w Łodzi z siedzibą przy al. T. Kościuszki 83, 90 – 436 Łódź; 2)administrator wyznaczył Inspektora Danych Osobowych, z którym można się kontaktować pod adresem e-mail: iod.lodz@mf.gov.pl; 3)Pani/Pana dane osobowe przetwarzane będą na podstawie art. 6 ust. 1 lit. c RODO w celu związanym z postępowaniem konkursowym na opracowanie koncepcji architektonicznej budynku Izby Administracji Skarbowej w Łodzi zlokalizowanego w Łodzi przy ul. Gibalskiego 2/4 -1001-ILZ.260.49.2024;4) odbiorcami Pani/Pana danych osobowych będą: a)osoby lub podmioty, którym udostępniona zostanie dokumentacja postępowania w oparciu o art. 18 oraz art. 74 ustawy Pzp; b)upoważnieni pracownicy Izby Administracji Skarbowej w Łodzi; c)spółka Otwarty Rynek Elektroniczny S.A. z siedzibą w Warszawie, ul. Domaniewska 49,  02-672 Warszawa, wpisana do rejestru przedsiębiorców Krajowego Rejestru Sądowego prowadzonego przez Sąd Rejonowy dla m. st. Warszawy w Warszawie, XIII Wydział Gospodarczy Krajowego Rejestru Sądowego pod numerem KRS: 0000041441, NIP: 526-25-35-153, REGON: 017282436, jako właściciel Platformy, na której Izba Administracji Skarbowej w Łodzi prowadzi postępowania o udzielenie zamówienia publicznego, działającej pod adresem: https://iaslodz.ezamawiajacy.pl,5)w związku z jawnością postępowania konkursowego Państwa dane mogą być przekazywane do państw z poza EOG z zastrzeżeniem, iż ograniczenie dostępu do Państwa danych może wystąpić jedynie w szczególnych przypadkach, jeśli jest to uzasadnione ochroną prywatności zgodnie z ustawą Pzp;6)Pani/Pana dane osobowe będą przechowywane, zgodnie z art. 358 ust. 1 ustawy Pzp przez okres 4 lat od dnia ustalenia wyników konkursu, a jeżeli czas trwania umowy przekracza 4 lata, okres przechowywania obejmuje cały czas trwania umowy;7)podanie danych osobowych jest dobrowolne. Jednak chęć wzięcia udziału w konkursie wywołuje konieczność podania przez Panią/Pana danych osobowych bezpośrednio Pani/Pana dotyczących, jako wymóg ustawowy określony w przepisach ustawy Pzp, związany z udziałem w konkursie. Konsekwencje niepodania określonych danych wynikają z ustawy Pzp;8)w odniesieniu do Pani/Pana danych osobowych decyzje nie będą podejmowane w sposób zautomatyzowany, stosownie do art. 22 RODO;9) zasada jawności, o której mowa w art. 74 ust 1 i 2 ustawy Pzp ma zastosowanie do wszystkich danych osobowych, z wyjątkiem danych, o których mowa w art. 9 ust. 1 RODO (tj. danych osobowych ujawniających pochodzenie rasowe lub etniczne,poglądy polityczne, przekonania religijne lub światopoglądowe, przynależność do związków zawodowych oraz danych genetycznych, biometrycznych, danych dotyczących zdrowia, seksualności lub orientacji seksualnej) zebranych w toku konkursu. Ograniczenia zasady jawności, o których mowa w art. 74 ust. 3 i art. 18 ust. 3-6 ustawy Pzp, stosuje się odpowiednio;10)od dnia zakończenia konkursu, w przypadku gdy wniesienie żądania, o którym mowa w art. 18 ust. 1 RODO, spowoduje ograniczenie przetwarzania danych osobowych zawartych w protokole i załącznikach do protokołu, Zamawiający nie udostępnia tych danych zawartych w protokole i załącznikach do protokołu, chyba że zachodzą przesłanki, o których mowa w art. 18 ust. 2 RODO (ustalenie, dochodzenie lub obrona roszczeń, ochrona praw innej osoby fizycznej lub prawnej, z uwagi na ważne względy interesu publicznego Unii Europejskiej lub państwa członkowskiego(...). Dalsza część klauzuli zamieszczona w Rozdziale XXIII Regulaminu konkursu.",
+      "zgodnie z Regulaminem"
+    ]
+  },
+  "4.13": {
+    "col_name": "cn_section_4_13",
+    "section_header": "RODO (ograniczenia stosowania)",
+    "data_model": "core",
+    "example_values": [
+      "Zgodnie  pkt  1.3. Regulaminu konkursu",
+      "Nie dotyczy",
+      "Klauzula informacyjna RODO znajduje się w Rozdziale IX ust. 7 Regulaminu Konkursu."
+    ]
+  },
+  "5.1": {
+    "col_name": "cn_section_5_1",
+    "section_header": "Numer referencyjny konkursu",
+    "data_model": "core",
+    "example_values": [
+      "1K/2025",
+      "2K/2025",
+      "1001-ILZ.260.49.2024"
+    ]
+  },
+  "5.2": {
+    "col_name": "cn_section_5_2",
+    "section_header": "Czy konkurs poprzedza udzielenie zamówienia na usługi projektowania architektonicznego lub projektowania architektoniczno - budowlanego",
+    "data_model": "core",
+    "example_values": [
+      "Tak",
+      "Nie"
+    ]
+  },
+  "5.3": {
+    "col_name": "cn_section_5_3",
+    "section_header": "Krótki opis przedmiotu konkursu",
+    "data_model": "core",
+    "example_values": [
+      "1.\tPrzedmiotem niniejszego konkursu jest opracowanie koncepcji architektoniczno - przestrzennej zadania pod nazwą „Budowa  budynków  mieszkalnych wielorodzinnych z lokalami usługowymi i biurowymi („Osiedle Centrum”) – Segment B, z garażami podziemnymi, zagospodarowaniem terenu oraz infrastrukturą techniczną, zlokalizowanego na dz. nr. 103/38 , obr. 120, przy ul. Myśliwskiej w Nowym Sączu. Opracowanie projektu banneru reklamowego na tle otoczenia.",
+      "1.\tPrzedmiotem niniejszego konkursu jest opracowanie koncepcji architektoniczno - przestrzennej zadania pod nazwą „Budowa  budynków  mieszkalnych wielorodzinnych z lokalami usługowymi i biurowymi („Osiedle Centrum”) – Segment C, z garażami podziemnymi, zagospodarowaniem terenu oraz infrastrukturą techniczną, zlokalizowanego na dz. nr. 103/38 , obr. 120, przy ul. Myśliwskiej w Nowym Sączu. Opracowanie projektu banneru reklamowego na tle otoczenia.",
+      "Przedmiotem konkursu jest opracowanie koncepcji architektonicznej przebudowy, rozbudowy i nadbudowy istniejącego"
+    ]
+  },
+  "5.4": {
+    "col_name": "cn_section_5_4",
+    "section_header": "Główny kod CPV",
+    "data_model": "core",
+    "example_values": [
+      "71220000-6 - Usługi projektowania architektonicznego",
+      "39221000-7 - Sprzęt kuchenny",
+      "45442110-1 - Malowanie budynków"
+    ]
+  },
+  "5.5": {
+    "col_name": "cn_section_5_5",
+    "section_header": "Dodatkowy kod CPV",
+    "data_model": "core",
+    "example_values": [
+      "71221000-3 - Usługi architektoniczne w zakresie obiektów budowlanych 71222000-0 - Usługi architektoniczne w zakresie przestrzeni",
+      "45233221-4 - Malowanie nawierzchi 92312000-1 - Usługi artystyczne",
+      "71220000-6 - Usługi projektowania architektonicznego 71400000-2 - Usługi architektoniczne dotyczące planowania przestrzennego i zagospodarowania terenu 71420000-8 - Architektoniczne usługi zagospodarowania terenu 71248000-8 - Nadzór nad projektem i dokumentacją"
+    ]
+  },
+  "5.6": {
+    "col_name": "cn_section_5_6",
+    "section_header": "Aspekty społeczne i środowiskowe w opisie przedmiotu konkursu",
+    "data_model": "core",
+    "example_values": [
+      "Zamawiający w opisie przedmiotu konkursu uwzględnił aspekty społeczne, w szczególności wymagania w zakresie dostępności dla osób niepełnosprawnych oraz projektowania z przeznaczeniem dla wszystkich użytkowników",
+      "Zamawiający w opisie przedmiotu konkursu uwzględnił aspekty społeczne, w szczególności wymagania w zakresie dostępności dla osób niepełnosprawnych oraz projektowania z przeznaczeniem dla wszystkich użytkowników Zamawiający w opisie przedmiotu konkursu uwzględnił aspekty środowiskowe"
+    ]
+  },
+  "6.1": {
+    "col_name": "cn_section_6_1",
+    "section_header": "Rodzaj nagrody",
+    "data_model": "core",
+    "example_values": [
+      "Zaproszenie do negocjacji w celu wykonania usługi na podstawie wybranej pracy konkursowej",
+      "Zaproszenie do negocjacji w celu wykonania usługi na podstawie wybranej pracy konkursowej wraz z nagrodą pieniężną"
+    ]
+  },
+  "6.2": {
+    "col_name": "cn_section_6_2",
+    "section_header": "Liczba nagród dla autora wybranej pracy konkursowej lub autorów wybranych prac konkursowych",
+    "data_model": "core",
+    "example_values": [
+      "1",
+      "11",
+      "2"
+    ]
+  },
+  "6.3": {
+    "col_name": "cn_section_6_3",
+    "section_header": "Liczba prac konkursowych, które zostaną nagrodzone",
+    "data_model": "core",
+    "example_values": [
+      "1",
+      "11",
+      "3"
+    ]
+  },
+  "6.4": {
+    "col_name": "cn_section_6_4",
+    "section_header": "Wartość nagród pieniężnych lub rzeczowych",
+    "data_model": "core",
+    "example_values": [
+      "60000,00             PLN",
+      "50000             PLN",
+      "100000             PLN"
+    ]
+  },
+  "6.5.1": {
+    "col_name": "cn_section_6_5_1",
+    "section_header": "Wartość zamówienia",
+    "data_model": "core",
+    "example_values": [
+      "950000",
+      "617886,18",
+      "240000"
+    ]
+  },
+  "6.5.2": {
+    "col_name": "cn_section_6_5_2",
+    "section_header": "Tryb udzielenia zamówienia",
+    "data_model": "core",
+    "example_values": [
+      "Zamówienie z wolnej ręki"
+    ]
+  },
+  "7.1": {
+    "col_name": "cn_section_7_1",
+    "section_header": "Wymagania, jakie muszą spełnić uczestnicy konkursu",
+    "data_model": "core",
+    "example_values": [
+      "W związku z powyższym Zamawiający wymaga aby Uczestnicy konkursu jako osoby fizyczne posiadali uprawnienia architektoniczne do projektowania bez ograniczeń (zgodnie z ustawą z dnia 7 lipca 1994 r. Prawo budowlane - t.j. Dz. U. z 2024 r. poz. 725, 834, 1222., rozporządzeniem Ministra Infrastruktury i Rozwoju z dnia 11 września 2014 r. w sprawie samodzielnych funkcji technicznych w budownictwie - Dz.U.2021.2351  ze. zm. lub odpowiadające im ważne uprawnienia architektoniczne wydane na podstawie wcześniej obowiązujących przepisów prawa, lub osoby, których odpowiednie kwalifikacje zawodowe zostały uznane na zasadach określonych w przepisach odrębnych), a podmioty posługiwały się osobami fizycznymi posiadającymi wskazane uprawnienia – wydane w okresie min 10 lat przed terminem składania prac konkursowych.",
+      "Wymagane doświadczenie w zaprojektowaniu/projektowaniu  min 1 obiektu mieszkalnego wielorodzinnego o min powierzchni użytkowej 2000 m2 z zapotrzebowanie na energię pierwotną nie większej niż 52 kw na m2 /rok – w okresie ostatnich 3 lat.",
+      "1. Zamawiający wymaga aby uczestnicy konkursu jako osoby fizyczne posiadali uprawnienia budowlane do projektowania bez ograniczeń w specjalności architektonicznej , a podmioty posługiwały się co najmniej jedną osobą  fizyczną posiadającą wskazane uprawnienia. W przypadku uczestników wspólnie biorących udział w konkursie warunek, o którym mowa wyżej musi być spełniony przez co najmniej jednego z uczestników wspólnie biorących udział w konkursie."
+    ]
+  },
+  "7.2": {
+    "col_name": "cn_section_7_2",
+    "section_header": "Czy ustanowiono  wymagania środowiskowe lub społeczne",
+    "data_model": "core",
+    "example_values": [
+      "Tak",
+      "Nie"
+    ]
+  },
+  "7.3": {
+    "col_name": "cn_section_7_3",
+    "section_header": "Czy przepisy szczególne wymagają posiadania uprawnień do opracowania pracy konkursowej lub opracowania studialnego",
+    "data_model": "core",
+    "example_values": [
+      "Tak",
+      "Nie"
+    ]
+  },
+  "7.4": {
+    "col_name": "cn_section_7_4",
+    "section_header": "Wymagany zawód/uprawnienia do wykonania pracy konkursowej lub opracowania studialnego",
+    "data_model": "core",
+    "example_values": [
+      "W związku z powyższym Zamawiający wymaga aby Uczestnicy konkursu jako osoby fizyczne posiadali uprawnienia architektoniczne do projektowania bez ograniczeń .......wydane w okresie min 10 lat przed terminem składania prac konkursowych.",
+      "Zamawiający wymaga aby Uczestnicy konkursu jako osoby fizyczne posiadali uprawnienia architektoniczne do projektowania bez ograniczeń (zgodnie z ustawą z dnia 7 lipca 1994 r. Prawo budowlane  – wydane w okresie min 10 lat przed terminem składania prac konkursowych.",
+      "Uprawnienia budowlane do projektowania bez ograniczeń w specjalności architektonicznej."
+    ]
+  },
+  "7.5": {
+    "col_name": "cn_section_7_5",
+    "section_header": "Wykaz podmiotowych środków dowodowych potwierdzających posiadanie wymaganych uprawnień",
+    "data_model": "core",
+    "example_values": [
+      "Oświadczenie uczestnika konkursu/uczestników wspólnie biorących udział w konkursie o posiadaniu wymaganych uprawnień zgodnie ze wzorem stanowiącym załącznik nr 2 do Regulaminu.",
+      "1. Oświadczenie o niepodleganiu wykluczeniu na podstawie art. 108 ust 1 oraz art. 109 ust. 1 pkt 4-5 oraz pkt 6-10 Ustawy Pzp.",
+      "1. Oświadczenie o spełnianiu warunków udziału w Konkursie, w tym oświadczenie o niepodleganiu wykluczeniu na pdst art. 108 ust 1 oraz art. 109 ust. 1 pkt 4-5, pkt 6 -10 Ustawy Prawo zamówień publicznych ."
+    ]
+  },
+  "8.1": {
+    "col_name": "cn_section_8_1",
+    "section_header": "Rodzaj i nazwa kryteriów oceny prac konkursowych/opracowań studialnych",
+    "data_model": "core",
+    "example_values": [
+      "1.\tOceny prac konkursowych dokonuje Sąd Konkursowy, którego pracami kieruje jego Przewodniczący. Sąd Konkursowy podejmie decyzje większością głosów. W przypadku równej ilości głosów decyduje głos Przewodniczącego Sadu Konkursowego.",
+      "Prace konkursowe oceniane będą według poniższych kryteriów:",
+      "Zgodnie z regulaminem"
+    ]
+  },
+  "8.2": {
+    "col_name": "cn_section_8_2",
+    "section_header": "Znaczenie kryteriów oceny prac konkursowych/opracowań studialnych",
+    "data_model": "core",
+    "example_values": [
+      "5.\tZasady oceny prac konkursowych według powyższych kryteriów.",
+      "1. Prace konkursowe oceniane będą według poniższych kryteriów:",
+      "Zgodnie z regulaminem"
+    ]
+  },
+  "8.3": {
+    "col_name": "cn_section_8_3",
+    "section_header": "Aspekty społeczne, środowiskowe albo innowacyjne w odniesieniu do kryteriów oceny ofert",
+    "data_model": "core",
+    "example_values": [
+      "aspekty innowacyjne",
+      "aspekty społeczne"
+    ]
+  }
+}

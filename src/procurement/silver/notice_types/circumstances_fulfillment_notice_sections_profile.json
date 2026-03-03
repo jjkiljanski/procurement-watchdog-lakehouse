@@ -1,0 +1,403 @@
+{
+  "1.1": {
+    "col_name": "cn_section_1_1",
+    "section_header": "Nazwa zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Gmina Miejska Szczytno",
+      "Gmina Bytów",
+      "Gmina Chmielnik"
+    ]
+  },
+  "1.2": {
+    "col_name": "cn_section_1_2",
+    "section_header": "Oddział zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Powiat Średzki",
+      "Gmina Pińczów",
+      "Zamówienia publiczne"
+    ]
+  },
+  "1.3": {
+    "col_name": "cn_section_1_3",
+    "section_header": "Krajowy Numer Identyfikacyjny",
+    "data_model": "core",
+    "example_values": [
+      "REGON 510743410",
+      "REGON 770979499",
+      "REGON 291009745"
+    ]
+  },
+  "1.4.1": {
+    "col_name": "cn_section_1_4_1",
+    "section_header": "Ulica",
+    "data_model": "core",
+    "example_values": [
+      "ul. Sienkiewicza 1",
+      "1 Maja 15",
+      "Plac Kościuszki 7"
+    ]
+  },
+  "1.4.2": {
+    "col_name": "cn_section_1_4_2",
+    "section_header": "Miejscowość",
+    "data_model": "core",
+    "example_values": [
+      "Szczytno",
+      "Bytów",
+      "Chmielnik"
+    ]
+  },
+  "1.4.3": {
+    "col_name": "cn_section_1_4_3",
+    "section_header": "Kod pocztowy",
+    "data_model": "core",
+    "example_values": [
+      "12-100",
+      "77-100",
+      "26-020"
+    ]
+  },
+  "1.4.4": {
+    "col_name": "cn_section_1_4_4",
+    "section_header": "Województwo",
+    "data_model": "core",
+    "example_values": [
+      "warmińsko-mazurskie",
+      "pomorskie",
+      "świętokrzyskie"
+    ]
+  },
+  "1.4.5": {
+    "col_name": "cn_section_1_4_5",
+    "section_header": "Kraj",
+    "data_model": "core",
+    "example_values": [
+      "Polska"
+    ]
+  },
+  "1.4.6": {
+    "col_name": "cn_section_1_4_6",
+    "section_header": "Lokalizacja NUTS 3",
+    "data_model": "core",
+    "example_values": [
+      "PL622 - Olsztyński",
+      "PL636 - Słupski",
+      "PL721 - Kielecki"
+    ]
+  },
+  "1.4.7": {
+    "col_name": "cn_section_1_4_7",
+    "section_header": "Numer telefonu",
+    "data_model": "core",
+    "example_values": [
+      "+48 89 624 72 00",
+      "59 822 20 11",
+      "41 354 22 78"
+    ]
+  },
+  "1.4.8": {
+    "col_name": "cn_section_1_4_8",
+    "section_header": "Numer faksu",
+    "data_model": "core",
+    "example_values": [
+      "+48 89 624 72 01",
+      "+48 (54) 414 42 57",
+      "25/7960373"
+    ]
+  },
+  "1.4.9": {
+    "col_name": "cn_section_1_4_9",
+    "section_header": "Adres poczty elektronicznej",
+    "data_model": "core",
+    "example_values": [
+      "anna.pawelczyk@um.szczytno.pl",
+      "urzad@bytow.com.pl",
+      "umig@chmielnik.com"
+    ]
+  },
+  "1.4.10": {
+    "col_name": "cn_section_1_4_10",
+    "section_header": "Adres strony internetowej zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "http://bip.um.szczytno.pl",
+      "www.bip.bytow.com.pl",
+      "www.chmielnik.com"
+    ]
+  },
+  "1.5": {
+    "col_name": "cn_section_1_5",
+    "section_header": "Rodzaj zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Zamawiający publiczny - jednostka sektora finansów publicznych - jednostka samorządu terytorialnego",
+      "Zamawiający publiczny - inna państwowa jednostka organizacyjna nieposiadająca osobowości prawnej",
+      "Zamawiający publiczny - osoba prawna, o której mowa w art. 4 pkt 3 ustawy (podmiot prawa publicznego)"
+    ]
+  },
+  "1.6": {
+    "col_name": "cn_section_1_6",
+    "section_header": "Przedmiot działalności zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Ogólne usługi publiczne",
+      "Inna działalność",
+      "Ochrona socjalna"
+    ]
+  },
+  "2.1": {
+    "col_name": "cn_section_2_1",
+    "section_header": "Nazwa zamówienia",
+    "data_model": "core",
+    "example_values": [
+      "Bieżące utrzymanie systemu sieci kanalizacji deszczowej  na terenie miasta Szczytno",
+      "Zarządzanie budynkami, budowlami i innymi urządzeniami tworzącymi kompleks Stadionu Miejskiego w Bytowie",
+      "Kompleksowe utrzymanie czystości i porządku na terenie miasta i gminy Chmielnik w 2024 roku."
+    ]
+  },
+  "2.2": {
+    "col_name": "cn_section_2_2",
+    "section_header": "Identyfikator postępowania",
+    "data_model": "core",
+    "example_values": [
+      "ocds-148610-e2807522-8209-11ee-a60c-9ec5599dddc1",
+      "ocds-148610-8b165bb4-ab9c-11ee-a681-52fe4aa7189e",
+      "ocds-148610-e8824235-8dbd-11ee-b55a-a22b2d7f700e"
+    ]
+  },
+  "2.3": {
+    "col_name": "cn_section_2_3",
+    "section_header": "Numer ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "2025/BZP 00000720",
+      "2025/BZP 00000978",
+      "2025/BZP 00001867"
+    ]
+  },
+  "2.4": {
+    "col_name": "cn_section_2_4",
+    "section_header": "Wersja ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "01"
+    ]
+  },
+  "2.5": {
+    "col_name": "cn_section_2_5",
+    "section_header": "Data ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "2025-01-02",
+      "2025-01-03",
+      "2025-01-07"
+    ]
+  },
+  "2.6.1": {
+    "col_name": "cn_section_2_6_1",
+    "section_header": "Czy były zamieszczone wcześniejsze ogłoszenia o spełnianiu okoliczności w BZP",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "2.6.2": {
+    "col_name": "cn_section_2_6_2",
+    "section_header": "Numer ogłoszenia w BZP",
+    "data_model": "core",
+    "example_values": [
+      "2024/BZP 00215111/01",
+      "2024/BZP 00001353/01",
+      "2024/BZP 00040400/01"
+    ]
+  },
+  "3.1": {
+    "col_name": "cn_section_3_1",
+    "section_header": "Numer ogłoszenia o zamiarze zawarcia umowy w BZP",
+    "data_model": "core",
+    "example_values": [
+      "2023/BZP 00521529",
+      "2023/BZP 00529267",
+      "2023/BZP 00461735"
+    ]
+  },
+  "3.2": {
+    "col_name": "cn_section_3_2",
+    "section_header": "Numer ogłoszenia o wyniku postępowania w BZP",
+    "data_model": "core",
+    "example_values": [
+      "2023/BZP 00556681/01",
+      "2024/BZP 00011762/01",
+      "2023/BZP 00569335/01"
+    ]
+  },
+  "3.3": {
+    "col_name": "cn_section_3_3",
+    "section_header": "Zamówienie dotyczy projektu lub programu współfinansowanego ze środków Unii Europejskiej",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "3.4": {
+    "col_name": "cn_section_3_4",
+    "section_header": "Nazwa projektu lub programu",
+    "data_model": "core",
+    "example_values": [
+      "Zamawiający nie przeznacza własnych środków na realizację zamówienia. Środki będą pozyskiwane bezpośrednio z budżetu UE tj. Europejskiego Funduszu Rozwoju Regionalnego w ramach FEdKP na lata 2021-2027. MFP będzie uprawniony do pobierania należnej opłaty za zarządzanie przypisanej do danego Działania ze środków zgromadzonych na Rachunku Bankowym z Wkładem Programu",
+      "Europejski Fundusz Rozwoju Regionalnego na lat 2021-2027",
+      "Program Rozwoju Obszrów Wiejskich na lata 2014-2020"
+    ]
+  },
+  "3.5": {
+    "col_name": "cn_section_3_5",
+    "section_header": "Podstawa prawna udzielenia zamówienia z wolnej ręki",
+    "data_model": "core",
+    "example_values": [
+      "Zamówienie udzielane jest w trybie zamówienia z wolnej ręki na podstawie: art. 305 pkt 1 ustawy w zw. z art. 214 ust. 1 pkt 11 ustawy",
+      "Zamówienie udzielane jest w trybie zamówienia z wolnej ręki na podstawie: art. 214 ust. 1 pkt 11 ustawy",
+      "Zamówienie udzielane jest w trybie zamówienia z wolnej ręki na podstawie: art. 214 ust. 1 pkt 14 ustawy"
+    ]
+  },
+  "3.6": {
+    "col_name": "cn_section_3_6",
+    "section_header": "Rodzaj zamówienia",
+    "data_model": "core",
+    "example_values": [
+      "Usługi",
+      "Roboty budowlane",
+      "Dostawy"
+    ]
+  },
+  "3.7": {
+    "col_name": "cn_section_3_7",
+    "section_header": "Krótki opis przedmiotu zamówienia",
+    "data_model": "core",
+    "example_values": [
+      "1. Przedmiotem zamówienia jest: bieżące utrzymanie systemu sieci kanalizacji  deszczowej  na okres 12 miesięcy licząc od dnia 01 stycznia 2024 r.  na terenie miasta Szczytno (Wspólny Słownik Zamówień Publicznych kod CPV 90641000-2). 2.  Przedmiotem zamówienia objęte są prace Wykonawcy w zakresie: 1) Bieżącego utrzymania w sprawności systemu sieci kanalizacji deszczowej na terenie Miasta Szczytno: a) Sieci kanalizacji deszczowej: - utrzymywanie w stanie drożności kanalizacji deszczowej o łącznej dł. 42.419 mb; - utrzymanie w stanie stałej drożności, systematyczne udrażnianie urządzeń odwadniających ulice i place miasta tj. wpustów ulicznych wraz z przykanalikami i studni na sieci kanalizacji deszczowej; - usuwanie zatorów bieżących elementów kanalizacji deszczowej, likwidowanie zastoisk wody w czasie opadów deszczu lub roztopów, przystąpienie do usuwania awarii w czasie do                      1 godziny od momentu zgłoszenia, niezależnie od pory doby łącznie z dniami wolnymi od pracy; - drobne remonty studni ulicznych i wpustowych, polegające na likwidacji nieszczelności, naprawie stopni włazowych; -  udrażnianie wlotów kanalizacji deszczowej do jezior i kanału szt.11 wraz  z wykaszaniem trawy, chwastów i samosiewów wokół wlotów; - bieżące czyszczenie separatorów i osadników z zanieczyszczeń typu: butelki plastikowe, kawałki styropianu, folia, kawałki drewna itp.; - odcinanie nielegalnych podłączeń kanalizacji sanitarnej do kolektora deszczowego. b) Kanału Domowego – 12.985 mb: - likwidacja zatorów, usuwanie drzew przewróconych przez bobry; - czyszczenie bieżące krat i przepustów; - usuwanie śmieci typu butelki, opony, gałęzie, kartony, plastik itp.; - ręczne lub mechaniczne usuwanie trzciny, oraz innych roślin z dna kanału  w miejscach zatorów; - ręczne lub mechaniczne usuwanie drzew i krzewów rosnących na skarpach kanału; - ręczne lub mechaniczne usunięcie namułu z dna koryta kanału z usunięciem urobku                           w miejscach usytuowania zatorów. c) Rowów odkrytych – 9870 mb: - bieżące usuwanie zatorów; - udrażnianie przepustów; - usuwanie śmieci typu  butelki, opony, gałęzie, kartony, plastik itp.; - oczyszczanie krat na wlotach do kolektorów. d) Wykonawca zobowiązany jest do wywiezienia i unieszkodliwienia lub zagospodarowania wytworzonych odpadów powstałych z wykonywania czynności określonych w pkt. 1 lit. a), b), c), zgodnie z obowiązującymi przepisami prawa. Wykonawca ponosi koszty przewozu składowania i utylizacji wszelkich zanieczyszczeń pochodzących z bieżącego utrzymania                w sprawności systemu sieci kanalizacji deszczowej. 2) Wymulenia rowów melioracyjnych w miejscach zatorów, z rozplantowaniem i wyrównaniem wydobytego urobku na koronie rowu, wyprofilowanie powierzchni skarp z nadaniem im odpowiednich pochyleń i spadków. 3) Koszenia rowów - dwa razy w roku koszenie zarośli i trawy z obu skarp rowu i po 0,5 m korony rowu z każdej strony rowu mb 9870. 4) Koszenia Kanału Domowego - dwa razy w roku koszenie zarośli i trawy z obu skarp kanału i po 1,0 m korony kanału z każdej strony kanału mb 12 985. 5) Wykonanie mechanicznego kompleksowego czyszczenia separatorów i osadników, wraz ze sporządzeniem dokumentacji fotograficznej, dokonaniem wpisu do książek eksploatacji                i czyszczenia separatorów oraz przedłożeniem karty odpadów przekazanych do utylizacji    (wykaz separatorów zał. nr 4) – raz  w roku w okresie od dnia 15 sierpnia do dnia 15 października. 6) Po okresie zimowym udrożnienie z piasku i innych zanieczyszczeń wszystkich osadników: wpustów ulicznych i studzienek na sieci kanalizacji deszczowej – do dnia 30 sierpnia. 7) Udziału w odbiorach nowobudowanych odcinków kanalizacji deszczowej. 8) Wymiana uszkodzonych włazów studzienek. 9) Częściowe czyszczenie kolektorów deszczowych. 10) Wymulanie Kanału Domowego – w miejscach newralgicznych.",
+      "Przedmiotem zamówienia jest powierzenie zarządzania budynkami, budowlami i innymi urządzeniami tworzącymi Kompleks Stadionu Miejskiego w Bytowie składającego się m.in. z budynku głównego, Domu Sportowca, Domu Piłkarza, boisk piłkarskich, boiska lekkoatletycznego, skateparku, organizowanie imprez sportowych i masowych oraz prowadzenie działalności hotelu. W zakresie zarządzania przedmiotem zamówienia jest prowadzenie spraw  i zapewnienie usług w zakresie zarządu nieruchomościami położonymi na działkach Nr 2/4 i 2/5 obręb Sto trzy w Bytowie przy ul. Mickiewicza 13 oraz Nr 180/2, 181, 182, 184 i 185 obręb Świątkowo a w szczególności: zapewnienie dostaw energii elektrycznej, cieplnej, wody, odprowadzania ścieków i wywozu odpadów komunalnych; zawieranie umów o korzystanie z nieruchomości z innymi podmiotami; pobieranie opłat za korzystanie z nieruchomości, w tym za bilety wstępu na imprezy masowe; wykonywanie uprawnień właściciela nieruchomości; informowanie Gminy o powstaniu szkody w zarządzanych nieruchomościach; zapewnienie dochodzenia i ściągania odszkodowań od osób wyrządzających szkody w zarządzanych nieruchomościach oraz zapewnienie należytej obsługi prawnej; utrzymanie w należytym stanie technicznym budynków i innych urządzeń; utrzymanie porządku i czystości oraz pielęgnacji zieleni na terenie zarządzanej nieruchomości; pielęgnacja i konserwacja boiska głównego, boiska sztucznego, boiska lekkoatletycznego zgodnie z instrukcją wykonawcy; usuwanie awarii na nieruchomości; prowadzenie ewidencji uzyskanych przychodów i poniesionych kosztów oraz przekazanie tych informacji Gminie; zawieranie umów ubezpieczenia mienia i odpowiedzialności cywilnej oraz odpowiedzialności cywilnej zarządcy nieruchomości, ubezpieczenia dla hotelarzy; prowadzenie hotelu; wykonywanie obowiązków organizatora imprez sportowych i masowych; prowadzenie ksiąg budynków i obiektów budowlanych oraz przeprowadzenia okresowych przeglądów.",
+      "Przedmiotem umowy jest świadczenie usług „Kompleksowego utrzymania czystości i porządku  na terenie miasta i gminy Chmielnik w 2024 roku” w ramach zadania budżetowego  Kompleksowe utrzymanie czystości i porządku na terenie miasta i gminy Chmielnik w  2024  roku w zakresie: a)\tUtrzymania czystości i porządku na obszarze mieszczącym się w granicach administracyjnych miasta Chmielnik; b)\tPielęgnacji terenów zielonych znajdujących się w granicach administracyjnych miasta Chmielnik; c)\tUtrzymania czystości i porządku na przystankach autobusowych na terenie miasta i gminy Chmielnik; d)\tBieżące utrzymanie i konserwacja fontanny miejskiej usytuowanej w Rynku; e)\tFlagowanie miasta z okazji świąt państwowych oraz uroczystości miejskich; f)\toczyszczanie słupów ogłoszeniowych, latarni, słupów energetycznych z ogłoszeń, plakatów i innych druków 1 raz na kwartał; g)\twymiana piasku w piaskownicach na placach zabaw przy ul. Piastów (1 szt.) i Żeromskiego ( 1 szt.)."
+    ]
+  },
+  "3.8": {
+    "col_name": "cn_section_3_8",
+    "section_header": "Główny kod CPV",
+    "data_model": "core",
+    "example_values": [
+      "90641000-2 - Usługi oczyszczania kanałów ściekowych",
+      "70100000-2 - Usługi w zakresie obsługi nieruchomości własnych",
+      "90610000-6 - Usługi sprzątania i zamiatania ulic"
+    ]
+  },
+  "3.9": {
+    "col_name": "cn_section_3_9",
+    "section_header": "Dodatkowy kod CPV",
+    "data_model": "core",
+    "example_values": [
+      "90918000-5 - Usługi czyszczenia pojemników na odpadki 77310000-6 - Usługi sadzenia roślin oraz utrzymania terenów zielonych",
+      "90512000-9 - Usługi transportu odpadów 90513100-7 - Usługi wywozu odpadów pochodzących z gospodarstw domowych",
+      "90511000-2 - Usługi wywozu odpadów 90512000-9 - Usługi transportu odpadów 90513100-7 - Usługi wywozu odpadów pochodzących z gospodarstw domowych 90533000-2 - Usługi gospodarki odpadami"
+    ]
+  },
+  "4.1": {
+    "col_name": "cn_section_4_1",
+    "section_header": "Data udzielenia zamówienia (zawarcia umowy)",
+    "data_model": "core",
+    "example_values": [
+      "2023-12-18",
+      "2023-12-29",
+      "2023-12-19"
+    ]
+  },
+  "4.2": {
+    "col_name": "cn_section_4_2",
+    "section_header": "Okres, na jaki została zawarta umowa",
+    "data_model": "core",
+    "example_values": [
+      "12 miesiące",
+      "od 2024-01-01 do 2024-12-31",
+      "36 miesiące"
+    ]
+  },
+  "4.3.1": {
+    "col_name": "cn_section_4_3_1",
+    "section_header": "Nazwa (firma) wykonawcy, któremu udzielono zamówienia (w przypadku wykonawców ubiegających się wspólnie o udzielenie zamówienia – dotyczy pełnomocnika, o którym mowa w art. 58 ust. 2 ustawy)",
+    "data_model": "core",
+    "example_values": [
+      "Przedsiębiorstwo Wodociągów i Kanalizacji Aqua Spółka z o.o.",
+      "Kompleks Basenowo-Rekreacyjny w Bytowie Sp. z o. o.",
+      "Zakład Usług Komunalnych w Chmielniku Sp. z o.o."
+    ]
+  },
+  "4.3.2": {
+    "col_name": "cn_section_4_3_2",
+    "section_header": "Krajowy Numer Identyfikacyjny",
+    "data_model": "core",
+    "example_values": [
+      "7450001718",
+      "8421769765",
+      "6572438901"
+    ]
+  },
+  "4.3.3": {
+    "col_name": "cn_section_4_3_3",
+    "section_header": "Ulica",
+    "data_model": "core",
+    "example_values": [
+      "ul. Polska 38",
+      "Adama Mickiewicza",
+      "Zrecze Duże 1A"
+    ]
+  },
+  "4.3.4": {
+    "col_name": "cn_section_4_3_4",
+    "section_header": "Miejscowość",
+    "data_model": "core",
+    "example_values": [
+      "Szczytno",
+      "Bytów",
+      "Chmielnik"
+    ]
+  },
+  "4.3.5": {
+    "col_name": "cn_section_4_3_5",
+    "section_header": "Kod pocztowy",
+    "data_model": "core",
+    "example_values": [
+      "12-100",
+      "77-100",
+      "26-020"
+    ]
+  },
+  "4.3.6": {
+    "col_name": "cn_section_4_3_6",
+    "section_header": "Województwo",
+    "data_model": "core",
+    "example_values": [
+      "warmińsko-mazurskie",
+      "pomorskie",
+      "świętokrzyskie"
+    ]
+  },
+  "4.3.7": {
+    "col_name": "cn_section_4_3_7",
+    "section_header": "Kraj",
+    "data_model": "core",
+    "example_values": [
+      "Polska"
+    ]
+  },
+  "4.4": {
+    "col_name": "cn_section_4_4",
+    "section_header": "Informacja, czy nadal spełnione są okoliczności uprawniające do udzielenia zamówienia        w trybie zamówienia wolnej ręki na wskazanej podstawie",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  }
+}
