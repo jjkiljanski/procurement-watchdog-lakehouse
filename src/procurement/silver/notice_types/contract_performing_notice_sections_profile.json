@@ -1,0 +1,540 @@
+{
+  "1.1": {
+    "col_name": "cn_section_1_1",
+    "section_header": "Nazwa zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Samodzielny Publiczny Zakład Opieki Zdrowotnej Gruźlicy i Chorób Płuc w Adampolu",
+      "POWIAT NOWOSĄDECKI - POWIATOWY ZARZĄD DRÓG W NOWYM SĄCZU",
+      "GMINA SŁUPNO"
+    ]
+  },
+  "1.2": {
+    "col_name": "cn_section_1_2",
+    "section_header": "Oddział zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Wójt Gminy Słupno",
+      "PBW Nowy Sącz",
+      "Sekcja Zamówień Publicznych"
+    ]
+  },
+  "1.3": {
+    "col_name": "cn_section_1_3",
+    "section_header": "Krajowy Numer Identyfikacyjny",
+    "data_model": "core",
+    "example_values": [
+      "REGON 110197411",
+      "REGON 491893180",
+      "REGON 611015997"
+    ]
+  },
+  "1.4.1": {
+    "col_name": "cn_section_1_4_1",
+    "section_header": "Ulica",
+    "data_model": "core",
+    "example_values": [
+      "Adampol 37",
+      "ul. Jeremiego Wiśniowieckiego 136",
+      "ul. Miszewska 8A"
+    ]
+  },
+  "1.4.2": {
+    "col_name": "cn_section_1_4_2",
+    "section_header": "Miejscowość",
+    "data_model": "core",
+    "example_values": [
+      "Włodawa",
+      "Nowy Sącz",
+      "Słupno"
+    ]
+  },
+  "1.4.3": {
+    "col_name": "cn_section_1_4_3",
+    "section_header": "Kod pocztowy",
+    "data_model": "core",
+    "example_values": [
+      "22-200",
+      "33-300",
+      "09-472"
+    ]
+  },
+  "1.4.4": {
+    "col_name": "cn_section_1_4_4",
+    "section_header": "Województwo",
+    "data_model": "core",
+    "example_values": [
+      "lubelskie",
+      "małopolskie",
+      "mazowieckie"
+    ]
+  },
+  "1.4.5": {
+    "col_name": "cn_section_1_4_5",
+    "section_header": "Kraj",
+    "data_model": "core",
+    "example_values": [
+      "Polska",
+      "Wielka Brytania",
+      "Republika Czeska"
+    ]
+  },
+  "1.4.6": {
+    "col_name": "cn_section_1_4_6",
+    "section_header": "Lokalizacja NUTS 3",
+    "data_model": "core",
+    "example_values": [
+      "PL811 - Bialski",
+      "PL218 - Nowosądecki",
+      "PL923 - Płocki"
+    ]
+  },
+  "1.4.7": {
+    "col_name": "cn_section_1_4_7",
+    "section_header": "Numer telefonu",
+    "data_model": "core",
+    "example_values": [
+      "82 59 13 286",
+      "+48 18 442 74 14",
+      "(+48) 18 443 70 67"
+    ]
+  },
+  "1.4.8": {
+    "col_name": "cn_section_1_4_8",
+    "section_header": "Numer faksu",
+    "data_model": "core",
+    "example_values": [
+      "+48 18 442 63 45",
+      "(+48) 58 682 34 51",
+      "542830640"
+    ]
+  },
+  "1.4.9": {
+    "col_name": "cn_section_1_4_9",
+    "section_header": "Adres poczty elektronicznej",
+    "data_model": "core",
+    "example_values": [
+      "info@spzozadampol.pl",
+      "przetargi@pzd.nowy-sacz.pl",
+      "ug@slupno.eu"
+    ]
+  },
+  "1.4.10": {
+    "col_name": "cn_section_1_4_10",
+    "section_header": "Adres strony internetowej zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "www.spzozadampol.pl",
+      "http://www.pzd.nowy-sacz.pl",
+      "www.ugslupno.bip.org.pl"
+    ]
+  },
+  "1.5": {
+    "col_name": "cn_section_1_5",
+    "section_header": "Rodzaj zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Zamawiający publiczny - jednostka sektora finansów publicznych - samodzielny publiczny zakład opieki zdrowotnej",
+      "Zamawiający publiczny - jednostka sektora finansów publicznych - jednostka samorządu terytorialnego",
+      "Zamawiający publiczny - inny zamawiający"
+    ]
+  },
+  "2.1": {
+    "col_name": "cn_section_2_1",
+    "section_header": "Identyfikator postępowania",
+    "data_model": "core",
+    "example_values": [
+      "ocds-148610-b7a40792-2fcd-4d7a-9d3b-6f3779073917",
+      "ocds-148610-b32ead90-999d-11ee-9ee7-e2087ac16d09",
+      "ocds-148610-e24fc37a-337d-4638-a98a-d1084f32c23e"
+    ]
+  },
+  "2.2": {
+    "col_name": "cn_section_2_2",
+    "section_header": "Numer ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "2025/BZP 00000003",
+      "2025/BZP 00000014",
+      "2025/BZP 00000015"
+    ]
+  },
+  "2.3": {
+    "col_name": "cn_section_2_3",
+    "section_header": "Wersja ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "01"
+    ]
+  },
+  "2.4": {
+    "col_name": "cn_section_2_4",
+    "section_header": "Data ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "2025-01-01",
+      "2025-01-02",
+      "2025-01-03"
+    ]
+  },
+  "3.1": {
+    "col_name": "cn_section_3_1",
+    "section_header": "Charakter zamówienia",
+    "data_model": "core",
+    "example_values": [
+      "Zamówienie klasyczne - od 130 000 zł, ale o wartości mniejszej niż progi unijne",
+      "Zamówienie klasyczne - wartości równej lub przekraczającej progi unijne",
+      "Zamówienie sektorowe"
+    ]
+  },
+  "3.2": {
+    "col_name": "cn_section_3_2",
+    "section_header": "Zamówienie było poprzedzone ogłoszeniem o zamówieniu albo ogłoszeniem o zamiarze zawarcia umowy w BZP lub Dz. Urz. UE",
+    "data_model": "core",
+    "example_values": [
+      "Tak",
+      "Nie"
+    ]
+  },
+  "3.2.1": {
+    "col_name": "cn_section_3_2_1",
+    "section_header": "Numer ogłoszenia w BZP lub Dz. Urz. UE",
+    "data_model": "core",
+    "example_values": [
+      "2024/BZP 00558846",
+      "2023/BZP 00551868",
+      "2024/BZP 00603547"
+    ]
+  },
+  "3.3": {
+    "col_name": "cn_section_3_3",
+    "section_header": "Czy zamówienie dotyczy projektu lub programu współfinansowanego ze środków Unii Europejskiej",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "3.4": {
+    "col_name": "cn_section_3_4",
+    "section_header": "Nazwa projektu lub programu",
+    "data_model": "core",
+    "example_values": [
+      "Współfinansowany ze środków UEw ramach POPT  2014-2020, Programu Operacyjnego PT POWER 2014-2020, Programu Interreg V-A Polska-Słowacja 2014-2020, Programu Współpracy Terytorialnej Polska – Białoruś – Ukraina 2014-2020, Programu Współpracy Transgranicznej Polska-Rosja 2014-2020, Programu Współpracy Interreg V-A Południowy Bałtyk 2014-2020, Programu Współpracy INTERREG Polska – Saksonia 2014-2020.",
+      "Projekt „Wielkopolskie telecentrum opieki” dofinansowany przez Unię Europejską w ramach Programu Regionalnego Fundusze Europejskie dla Wielkopolski 2021 - 2027, Program Fundusze Europejskie dla Wielkopolski 2021-2027 na realizację Projektu „Wspomaganie preadopcji i postadopcji kluczem do udanej adopcji”, Projekt \"Wsparcie wielkopolskich migrantów\"",
+      "Projekt „Wielkopolskie telecentrum opieki” dofinansowany przez Unię Europejską w ramach Programu Regionalnego \"Fundusze Europejskie dla Wielkopolski 2021 - 2027\", Program Fundusze Europejskie dla Wielkopolski 2021-2027 na realizację Projektu „Wspomaganie preadopcji i postadopcji kluczem do udanej adopcji”, Projekt \"Wsparcie wielkopolskich migrantów\""
+    ]
+  },
+  "3.5": {
+    "col_name": "cn_section_3_5",
+    "section_header": "Tryb udzielenia zamówienia wraz z podstawą prawną",
+    "data_model": "core",
+    "example_values": [
+      "Zamówienie udzielane jest w trybie podstawowym na podstawie: art. 275 pkt 1 ustawy",
+      "Zamówienie udzielane jest w trybie podstawowym na podstawie: art. 275 pkt 2 ustawy",
+      "Zamówienie udzielane jest w trybie przetargu nieograniczonego na podstawie: art. 132 ustawy"
+    ]
+  },
+  "3.6": {
+    "col_name": "cn_section_3_6",
+    "section_header": "Rodzaj zamówienia",
+    "data_model": "core",
+    "example_values": [
+      "Dostawy",
+      "Roboty budowlane",
+      "Usługi"
+    ]
+  },
+  "3.7": {
+    "col_name": "cn_section_3_7",
+    "section_header": "Nazwa zamówienia",
+    "data_model": "core",
+    "example_values": [
+      "Zakup aparatu ultrasonograficznego",
+      "Dostawa paliw na potrzeby Powiatowego Zarządu Dróg w Nowym Sączu",
+      "Dostawa i montaż lamp solarnych na terenie gminy Słupno"
+    ]
+  },
+  "3.8": {
+    "col_name": "cn_section_3_8",
+    "section_header": "Krótki opis przedmiotu zamówienia",
+    "data_model": "part",
+    "example_values": [
+      "zakup aparatu usg z dwiema głowicami",
+      "Dostawa benzyny silnikowej  (Kod CN 2710 12 45) – zamówienie gwarantowane – 4.000 litrów. Szczegółowy zakres zamówienia został określony w załączniku nr 5 do SWZ – Opis przedmiotu zamówienia.",
+      "Dostawa gazu propan-butan w butlach 11 kg zamówienie gwarantowane 154 kg. Szczegółowy zakres zamówienia został określony w załączniku nr 5 do SWZ – Opis przedmiotu zamówienia."
+    ]
+  },
+  "3.9": {
+    "col_name": "cn_section_3_9",
+    "section_header": "Główny kod CPV",
+    "data_model": "part",
+    "example_values": [
+      "33112200-0 - Aparaty ultrasonograficzne",
+      "09132100-4 - Benzyna bezołowiowa",
+      "09120000-6 - Paliwa gazowe"
+    ]
+  },
+  "3.10": {
+    "col_name": "cn_section_3_10",
+    "section_header": "Dodatkowy kod CPV",
+    "data_model": "part",
+    "example_values": [
+      "34928510-6 - Uliczne słupy oświetleniowe",
+      "45316110-9 - Instalowanie urządzeń oświetlenia drogowego",
+      "45400000-1 - Roboty wykończeniowe w zakresie obiektów budowlanych 45111300-1 - Roboty rozbiórkowe 45300000-0 - Roboty instalacyjne w budynkach"
+    ]
+  },
+  "4.1": {
+    "col_name": "cn_section_4_1",
+    "section_header": "Data zawarcia umowy",
+    "data_model": "core",
+    "example_values": [
+      "2024-11-19",
+      "2024-01-02",
+      "2024-12-11"
+    ]
+  },
+  "4.2": {
+    "col_name": "cn_section_4_2",
+    "section_header": "Okres realizacji zamówienia",
+    "data_model": "core",
+    "example_values": [
+      "do 2024-12-19",
+      "do 2024-12-31",
+      "do 2024-12-20"
+    ]
+  },
+  "4.3": {
+    "col_name": "cn_section_4_3",
+    "section_header": "Dane wykonawcy, z którym zawarto umowę",
+    "data_model": "core",
+    "example_values": [
+      "Wykonawca 0"
+    ]
+  },
+  "4.3.1": {
+    "col_name": "cn_section_4_3_1",
+    "section_header": "Nazwa (firma) wykonawcy, któremu udzielono zamówienia (w przypadku wykonawców ubiegających się wspólnie o udzielenie zamówienia – dotyczy pełnomocnika, o którym mowa w art. 58 ust. 2 ustawy)",
+    "data_model": "core",
+    "example_values": [
+      "TMS Sp. z o.o.",
+      "Petrodom Paliwa Spółka z Ograniczoną Odpowiedzialnością Spółka Komandytowa",
+      "SOLUMEN Sp. z o.o."
+    ]
+  },
+  "4.3.2": {
+    "col_name": "cn_section_4_3_2",
+    "section_header": "Krajowy Numer Identyfikacyjny",
+    "data_model": "core",
+    "example_values": [
+      "5211004948",
+      "REGON 147026712",
+      "REGON 492004399"
+    ]
+  },
+  "4.3.3": {
+    "col_name": "cn_section_4_3_3",
+    "section_header": "Ulica",
+    "data_model": "core",
+    "example_values": [
+      "Wiertnicza",
+      "Sidorska 61",
+      "Zajączkowo 35A"
+    ]
+  },
+  "4.3.4": {
+    "col_name": "cn_section_4_3_4",
+    "section_header": "Miejscowość",
+    "data_model": "core",
+    "example_values": [
+      "Warszawa",
+      "Biała Podlaska",
+      "Miłobądz"
+    ]
+  },
+  "4.3.5": {
+    "col_name": "cn_section_4_3_5",
+    "section_header": "Kod pocztowy",
+    "data_model": "core",
+    "example_values": [
+      "02-952",
+      "21-500",
+      "33-330"
+    ]
+  },
+  "4.3.6": {
+    "col_name": "cn_section_4_3_6",
+    "section_header": "Województwo",
+    "data_model": "core",
+    "example_values": [
+      "mazowieckie",
+      "lubelskie",
+      "pomorskie"
+    ]
+  },
+  "4.3.7": {
+    "col_name": "cn_section_4_3_7",
+    "section_header": "Kraj",
+    "data_model": "core",
+    "example_values": [
+      "Polska",
+      "Szwajcaria",
+      "Francja"
+    ]
+  },
+  "4.4": {
+    "col_name": "cn_section_4_4",
+    "section_header": "Wartość umowy",
+    "data_model": "core",
+    "example_values": [
+      "278100                PLN",
+      "24720,00                        PLN",
+      "956,34                        PLN"
+    ]
+  },
+  "4.5": {
+    "col_name": "cn_section_4_5",
+    "section_header": "Numer ogłoszenia o wyniku postępowania zamieszczonego w BZP lub numer ogłoszenia o udzieleniu zamówienia opublikowanego w Dzienniku Urzędowym Unii Europejskiej",
+    "data_model": "core",
+    "example_values": [
+      "2024/BZP 00633646/01",
+      "2024/BZP 00041828/01",
+      "2024/BZP 00495396/01"
+    ]
+  },
+  "5.1": {
+    "col_name": "cn_section_5_1",
+    "section_header": "Czy umowa została wykonana",
+    "data_model": "core",
+    "example_values": [
+      "Tak",
+      "Nie"
+    ]
+  },
+  "5.2": {
+    "col_name": "cn_section_5_2",
+    "section_header": "Termin wykonania umowy",
+    "data_model": "core",
+    "example_values": [
+      "2024-12-09",
+      "2024-11-29",
+      "2024-12-20"
+    ]
+  },
+  "5.3": {
+    "col_name": "cn_section_5_3",
+    "section_header": "Czy umowę wykonano w pierwotnie określonym terminie",
+    "data_model": "core",
+    "example_values": [
+      "Tak",
+      "Nie"
+    ]
+  },
+  "5.4.1": {
+    "col_name": "cn_section_5_4_1",
+    "section_header": "Liczba zmian",
+    "data_model": "core",
+    "example_values": [
+      "0",
+      "2",
+      "1"
+    ]
+  },
+  "5.4.2": {
+    "col_name": "cn_section_5_4_2",
+    "section_header": "Numer zmiany",
+    "data_model": "change_matter",
+    "example_values": [
+      "1",
+      "2",
+      "3"
+    ]
+  },
+  "5.4.3": {
+    "col_name": "cn_section_5_4_3",
+    "section_header": "Podstawa prawna zmiany",
+    "data_model": "change_matter",
+    "example_values": [
+      "art. 455 ust. 1 pkt 3 ustawy",
+      "art. 455 ust. 1 pkt 1 ustawy",
+      "art. 455 ust. 1 pkt 4 ustawy"
+    ]
+  },
+  "5.4.4": {
+    "col_name": "cn_section_5_4_4",
+    "section_header": "Przyczyny dokonania zmian",
+    "data_model": "change_matter",
+    "example_values": [
+      "Konieczność wykonania robót dodatkowych, których Zamawiający nie mógł przewidzieć na etapie przygotowania postępowania i zawierania umowy (roboty dotyczą lub wynikają z elementów zakrytych).",
+      "Konieczność przedłużenia terminu realizacji zamówienia z uwagi na roboty dodatkowe. Zmiana terminu dotyczyła tylko robót dodatkowych i bezpośrednio z nimi powiązanymi.",
+      "zmiana wynagrodzenia Wykonawcy ze względu na zmianę ilości pracujących sobót"
+    ]
+  },
+  "5.4.5": {
+    "col_name": "cn_section_5_4_5",
+    "section_header": "Krótki opis zamówienia po zmianie",
+    "data_model": "change_matter",
+    "example_values": [
+      "1. Nazwa zamówienia: Modernizacja i dostosowanie pomieszczeń Pedagogicznej Biblioteki Wojewódzkiej w Nowym Sączu Filia w Nowym Targu. 2. Przedmiot zamówienia obejmuje wykonanie następujących robót budowlanych: 2.1. wykonanie posadzek z wymianą warstw wyrównujących i wygładzających, 2.2. wykonanie wykończenia ścian, 2.3. wykonanie wykończenia sufitów, 2.4. montaż lamp oświetleniowych, 2.5. montaż drzwi i wydzieleni szklanych, 2.6. wywóz gruzu i roboty zabezpieczające 2.7.wymiana elementów instalacji alarmowej. 3. Szczegółowy zakres zamówienia został określony w załączniku nr 4 do SWZ - dokumentacja techniczna składająca się z następujących opracowań: 3.1. Dokumentacja projektowa, 3.2. Specyfikacje techniczne wykonania i odbioru robót, 3.3. Przedmiar robót.",
+      "1. Nazwa zamówienia: Modernizacja i dostosowanie pomieszczeń Pedagogicznej Biblioteki Wojewódzkiej w Nowym Sączu Filia w Nowym Targu. 2. Przedmiot zamówienia obejmuje wykonanie następujących robót budowlanych: 2.1. wykonanie posadzek z wymianą warstw wyrównujących i wygładzających, 2.2. wykonanie wykończenia ścian, 2.3. wykonanie wykończenia sufitów, 2.4. montaż lamp oświetleniowych, 2.5. montaż drzwi i wydzieleni szklanych, 2.6. wywóz gruzu i roboty zabezpieczające 2.7.wymiana elementów instalacji alarmowej. 3. Szczegółowy zakres zamówienia został określony w załączniku nr 4 do SWZ - dokumentacja techniczna składająca się z następujących opracowań: 3.1. Dokumentacja projektowa, 3.2. Specyfikacje techniczne wykonania i odbioru robót, 3.3. Przedmiar robót. 4. Okres realizacji zamówienia: do 2024-12-20",
+      "ze względu na  zmniejszenie ilości pracujących sobót zmniejszeniu uległo wynagrodzenie Wykonawcy."
+    ]
+  },
+  "5.4.6": {
+    "col_name": "cn_section_5_4_6",
+    "section_header": "Wartość zmiany",
+    "data_model": "change_matter",
+    "example_values": [
+      "97628,86",
+      "8194,46",
+      "269295,61"
+    ]
+  },
+  "5.4.7": {
+    "col_name": "cn_section_5_4_7",
+    "section_header": "Kod waluty",
+    "data_model": "change_matter",
+    "example_values": [
+      "PLN"
+    ]
+  },
+  "5.4.8": {
+    "col_name": "cn_section_5_4_8",
+    "section_header": "Wzrost ceny w związku ze zmianą umowy/umowy ramowej",
+    "data_model": "change_matter",
+    "example_values": [
+      "Tak",
+      "Nie"
+    ]
+  },
+  "5.5": {
+    "col_name": "cn_section_5_5",
+    "section_header": "Łączna wartość wynagrodzenia wypłacona z tytułu zrealizowanej umowy",
+    "data_model": "core",
+    "example_values": [
+      "278100                PLN",
+      "43239,39                PLN",
+      "1707,75                PLN"
+    ]
+  },
+  "5.6": {
+    "col_name": "cn_section_5_6",
+    "section_header": "Czy umowa została wykonana należycie",
+    "data_model": "core",
+    "example_values": [
+      "Tak",
+      "Nie"
+    ]
+  },
+  "5.7": {
+    "col_name": "cn_section_5_7",
+    "section_header": "Podczas realizacji zamówienia zamawiający kontrolował przewidziane w zawartej umowie wymagania",
+    "data_model": "core",
+    "example_values": [
+      "nie dotyczy",
+      "w zakresie zatrudnienia na podstawie stosunku pracy, w okolicznościach, o których mowa w art. 95 ustawy",
+      "obejmujące, zgodnie z art. 96 ustawy: - aspekty społeczne"
+    ]
+  }
+}

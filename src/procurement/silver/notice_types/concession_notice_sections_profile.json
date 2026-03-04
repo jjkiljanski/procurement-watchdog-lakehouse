@@ -524,7 +524,7 @@
   "5.13.2": {
     "col_name": "cn_section_5_13_2",
     "section_header": "Rodzaj kryterium",
-    "data_model": "core",
+    "data_model": "criterion_procedure",
     "example_values": [
       "inne"
     ]
@@ -532,7 +532,7 @@
   "5.13.3": {
     "col_name": "cn_section_5_13_3",
     "section_header": "Nazwa kryterium",
-    "data_model": "core",
+    "data_model": "criterion_procedure",
     "example_values": [
       "Cena",
       "Utworzenie dodatkowych miejsc pracy",
@@ -542,7 +542,7 @@
   "5.13.4": {
     "col_name": "cn_section_5_13_4",
     "section_header": "Waga",
-    "data_model": "core",
+    "data_model": "criterion_procedure",
     "example_values": [
       "90",
       "10",
@@ -552,7 +552,7 @@
   "5.13.6": {
     "col_name": "cn_section_5_13_6",
     "section_header": "Wzór matematyczny lub opis ważenia kryterium",
-    "data_model": "core",
+    "data_model": "criterion_procedure",
     "example_values": [
       "(Najniższa płatność brutto spośród ofert nieodrzuconych/Płatność brutto badanej oferty) x 100 pkt = liczba punktów.",
       "M=M_bad/M_max ×10",
@@ -562,7 +562,7 @@
   "5.13.7": {
     "col_name": "cn_section_5_13_7",
     "section_header": "Opis kryterium",
-    "data_model": "core",
+    "data_model": "criterion_procedure",
     "example_values": [
       "Do obliczenia punktów za wskazane kryterium Zamawiający przyjmie wysokość płatności brutto podaną w ofercie. Uzyskane w ten sposób punkty będą przemnożone przez wagę kryterium 90 %. W kryterium \"Wysokość płatności brutto Zamawiającego na rzecz Koncesjonariusza\" oferta może uzyskać maksymalnie 90 punktów.",
       "M\t– ocena punktowa oferty w kryterium „utworzenie dodatkowych miejsc pracy” Mmax\t– oferta z największą ilością dodatkowych miejsc pracy Mbad\t– ilość dodatkowych miejsc pracy w badanej ofercie",
@@ -589,7 +589,7 @@
   "6.1.1": {
     "col_name": "cn_section_6_1_1",
     "section_header": "Rodzaj kryterium kwalifikacji",
-    "data_model": "core",
+    "data_model": "criterion_qualification",
     "example_values": [
       "kryteria dotyczące sytuacji ekonomicznej finansowej",
       "kryteria dotyczące sytuacji ekonomicznej",
@@ -599,7 +599,7 @@
   "6.1.2": {
     "col_name": "cn_section_6_1_2",
     "section_header": "Nazwa kryterium kwalifikacji",
-    "data_model": "core",
+    "data_model": "criterion_qualification",
     "example_values": [
       "Sytuacja ekonimiczna",
       "dotyczące sytuacji ekonomicznej lub finansowej",
@@ -609,7 +609,7 @@
   "6.1.3": {
     "col_name": "cn_section_6_1_3",
     "section_header": "Krótki opis kryterium kwalifikacji, w tym wymagania minimalne dotyczące oczekiwanego przez zamawiającego poziomu spełnienia kryterium",
-    "data_model": "core",
+    "data_model": "criterion_qualification",
     "example_values": [
       "1) Wykonawca posiada polisę ubezpieczeniową od odpowiedzialności cywilnej w zakresie prowadzonej działalności na łączną kwotę co najmniej 500 000,00 zł (słownie: pięćset tysięcy złotych 00/100). Zamawiający uzna, że warunek został spełniony jeżeli Wykonawca, którego oferta uznana zostanie za najkorzystniejszą, złoży w wyznaczonym przez Zamawiającego terminie polisę ubezpieczeniową lub inny dokument ubezpieczenia potwierdzającą, że Wykonawca jest ubezpieczony od odpowiedzialności cywilnej w zakresie prowadzonej działalności na łączną kwotę co najmniej 500 000,00 zł lub równowartość tej kwoty w innej walucie przeliczonej według kursu średniego NBP danej waluty z dnia, w którym ukazało się Ogłoszenie o koncesji na usługi w Biuletynie Zamówień Publicznych;",
       "Wykonawca spełni kryteria kwalifikacji, jeżeli wykaże, że posiada aktualne ubezpieczenie od odpowiedzialności cywilnej w zakresie prowadzonej działalności związanej z przedmiotem umowy koncesji na kwotę nie niższą niż 300 000,00 zł (słownie: trzysta tysięcy złotych);",
@@ -619,7 +619,7 @@
   "6.1.4": {
     "col_name": "cn_section_6_1_4",
     "section_header": "Krótki opis sposobu zastosowania kryterium",
-    "data_model": "core",
+    "data_model": "criterion_qualification",
     "example_values": [
       "Wykonawca posiada środki finansowe lub zdolność kredytową nie mniejszą niż 180 000,00 zł (słownie: sto osiemdziesiąt tysięcy złotych 00/100)",
       "5.\tZgodnie z art. 35 ust. 2 ustawy o koncesji, Zamawiający wezwie Wykonawcę, którego oferta została najwyżej oceniona, do złożenia w wyznaczonym, nie krótszym niż 5 dni terminie, aktualnych na dzień złożenia następujących oświadczeń lub dokumentów potwierdzających okoliczności, o których mowa w art. 33 ust. 1 pkt 1 i 2 ustawy koncesji",
@@ -629,7 +629,7 @@
   "6.1.5": {
     "col_name": "cn_section_6_1_5",
     "section_header": "Zamawiający wymaga przedłożenia dokumentów na potwierdzenie kryterium kwalifikacji",
-    "data_model": "core",
+    "data_model": "criterion_qualification",
     "example_values": [
       "Tak"
     ]
@@ -637,7 +637,7 @@
   "6.1.6": {
     "col_name": "cn_section_6_1_6",
     "section_header": "Dokumenty wymagane na potwierdzenie kryterium kwalifikacji, sposób ich przedłożenia oraz zakres",
-    "data_model": "core",
+    "data_model": "criterion_qualification",
     "example_values": [
       "a) polisę lub inny dokument ubezpieczenia potwierdzającą, że Wykonawca jest ubezpieczony od odpowiedzialności cywilnej w zakresie prowadzonej działalności na roczną kwotę co najmniej 500 000,00 zł lub równowartość tej kwoty w innej walucie przeliczonej według kursu średniego NBP danej waluty z dnia, w którym ukazało się Ogłoszenie o koncesji na usługi w Biuletynie Zamówień Publicznych, b) informację banku lub spółdzielczej kasy oszczędnościowo-kredytowej potwierdzającej wysokość posiadanych środków finansowych lub zdolność kredytową Wykonawcy nie mniejszą niż 180 000,00 zł, w okresie nie wcześniejszym niż 3 miesiące przed jej złożeniem,",
       "a)\tdokument potwierdzający, że wykonawca posiada aktualne ubezpieczenie od odpowiedzialności cywilnej w zakresie prowadzonej działalności związanej z przedmiotem umowy koncesji na kwotę nie niższą niż 300 000,00 zł (słownie: trzysta tysięcy złotych)",

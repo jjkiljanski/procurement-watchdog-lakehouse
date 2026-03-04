@@ -1,0 +1,1318 @@
+{
+  "1.1": {
+    "col_name": "cn_section_1_1",
+    "section_header": "Rola zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Postępowanie prowadzone jest samodzielnie przez zamawiającego",
+      "Postępowanie prowadzi podmiot, któremu powierzono przeprowadzenie postępowania",
+      "Postępowanie prowadzą zamawiający działający wspólnie"
+    ]
+  },
+  "1.2": {
+    "col_name": "cn_section_1_2",
+    "section_header": "Nazwa zamawiającego",
+    "data_model": "client",
+    "example_values": [
+      "ZESPÓŁ SZKÓŁ TECHNICZNYCH I OGÓLNOKSZTAŁCĄCYCH IM. PROF. ZBIGNIEWA STRZELECKIEGO W SANDOMEIRZU",
+      "ZESPÓŁ OPIEKI ZDROWOTNEJ W ŚWIĘTOCHŁOWICACH SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ",
+      "ZESPÓŁ OPIEKI ZDROWOTNEJ W ŚWIĘTOCHŁOWICACH SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ W RESTRUKTURYZACJI"
+    ]
+  },
+  "1.3": {
+    "col_name": "cn_section_1_3",
+    "section_header": "Oddział zamawiającego",
+    "data_model": "client",
+    "example_values": [
+      "Dział ZP Anna Wiącek",
+      "Sąd Okręgowy we Wrocławiu",
+      "Broker ubezpieczeniowy"
+    ]
+  },
+  "1.4": {
+    "col_name": "cn_section_1_4",
+    "section_header": "Krajowy Numer Identyfikacyjny",
+    "data_model": "client",
+    "example_values": [
+      "REGON 292442065",
+      "REGON 000311450",
+      "REGON 000325073"
+    ]
+  },
+  "1.5.1": {
+    "col_name": "cn_section_1_5_1",
+    "section_header": "Ulica",
+    "data_model": "client",
+    "example_values": [
+      "ul. Słowackiego 37",
+      "ul. Chorzowska 38",
+      "Sądowa, 1"
+    ]
+  },
+  "1.5.2": {
+    "col_name": "cn_section_1_5_2",
+    "section_header": "Miejscowość",
+    "data_model": "client",
+    "example_values": [
+      "Sandomierz",
+      "Świętochłowice",
+      "Wrocław"
+    ]
+  },
+  "1.5.3": {
+    "col_name": "cn_section_1_5_3",
+    "section_header": "Kod pocztowy",
+    "data_model": "client",
+    "example_values": [
+      "27-600",
+      "41-605",
+      "50-046"
+    ]
+  },
+  "1.5.4": {
+    "col_name": "cn_section_1_5_4",
+    "section_header": "Województwo",
+    "data_model": "client",
+    "example_values": [
+      "świętokrzyskie",
+      "śląskie",
+      "dolnośląskie"
+    ]
+  },
+  "1.5.5": {
+    "col_name": "cn_section_1_5_5",
+    "section_header": "Kraj",
+    "data_model": "client",
+    "example_values": [
+      "Polska"
+    ]
+  },
+  "1.5.6": {
+    "col_name": "cn_section_1_5_6",
+    "section_header": "Lokalizacja NUTS 3",
+    "data_model": "client",
+    "example_values": [
+      "PL722 - Sandomiersko-jędrzejowski",
+      "PL22A - Katowicki",
+      "PL514 - Miasto Wrocław"
+    ]
+  },
+  "1.5.7": {
+    "col_name": "cn_section_1_5_7",
+    "section_header": "Numer telefonu",
+    "data_model": "client",
+    "example_values": [
+      "+48797637683",
+      "32 2455041",
+      "71-74-82-130"
+    ]
+  },
+  "1.5.8": {
+    "col_name": "cn_section_1_5_8",
+    "section_header": "Numer faksu",
+    "data_model": "client",
+    "example_values": [
+      "32 2453440",
+      "757411541",
+      "+48 67 263 53 05"
+    ]
+  },
+  "1.5.9": {
+    "col_name": "cn_section_1_5_9",
+    "section_header": "Adres poczty elektronicznej",
+    "data_model": "client",
+    "example_values": [
+      "kierownik@zstio.pl",
+      "zamowieniapubliczne@zoz.net.pl",
+      "zamowienia.publiczne@wroclaw.so.gov.pl"
+    ]
+  },
+  "1.5.10": {
+    "col_name": "cn_section_1_5_10",
+    "section_header": "Adres strony internetowej zamawiającego",
+    "data_model": "client",
+    "example_values": [
+      "www.zstio.pl",
+      "www.zoz.net.pl",
+      "www.wroclaw.so.gov.pl"
+    ]
+  },
+  "1.6": {
+    "col_name": "cn_section_1_6",
+    "section_header": "Rodzaj zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Zamawiający publiczny - jednostka sektora finansów publicznych - jednostka samorządu terytorialnego",
+      "Zamawiający publiczny - osoba prawna, o której mowa w art. 4 pkt 3 ustawy (podmiot prawa publicznego)",
+      "Zamawiający publiczny - jednostka sektora finansów publicznych - organ władzy publicznej - organ kontroli państwowej i ochrony prawa oraz sąd i trybunał"
+    ]
+  },
+  "1.7": {
+    "col_name": "cn_section_1_7",
+    "section_header": "Przedmiot działalności zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Edukacja",
+      "Zdrowie",
+      "Inna działalność"
+    ]
+  },
+  "1.9": {
+    "col_name": "cn_section_1_9",
+    "section_header": "Podział obowiązków – zamówienie wspólne",
+    "data_model": "core",
+    "example_values": [
+      "Zakład Karny w Opolu Lubelskim przygotowuje i przeprowadza w imieniu i na rzecz wszystkich Zamawiających, postępowanie o udzielenie zamówienia publicznego, którego przedmiotem są „Zakup i sukcesywne dostawy margaryny dosmarowania pieczywa” do zakładów karnych i aresztów śledczych podległych pod Okręgowy Inspektorat Służby Więziennej w Lublinie",
+      "Gmina Myślenice: prowadzi postępowania w celu wyboru najkorzystniejszej oferty, wybór oferty Przedszkole Samorządowe w Trzemeśni -  opisu przedmiotu zamówienia, określenie wartości szacunkowej oraz udzieli zamówienia",
+      "Gmina Myślenice: prowadzi postępowania w celu wyboru najkorzystniejszej oferty, wybór oferty ZPO w Drogini -  opisu przedmiotu zamówienia, określenie wartości szacunkowej oraz udzieli zamówienia"
+    ]
+  },
+  "1.11.1": {
+    "col_name": "cn_section_1_11_1",
+    "section_header": "Nazwa podmiotu prowadzącego postępowanie",
+    "data_model": "core",
+    "example_values": [
+      "Inter-Broker sp. z o.o.",
+      "Supra Brokers S.A.",
+      "Postępowanie prowadzi Gmina Miasto Rzeszów - Urząd Miasta Rzeszowa na rzecz Zamawiającego Domu Pomocy Społecznej dla Osób Przewlekle Psychicznie Chorych w Rzeszowie, ul. Załęska 7a"
+    ]
+  },
+  "1.11.2": {
+    "col_name": "cn_section_1_11_2",
+    "section_header": "Krajowy Numer Identyfikacyjny",
+    "data_model": "core",
+    "example_values": [
+      "870315750",
+      "021916234",
+      "REGON 000650614"
+    ]
+  },
+  "1.11.3": {
+    "col_name": "cn_section_1_11_3",
+    "section_header": "Ulica",
+    "data_model": "core",
+    "example_values": [
+      "Żółkiewskiego 5",
+      "Al. Śląska 1",
+      "ul. Rynek 1"
+    ]
+  },
+  "1.11.4": {
+    "col_name": "cn_section_1_11_4",
+    "section_header": "Miejscowość",
+    "data_model": "core",
+    "example_values": [
+      "Toruń",
+      "Wrocław",
+      "Rzeszów"
+    ]
+  },
+  "1.11.5": {
+    "col_name": "cn_section_1_11_5",
+    "section_header": "Kod pocztowy",
+    "data_model": "core",
+    "example_values": [
+      "87-100",
+      "54-118",
+      "35-064"
+    ]
+  },
+  "1.11.6": {
+    "col_name": "cn_section_1_11_6",
+    "section_header": "Województwo",
+    "data_model": "core",
+    "example_values": [
+      "kujawsko-pomorskie",
+      "dolnośląskie",
+      "podkarpackie"
+    ]
+  },
+  "1.11.7": {
+    "col_name": "cn_section_1_11_7",
+    "section_header": "Kraj",
+    "data_model": "core",
+    "example_values": [
+      "Polska"
+    ]
+  },
+  "1.11.8": {
+    "col_name": "cn_section_1_11_8",
+    "section_header": "Lokalizacja NUTS 3",
+    "data_model": "core",
+    "example_values": [
+      "PL613 - Bydgosko-toruński",
+      "PL514 - Miasto Wrocław",
+      "PL823 - Rzeszowski"
+    ]
+  },
+  "1.11.9": {
+    "col_name": "cn_section_1_11_9",
+    "section_header": "Numer telefonu",
+    "data_model": "core",
+    "example_values": [
+      "56 6548260",
+      "44 683 54 03",
+      "/94/ 714 02 71"
+    ]
+  },
+  "1.11.10": {
+    "col_name": "cn_section_1_11_10",
+    "section_header": "Numer faksu",
+    "data_model": "core",
+    "example_values": [
+      "566584260",
+      "632416580",
+      "943161769"
+    ]
+  },
+  "1.11.11": {
+    "col_name": "cn_section_1_11_11",
+    "section_header": "Adres poczty elektronicznej",
+    "data_model": "core",
+    "example_values": [
+      "interbroker@interbroker.pl",
+      "s.ruskiewicz@suprabrokers.pl",
+      "przetargi@erzeszow.pl"
+    ]
+  },
+  "1.11.12": {
+    "col_name": "cn_section_1_11_12",
+    "section_header": "Adres strony internetowej",
+    "data_model": "core",
+    "example_values": [
+      "www.interbroker.pl",
+      "www.suprabrokers.pl",
+      "https://bip.erzeszow.pl"
+    ]
+  },
+  "2.1": {
+    "col_name": "cn_section_2_1",
+    "section_header": "Ogłoszenie dotyczy",
+    "data_model": "core",
+    "example_values": [
+      "Zamówienia publicznego",
+      "Umowy ramowej"
+    ]
+  },
+  "2.2": {
+    "col_name": "cn_section_2_2",
+    "section_header": "Ogłoszenie dotyczy usług społecznych i innych szczególnych usług",
+    "data_model": "core",
+    "example_values": [
+      "Tak",
+      "Nie"
+    ]
+  },
+  "2.3": {
+    "col_name": "cn_section_2_3",
+    "section_header": "Nazwa zamówienia albo umowy ramowej",
+    "data_model": "core",
+    "example_values": [
+      "„Zorganizowanie kompleksowej usługi przygotowania i realizacji kursów/szkoleń specjalistycznych/seminariów/wyjazdów dla nauczycieli i uczniów  ZSTiO w Sandomierzu”",
+      "Świadczenie usług odbioru, transportu i unieszkodliwiania odpadów medycznych z obiektów Zespołu Opieki Zdrowotnej w Świętochłowicach sp. z o.o. w restrukturyzacji",
+      "Świadczenie usług gastronomicznych w zakresie przygotowania i dystrybucji posiłków na potrzeby Zespołu Opieki Zdrowotnej w Świętochłowicach sp. z o.o. w restrukturyzacji"
+    ]
+  },
+  "2.4": {
+    "col_name": "cn_section_2_4",
+    "section_header": "Identyfikator postępowania",
+    "data_model": "core",
+    "example_values": [
+      "ocds-148610-83fd4966-0241-4a57-8823-3b202a86afbf",
+      "ocds-148610-adc3e525-a98f-4bf0-9f77-18bad9062000",
+      "ocds-148610-93b308dc-be64-4bae-96a1-57a2e397956d"
+    ]
+  },
+  "2.5": {
+    "col_name": "cn_section_2_5",
+    "section_header": "Numer ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "2025/BZP 00000033",
+      "2025/BZP 00000036",
+      "2025/BZP 00000037"
+    ]
+  },
+  "2.6": {
+    "col_name": "cn_section_2_6",
+    "section_header": "Wersja ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "01"
+    ]
+  },
+  "2.7": {
+    "col_name": "cn_section_2_7",
+    "section_header": "Data ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "2025-01-02",
+      "2025-01-03",
+      "2025-01-04"
+    ]
+  },
+  "2.8": {
+    "col_name": "cn_section_2_8",
+    "section_header": "Zamówienie albo umowa ramowa zostały ujęte w planie postępowań",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "2.9": {
+    "col_name": "cn_section_2_9",
+    "section_header": "Numer planu postępowań w BZP",
+    "data_model": "core",
+    "example_values": [
+      "2024/BZP 00027746/07/P",
+      "2024/BZP 00070095/01/P",
+      "2025/BZP 00000077/01/P"
+    ]
+  },
+  "2.10": {
+    "col_name": "cn_section_2_10",
+    "section_header": "Identyfikator pozycji planu postępowań",
+    "data_model": "core",
+    "example_values": [
+      "1.3.4 Świadczenie usług ochrony mienia Zarządu Zieleni Miejskiej w Elblągu",
+      "1.3.4 Obsługa prawna",
+      "1.2.1 „Zakup i dostawę pomocy dydaktycznych i wyposażenia do przedszkola i oddziałów przedszkolnych w Gminie Łobżenica” w ramach projektu pn.: „Gmina Łobżenica stawia na przedszkolaków”"
+    ]
+  },
+  "2.11": {
+    "col_name": "cn_section_2_11",
+    "section_header": "O udzielenie zamówienia mogą ubiegać się wyłącznie wykonawcy, o których mowa w art. 94 ustawy",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "2.12": {
+    "col_name": "cn_section_2_12",
+    "section_header": "Rodzaj wykonawców, którzy mogą ubiegać się o udzielenie zamówienia",
+    "data_model": "core",
+    "example_values": [
+      "art. 94 ust. 1 pkt 1) ustawy art. 94 ust. 1 pkt 2) ustawy art. 94 ust. 1 pkt 3) ustawy art. 94 ust. 1 pkt 4) ustawy art. 94 ust. 1 pkt 5) ustawy art. 94 ust. 1 pkt 6) ustawy art. 94 ust. 1 pkt 7) ustawy art. 94 ust. 1 pkt 8) ustawy art. 94 ust. 1 pkt 9) ustawy art. 94 ust. 1 pkt 10) ustawy",
+      "art. 94 ust. 1 pkt 1) ustawy",
+      "art. 94 ust. 1 pkt 1) ustawy art. 94 ust. 1 pkt 2) ustawy art. 94 ust. 1 pkt 3) ustawy art. 94 ust. 1 pkt 4) ustawy art. 94 ust. 1 pkt 7) ustawy art. 94 ust. 1 pkt 8) ustawy art. 94 ust. 1 pkt 9) ustawy art. 94 ust. 1 pkt 10) ustawy"
+    ]
+  },
+  "2.13": {
+    "col_name": "cn_section_2_13",
+    "section_header": "O zamówienie mogą ubiegać się wyłącznie wykonawcy, którzy spełniają warunki określone w art. 361 ustawy – usługi społeczne",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "2.14": {
+    "col_name": "cn_section_2_14",
+    "section_header": "Czy zamówienie albo umowa ramowa dotyczy projektu lub programu współfinansowanego ze środków Unii Europejskiej",
+    "data_model": "core",
+    "example_values": [
+      "Tak",
+      "Nie"
+    ]
+  },
+  "2.15": {
+    "col_name": "cn_section_2_15",
+    "section_header": "Nazwa projektu lub programu",
+    "data_model": "core",
+    "example_values": [
+      "„Profesjonalni fachowcy w sandomierskiej „Budowlance”” nr FESW.08.04-IZ.00-003/24, z Programu Regionalnego Fundusze Europejskie dla Świętokrzyskiego 2021-2027. Priorytet 8. Edukacja na wszystkich etapach życia, Działanie 08.04 Rozwój szkolnictwa branżowego współfinansowanego ze środków Unii Europejskiej w ramach Europejskiego Funduszu Społecznego Plus (EFS+).",
+      "Program Fundusze Europejskie dla Wielkopolski 2021-2027 (FEW) współfinansowanego ze środków Europejskiego Funduszu Społecznego Plus (EFS+)",
+      "Krajowy Plan Odbudowy, Dziedzina: Energetyka odnawialna (słoneczna), Tytuł: Utworzenie i wsparcie funkcjonowania Branżowego Centrum Umiejętności dla branży elektroenergetycznej w dziedzinie energetyka odnawialna (słoneczna)"
+    ]
+  },
+  "2.16": {
+    "col_name": "cn_section_2_16",
+    "section_header": "Tryb udzielenia zamówienia wraz z podstawą prawną",
+    "data_model": "core",
+    "example_values": [
+      "Zamówienie udzielane jest w trybie podstawowym na podstawie: art. 275 pkt 2 ustawy",
+      "Zamówienie udzielane jest w trybie podstawowym na podstawie: art. 275 pkt 1 ustawy",
+      "Zamówienie udzielane jest w trybie partnerstwa innowacyjnego na podstawie: art. 297 ustawy"
+    ]
+  },
+  "2.17": {
+    "col_name": "cn_section_2_17",
+    "section_header": "Tryb zawarcia umowy ramowej wraz z podstawą prawną",
+    "data_model": "core",
+    "example_values": [
+      "Umowa ramowa udzielana jest w trybie podstawowym na podstawie: art. 311 ust. 1 pkt 2 ustawy  w zw. z art. 275 pkt 1 ustawy",
+      "Umowa ramowa udzielana jest w trybie podstawowym na podstawie: art. 311 ust. 1 pkt 2 ustawy  w zw. z art. 275 pkt 2 ustawy"
+    ]
+  },
+  "3.1": {
+    "col_name": "cn_section_3_1",
+    "section_header": "Adres strony internetowej prowadzonego postępowania",
+    "data_model": "core",
+    "example_values": [
+      "https://ezamowienia.gov.pl/mp-client/search/list/ocds-148610-83fd4966-0241-4a57-8823-3b202a86afbf",
+      "https://zoz.logintrade.net/rejestracja/ustawowe.html",
+      "https://ezamowienia.gov.pl/mp-client/search/list/ocds-148610-b26097a3-a718-48ce-9ae5-4f2ff1a6499c"
+    ]
+  },
+  "3.2": {
+    "col_name": "cn_section_3_2",
+    "section_header": "Zamawiający zastrzega dostęp do dokumentów zamówienia",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "3.3": {
+    "col_name": "cn_section_3_3",
+    "section_header": "Informacje na temat sposobu udostępnienia zastrzeżonych dokumentów zamówienia",
+    "data_model": "core",
+    "example_values": [
+      "Z powodu ochrony poufnego charakteru informacji Specyfikacja Warunków Zamówienia zwana dalej SWZ, na podstawie art. 280 ust. 3 ustawy została podzielona na część zawierającą informacje jawne i część zawierającą informacje poufne. Treść SWZ nie objęta poufnością jest dostępna na stronie internetowej, natomiast część SWZ objęta poufnością zostanie udostępniona Wykonawcy po złożeniu wniosku o udostępnienie. W treści wniosku Wykonawca zobowiązany jest wskazać swoje dane identyfikacyjne oraz nr postępowania/SWZ, którego wniosek dotyczy.  Wykonawca zobowiązany jest do zachowania w tajemnicy treści udostępnionych informacji",
+      "4.\tZamawiającego informuje o charakterze poufnym części dokumentacji SWZ. Wykonawca może uzyskać dostęp do dokumentacji poufnej poprzez złożenie wniosku (załącznik nr 7 do SWZ) o ich przesłanie w formie elektronicznej, przekazując wniosek za pośrednictwem poczty elektronicznej: kaniewska@jarjarocin.pl.",
+      "Zamawiający udostępnia dokumentację techniczną na wniosek zainteresowanego"
+    ]
+  },
+  "3.4": {
+    "col_name": "cn_section_3_4",
+    "section_header": "Wykonawcy zobowiązani są do składania ofert, wniosków o dopuszczenie do udziału w postępowaniu, oświadczeń oraz innych dokumentów wyłącznie przy użyciu środków komunikacji elektronicznej",
+    "data_model": "core",
+    "example_values": [
+      "Tak",
+      "Nie"
+    ]
+  },
+  "3.5": {
+    "col_name": "cn_section_3_5",
+    "section_header": "Informacje o środkach komunikacji elektronicznej, przy użyciu których zamawiający  będzie komunikował się z wykonawcami - adres strony internetowej",
+    "data_model": "core",
+    "example_values": [
+      "www.zstio.pl",
+      "https://zoz.logintrade.net/rejestracja/ustawowe.html, email:zamowieniapubliczne@zoz.net.pl",
+      "https://zoz.logintrade.net/rejestracja/ustawowe.html, e-mail:zamowieniapubliczne@zoz.net.pl"
+    ]
+  },
+  "3.6": {
+    "col_name": "cn_section_3_6",
+    "section_header": "Wymagania techniczne i organizacyjne dotyczące korespondencji elektronicznej",
+    "data_model": "core",
+    "example_values": [
+      "1.\tPostępowanie prowadzone jest w języku polskim w formie elektronicznej za pośrednictwem Platformy e-Zamówienia.2.Komunikacja o udzielenie zamówienia oraz informacji między zamawiającym a wykonawcami przekazywane winny być za pośrednictwem Platformy e-Zamówienia przy użyciu środków komunikacji elektronicznej. 3.W postępowaniu o udzielenie zamówienia publicznego komunikacja między Zamawiającym a wykonawcami odbywa się przy użyciu Platformy e-Zamówienia, która jest dostępna pod adresem https://ezamowienia.gov.pl.4.\tZa datę przekazania (wpływu) oświadczeń, wniosków, zawiadomień oraz informacji przyjmuje się datę ich przesłania za pośrednictwem Platformy e-Zamówienia.5.\tW przypadku problemów technicznych i awarii związanych z funkcjonowaniem Platformy e-Zamówienia użytkownicy mogą skorzystać ze wsparcia technicznego dostępnego pod numerem telefonu (32) 77 88 999 lub drogą elektroniczną poprzez formularz udostępniony na stronie internetowej  6.\tW szczególnie uzasadnionych przypadkach uniemożliwiających komunikację Wykonawcy i Zamawiającego za pośrednictwem Platformy e-Zamówienia, Zamawiający dopuszcza komunikację za pośrednictwem poczty elektronicznej: kierownik@zstio.pl .7.Możliwość korzystania w postępowaniu z „Formularzy do komunikacji” w pełnym zakresie wymaga posiadania konta „Wykonawcy” na Platformie e- Zamówienia.8.Do korzystania z „Formularzy do komunikacji” służących do zadawania pytań dotyczących treści dokumentów zamówienia wystarczające jest posiadanie tzw. konta uproszczonego na Platformie e-Zamówienia.9.Minimalne wymagania techniczne dotyczące sprzętu używanego w celu korzystania z usług Platformy e-Zamówienia oraz informacje dotyczące specyfikacji połączenia określa Regulamin Platformy e-Zamówienia.10.Wykonawca, przystępując do niniejszego postępowania o udzielenie zamówienia publicznego:1)\takceptuje warunki korzystania z Platformy e- Zamówienia określone w Regulaminie Platformy e-Zmówienia oraz uznaje go za wiążący,2)\tzapoznał i stosuje się do Instrukcji składania ofert/wniosków dostępnej pod adresem: https://ezamowienia.gov.pl.  11.Zamawiający nie ponosi odpowiedzialności za złożenie oferty w sposób niezgodny z Instrukcją korzystania z Platformy e-Zamówienia.12.Zgodnie z art. 284 ustawy Pzp, Wykonawca może zwrócić się do Zamawiającego z wnioskiem o wyjaśnienie odpowiednio treści SWZ.13.Zamawiający jest obowiązany udzielić wyjaśnień niezwłocznie, jednak nie później niż na 2 dni przed upływem terminu składania ofert, pod warunkiem że wniosek o wyjaśnienie treści SWZ wpłynął do Zamawiającego nie później niż na 4 dni przed upływem terminu składania ofert.14.\tJeżeli Zamawiający nie udzieli wyjaśnień w terminie, o którym mowa w ust. 18, przedłuża termin składania odpowiednio ofert o czas niezbędny do zapoznania się wszystkich zainteresowanych Wykonawców z wyjaśnieniami niezbędnymi do należytego przygotowania i złożenia ofert.20.W przypadku gdy wniosek o wyjaśnienie treści SWZ nie wpłynął w terminie, o którym mowa w ust. 18, Zamawiający nie ma obowiązku udzielania wyjaśnień SWZ oraz obowiązku przedłużenia terminu składania ofert.21.Przedłużenie terminu składania ofert, o których mowa w ust. 18, nie wpływa na bieg terminu składania wniosku o wyjaśnienie treści SWZ.15.Treść zapytań wraz z wyjaśnieniami Zamawiający udostępnia, bez ujawniania źródła zapytania, na Platformie e- Zamówienia, w zakładce prowadzonego postępowania. 16.W zakresie kwestii nieuregulowanych niniejszą SWZ obowiązują przepisy ustawy Pzp oraz Rozporządzenia Prezesa Rady Ministrów z dnia z dnia 30 grudnia 2020 r. w sprawie sposobu sporządzania i przekazywania informacji oraz wymagań technicznych dla dokumentów elektronicznych oraz środków komunikacji elektronicznej w postępowaniu o udzielenie zamówienia publicznego lub konkursie",
+      "1. Ofertę składa się pod rygorem nieważności, zgodnie z wyborem Wykonawcy: a) w formie elektronicznej (oznacza to postać elektroniczną opatrzoną kwalifikowanym podpisem elektronicznym), lub b) w postaci elektronicznej opatrzonej podpisem zaufanym lub podpisem osobistym -wyłącznie poprzez Platformę przetargową. 2. Wykonawca zamierzający złożyć ofertę (wyłącznie poprzez Platformę przetargową) – zobowiązany jest zapoznać się z instrukcjami użytkowników Platformy przetargowej - dostępnymi pod adresem: https://zoz.logintrade.net/rejestracja/instrukcje.html oraz zaakceptować regulamin korzystania z Platformy przetargowej dostępny pod adresem: https://zoz.logintrade.net/rejestracja/regulamin.html 3. Złożenie oferty poprzez Platformę przetargową oznacza akceptację regulaminu, o którym mowa w pkt 1 niniejszego rozdziału SWZ. 4. Wymagania techniczne związane z korzystaniem z Platformy przetargowej – wskazane są na stronie internetowej Platformy przetargowej - pod adresem:  https://zoz.logintrade.net/rejestracja/instrukcje.html 5. Wsparcia technicznego w zakresie działania Platformy przetargowej udziela jej dostawca, tj. Logintrade S.A., ul. Legnicka 57d, lokal B/J, 54-203Wrocław, nr tel. +48 71 787 35 34, e-mail: helpdesk@logintrade.net od poniedziałku do piątku (dni robocze) w godz. 8:00 - 16:00. 6. Sposoby złożenia oferty za pośrednictwem Platformy przetargowej oraz potwierdzenia złożenia oferty (w zależności od wyboru opcji z logowaniem lub bez logowania), zostały opisane w Instrukcjach użytkowników Platformy przetargowej. 7. Oferty, oświadczenie, o którym mowa w art. 117 ust. 4 ustawy, oraz zobowiązanie podmiotu udostępniającego zasoby, o którym mowa w art. 118 ust. 3 ustawy, zwane dalej „zobowiązaniem podmiotu udostępniającego zasoby”, przedmiotowe środki dowodowe, pełnomocnictwo, sporządza się w postaci elektronicznej, w formatach danych określonych w przepisach wydanych na podstawie art.18 ustawy z dnia 17 lutego 2005 r. o informatyzacji działalności podmiotów realizujących zadania publiczne, z zastrzeżeniem formatów, o których mowa w art. 66 ust. 1 ustawy, z uwzględnieniem rodzaju przekazywanych danych.",
+      "1. Ofertę składa się pod rygorem nieważności, zgodnie z wyborem Wykonawcy: a) w formie elektronicznej (oznacza to postać elektroniczną opatrzoną kwalifikowanym podpisem elektronicznym), lub b) w postaci elektronicznej opatrzonej podpisem zaufanym lub podpisem osobistym -wyłącznie poprzez Platformę przetargową.2. Wykonawca zamierzający złożyć ofertę (wyłącznie poprzez Platformę przetargową) – zobowiązany jest zapoznać się z instrukcjami użytkowników Platformy przetargowej - dostępnymi pod adresem https://zoz.logintrade.net/rejestracja/instrukcje.html oraz zaakceptować regulamin korzystania z Platformy przetargowej dostępny pod adresem:https://zoz.logintrade.net/rejestracja/regulamin.html3. Złożenie oferty poprzez Platformę przetargową oznacza akceptację regulaminu, o którym mowa w pkt 1 niniejszego rozdziału SWZ. 4. Wymagania techniczne związane z korzystaniem z Platformy przetargowej – wskazane są na stronie internetowej Platformy przetargowej - pod adresem: https://zoz.logintrade.net/rejestracja/instrukcje.html 5. Wsparcia technicznego w zakresie działania Platformy przetargowej udziela jej dostawca, tj. Logintrade S.A., ul. Legnicka 57d, lokal B/J, 54-203 Wrocław, nr tel. +48 71 787 35 34, e-mail: helpdesk@logintrade.netod poniedziałku do piątku (dni robocze) w godz. 8:00 - 16:00. 6. Sposoby złożenia oferty za pośrednictwem Platformy przetargowejoraz potwierdzenia złożenia oferty (w zależności od wyboru opcji z logowaniem lub bez logowania), zostały opisane w Instrukcjach użytkowników Platformy przetargowej. 7. Oferty, oświadczenie, o którym mowa w art. 117 ust. 4 ustawy, oraz zobowiązanie podmiotu udostępniającego zasoby, o którym mowa w art. 118 ust. 3 ustawy, zwane dalej „zobowiązaniem podmiotu udostępniającegozasoby”, przedmiotowe środki dowodowe, pełnomocnictwo, sporządza się w postaci elektronicznej, w formatach danych określonych w przepisach wydanych na podstawie art. 18 ustawy z dnia 17 lutego 2005 r. o informatyzacji działalności podmiotów realizujących zadania publiczne, z zastrzeżeniem formatów, o których mowa w art. 66 ust. 1 ustawy, z uwzględnieniem rodzaju przekazywanych danych."
+    ]
+  },
+  "3.7": {
+    "col_name": "cn_section_3_7",
+    "section_header": "Adres strony internetowej, pod którym są dostępne narzędzia, urządzenia lub formaty plików, które nie są ogólnie dostępne",
+    "data_model": "core",
+    "example_values": [
+      "https://ezamowienia.gov.pl",
+      "https://oneplace.marketplanet.pl/przygotuj-stanowisko-pc-wykonujac-ponizsze-kroki",
+      "https://zsm-chorzow.ezamawiajacy.pl/pn/zsm-chorzow/demand/188487/notice/public/details"
+    ]
+  },
+  "3.8": {
+    "col_name": "cn_section_3_8",
+    "section_header": "Zamawiający wymaga sporządzenia i przedstawienia ofert przy użyciu narzędzi elektronicznego modelowania danych budowlanych lub innych podobnych narzędzi, które nie są ogólnie dostępne",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "3.9": {
+    "col_name": "cn_section_3_9",
+    "section_header": "Sposób dostępu do narzędzi elektronicznego modelowania danych budowlanych",
+    "data_model": "core",
+    "example_values": [
+      "https://platformazakupowa.pl/pn/wolow;"
+    ]
+  },
+  "3.10": {
+    "col_name": "cn_section_3_10",
+    "section_header": "Przyczyny odstąpienia od komunikacji elektronicznej",
+    "data_model": "core",
+    "example_values": [
+      "zamawiający wymaga przedstawienia modelu fizycznego, modelu w skali lub próbki, których nie można przekazać przy użyciu środków komunikacji elektronicznej (art. 65 ust. 1 pkt 4 ustawy)",
+      "wyspecjalizowany charakter zamówienia, użycie środków komunikacji elektronicznej wymaga narzędzi, urządzeń lub formatów plików, które nie są ogólnie dostępne lub nie są obsługiwane za pomocą ogólnie dostępnych aplikacji (art. 65 ust. 1 pkt 1 ustawy)",
+      "użycie środków komunikacji elektronicznej wymaga pozyskania przez zamawiającego specjalistycznego sprzętu biurowego (art. 65 ust. 1 pkt 3 ustawy)"
+    ]
+  },
+  "3.11": {
+    "col_name": "cn_section_3_11",
+    "section_header": "Sposób nieelektronicznego składania ofert, wniosków, oświadczeń oraz innych dokumentów",
+    "data_model": "core",
+    "example_values": [
+      "Zamawiający działając na podstawie art. 65 ust. 1 pkt 4) Ustawy Pzp odstępuje od użycia środków komunikacji elektronicznej w zakresie przedstawienia próbki. Próbki należy przesłać najpóźniej do dnia i godziny terminu składania ofert z podaniem nazwy i adresu Wykonawcy na adres wskazany w SWZ.Próbki powinny być zapakowane i opisane w sposób pozwalający na jednoznaczne ustalenie, której pozycji dotyczą. Próbki zostaną sprawdzone w toku badania i oceny ofert pod kątem zgodności parametrów oferowanego produktu z wymogami określonymi w opisie przedmiotu zamówienia w SWZ.",
+      "Zamawiający działając na podstawie art. 65 ust. 1 pkt 4) Ustawy Pzp odstępuje od użycia środków komunikacji elektronicznej w zakresie przedstawienia próbki. Próbki należy przesłać najpóźniej do dnia i godziny terminu składania ofert z podaniem nazwy i adresu Wykonawcy na adres wskazany w SWZ. Próbki powinny być zapakowane i opisane w sposób pozwalający na jednoznaczne ustalenie, której pozycji dotyczą. Próbki zostaną sprawdzone w toku badania i oceny ofert pod kątem zgodności parametrów oferowanego produktu z wymogami określonymi w opisie przedmiotu zamówienia w SWZ.",
+      "Wykonawca zobowiązany jest złożyć wraz z ofertą próbki zaoferowanych produktów  (wg informacji z załącznika nr 5  do SWZ) w celu dokonania oceny zgodności zaoferowanego przedmiotu zamówienia z wymaganiami określonymi przez Zamawiającego w SWZ oraz dokonania oceny jakościowej. Egzemplarze produktów zostaną wykorzystane do oceny jakościowej i nie podlegają zwrotowi. Egzemplarze produktów, jako elementy oferty nie podlegają uzupełnieniu po upływie terminu składania ofert.  Próbki należy dosłać przed terminem składania ofert określonym w Dziale XXVIII ust. 1 do siedziby zamawiającego na adres:  Powiatowy Zakład Opieki Zdrowotnej, Kancelaria - pokój nr 245,  ul. Batalionów Chłopskich 6, 27-200 Starachowice."
+    ]
+  },
+  "3.12": {
+    "col_name": "cn_section_3_12",
+    "section_header": "Oferta - katalog elektroniczny",
+    "data_model": "core",
+    "example_values": [
+      "Nie dotyczy",
+      "Zamawiający wymaga złożenia oferty w postaci katalogu elektronicznego",
+      "Zamawiający dopuszcza dołączenie katalogu elektronicznego do oferty"
+    ]
+  },
+  "3.14": {
+    "col_name": "cn_section_3_14",
+    "section_header": "Języki, w jakich mogą być sporządzane dokumenty składane w postępowaniu",
+    "data_model": "core",
+    "example_values": [
+      "polski",
+      "polski angielski"
+    ]
+  },
+  "3.15": {
+    "col_name": "cn_section_3_15",
+    "section_header": "RODO (obowiązek informacyjny)",
+    "data_model": "core",
+    "example_values": [
+      "Od dnia 25 maja 2018 roku obowiązuje Rozporządzenie Parlamentu Europejskiego i Rady (UE) 2016/679 z dnia 27 kwietnia 2016 r. w sprawie ochrony osób fizycznych w związku z przetwarzaniem danych osobowych i w sprawie swobodnego przepływu takich danych oraz uchylenia dyrektywy 95/46/WE (ogólne rozporządzenie o ochronie danych)(Dz. Urz. UE L z 04.05.2016 r., Nr 119, s. 1), zwane w skrócie „RODO”, które stanowi podstawą prawą przetwarzania Państwa danych, w związku z powyższym  zgodnie z art. 12, art.13 ust. 1 i ust. 2, art. 14 informujemy o zasadach przetwarzania danych osobowych oraz o przysługujących prawach z tym związanych.1.\tAdministratorem Państwa danych osobowych jest Zespół Szkół Technicznych i Ogólnokształcących im. prof. Zbigniewa Strzeleckiego w Sandomierzu reprezentowany przez dyrektora szkoły, z siedzibą ul. Słowackiego 37, 27-600 Sandomierz, tel. 797 637 683, e-mail: sekretariat@zstio.pl. 2.\tZ Inspektorem Ochrony Danych można skontaktować się poprzez adres e-mail: gradzinski@powiat.sandomierz.pl,tel. (+ 48 15) 832 33 78) lub pisemnie na adres siedziby administratora. 3.\tDane osobowe przetwarzane będą zgodnie z obowiązującymi przepisami prawa w celu realizacji ustawowych zadań szkoły oraz przepisów prawa i nie będą udostępniane innym podmiotom niż upoważnione na podstawie przepisów prawa:1)\tna etapie postępowania o udzielenie zamówienia: na podstawie art. 6 ust. 1 lit. c RODO w związku z art. 2 ust. 1 pkt 1 ustawy z dnia 11 września 2019 r. Prawo zamówień publicznych (t.j. DZ. U z 2024 r., poz. 1320) w celu związanym z postępowaniem o udzielenie zamówienia publicznego poniżej 130 000 złotych, prowadzonym w trybie zapytania ofertowego, w celu realizacji umów zawartych z kontrahentami, której Pani/Pan jest stroną, obsługi gwarancyjnej i pogwarancyjnej, obsługi reklamacji i promocji, obsługi programów partnerskich lub do podjęcia niezbędnych działań, na Pani/Pana żądanie, przed zawarciem umowy;2)\tna etapie zawierania umowy: na podstawie art. 6 ust. 1 lit. b RODO w celu zawarcia  i prawidłowego wykonania umowy, której przedmiotem jest: „Zorganizowanie kompleksowej usługi przygotowania i realizacji kursów/szkoleń specjalistycznych/seminariów/wyjazdów dla nauczycieli i uczniów  Zespołu Szkół Technicznych i Ogólnokształcących im. prof. Zbigniewa Strzeleckiego w Sandomierzu” w ramach realizacji projektu pn.: „Profesjonalni fachowcy w sandomierskiej „Budowlance”” nr FESW.08.04-IZ.00-003/24, z Programu Regionalnego Fundusze Europejskie dla Świętokrzyskiego 2021-2027. Priorytet 8. Edukacja na wszystkich etapach życia, Działanie 08.04 Rozwój szkolnictwa branżowego współfinansowanego ze środków Unii Europejskiej w ramach Europejskiego Funduszu Społecznego Plus (EFS+).3)\tw pozostałych przypadkach Pani/Pana dane osobowe przetwarzane będą wyłącznie na podstawie wcześniej udzielonej zgody w zakresie i celu określonym w treści zgody na podstawie  art. 6 ust. 1 lit. a oraz art. 9 ust. 2 lit. a  Rozporządzenia – dotyczy to realizacji zadań statutowych i wypełnienia innych niż w ust. 3  pkt 1-3 obowiązków prawnych ciążących na Zespole Szkół Technicznych i Ogólnokształcących     im. prof. Zbigniewa Strzeleckiego w Sandomierzu.4.\tAdministrator będzie przetwarzał Pani/Pana dane zgodnie z prawem w zakresie związanym z realizacją powyższych celów.",
+      "Zgodnie z art. 13 ust. 1 i 2 rozporządzenia Parlamentu Europejskiego i Rady (UE) 2016/679 z dnia 27 kwietnia 2016 r. w sprawie ochrony osób fizycznych w związku z przetwarzaniem danych osobowych i w sprawie swobodnego przepływu takich danych oraz uchylenia dyrektywy 95/46/WE (ogólne rozporządzenie o ochronie danych) (Dz. Urz. UE L 119 z 04.05.2016, str. 1), dalej „RODO”, informuję, że:administratorem Pani/Pana danych osobowych jest: Zarząd Zespołu Opieki Zdrowotnej w Świętochłowicach sp. z o.o. w restrukturyzacji z siedzibą w Świętochłowicach (kod pocztowy: 41-605) przy ul. Chorzowskiej 38;Administrator wyznaczył Inspektora Ochrony Danych, z którym może się Pani/Pan skontaktować w sprawach związanych z ochroną danych osobowych w następujący sposób:• pod adresem poczty elektronicznej: iodo@zoz.net.pl;• pisemnie na adres siedziby Administratora;Pani/Pana dane osobowe przetwarzane będą na podstawie art. 6 ust. 1 lit. c RODO w związku z przepisami ustawy z dnia 11 września 2019 r. – Prawo zamówień publicznych (Dz.U. z 2024 r. poz. 1320 z późn. zm) dalej „ustawa Pzp” w celu przeprowadzenia przedmiotowego postępowania o udzielenie zamówienia publicznego oraz jego rozstrzygnięcia, jak również zawarcia umowy w sprawie zamówienia publicznego i jego archiwizacji;odbiorcami Pani/Pana danych osobowych będą:• osoby lub podmioty, którym udostępniona zostanie dokumentacja postępowania w oparciu o art. 18 oraz art. 74 ust. 1 ustawy Pzp;• firma PZP24.pl sp. z o.o. oraz Logintrade S.A. z siedzibą we Wrocławiu przy ul. Legnickiej 57D lok. B/J, z którą administrator zawarł umowę na obsługę Platformy Przetargowej, na której prowadzone są postępowania o udzielenie zamówienia publicznego;• podmiot uprawniony do obsługi doręczeń (Poczta Polska S.A.);• podmioty, z którymi administrator zawarł umowę na świadczenie usług serwisowych dla użytkowanych w Zespole Opieki Zdrowotnej w Świętochłowicach sp. z o.o. w restrukturyzacji systemów informatycznych;Pani/Pana dane osobowe będą przechowywane jedynie w okresie niezbędnym do spełnienia celu, dla którego zostały zebrane, a następnie w celach archiwalnych przechowywane będą przez 5 lat, chyba że przepisy szczególne będą stanowić inaczej.obowiązek podania przez Panią/Pana danych osobowych bezpośrednio Pani/Pana dotyczących jest wymogiem ustawowym określonym w przepisach ustawy Pzp, związanym z udziałem w postępowaniu o udzielenie zamówienia publicznego; konsekwencje niepodania określonych danych wynikają z ustawy Pzp;w odniesieniu do Pani/Pana danych osobowych decyzje nie będą podejmowane w sposób zautomatyzowany, stosowanie do art. 22 RODO;posiada Pani/Pan:• na podstawie art. 15 RODO prawo dostępu do danych osobowych Pani/Pana dotyczących;• na podstawie art. 16 RODO prawo do sprostowania Pani/Pana danych osobowych z zastrzeżeniem, iż skorzystanie przez osobę, której dane osobowe dotyczą, z uprawnienia do sprostowania lub uzupełnienia, o którym mowa w art. 16 RODO, nie może skutkować zmianą wyniku postępowania o udzielenie zamówienia ani zmianą postanowień umowy w sprawie zamówienia publicznego w zakresie niezgodnym z ustawą;• na podstawie art. 18 RODO prawo żądania od administratora ograniczenia przetwarzania danych osobowych z zastrzeżeniem, iż w postępowaniu o udzielenie zamówienia zgłoszenie żądania ograniczenia przetwarzania, o którym mowa w art. 18 ust. 1 RODO, nie ogranicza przetwarzania danych osobowych do czasu zakończenia tego postępowania;• prawo do wniesienia skargi do Prezesa Urzędu Ochrony Danych Osobowych, gdy uzna Pani/Pan, że przetwarzanie danych osobowych Pani/Pana dotyczących narusza przepisy RODO;nie przysługuje Pani/Panu:• w związku z art. 17 ust. 3 lit. b, d lub e RODO prawo do usunięcia danych osobowych;• prawo do przenoszenia danych osobowych, o którym mowa w art. 20 RODO;• na podstawie art. 21 RODO prawo sprzeciwu, wobec przetwarzania danych osobowych, gdyż podstawą prawną przetwarzania Pani/Pana danych osobowych jest art. 6 ust. 1 lit. c RODO.",
+      "Zgodnie z art. 13 ust. 1 i 2 rozporządzenia Parlamentu Europejskiego i Rady (UE) 2016/679 z dnia 27 kwietnia 2016r. w sprawie ochrony osób fizycznych w związku z przetwarzaniem danych osobowych i w sprawie swobodnego przepływu takich danych oraz uchylenia dyrektywy 95/46/WE (ogólne rozporządzenie o ochronie danych) (Dz. Urz. UE L 119 z 04.05.2016, str. 1), dalej „RODO”, informuję, że: administratorem Pani/Pana danych osobowych jest: Zarząd Zespołu Opieki Zdrowotnej w Świętochłowicach sp. z oo. w restrukturyzacji z siedzibą w Świętochłowicach (kod pocztowy: 41-605) przy ul. Chorzowskiej 38; Administrator wyznaczył Inspektora Ochrony Danych, z którym może się Pani/Pan skontaktować w sprawach związanych z ochroną danych osobowych w następujący sposób:• pod adresem poczty elektronicznej: iodo@zoz.net.pl;• pisemnie na adres siedziby Administratora; Pani/Pana dane osobowe przetwarzane będą na podstawie art. 6 ust. 1 lit. c RODO w związku z przepisami ustawy z dnia 11 września 2019 r. – Prawo zamówień publicznych (Dz.U. z 2024 r. poz. 1320 z późn. zm) dalej „ustawa Pzp” w celu przeprowadzenia przedmiotowego postępowania o udzielenie zamówienia publicznego oraz jego rozstrzygnięcia, jak również zawarcia umowy w sprawie zamówienia publicznego i jego archiwizacji; odbiorcami Pani/Pana danych osobowych będą:• osoby lub podmioty, którym udostępniona zostanie dokumentacja postępowania w oparciu o art. 18 oraz art. 74 ust. 1 ustawy Pzp;• firma PZP24.pl sp. z o.o. oraz Logintrade S.A. z siedzibą we Wrocławiu przy ul. Legnickiej 57D lok. B/J, z którą administrator zawarł umowę na obsługę Platformy Przetargowej, na której prowadzone są postępowania o udzielenie zamówienia publicznego; • podmiot uprawniony do obsługi doręczeń (Poczta Polska S.A.);• podmioty, z którymi administrator zawarł umowę na świadczenie usług serwisowych dla użytkowanych w Zespole Opieki Zdrowotnej w Świętochłowicach sp. z o.o. w restrukturyzacji systemów informatycznych;Pani/Pana dane osobowe będą przechowywane jedynie w okresie niezbędnym do spełnienia celu, dla którego zostały zebrane, a następnie w celach archiwalnych przechowywane będą przez 5 lat, chyba że przepisy szczególne będą stanowić inaczej. obowiązek podania przez Panią/Pana danych osobowych bezpośrednio Pani/Pana dotyczących jest wymogiem ustawowym określonym w przepisach ustawy Pzp, związanym z udziałem w postępowaniu o udzielenie zamówienia publicznego; konsekwencje niepodania określonych danych wynikają z ustawy Pzp; w odniesieniu do Pani/Pana danych osobowych decyzje nie będą podejmowane w sposób zautomatyzowany, stosowanie do art. 22RODO; posiada Pani/Pan:• na podstawie art. 15 RODO prawo dostępu do danych osobowych Pani/Pana dotyczących;• na podstawie art. 16 RODO prawo do sprostowania Pani/Pana danych osobowych z zastrzeżeniem, iż skorzystanie przez osobę, której dane osobowe dotyczą, z uprawnienia do sprostowania lub uzupełnienia, o którym mowa w art. 16 RODO, nie może skutkować zmianą wyniku postępowania o udzielenie zamówienia ani zmianą postanowień umowy w sprawie zamówienia publicznego w zakresie niezgodnym z ustawą;• na podstawie art. 18 RODO prawo żądania od administratora ograniczenia przetwarzania danych osobowych z zastrzeżeniem, iż w postępowaniu o udzielenie zamówienia zgłoszenie żądania ograniczenia przetwarzania, o którym mowa w art. 18 ust. 1 RODO, nie ogranicza przetwarzania danych osobowych do czasu zakończenia tego postępowania;• prawo do wniesienia skargi do Prezesa Urzędu Ochrony Danych Osobowych, gdy uzna Pani/Pan, że przetwarzanie danych osobowych Pani/Pana dotyczących narusza przepisy RODO; nie przysługuje Pani/Panu:• w związku z art. 17 ust. 3 lit. b, d lub e RODO prawo do usunięcia danych osobowych;• prawo do przenoszenia danych osobowych, o którym mowa w art. 20 RODO;• na podstawie art. 21 RODO prawo sprzeciwu, wobec przetwarzania danych osobowych, gdyż podstawą prawną przetwarzania Pani/Pana danych osobowych jest art. 6 ust. 1 lit. c RODO."
+    ]
+  },
+  "3.16": {
+    "col_name": "cn_section_3_16",
+    "section_header": "RODO (ograniczenia stosowania)",
+    "data_model": "core",
+    "example_values": [
+      "7.\tPrzysługuje Pani/Panu prawo do:1)\tżądania dostępu do treści swoich danych osobowych, w tym prawo do uzyskania kopii tych danych na podstawie art. 15 RODO;2)\tsprostowania (poprawienia) danych na podstawie art. 16 RODO – w przypadku gdy dane są nieprawidłowe lub niekompletne;3)\tusunięcia danych osobowych (tzw. „prawo do bycia zapomnianym\") na podstawie art. 17 RODO;4)\tograniczenia przetwarzania danych na podstawie art. 18 RODO;5)\tprzenoszenia danych na podstawie art. 20 RODO;6)\twniesienia sprzeciwu wobec przetwarzania danych na podstawie art.21 RODO;7)\twniesienia skargi do Prezesa Urzędu Ochrony Danych Osobowych z siedzibą ul. Stawki 2, 00-193 Warszawa w przypadku powzięcia informacji o niezgodnym z prawem przetwarzaniu Pani/Pana danych osobowych co narusza przepisy ogólnego rozporządzenia o ochronie danych osobowych z dnia 27 kwietnia 2016 r.8.\tTam, gdzie do przetwarzania danych osobowych konieczne jest wyrażenie zgody, zawsze ma Pani/Pan prawo nie wyrazić zgody, a w przypadku jej wcześniejszego wyrażenia, do cofnięcia zgody w dowolnym momencie. Skorzystanie z prawa cofnięcia zgody nie ma wpływu na przetwarzanie, które miało miejsce do momentu wycofania zgody – dane przed wycofaniem zgody nadal będą przetwarzane zgodnie z prawem.9.\tDane osobowe nie podlegają zautomatyzowanemu podejmowaniu decyzji a Administrator nie przewiduje profilowania na podstawie Państwa danych osobowych, chyba że takie działanie jest dozwolone przepisami prawa.10.\tDane osobowe nie będą przekazywane do państwa trzeciego/organizacji międzynarodowej poza Europejskim Obszarem Gospodarczym (czyli poza teren Unii Europejskiej, Islandii, Liechtensteinu, Norwegii). 11.\tPodanie przez Panią/Pana prawidłowych danych osobowych jest obowiązkowe, w sytuacji gdy przesłankę przetwarzania danych osobowych stanowi przepis prawa lub zawarta między stronami umowa (wymóg ustawowy, umowny lub warunek zawarcia umowy). W przypadku niepodania danych nie będzie możliwy udział w postępowaniu o udzielenie zamówienia powyżej 130 000,00 złotych.12.\tW przypadku, gdy będzie istniał obowiązek ustawowy, a nie poda Pani/Pan swoich danych, nie będziemy mogli zrealizować zadania ustawowego, co może skutkować konsekwencjami przewidzianymi przepisami prawa.13.\tW przypadku, gdy będzie istniał wymóg umowny, a nie poda Pani/Pan swoich danych, nie będziemy mogli wykonać takiej umowy.14.\tW przypadku, kiedy podanie danych będzie warunkiem zawarcia umowy, a nie poda Pani/Pan swoich danych, nie będziemy mogli zawrzeć takiej umowy.15.\tW przypadku gdy przetwarzanie danych osobowych odbywa się na podstawie zgody osoby, podanie przez Państwa danych osobowych Administratorowi jest dobrowolne. Nie wyrażenie zgody lub jej cofnięcie jest równoznaczne, że dane nie będą przetwarzane w tym celu.",
+      "Informacja zawarta w pkt 7 Rozdziału I SWZ",
+      "- w związku z art. 17 ust. 3 lit. b), d) lub e) RODO prawo do usunięcia danychosobowych;- prawo do przenoszenia danych osobowych, o którym mowa w art. 20 RODO;- na podstawie art. 21 RODO prawo sprzeciwu, wobec przetwarzania danych osobowych, gdyż podstawą prawną przetwarzaniadanych osobowych jest art. 6 ust. 1 lit. c) RODO"
+    ]
+  },
+  "4.1.1": {
+    "col_name": "cn_section_4_1_1",
+    "section_header": "Przed wszczęciem postępowania przeprowadzono konsultacje rynkowe",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "4.1.2": {
+    "col_name": "cn_section_4_1_2",
+    "section_header": "Numer referencyjny",
+    "data_model": "core",
+    "example_values": [
+      "KA.262.15.2024",
+      "1/TP/2025",
+      "2/TP/2025"
+    ]
+  },
+  "4.1.3": {
+    "col_name": "cn_section_4_1_3",
+    "section_header": "Rodzaj zamówienia",
+    "data_model": "core",
+    "example_values": [
+      "Usługi",
+      "Dostawy",
+      "Roboty budowlane"
+    ]
+  },
+  "4.1.4": {
+    "col_name": "cn_section_4_1_4",
+    "section_header": "Zamawiający udziela zamówienia w częściach, z których każda stanowi przedmiot odrębnego postępowania",
+    "data_model": "core",
+    "example_values": [
+      "Tak",
+      "Nie"
+    ]
+  },
+  "4.1.5": {
+    "col_name": "cn_section_4_1_5",
+    "section_header": "Łączna wartość poszczególnych części zamówienia",
+    "data_model": "core",
+    "example_values": [
+      "538943,00                    PLN",
+      "179695,01                    PLN",
+      "141872,82                    PLN"
+    ]
+  },
+  "4.1.6": {
+    "col_name": "cn_section_4_1_6",
+    "section_header": "Wartość zamówienia stanowiącego przedmiot tego postępowania (bez VAT)",
+    "data_model": "core",
+    "example_values": [
+      "438165,04                PLN",
+      "16397                PLN",
+      "22665,51                PLN"
+    ]
+  },
+  "4.1.7": {
+    "col_name": "cn_section_4_1_7",
+    "section_header": "Wartość umowy ramowej (bez VAT)",
+    "data_model": "core",
+    "example_values": [
+      "208705,53                PLN"
+    ]
+  },
+  "4.1.8": {
+    "col_name": "cn_section_4_1_8",
+    "section_header": "Możliwe jest składanie ofert częściowych",
+    "data_model": "core",
+    "example_values": [
+      "Tak",
+      "Nie"
+    ]
+  },
+  "4.1.9": {
+    "col_name": "cn_section_4_1_9",
+    "section_header": "Liczba części",
+    "data_model": "core",
+    "example_values": [
+      "59",
+      "2",
+      "4"
+    ]
+  },
+  "4.1.11": {
+    "col_name": "cn_section_4_1_11",
+    "section_header": "Zamawiający ogranicza liczbę części zamówienia, którą można udzielić jednemu wykonawcy",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "4.1.12": {
+    "col_name": "cn_section_4_1_12",
+    "section_header": "Maksymalna liczba części, jaka może zostać udzielona jednemu wykonawcy",
+    "data_model": "core",
+    "example_values": [
+      "3",
+      "2",
+      "1"
+    ]
+  },
+  "4.1.13": {
+    "col_name": "cn_section_4_1_13",
+    "section_header": "Zamawiający uwzględnia aspekty społeczne, środowiskowe lub etykiety w opisie przedmiotu zamówienia",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "4.1.14": {
+    "col_name": "cn_section_4_1_14",
+    "section_header": "Określenie aspektów społecznych, środowiskowych lub etykiet w opisie przedmiotu zamówienia",
+    "data_model": "core",
+    "example_values": [
+      "Zamawiający uwzględnił wymagania w zakresie dostępności dla osób niepełnosprawnych oraz projektowania z przeznaczeniem dla wszystkich użytkowników, zgodnie z art. 100 ust. 1 ustawy",
+      "Zamawiający żąda określonej etykiety lub wskazuje mające zastosowanie wymagania określonej etykiety, zgodnie z art. 104 ustaw - etykiety  środowiskowej (tzw. Ekoetykieta)",
+      "Zamawiający żąda określonej etykiety lub wskazuje mające zastosowanie wymagania określonej etykiety, zgodnie z art. 104 ustaw - etykiety społecznej"
+    ]
+  },
+  "4.2.2": {
+    "col_name": "cn_section_4_2_2",
+    "section_header": "Krótki opis przedmiotu zamówienia",
+    "data_model": "part",
+    "example_values": [
+      "Szkolenie z suchej zabudowy Bezpieczeństwo i higiena pracy i p.poż.; Dokumentacja budowlana oraz rysunek budowlany; Materiałoznawstwo; Montaż ścian działowych, przedścianek i ścian szybów instalacyjnych, sufitów podwieszanych; Montaż zabudowy poddasza z obróbką okna; Akustyka w systemach suchej zabudowy: Naprawa usterek wykonawczych;",
+      "Szkolenie z budownictwa pasywnego Budynki energooszczędne; System wentylacji; Mostki termiczne i sposoby ich likwidacji; Zalety budynków energooszczędnych; System ogrzewania w budownictwie energooszczędnym; Wykorzystanie energii ze źródeł odnawialnych w budownictwie energooszczędnym;",
+      "Szkolenie z systemów glazurniczych Przygotowanie podłoża; Kleje i fugi do montażu okładzin ceramicznych; Hydroizolacja oraz tarasy; Rodzaje maszyn, nowoczesne technologie, zasady bezpieczeństwa; Wykonanie hydroizolacji mineralnej oraz jednoskładnikowej wraz z montażem taśm; Wykonanie wylewki; Klejenie płytek na klejach; Techniki cięcia i fazowania;"
+    ]
+  },
+  "4.2.4": {
+    "col_name": "cn_section_4_2_4",
+    "section_header": "Zapotrzebowa",
+    "data_model": "part",
+    "example_values": [
+      "nie",
+      "Nie"
+    ]
+  },
+  "4.2.5": {
+    "col_name": "cn_section_4_2_5",
+    "section_header": "Wartość części",
+    "data_model": "part",
+    "example_values": [
+      "25854,00                        PLN",
+      "149268,00                        PLN",
+      "52747,47                        PLN"
+    ]
+  },
+  "4.2.6": {
+    "col_name": "cn_section_4_2_6",
+    "section_header": "Główny kod CPV",
+    "data_model": "part",
+    "example_values": [
+      "80000000-4 - Usługi edukacyjne i szkoleniowe",
+      "90524000-6 - Usługi w zakresie odpadów medycznych",
+      "55322000-3 - Usługi gotowania posiłków"
+    ]
+  },
+  "4.2.7": {
+    "col_name": "cn_section_4_2_7",
+    "section_header": "Dodatkowy kod CPV",
+    "data_model": "part",
+    "example_values": [
+      "80500000-9 - Usługi szkoleniowe",
+      "80530000-8 - Usługi szkolenia zawodowego",
+      "80510000-2 - Usługi szkolenia specjalistycznego"
+    ]
+  },
+  "4.2.8": {
+    "col_name": "cn_section_4_2_8",
+    "section_header": "Zamówienie obejmuje opcje",
+    "data_model": "part",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "4.2.9": {
+    "col_name": "cn_section_4_2_9",
+    "section_header": "Rodzaj i maksymalna wartość opcji oraz okoliczności skorzystania z opcji",
+    "data_model": "part",
+    "example_values": [
+      "Zamawiający, korzystając z prawa opcji, zastrzega sobie prawo do ograniczenia o 15 % maksymalnej wielkości przedmiotu zamówienia – tj. maksymalnej ilości zamawianego paliwa gazowego wskazanej w § 4 ust. 8 Wzoru Umowy (załącznik nr 3 do SWZ), a wskutek tego wszystkich z tym związanych parametrów dostaw paliwa gazowego wskazanych w Załączniku nr 2 do Umowy – Szczegółowy opis przedmiotu zamówienia,  w taki sposób, który może powodować zmniejszenie maksymalnej wartości umowy o nie więcej niż 15 %. Niewykonanie przez Zamawiającego umowy w zakresie pozostałych 15 % maksymalnej wartości przedmiotu zamówienia nie wymaga podania przyczyn i nie stanowi podstawy jego odpowiedzialności z tytułu niewykonania lub nienależytego wykonania umowy, a Wykonawcy nie przysługują żadne roszczenia z tego tytułu.",
+      "dodatkowe 1000 ton",
+      "5.\tZamawiający przewiduje zmianę umowy poprzez zastrzeżenie możliwości zastosowania prawa opcji do zmniejszenia ilości asortymentu stanowiącego przedmiot zamówienia ujętego w SAC stanowiącej załącznik nr 2 do umowy."
+    ]
+  },
+  "4.2.10": {
+    "col_name": "cn_section_4_2_10",
+    "section_header": "Okres realizacji zamówienia albo umowy ramowej",
+    "data_model": "part",
+    "example_values": [
+      "do 2025-12-31",
+      "do 2026-04-30",
+      "od 2026-01-01 do 2026-04-30"
+    ]
+  },
+  "4.2.11": {
+    "col_name": "cn_section_4_2_11",
+    "section_header": "Zamawiający przewiduje wznowienia",
+    "data_model": "part",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "4.2.12": {
+    "col_name": "cn_section_4_2_12",
+    "section_header": "Opis wznowienia",
+    "data_model": "part",
+    "example_values": [
+      "Kolejna edycja od 01.09.2025 r. do 31.05.2026 r.",
+      "4)\tZamawiający zastrzega sobie możliwość skorzystania ze wznowienia zamówienia, polegającego na przedłużeniu świadczenia usług ochrony mienia maksymalnie o 1200 godziny, tj. 2 miesiące. Wymagania dotyczące realizacji zamówienia objętego wznowieniem będą takie same jak te, które zostały wskazane dla zamówienia podstawowego. Szczegóły wznowienia zamówienia zawarte są we wzorze umowy stanowiącej załącznik nr 3 do SWZ dla części I.",
+      "Zamawiający przewiduje postepowanie na podobne zamówienie na kolejny rok w IV kwartale 2025r."
+    ]
+  },
+  "4.2.13": {
+    "col_name": "cn_section_4_2_13",
+    "section_header": "Zamawiający przewiduje udzielenie dotychczasowemu wykonawcy zamówień na podobne usługi lub roboty budowlane",
+    "data_model": "part",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "4.2.14": {
+    "col_name": "cn_section_4_2_14",
+    "section_header": "Przedmiot, wielkość lub zakres oraz warunki zamówień na podobne usługi lub roboty budowlane",
+    "data_model": "part",
+    "example_values": [
+      "zwiększenie dostaw do 20% wartości zamówienia podstawowego",
+      "Zamawiającyprzewiduje możliwość zawarcia w okresie trwania umowy zamówieniapolegającego na powtórzeniu usług podobnych do zamówienia podstawowego stanowiących20% zamówienia podstawowego. Zamówienie udzielane będzie na usługi zgodne zprzedmiotem zamówienia podstawowego w trybie zamówień z wolnej ręki, po spełnieniuprzesłanek z art. 214 ust.1 pkt. 7 ustawy.",
+      "Zamawiający przewiduje możliwość udzielania zamówień podobnych, o których mowa w art. 214 ust. 1 pkt 7 ustawy, polegających na powtórzeniu podobnych usług, zgodnych z przedmiotem zamówienia podstawowego do 20 % wartości zamówienia podstawowego. Podstawą ustalenia warunków realizacji zamówienia podobnego jest umowa podstawowa oraz przeprowadzone z wykonawcą negocjacje."
+    ]
+  },
+  "4.3.1": {
+    "col_name": "cn_section_4_3_1",
+    "section_header": "Sposób oceny ofert",
+    "data_model": "part",
+    "example_values": [
+      "1)\tCena: waga 60 punktów (PK1);2)\tDoświadczenie zawodowe osób skierowanych przez wykonawcę do realizacji zamówienia: waga 40 punktów (PK2).",
+      "Z uwagi na ograniczoną ilość znaków informacje zostały zawarte w Rozdziale X SWZ",
+      "Sposób oceny ofert:Liczba punktów przyznawana przez jednego oceniającego dla oferty, w przyjętych kryteriach oceny ofert:   X(1) x 60% + X(2) x 40%gdzie:X(1) – liczba punktów przyznawana w kryterium cena (brutto)X(2) – liczba punktów przyznawana w kryterium doświadczenie pracowników ochrony"
+    ]
+  },
+  "4.3.2": {
+    "col_name": "cn_section_4_3_2",
+    "section_header": "Sposób określania wagi kryteriów oceny ofert",
+    "data_model": "part",
+    "example_values": [
+      "Punktowo",
+      "Procentowo",
+      "Wg kolejności"
+    ]
+  },
+  "4.3.3": {
+    "col_name": "cn_section_4_3_3",
+    "section_header": "Stosowane kryteria oceny ofert",
+    "data_model": "part",
+    "example_values": [
+      "Kryterium ceny oraz kryteria jakościowe",
+      "Wyłącznie kryterium ceny",
+      "Kryterium kosztu oraz kryteria jakościowe"
+    ]
+  },
+  "4.3.4": {
+    "col_name": "cn_section_4_3_4",
+    "section_header": "Rodzaj kryterium",
+    "data_model": "part",
+    "example_values": [
+      "inne.",
+      "serwis posprzedażny, pomoc techniczna, warunki dostawy takich jak termin, sposób lub czas dostawy, oraz okresu realizacji.",
+      "jakość, w tym do parametry techniczne, właściwości estetyczne i funkcjonalne takie jak dostępność dla osób niepełnosprawnych lub uwzględnianie potrzeb użytkowników"
+    ]
+  },
+  "4.3.5": {
+    "col_name": "cn_section_4_3_5",
+    "section_header": "Nazwa kryterium",
+    "data_model": "part",
+    "example_values": [
+      "Cena",
+      "Doświadczenie zawodowe",
+      "Gotowość odbioru w trybie pilnym"
+    ]
+  },
+  "4.3.6": {
+    "col_name": "cn_section_4_3_6",
+    "section_header": "Waga",
+    "data_model": "part",
+    "example_values": [
+      "60",
+      "40",
+      "100"
+    ]
+  },
+  "4.3.7": {
+    "col_name": "cn_section_4_3_7",
+    "section_header": "Kolejność kryterium",
+    "data_model": "part",
+    "example_values": [
+      "1",
+      "100",
+      "60"
+    ]
+  },
+  "4.3.10": {
+    "col_name": "cn_section_4_3_10",
+    "section_header": "Zamawiający określa  aspekty społeczne, środowiskowe lub innowacyjne, żąda etykiet lub stosuje rachunek kosztów cyklu życia w odniesieniu do kryterium oceny ofert",
+    "data_model": "part",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "4.3.11": {
+    "col_name": "cn_section_4_3_11",
+    "section_header": "Określenie aspektów społecznych, środowiskowych lub innowacyjnych, etykiet lub rachunku  kosztów cyklu życia w odniesieniu do kryteriów oceny ofert",
+    "data_model": "part",
+    "example_values": [
+      "zgodnie z art. 242 ust. 2 ustawy - aspekty społeczne",
+      "zgodnie z art. 242 ust. 2 ustawy - aspekty środowiskowe",
+      "wymagania dotyczące określonej etykiety, zgodnie z art. 104 ustawy - etykiety środowiskowej (tzw. Ekoetykieta)"
+    ]
+  },
+  "5.1": {
+    "col_name": "cn_section_5_1",
+    "section_header": "Zamawiający przewiduje fakultatywne podstawy wykluczenia",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "5.2": {
+    "col_name": "cn_section_5_2",
+    "section_header": "Fakultatywne podstawy wykluczenia",
+    "data_model": "core",
+    "example_values": [
+      "Art. 109 ust. 1 pkt 8 Art. 109 ust. 1 pkt 10",
+      "Art. 109 ust. 1 pkt 4",
+      "Art. 109 ust. 1 pkt 1 Art. 109 ust. 1 pkt 4"
+    ]
+  },
+  "5.3": {
+    "col_name": "cn_section_5_3",
+    "section_header": "Warunki udziału w postępowaniu",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "5.4": {
+    "col_name": "cn_section_5_4",
+    "section_header": "Nazwa i opis warunków udziału w postępowaniu.",
+    "data_model": "core",
+    "example_values": [
+      "Wykonawca musi posiadać aktualne niezbędne decyzje/zezwolenia (właściwego terytorialnie organu) do wykonywania działalności w zakresie usług związanych z odbiorem, transportem i unieszkodliwianiem odpadów medycznych zgodnie z ustawą z dnia 14 grudnia 2012 r. o odpadach.",
+      "1.Wykonawca musi wykazać, iż w okresie ostatnich 3 lat przed upływem terminu składania ofert, a jeżeli okres prowadzenia działalności jest krótszy – w tym okresie, wykonał/wykonuje należycie co najmniej 1 usługę polegającą na świadczeniu usługi cateringu zbiorowego żywienia co najmniej przez 6 miesięcy na kwotę min. 500 000,00 PLN brutto. W przypadku",
+      "O udzielenie zamówienia mogą ubiegać się Wykonawcy, którzy nie podlegają wykluczeniu na zasadach określonych w Rozdziale V SWZ i spełniają warunki udziału w postępowaniu dotyczące:"
+    ]
+  },
+  "5.5": {
+    "col_name": "cn_section_5_5",
+    "section_header": "Zamawiający wymaga złożenia oświadczenia, o którym mowa w art.125 ust. 1 ustawy",
+    "data_model": "core",
+    "example_values": [
+      "Tak",
+      "Nie"
+    ]
+  },
+  "5.6": {
+    "col_name": "cn_section_5_6",
+    "section_header": "Wykaz podmiotowych środków dowodowych na potwierdzenie niepodlegania wykluczeniu",
+    "data_model": "core",
+    "example_values": [
+      "9)\tZałącznik nr 9 - wzór oświadczenia wykonawcy",
+      "Wykonawca, którego oferta zostanie najwyżej oceniona, w celu wykazania braku podstaw (przesłanek) wykluczenia z postępowania, na podstawie art. 274 ust. 1 ustawy zostanie wezwany do złożenia następujących podmiotowych środków dowodowych (aktualnych na dzień ich złożenia):- oświadczenia Wykonawcy, w zakresie art. 108 ust. 1 pkt 5 ustawy, o braku przynależności do tej samej grupy kapitałowej w rozumieniu ustawy z dnia 16 lutego 2007 r. o ochronie konkurencji i konsumentów, z innym Wykonawcą, który złożył odrębną ofertę, ofertę częściową lub wniosek o dopuszczenie do udziału w postępowaniu, albo oświadczenia o przynależności do tej samej grupy kapitałowej wraz z dokumentami lub informacjami potwierdzającymi przygotowanie oferty, oferty częściowej lub wniosku o dopuszczenie do udziału w postępowaniu niezależnie od innego Wykonawcy należącego do tej samej grupy kapitałowej.W przypadku wspólnego ubiegania się o zamówienie przez Wykonawców, oświadczenie w zakresie pkt 4.1. składa każdy z Wykonawców wspólnie ubiegających się o zamówienie.",
+      "Oświadczenie Wykonawcy,w zakresie art. 108 ust. 1 pkt 5 ustawy, o braku przynależności do tej samej grupy kapitałowej w rozumieniu ustawy z dnia 16 lutego2007 r. o ochronie konkurencji i konsumentów, z innym Wykonawcą, który złożył odrębną ofertę, ofertę częściową lub wniosek odopuszczenie do udziału w postępowaniu, albo oświadczenia o przynależności do tej samej grupy kapitałowej wraz z dokumentamilub informacjami potwierdzającymi przygotowanie oferty, oferty częściowej lub wniosku o dopuszczenie do udziału w postępowaniuniezależnie od innego Wykonawcy należącego do tej samej grupy kapitałowej.W przypadku wspólnego ubiegania się o zamówienie przez Wykonawców, oświadczenie, o którym wyżej mowa składa każdy zWykonawców wspólnie ubiegających się o zamówienie."
+    ]
+  },
+  "5.7": {
+    "col_name": "cn_section_5_7",
+    "section_header": "Wykaz podmiotowych środków dowodowych na potwierdzenie spełniania warunków udziału w postępowaniu",
+    "data_model": "core",
+    "example_values": [
+      "8)\tZałącznik nr 8 - formularz ofertowy",
+      "Wykonawca, którego oferta zostanie najwyżej oceniona, w celu wykazania spełniania warunków udziału w postępowaniu, na podstawie art. 274 ust. 1 ustawy zostanie wezwany do złożenia następujących podmiotowych środków dowodowych (aktualnych na dzień ich złożenia):- aktualne niezbędne decyzje/zezwolenia (właściwego terytorialnie organu) do wykonywania działalności w zakresie usług związanych z odbiorem, transportem i unieszkodliwianiem odpadów medycznych zgodnie z ustawą z dnia 14 grudnia 2012 r o odpadach.",
+      "Wykonawca, którego oferta zostanie najwyżej oceniona, w celu wykazania spełniania warunków udziału w postępowaniu (określonych przez Zamawiającego), na podstawie art. 274 ust. 1 ustawy zostanie wezwany do złożenia następujących podmiotowych środków dowodowych (aktualnych na dzień ich złożenia):- wykazu usług wykonanych, a w przypadku świadczeń powtarzających się lub ciągłych również wykonywanych, w okresie ostatnich 3 lat, a jeżeli okres prowadzenia działalności jest krótszy – w tym okresie, wraz z podaniem ich wartości, przedmiotu, dat wykonania i podmiotów, na rzecz których usługi zostały wykonane lub są wykonywane oraz załączeniem dowodów określających, czy te usługi zostały wykonane lub są wykonywane należycie.Uwaga: Dowodami, o których mowa, są referencje bądź inne dokumenty sporządzone przez podmiot, na rzecz którego usługi zostały wykonane, a w przypadku świadczeń powtarzających się lub ciągłych są wykonywane, a jeżeli Wykonawca z przyczyn niezależnych od niego nie jest w stanie uzyskać tych dokumentów – oświadczenie Wykonawcy, w przypadku świadczeńpowtarzających się lub ciągłych są wykonywane, a jeżeli Wykonawca z przyczyn niezależnych od niego nie jest wstanie uzyskać tych dokumentów - oświadczenie wykonawcy; w przypadku świadczeń powtarzających się lub ciągłych nadal wykonywanych referencje bądź inne dokumenty potwierdzające ich należyte wykonywanie powinny być wystawione w okresie ostatnich 3 miesięcy. Okres, o którym wyżej mowa liczy się wstecz od dnia, w którym upływa termin składania ofert.- wykazu osób, skierowanych przez Wykonawcę do realizacji zamówienia publicznego, w szczególności odpowiedzialnych za świadczenie usług, kontrolę jakości, wraz z informacjami na temat ich kwalifikacji zawodowych i uprawnień niezbędnych do wykonania zamówienia publicznego, a także zakresu wykonywanych przez nie czynności oraz informacją o podstawie dodysponowania tymi osobami.- wykazu środków transportu, którymi Wykonawca dysponuje lub będzie dysponował na czas realizacji zamówienia wraz z informacją o podstawie dysponowania tymi zasobami."
+    ]
+  },
+  "5.8": {
+    "col_name": "cn_section_5_8",
+    "section_header": "Wykaz przedmiotowych środków dowodowych",
+    "data_model": "core",
+    "example_values": [
+      "Zamawiający nie wymaga składania przedmiotowych środków dowodowych",
+      "Dokumenty charakteryzujące oferowane produkty (np. firmowe materiały informacyjne producenta, katalogi, ulotki, foldery, opisy techniczne lub inne posiadane dokumenty), zawierające szczegółowe dane, które umożliwią potwierdzenie spełniania wymagań ustalonych przez Zamawiającego oraz będą podstawą dokonania oceny zgodności złożonej oferty przez Wykonawcę z wymaganiami określonymi przez Zamawiającego. Zaleca się w sposób widoczny (np. kolorowy zakreślacz lub obrys kolorem) na w/w dokumentach wpisać nr pakietu i pozycji w Formularzu",
+      "Do oferty należy dołączyć następujące dokumenty:"
+    ]
+  },
+  "5.9": {
+    "col_name": "cn_section_5_9",
+    "section_header": "Zamawiający przewiduje uzupełnienie przedmiotowych środków dowodowych",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "5.10": {
+    "col_name": "cn_section_5_10",
+    "section_header": "Przedmiotowe środki dowodowe podlegające uzupełnieniu po złożeniu oferty",
+    "data_model": "core",
+    "example_values": [
+      "Zamawiający przewiduje uzupełnienie przedmiotowych środków dowodowych – dotyczy tylko dokumentów charakteryzujących oferowane produkty (art. 107- ustawy Pzp)",
+      "10.\tJeżeli Wykonawca nie złoży przedmiotowych środków dowodowych lub złożone przedmiotowe środki dowodowe będą niekompletne, Zamawiający wezwie do ich złożenia lub uzupełnienia w wyznaczonym terminie",
+      "1) Oświadczenie o niepodleganiu wykluczeniu oraz spełnianiu warunków uczestnictwa w postępowaniu zgodnie z art. 125"
+    ]
+  },
+  "5.11": {
+    "col_name": "cn_section_5_11",
+    "section_header": "Wykaz innych wymaganych oświadczeń lub dokumentów",
+    "data_model": "core",
+    "example_values": [
+      "Integralną częścią SWZ są załączniki:",
+      "1. Oświadczenie, że Wykonawca zapoznał się z warunkami zamówienia i z projektowanymi postanowieniami umowy w sprawie zamówienia, które zostaną wprowadzone do umowy w sprawie zamówienia oraz, że przyjmuje ich treść bez żadnych zastrzeżeń – zgodnie z treścią zawartą w formularzu oferty, stanowiącym załącznik nr 1 do SWZ. Oświadczenie składa się, pod rygorem nieważności, w formie elektronicznej (w postaci elektronicznej opatrzonej kwalifikowanym podpisem elektronicznym) lub w postaci elektronicznej opatrzonej podpisem zaufanym lub podpisem osobistym.",
+      "1. Pełnomocnictwo ustanowione do reprezentowania Wykonawcy/ów ubiegającego/ych się o udzielenie zamówienia publicznego. Pełnomocnictwo przekazuje się w postaci elektronicznej i opatruje kwalifikowanym podpisem elektronicznym, podpisem zaufanym lub podpisem osobistym. W przypadku, gdy pełnomocnictwo zostało wystawione w postaci papierowej i opatrzone własnoręcznym podpisem, przekazuje się cyfrowe odwzorowanie tego dokumentu, opatrzone kwalifikowanym podpisem elektronicznym, podpisem zaufanym lub podpisem osobistym, poświadczającym zgodność cyfrowego"
+    ]
+  },
+  "6.1": {
+    "col_name": "cn_section_6_1",
+    "section_header": "Zamawiający wymaga albo dopuszcza oferty wariantowe",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "6.2": {
+    "col_name": "cn_section_6_2",
+    "section_header": "Oferty wariantowe wraz ze złożeniem ofert podstawowej albo zamiast oferty podstawowej",
+    "data_model": "core",
+    "example_values": [
+      "wymaga  tylko z jednoczesnym złożeniem oferty podstawowej"
+    ]
+  },
+  "6.3": {
+    "col_name": "cn_section_6_3",
+    "section_header": "Zamawiający przewiduje aukcję elektroniczną",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "6.3.1": {
+    "col_name": "cn_section_6_3_1",
+    "section_header": "Adres internetowy aukcji",
+    "data_model": "core",
+    "example_values": [
+      "https://laip-srk.coig.biz/"
+    ]
+  },
+  "6.3.2": {
+    "col_name": "cn_section_6_3_2",
+    "section_header": "Opis aukcji elektronicznej",
+    "data_model": "core",
+    "example_values": [
+      "1. Zgodnie z art. 281 ust. 2 pkt 17 ustawy Pzp Zamawiający informuje, że w niniejszym postępowaniu przewiduje",
+      "Zgodnie z pkt 24 SWZ",
+      "przeprowadzenie aukcji elektronicznej na zasadach określonych poniżej:"
+    ]
+  },
+  "6.4": {
+    "col_name": "cn_section_6_4",
+    "section_header": "Zamawiający wymaga wadium",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "6.4.1": {
+    "col_name": "cn_section_6_4_1",
+    "section_header": "Informacje dotyczące wadium",
+    "data_model": "core",
+    "example_values": [
+      "Wykonawca jest zobowiązany, przed upływem terminu składania ofert, wnieść wadium w kwocie 10.000,00 (słownie: dziesięć tysięcy i 00/100) złotych. Szczegółowe wymagania zawiera § 11 SWZ.",
+      "Wartość: 25 000,00 PLN",
+      "Wadium należy wnieść w wysokości:"
+    ]
+  },
+  "6.5": {
+    "col_name": "cn_section_6_5",
+    "section_header": "Zamawiający wymaga zabezpieczenia należytego wykonania umowy",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "6.6": {
+    "col_name": "cn_section_6_6",
+    "section_header": "Wymagania dotyczące składania oferty przez wykonawców wspólnie ubiegających się o udzielenie zamówienia",
+    "data_model": "core",
+    "example_values": [
+      "W przypadku wspólnego ubiegania się wykonawców o udzielenie zamówienia zamawiający bada, czy nie zachodzą podstawy wykluczenia wobec każdego z tych wykonawców.",
+      "1. Wykonawcy wspólnie ubiegający się o udzielenie zamówienia, ustanawiają pełnomocnika do reprezentowania ich w postępowaniu o udzielenie zamówienia albo reprezentowania w postępowaniu i zawarcia umowy w sprawie zamówienia publicznego – nie dotyczy spółki cywilnej, o ile",
+      "1.\tWykonawcy mogą wspólnie ubiegać się o udzielenie zamówienia. W takim przypadku Wykonawcy ustanawiają pełnomocnika do reprezentowania ich w postępowaniu o udzielenie zamówienia albo reprezentowania w postępowaniu i zawarcia umowy w sprawie zamówienia publicznego (lider konsorcjum)."
+    ]
+  },
+  "6.7": {
+    "col_name": "cn_section_6_7",
+    "section_header": "Zamawiający przewiduje unieważnienie postępowania, jeśli środki publiczne, które zamierzał przeznaczyć na sfinansowanie całości lub części zamówienia nie zostały przyznane",
+    "data_model": "core",
+    "example_values": [
+      "Tak",
+      "Nie"
+    ]
+  },
+  "7.1": {
+    "col_name": "cn_section_7_1",
+    "section_header": "Zamawiający przewiduje udzielenia zaliczek",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "7.2": {
+    "col_name": "cn_section_7_2",
+    "section_header": "Informacje na temat zaliczek",
+    "data_model": "core",
+    "example_values": [
+      "Wskazana w projektowanych postanowieniach umowy, stanowiących załącznik do SWZ.",
+      "Zamawiający dopuszcza możliwość udzielenia zaliczki w wysokości 5% wynagrodzenia brutto, o którym mowa w § 4 ust. 8 PPU. W przypadku udzielenia zaliczki Zamawiający będzie żądał wniesienia zabezpieczenia zaliczki.",
+      "Zgodnie z wynegocjowanymi warunkami umowy"
+    ]
+  },
+  "7.3": {
+    "col_name": "cn_section_7_3",
+    "section_header": "Zamawiający przewiduje zmiany umowy",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "7.4": {
+    "col_name": "cn_section_7_4",
+    "section_header": "Rodzaj i zakres zmian umowy oraz warunki ich wprowadzenia",
+    "data_model": "core",
+    "example_values": [
+      "Zamawiający przewiduje możliwość zmian postanowień zawartej umowy (tzw. zmiany kontraktowe w oparciu o art. 455 ust. 1 pkt 1 ustawy) w stosunku do treści oferty, na podstawie której dokonano wyboru Wykonawcy, zgodnie z warunkami podanymi w projektowanych postanowieniach umowy, stanowiącymi załącznik nr 4 do SWZ.",
+      "Zamawiający przewiduje możliwość zmian postanowień zawartej umowy (tzw. zmiany kontraktowe w oparciu o art. 455 ust. 1 pkt 1 ustawy) w stosunku do treści oferty, na podstawie której dokonano wyboru Wykonawcy, zgodnie z warunkami podanymi w projektowanych postanowieniach umowy, stanowiącymi załącznik nr 6 do SWZ.",
+      "Z uwagi na ograniczoną liczbę znaków zobowiązania wynikające z realizacji przedmiotu zamówienia, a spoczywające na Wykonawcy oraz Zamawiającym oraz przewidywane dopuszczalne zmiany postanowień umownych, zawiera wzór umowy stanowiący załącznik nr 3 do SWZ."
+    ]
+  },
+  "7.5": {
+    "col_name": "cn_section_7_5",
+    "section_header": "Zamawiający uwzględnił aspekty społeczne, środowiskowe, innowacyjne lub etykiety związane z realizacją zamówienia",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ]
+  },
+  "7.6": {
+    "col_name": "cn_section_7_6",
+    "section_header": "Zamawiający przewiduje następujące wymagania związane z realizacją zamówienia",
+    "data_model": "core",
+    "example_values": [
+      "w zakresie zatrudnienia na podstawie stosunku pracy, w okolicznościach, o których mowa w art. 95 ustawy",
+      "obejmujące, zgodnie z art. 96 ustawy: - aspekty srodowiskowe w zakresie żądania określonej etykiety lub wskazania mającego zastosowanie wymagania określonej etykiety, zgodnie z art. 104 ustawy: - etykiety  środowiskowej (tzw. Ekoetykieta)",
+      "obejmujące, zgodnie z art. 96 ustawy: - aspekty społeczne"
+    ]
+  },
+  "8.1": {
+    "col_name": "cn_section_8_1",
+    "section_header": "Termin składania ofert",
+    "data_model": "core",
+    "example_values": [
+      "2025-01-10 23:59",
+      "2025-01-10 09:00",
+      "2025-01-13 09:30"
+    ]
+  },
+  "8.2": {
+    "col_name": "cn_section_8_2",
+    "section_header": "Miejsce składania ofert",
+    "data_model": "core",
+    "example_values": [
+      "https://ezamowienia.gov.pl",
+      "Ofertę należy złożyć za pośrednictwem Platformy przetargowej https://zoz.logintrade.net/rejestracja/ustawowe.html",
+      "Platforma e-Zamówienia dostępna pod adresem https://ezamowienia.gov.pl"
+    ]
+  },
+  "8.3": {
+    "col_name": "cn_section_8_3",
+    "section_header": "Termin otwarcia ofert",
+    "data_model": "core",
+    "example_values": [
+      "2025-01-11 10:00",
+      "2025-01-10 09:30",
+      "2025-01-13 09:35"
+    ]
+  },
+  "8.4": {
+    "col_name": "cn_section_8_4",
+    "section_header": "Termin związania ofertą",
+    "data_model": "core",
+    "example_values": [
+      "30 dni",
+      "do 2025-02-08",
+      "do 2025-02-03"
+    ]
+  },
+  "8.5": {
+    "col_name": "cn_section_8_5",
+    "section_header": "Zamawiający przewiduje wybór najkorzystniejszej oferty z możliwością negocjacji",
+    "data_model": "core",
+    "example_values": [
+      "Część 1 : Tak Część 2 : Tak Część 3 : Tak Część 4 : Tak Część 5 : Tak Część 6 : Tak Część 7 : Tak Część 8 : Tak Część 9 : Tak Część 10 : Tak Część 11 : Tak Część 12 : Tak Część 13 : Tak Część 14 : Tak Część 15 : Tak Część 16 : Tak Część 17 : Tak Część 18 : Tak Część 19 : Tak Część 20 : Tak Część 21 : Tak Część 22 : Tak Część 23 : Tak Część 24 : Tak Część 25 : Tak Część 26 : Tak Część 27 : Tak Część 28 : Tak Część 29 : Tak Część 30 : Tak Część 31 : Tak Część 32 : Tak Część 33 : Tak Część 34 : Tak Część 35 : Tak Część 36 : Tak Część 37 : Tak Część 38 : Tak Część 39 : Tak Część 40 : Tak Część 41 : Tak Część 42 : Tak Część 43 : Tak Część 44 : Tak Część 45 : Tak Część 46 : Tak Część 47 : Tak Część 48 : Tak Część 49 : Tak Część 50 : Tak Część 51 : Tak Część 52 : Tak Część 53 : Tak Część 54 : Tak Część 55 : Tak Część 56 : Tak Część 57 : Tak Część 58 : Tak Część 59 : Tak",
+      "Tak",
+      "Część 1 : Tak Część 2 : Tak"
+    ]
+  },
+  "8.6": {
+    "col_name": "cn_section_8_6",
+    "section_header": "Maksymalna liczba wykonawców, którzy zostaną zaproszeni do negocjacji",
+    "data_model": "core",
+    "example_values": [
+      "3",
+      "1",
+      "5"
+    ]
+  },
+  "8.7": {
+    "col_name": "cn_section_8_7",
+    "section_header": "Kryteria oceny ofert, które zamawiający zamierza stosować w celu ograniczenia liczby wykonawców",
+    "data_model": "core",
+    "example_values": [
+      "1)\tCena: waga 60 punktów (PK1);",
+      "cena",
+      "kryteria oceny ofert określone w Rozdziale XXVIII SWZ"
+    ]
+  },
+  "8.9": {
+    "col_name": "cn_section_8_9",
+    "section_header": "Termin składania wniosków o dopuszczenie do udziału w postępowaniu",
+    "data_model": "core",
+    "example_values": [
+      "2025-01-28 09:00",
+      "2025-01-16 12:00"
+    ]
+  },
+  "8.10": {
+    "col_name": "cn_section_8_10",
+    "section_header": "Miejsce składania wniosków o dopuszczenie do udziału w postępowaniu",
+    "data_model": "core",
+    "example_values": [
+      "https://platformazakupowa.pl/pn/powiatsulecinski",
+      "e zamowienia"
+    ]
+  },
+  "8.11": {
+    "col_name": "cn_section_8_11",
+    "section_header": "Termin otwarcia wniosków o dopuszczenie do udziału w postępowaniu",
+    "data_model": "core",
+    "example_values": [
+      "2025-01-28 10:00",
+      "2025-01-17 12:00"
+    ]
+  },
+  "8.18": {
+    "col_name": "cn_section_8_18",
+    "section_header": "Zamawiający przewiduje podział negocjacji na etapy w celu ograniczenia liczby ofert",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ]
+  },
+  "8.19": {
+    "col_name": "cn_section_8_19",
+    "section_header": "Umowa ramowa",
+    "data_model": "core",
+    "example_values": [
+      "Umowa ramowa zawarta zostanie z kilkoma wykonawcami",
+      "Umowa ramowa zawarta zostanie z jednym wykonawcą"
+    ]
+  },
+  "8.20": {
+    "col_name": "cn_section_8_20",
+    "section_header": "Przewiduje się ograniczenie liczby uczestników umowy ramowej",
+    "data_model": "core",
+    "example_values": [
+      "Tak",
+      "Nie"
+    ]
+  },
+  "8.21": {
+    "col_name": "cn_section_8_21",
+    "section_header": "Maksymalna liczba wykonawców, z którymi zamawiający zawrze umowę ramową",
+    "data_model": "core",
+    "example_values": [
+      "5",
+      "3",
+      "1"
+    ]
+  },
+  "8.22": {
+    "col_name": "cn_section_8_22",
+    "section_header": "Zamawiający udziela zamówień na podstawie art. 314 ust. 1 pkt 1, 2 albo 3 ustawy",
+    "data_model": "core",
+    "example_values": [
+      "Zamawiający udziela zamówień na podstawie art. 314 ust. 1 pkt 2  ustawy",
+      "Zamawiający udziela zamówień na podstawie art. 314 ust. 1 pkt 3  ustawy",
+      "Zamawiający udziela zamówień na podstawie art. 314 ust. 1 pkt 1  ustawy"
+    ]
+  }
+}

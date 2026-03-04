@@ -200,7 +200,7 @@
   "3.4": {
     "col_name": "cn_section_3_4",
     "section_header": "Identyfikator sekcji zmienianego ogłoszenia",
-    "data_model": "core",
+    "data_model": "part.core",
     "example_values": [
       "SEKCJA V - KWALIFIKACJA WYKONAWCÓW",
       "SEKCJA VIII - PROCEDURA",
@@ -210,7 +210,7 @@
   "3.4.1": {
     "col_name": "cn_section_3_4_1",
     "section_header": "Opis zmiany, w tym tekst, który należy dodać lub zmienić",
-    "data_model": "core",
+    "data_model": "part.part",
     "example_values": [
       "5.4.  Nazwa i opis warunków udziału w postępowaniu",
       "8.1.  Termin składania ofert",
