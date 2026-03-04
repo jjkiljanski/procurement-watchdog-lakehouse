@@ -1,8 +1,9 @@
-"""Notice-type specific parsed-value extractors (scaffold package)."""
+"""Column-level field value parsers for section DataFrames.
 
-from __future__ import annotations
+Active module
+-------------
+common.py — shared string-to-typed-value parsers (parse_tak_nie, parse_pln_value, …)
+            used by section_pipeline/column_parsers.py and gold/notice_types/*.py
 
-from procurement.silver.field_parsers.registry import PARSER_REGISTRY, parse_notice_values
-
-__all__ = ["PARSER_REGISTRY", "parse_notice_values"]
-
+Legacy notice-level parsers (per-type stubs + registry) have been moved to legacy/field_parsers/.
+"""
