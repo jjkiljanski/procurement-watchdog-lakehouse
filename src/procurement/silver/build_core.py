@@ -18,7 +18,8 @@ from procurement.silver.notice_types import (
     normalized_notice_type_token,
 )
 from procurement.silver.sections_profile import load_all_profiles
-from procurement.silver.sections_spark import build_section_tables, make_html_sections_udf
+from procurement.silver.section_model_validation import validate_section_models
+from procurement.silver.sections_spark import apply_column_parsers, build_section_tables, make_html_sections_udf
 from procurement.silver.spark_transforms import (
     build_silver_for_notice_type,
 )
@@ -353,6 +354,12 @@ def run_silver_day_core(
                     profile=notice_profile,
                     sections_udf=sections_udf,
                 )
+                section_tables = apply_column_parsers(
+                    section_tables,
+                    notice_profile,
+                    notice_type,
+                )
+                section_tables = validate_section_models(section_tables, notice_type)
                 for model, model_df in section_tables.items():
                     model_day_dir = (
                         specific_root

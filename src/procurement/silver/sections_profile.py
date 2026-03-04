@@ -86,6 +86,27 @@ def model_core_col_names(profile: dict, model: str) -> list[str]:
     return result
 
 
+def section_parsers(profile: dict) -> dict[str, dict]:
+    """Return {col_name: parser_config} for sections that have a non-null parser.
+
+    Parser config has at least ``{"fn": "<function_name>"}`` and optionally
+    ``{"args": {...}}`` for extra keyword arguments passed to the function.
+
+    Sections without a ``"parser"`` key, or with ``null``/missing ``"fn"``,
+    are omitted.  All current profiles return ``{}`` (parsers are configured
+    per-column when the Gold typing phase begins).
+    """
+    result: dict[str, dict] = {}
+    for cfg in profile.values():
+        parser = cfg.get("parser")
+        if not isinstance(parser, dict) or not parser.get("fn"):
+            continue
+        col_name = cfg.get("col_name")
+        if col_name:
+            result[col_name] = parser
+    return result
+
+
 def model_sub_info(profile: dict, model: str) -> tuple[str | None, list[str]]:
     """Return (sub_key, col_names) for the two-level sub-list of a model.
 

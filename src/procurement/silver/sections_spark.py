@@ -5,6 +5,8 @@ Pipeline:
    serialise all_profiles into the UDF closure.
 2. `build_section_tables(df, notice_type, profile, sections_udf)` — called once per
    notice-type batch; applies the UDF and returns one DataFrame per data_model.
+3. `apply_column_parsers(section_tables, profile, notice_type)` — applies registered
+   column-level UDFs to section columns that have a ``"parser"`` entry in the profile.
 
 Output DataFrame shapes
 -----------------------
@@ -23,9 +25,11 @@ from pyspark.sql.functions import col, from_json, get_json_object, lit, posexplo
 from pyspark.sql.types import ArrayType, StringType, StructField, StructType
 from pyspark.sql.functions import udf
 
+from procurement.silver.column_parser_registry import get_parser_entry
 from procurement.silver.sections_profile import (
     model_core_col_names,
     model_sub_info,
+    section_parsers,
     top_level_models,
 )
 
@@ -211,5 +215,71 @@ def build_section_tables(
             model,
             len(core_cols),
         )
+
+    return result
+
+
+def apply_column_parsers(
+    section_tables: dict[str, DataFrame],
+    profile: dict,
+    notice_type: str | None,
+) -> dict[str, DataFrame]:
+    """Apply registered column-level parsers to section DataFrames.
+
+    For each section column that has a ``"parser"`` entry in the profile, the raw
+    StringType column is replaced with a typed column produced by the registered UDF.
+    Columns without a parser configuration remain as StringType (unchanged).
+
+    The parser function must be registered in
+    :mod:`procurement.silver.column_parser_registry` under the given ``fn`` name.
+    Notice-type-specific parsers take precedence over common ones when names clash.
+
+    Parameters
+    ----------
+    section_tables:
+        Output of :func:`build_section_tables`.
+    profile:
+        The notice type's sections profile dict (from :func:`sections_profile.load_profile`).
+    notice_type:
+        CamelCase notice type name (e.g. ``"ContractNotice"``).
+
+    Returns
+    -------
+    dict[model, DataFrame] — same keys as input; columns with configured parsers
+    now carry the parser's return type instead of StringType.
+    """
+    col_parsers = section_parsers(profile)
+    if not col_parsers or not section_tables:
+        return section_tables
+
+    result: dict[str, DataFrame] = {}
+    for model, df in section_tables.items():
+        df_out = df
+        for col_name, parser_cfg in col_parsers.items():
+            if col_name not in df_out.columns:
+                continue
+            fn_name = parser_cfg.get("fn")
+            if not fn_name:
+                continue
+            entry = get_parser_entry(fn_name, notice_type)
+            if entry is None:
+                log.warning(
+                    "apply_column_parsers: unknown fn=%s notice_type=%s col=%s; skipping",
+                    fn_name,
+                    notice_type,
+                    col_name,
+                )
+                continue
+            parser_fn, return_type = entry
+            parser_udf = udf(parser_fn, return_type)
+            df_out = df_out.withColumn(col_name, parser_udf(col(col_name)))
+            log.debug(
+                "Applied parser fn=%s col=%s model=%s notice_type=%s",
+                fn_name,
+                col_name,
+                model,
+                notice_type,
+            )
+        result[model] = df_out
 
     return result
