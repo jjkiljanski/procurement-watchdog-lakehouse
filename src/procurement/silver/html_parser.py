@@ -8,13 +8,12 @@ docs/data_model/html_structure.md for the full field reference.
 from __future__ import annotations
 
 import re
-from datetime import date
 from html import unescape
 
 from bs4 import BeautifulSoup, Tag
 from pydantic import ValidationError
 
-from procurement.silver.html_common import (
+from procurement.silver.parser_utils import (
     _collect_p_text,
     _collect_p_values,
     _extract_h3_field_fast,
@@ -28,6 +27,7 @@ from procurement.silver.html_common import (
     _text_after_h3,
 )
 from procurement.silver.html_value_parsers.common_values import (
+    classify_national_id_by_country,
     _extract_currency,
     _parse_criterion_weight,
     _parse_pln_value,
@@ -65,138 +65,9 @@ _SPAN_NORMAL_RE = re.compile(
 _TAG_RE = re.compile(r"<[^>]+>")
 
 
-def _is_poland_country(raw: str | None) -> bool:
-    if not raw:
-        return False
-    normalized = _normalize_label_text(raw)
-    compact = re.sub(r"[^a-z]", "", normalized)
-    return ("polska" in normalized) or ("poland" in normalized) or (compact == "pl")
-
-
-def _digits_only(raw: str) -> str:
-    return re.sub(r"\D", "", raw)
-
-
-def _validate_nip(digits: str) -> bool:
-    if len(digits) != 10:
-        return False
-    vals = [int(ch) for ch in digits]
-    weights = [6, 5, 7, 2, 3, 4, 5, 6, 7]
-    checksum = sum(vals[i] * weights[i] for i in range(9)) % 11
-    return checksum != 10 and checksum == vals[9]
-
-
-def _validate_regon9(digits: str) -> bool:
-    if len(digits) != 9:
-        return False
-    vals = [int(ch) for ch in digits]
-    weights = [8, 9, 2, 3, 4, 5, 6, 7]
-    checksum = sum(vals[i] * weights[i] for i in range(8)) % 11
-    if checksum == 10:
-        checksum = 0
-    return checksum == vals[8]
-
-
-def _validate_regon14(digits: str) -> bool:
-    if len(digits) != 14:
-        return False
-    vals = [int(ch) for ch in digits]
-    weights = [2, 3, 4, 5, 6, 7, 8, 9, 2, 3, 4, 5, 6]
-    checksum = sum(vals[i] * weights[i] for i in range(13)) % 11
-    if checksum == 10:
-        checksum = 0
-    return checksum == vals[13]
-
-
-def _decode_pesel_date(digits: str) -> date | None:
-    if len(digits) != 11:
-        return None
-    yy = int(digits[0:2])
-    mm = int(digits[2:4])
-    dd = int(digits[4:6])
-    if 1 <= mm <= 12:
-        year, month = 1900 + yy, mm
-    elif 21 <= mm <= 32:
-        year, month = 2000 + yy, mm - 20
-    elif 41 <= mm <= 52:
-        year, month = 2100 + yy, mm - 40
-    elif 61 <= mm <= 72:
-        year, month = 2200 + yy, mm - 60
-    elif 81 <= mm <= 92:
-        year, month = 1800 + yy, mm - 80
-    else:
-        return None
-    try:
-        return date(year, month, dd)
-    except ValueError:
-        return None
-
-
-def _validate_pesel(digits: str) -> bool:
-    if len(digits) != 11:
-        return False
-    vals = [int(ch) for ch in digits]
-    weights = [1, 3, 7, 9, 1, 3, 7, 9, 1, 3]
-    checksum = (10 - (sum(vals[i] * weights[i] for i in range(10)) % 10)) % 10
-    return checksum == vals[10] and _decode_pesel_date(digits) is not None
-
-
-def _classify_polish_contractor_id(raw_id: str) -> tuple[str | None, str]:
-    # Prefer NIP when multiple IDs are present in one raw field.
-    nip_candidates = re.findall(r"(?<!\d)(?:\d{3}[-\s]?\d{3}[-\s]?\d{2}[-\s]?\d{2}|\d{10})(?!\d)", raw_id)
-    for cand in nip_candidates:
-        digits = _digits_only(cand)
-        if _validate_nip(digits):
-            return digits, "NIP"
-
-    regon_candidates = re.findall(r"(?<!\d)\d{14}(?!\d)|(?<!\d)\d{9}(?!\d)|(?<!\d)\d{8}(?!\d)", raw_id)
-    for cand in regon_candidates:
-        digits = _digits_only(cand)
-        if len(digits) == 14 and _validate_regon14(digits):
-            return digits, "REGON"
-        if len(digits) == 9 and _validate_regon9(digits):
-            return digits, "REGON"
-        if len(digits) == 8:
-            padded = f"0{digits}"
-            if _validate_regon9(padded):
-                return padded, "REGON"
-
-    pesel_candidates = re.findall(r"(?<!\d)\d{11}(?!\d)", raw_id)
-    for cand in pesel_candidates:
-        if _validate_pesel(cand):
-            return cand, "PESEL"
-    # Fallback for operational typing: 11-digit national IDs are treated as PESEL
-    # even when checksum/date sanity fails in source data.
-    if pesel_candidates:
-        return pesel_candidates[0], "PESEL"
-
-    digits = _digits_only(raw_id)
-    if len(digits) == 10 and _validate_nip(digits):
-        return digits, "NIP"
-    if len(digits) == 14 and _validate_regon14(digits):
-        return digits, "REGON"
-    if len(digits) == 9 and _validate_regon9(digits):
-        return digits, "REGON"
-    if len(digits) == 8:
-        padded = f"0{digits}"
-        if _validate_regon9(padded):
-            return padded, "REGON"
-    if len(digits) == 11:
-        return digits, "PESEL"
-    return None, "not_recognized"
-
-
 def _classify_contractor_id(country: str | None, raw_id: str | None) -> tuple[str | None, str | None, str | None]:
     """Return (raw, parsed, type) for contractor ID."""
-    if raw_id is None:
-        return None, None, None
-    raw = raw_id.strip()
-    if not raw:
-        return None, None, None
-    if not _is_poland_country(country):
-        return raw, raw, "foreign"
-    parsed, id_type = _classify_polish_contractor_id(raw)
-    return raw, parsed, id_type
+    return classify_national_id_by_country(country, raw_id)
 
 
 def classify_contractor_id_for_notice(

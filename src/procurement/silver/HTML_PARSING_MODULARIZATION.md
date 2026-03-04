@@ -13,7 +13,7 @@ Separate HTML parsing into clear stages so each concern is isolated:
 
 ## Modules
 
-### `html_common.py`
+### `parser_utils.py`
 
 Shared low-level helpers for section handling (naming, section number parsing,
 value extraction primitives).  
@@ -58,11 +58,10 @@ Function:
 ## Migration Strategy
 
 1. Keep existing production path in `html_parser.py` unchanged.
-2. Move reusable helpers to `html_common.py`.
+2. Move reusable helpers to `parser_utils.py`.
 3. Migrate one notice type at a time from `html_parser.py` into
    `html_value_parsers/<notice>.py`.
 4. Add tests per notice parser as migration progresses.
 5. Switch production integration to `html_orchestrator.py` only after feature parity.
 
 This avoids large risky rewrites and keeps behavior debuggable.
-
