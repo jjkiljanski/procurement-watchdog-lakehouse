@@ -15,12 +15,11 @@ from pathlib import Path
 from procurement.common.locks import acquire_directory_lock, release_directory_lock_if_owner
 from procurement.lineage import atomic_write_json, git_commit_sha, now_utc_iso, script_hashes, sha256_file
 from procurement.silver.notice_types import (
-    html_extracted_fields_for_notice_type,
     normalized_notice_type_token,
-    specific_columns_for_notice_type,
 )
+from procurement.silver.sections_profile import load_all_profiles
+from procurement.silver.sections_spark import build_section_tables, make_html_sections_udf
 from procurement.silver.spark_transforms import (
-    build_contract_notice_parts_table,
     build_silver_for_notice_type,
 )
 from procurement.silver.validation import (
@@ -245,6 +244,11 @@ def run_silver_day_core(
     if cfg.shuffle_partitions > 0:
         spark.conf.set("spark.sql.shuffle.partitions", str(cfg.shuffle_partitions))
 
+    # Load all section profiles once; build the HTML→sections UDF once for the run.
+    all_profiles = load_all_profiles()
+    sections_udf = make_html_sections_udf(all_profiles)
+    log.info("Loaded section profiles for notice types: %s", sorted(all_profiles))
+
     try:
         bronze_paths = sorted(bronze_root.glob(f"noticeType=*/publicationDateDay={target_date}"))
         use_bronze = cfg.input_layer in ("auto", "bronze") and len(bronze_paths) > 0
@@ -332,17 +336,43 @@ def run_silver_day_core(
                 notice_type_token=notice_token,
             )
 
-            specific_columns = specific_columns_for_notice_type(notice_type)
-            html_fields = html_extracted_fields_for_notice_type(notice_type)
-            required_columns = set(ENVELOPE_COLUMNS) | set(specific_columns)
+            # Ensure publicationDateDay is present on the raw batch for section tables.
+            batch_raw = batch_raw.withColumn(
+                "publicationDateDay", to_date(col("publicationDate")).cast("string")
+            )
+
+            required_columns = set(ENVELOPE_COLUMNS)
 
             cached_batch = None
             try:
+                # --- Section tables (new profile-driven path) ---
+                notice_profile = all_profiles.get(notice_type or "", {})
+                section_tables = build_section_tables(
+                    batch_raw,
+                    notice_type=notice_type,
+                    profile=notice_profile,
+                    sections_udf=sections_udf,
+                )
+                for model, model_df in section_tables.items():
+                    model_day_dir = (
+                        specific_root
+                        / f"noticeType={notice_token}"
+                        / f"data_model={model}"
+                        / f"publicationDateDay={target_date}"
+                    )
+                    _safe_rmtree(model_day_dir, f"section table noticeType={notice_token} model={model}")
+                    model_df.write.mode("overwrite").parquet(str(model_day_dir))
+                    log.info(
+                        "Wrote section table noticeType=%s model=%s -> %s",
+                        notice_token, model, model_day_dir,
+                    )
+
+                # --- Envelope (derived from bronze metadata, no HTML) ---
                 batch_silver = build_silver_for_notice_type(
                     batch_raw,
                     notice_type=notice_type,
                     required_columns=required_columns,
-                ).withColumn("publicationDateDay", to_date(col("publicationDate")).cast("string")).withColumn(
+                ).withColumn(
                     "caseId_shard",
                     when(col("caseId").isNotNull(), pmod(xxhash64(col("caseId")), lit(64)).cast("int")),
                 )
@@ -372,29 +402,13 @@ def run_silver_day_core(
                         .parquet(str(quarantine_root))
                     )
 
-                if notice_type == "ContractNotice":
-                    specific_df = valid_batch
-                else:
-                    specific_df = _select_existing(valid_batch, ["caseId_shard", *specific_columns])
-                    specific_df = _compact_html_extracted(specific_df, html_fields)
-
-                specific_day_dir = specific_root / f"noticeType={notice_token}" / f"publicationDateDay={target_date}"
-                _safe_rmtree(specific_day_dir, f"specific day dir noticeType={notice_token}")
-                specific_df.write.mode("overwrite").parquet(str(specific_day_dir))
-
-                if notice_type == "ContractNotice":
-                    parts_token = "ContractNotice_parts"
-                    parts_df = build_contract_notice_parts_table(valid_batch)
-                    parts_day_dir = specific_root / f"noticeType={parts_token}" / f"publicationDateDay={target_date}"
-                    _safe_rmtree(parts_day_dir, f"specific day dir noticeType={parts_token}")
-                    parts_df.write.mode("overwrite").parquet(str(parts_day_dir))
-
                 envelope_df = _select_existing(valid_batch, ENVELOPE_COLUMNS)
                 envelope_df.write.mode("append").parquet(str(envelope_tmp_dir))
 
                 batch_profile["validation"] = batch_validation
                 batch_profile["invalid_rows"] = batch_invalid_rows
                 batch_profile["valid_rows"] = batch_count - batch_invalid_rows
+                batch_profile["section_models"] = sorted(section_tables.keys())
             finally:
                 if cached_batch is not None:
                     cached_batch.unpersist()
@@ -430,9 +444,10 @@ def run_silver_day_core(
         code_paths = list(script_paths or [])
         core_paths = [
             Path(__file__).resolve(),
+            repo_root / "src" / "procurement" / "silver" / "sections_profile.py",
+            repo_root / "src" / "procurement" / "silver" / "sections_spark.py",
+            repo_root / "src" / "procurement" / "silver" / "raw_html_sections_parser.py",
             repo_root / "src" / "procurement" / "silver" / "spark_transforms.py",
-            repo_root / "src" / "procurement" / "silver" / "html_parser.py",
-            repo_root / "src" / "procurement" / "silver" / "notice_types" / "definitions.py",
         ]
         for p in core_paths:
             if p not in code_paths:

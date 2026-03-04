@@ -1,6 +1,6 @@
 {
   "1.1": {
-    "col_name": "cn_section_1_1",
+    "col_name": "section_1_1",
     "section_header": "Nazwa zamawiającego",
     "data_model": "core",
     "example_values": [
@@ -10,7 +10,7 @@
     ]
   },
   "1.2": {
-    "col_name": "cn_section_1_2",
+    "col_name": "section_1_2",
     "section_header": "Oddział zamawiającego",
     "data_model": "core",
     "example_values": [
@@ -20,7 +20,7 @@
     ]
   },
   "1.3": {
-    "col_name": "cn_section_1_3",
+    "col_name": "section_1_3",
     "section_header": "Krajowy Numer Identyfikacyjny",
     "data_model": "core",
     "example_values": [
@@ -30,7 +30,7 @@
     ]
   },
   "1.4.1": {
-    "col_name": "cn_section_1_4_1",
+    "col_name": "section_1_4_1",
     "section_header": "Ulica",
     "data_model": "core",
     "example_values": [
@@ -40,7 +40,7 @@
     ]
   },
   "1.4.2": {
-    "col_name": "cn_section_1_4_2",
+    "col_name": "section_1_4_2",
     "section_header": "Miejscowość",
     "data_model": "core",
     "example_values": [
@@ -50,7 +50,7 @@
     ]
   },
   "1.4.3": {
-    "col_name": "cn_section_1_4_3",
+    "col_name": "section_1_4_3",
     "section_header": "Kod pocztowy",
     "data_model": "core",
     "example_values": [
@@ -60,7 +60,7 @@
     ]
   },
   "1.4.4": {
-    "col_name": "cn_section_1_4_4",
+    "col_name": "section_1_4_4",
     "section_header": "Województwo",
     "data_model": "core",
     "example_values": [
@@ -70,7 +70,7 @@
     ]
   },
   "1.4.5": {
-    "col_name": "cn_section_1_4_5",
+    "col_name": "section_1_4_5",
     "section_header": "Kraj",
     "data_model": "core",
     "example_values": [
@@ -78,7 +78,7 @@
     ]
   },
   "1.4.6": {
-    "col_name": "cn_section_1_4_6",
+    "col_name": "section_1_4_6",
     "section_header": "Lokalizacja NUTS 3",
     "data_model": "core",
     "example_values": [
@@ -88,7 +88,7 @@
     ]
   },
   "1.4.7": {
-    "col_name": "cn_section_1_4_7",
+    "col_name": "section_1_4_7",
     "section_header": "Numer telefonu",
     "data_model": "core",
     "example_values": [
@@ -98,7 +98,7 @@
     ]
   },
   "1.4.8": {
-    "col_name": "cn_section_1_4_8",
+    "col_name": "section_1_4_8",
     "section_header": "Numer faksu",
     "data_model": "core",
     "example_values": [
@@ -108,7 +108,7 @@
     ]
   },
   "1.4.9": {
-    "col_name": "cn_section_1_4_9",
+    "col_name": "section_1_4_9",
     "section_header": "Adres poczty elektronicznej",
     "data_model": "core",
     "example_values": [
@@ -118,7 +118,7 @@
     ]
   },
   "1.4.10": {
-    "col_name": "cn_section_1_4_10",
+    "col_name": "section_1_4_10",
     "section_header": "Adres strony internetowej zamawiającego",
     "data_model": "core",
     "example_values": [
@@ -128,7 +128,7 @@
     ]
   },
   "1.5": {
-    "col_name": "cn_section_1_5",
+    "col_name": "section_1_5",
     "section_header": "Rodzaj zamawiającego",
     "data_model": "core",
     "example_values": [
@@ -138,7 +138,7 @@
     ]
   },
   "2.1": {
-    "col_name": "cn_section_2_1",
+    "col_name": "section_2_1",
     "section_header": "Ogłoszenie dotyczy zmiany",
     "data_model": "core",
     "example_values": [
@@ -146,7 +146,7 @@
     ]
   },
   "2.2": {
-    "col_name": "cn_section_2_2",
+    "col_name": "section_2_2",
     "section_header": "Identyfikator postępowania",
     "data_model": "core",
     "example_values": [
@@ -156,7 +156,7 @@
     ]
   },
   "2.3": {
-    "col_name": "cn_section_2_3",
+    "col_name": "section_2_3",
     "section_header": "Numer ogłoszenia",
     "data_model": "core",
     "example_values": [
@@ -166,7 +166,7 @@
     ]
   },
   "2.4": {
-    "col_name": "cn_section_2_4",
+    "col_name": "section_2_4",
     "section_header": "Wersja ogłoszenia",
     "data_model": "core",
     "example_values": [
@@ -174,7 +174,7 @@
     ]
   },
   "2.5": {
-    "col_name": "cn_section_2_5",
+    "col_name": "section_2_5",
     "section_header": "Data ogłoszenia",
     "data_model": "core",
     "example_values": [
@@ -184,7 +184,7 @@
     ]
   },
   "3.1": {
-    "col_name": "cn_section_3_1",
+    "col_name": "section_3_1",
     "section_header": "Zamówienie/umowa ramowa było poprzedzone ogłoszeniem o zamówieniu/ogłoszeniem o zamiarze zawarcia umowy",
     "data_model": "core",
     "example_values": [
@@ -193,7 +193,7 @@
     ]
   },
   "3.1.1": {
-    "col_name": "cn_section_3_1_1",
+    "col_name": "section_3_1_1",
     "section_header": "Numer ogłoszenia",
     "data_model": "core",
     "example_values": [
@@ -203,7 +203,7 @@
     ]
   },
   "3.2": {
-    "col_name": "cn_section_3_2",
+    "col_name": "section_3_2",
     "section_header": "Czy zamówienie albo umowa ramowa dotyczy projektu lub programu współfinansowanego ze środków Unii Europejskiej",
     "data_model": "core",
     "example_values": [
@@ -212,7 +212,7 @@
     ]
   },
   "3.3": {
-    "col_name": "cn_section_3_3",
+    "col_name": "section_3_3",
     "section_header": "Nazwa projektu lub programu",
     "data_model": "core",
     "example_values": [
@@ -222,7 +222,7 @@
     ]
   },
   "3.4": {
-    "col_name": "cn_section_3_4",
+    "col_name": "section_3_4",
     "section_header": "Tryb udzielenia zamówienia/zawarcia umowy ramowej wraz z podstawą prawną",
     "data_model": "core",
     "example_values": [
@@ -232,7 +232,7 @@
     ]
   },
   "3.5": {
-    "col_name": "cn_section_3_5",
+    "col_name": "section_3_5",
     "section_header": "Rodzaj zamówienia",
     "data_model": "core",
     "example_values": [
@@ -242,7 +242,7 @@
     ]
   },
   "3.6": {
-    "col_name": "cn_section_3_6",
+    "col_name": "section_3_6",
     "section_header": "Nazwa zamówienia albo umowy ramowej",
     "data_model": "core",
     "example_values": [
@@ -252,7 +252,7 @@
     ]
   },
   "3.7": {
-    "col_name": "cn_section_3_7",
+    "col_name": "section_3_7",
     "section_header": "Krótki opis przedmiotu zamówienia",
     "data_model": "core",
     "example_values": [
@@ -262,7 +262,7 @@
     ]
   },
   "3.8": {
-    "col_name": "cn_section_3_8",
+    "col_name": "section_3_8",
     "section_header": "Główny kod CPV",
     "data_model": "core",
     "example_values": [
@@ -272,7 +272,7 @@
     ]
   },
   "3.9": {
-    "col_name": "cn_section_3_9",
+    "col_name": "section_3_9",
     "section_header": "Dodatkowy kod CPV",
     "data_model": "core",
     "example_values": [
@@ -282,7 +282,7 @@
     ]
   },
   "4.1": {
-    "col_name": "cn_section_4_1",
+    "col_name": "section_4_1",
     "section_header": "Data zawarcia umowy/umowy ramowej",
     "data_model": "core",
     "example_values": [
@@ -292,7 +292,7 @@
     ]
   },
   "4.2": {
-    "col_name": "cn_section_4_2",
+    "col_name": "section_4_2",
     "section_header": "Okres realizacji zamówienia/umowy ramowej",
     "data_model": "core",
     "example_values": [
@@ -302,7 +302,7 @@
     ]
   },
   "4.3": {
-    "col_name": "cn_section_4_3",
+    "col_name": "section_4_3",
     "section_header": "Dane wykonawcy, z którym zawarto umowę/umowę ramową",
     "data_model": "core",
     "example_values": [
@@ -310,7 +310,7 @@
     ]
   },
   "4.3.1": {
-    "col_name": "cn_section_4_3_1",
+    "col_name": "section_4_3_1",
     "section_header": "Nazwa (firma) wykonawcy, któremu udzielono zamówienia (w przypadku wykonawców ubiegających się wspólnie o udzielenie zamówienia – dotyczy pełnomocnika, o którym mowa w art. 58 ust. 2 ustawy)",
     "data_model": "core",
     "example_values": [
@@ -320,7 +320,7 @@
     ]
   },
   "4.3.2": {
-    "col_name": "cn_section_4_3_2",
+    "col_name": "section_4_3_2",
     "section_header": "Krajowy Numer Identyfikacyjny",
     "data_model": "core",
     "example_values": [
@@ -330,7 +330,7 @@
     ]
   },
   "4.3.3": {
-    "col_name": "cn_section_4_3_3",
+    "col_name": "section_4_3_3",
     "section_header": "Ulica",
     "data_model": "core",
     "example_values": [
@@ -340,7 +340,7 @@
     ]
   },
   "4.3.4": {
-    "col_name": "cn_section_4_3_4",
+    "col_name": "section_4_3_4",
     "section_header": "Miejscowość",
     "data_model": "core",
     "example_values": [
@@ -350,7 +350,7 @@
     ]
   },
   "4.3.5": {
-    "col_name": "cn_section_4_3_5",
+    "col_name": "section_4_3_5",
     "section_header": "Kod pocztowy",
     "data_model": "core",
     "example_values": [
@@ -360,7 +360,7 @@
     ]
   },
   "4.3.6": {
-    "col_name": "cn_section_4_3_6",
+    "col_name": "section_4_3_6",
     "section_header": "Województwo",
     "data_model": "core",
     "example_values": [
@@ -370,7 +370,7 @@
     ]
   },
   "4.3.7": {
-    "col_name": "cn_section_4_3_7",
+    "col_name": "section_4_3_7",
     "section_header": "Kraj",
     "data_model": "core",
     "example_values": [
@@ -378,7 +378,7 @@
     ]
   },
   "4.4": {
-    "col_name": "cn_section_4_4",
+    "col_name": "section_4_4",
     "section_header": "Wartość umowy/umowy ramowej",
     "data_model": "core",
     "example_values": [
@@ -388,7 +388,7 @@
     ]
   },
   "4.5": {
-    "col_name": "cn_section_4_5",
+    "col_name": "section_4_5",
     "section_header": "Numer ogłoszenia o wyniku postępowania w BZP",
     "data_model": "core",
     "example_values": [
@@ -398,7 +398,7 @@
     ]
   },
   "5.1": {
-    "col_name": "cn_section_5_1",
+    "col_name": "section_5_1",
     "section_header": "Data zmiany umowy/umowy ramowej)",
     "data_model": "core",
     "example_values": [
@@ -408,7 +408,7 @@
     ]
   },
   "5.2": {
-    "col_name": "cn_section_5_2",
+    "col_name": "section_5_2",
     "section_header": "Podstawa prawna zmiany umowy/umowy ramowej",
     "data_model": "core",
     "example_values": [
@@ -417,7 +417,7 @@
     ]
   },
   "5.3": {
-    "col_name": "cn_section_5_3",
+    "col_name": "section_5_3",
     "section_header": "Przyczyny dokonania zmian umowy/umowy ramowej",
     "data_model": "core",
     "example_values": [
@@ -427,7 +427,7 @@
     ]
   },
   "5.4": {
-    "col_name": "cn_section_5_4",
+    "col_name": "section_5_4",
     "section_header": "Krótki opis zmiany umowy/umowy ramowej",
     "data_model": "core",
     "example_values": [
@@ -437,7 +437,7 @@
     ]
   },
   "5.5.1": {
-    "col_name": "cn_section_5_5_1",
+    "col_name": "section_5_5_1",
     "section_header": "Wartość zmiany",
     "data_model": "core",
     "example_values": [
@@ -447,7 +447,7 @@
     ]
   },
   "5.5.2": {
-    "col_name": "cn_section_5_5_2",
+    "col_name": "section_5_5_2",
     "section_header": "Kod waluty",
     "data_model": "core",
     "example_values": [
@@ -455,7 +455,7 @@
     ]
   },
   "5.5.3": {
-    "col_name": "cn_section_5_5_3",
+    "col_name": "section_5_5_3",
     "section_header": "Wzrost ceny w związku ze zmianą umowy/umowy ramowej",
     "data_model": "core",
     "example_values": [
@@ -464,7 +464,7 @@
     ]
   },
   "5.6": {
-    "col_name": "cn_section_5_6",
+    "col_name": "section_5_6",
     "section_header": "Wcześniejsze zmiany umowy/umowy ramowej, obligujące do zamieszczenia ogłoszenia o zmianie umowy",
     "data_model": "core",
     "example_values": [
@@ -473,7 +473,7 @@
     ]
   },
   "5.7": {
-    "col_name": "cn_section_5_7",
+    "col_name": "section_5_7",
     "section_header": "Numer ogłoszenia w BZP o zmianie umowy",
     "data_model": "core",
     "example_values": [

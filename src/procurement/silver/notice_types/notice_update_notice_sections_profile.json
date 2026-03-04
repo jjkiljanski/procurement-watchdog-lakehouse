@@ -1,6 +1,6 @@
 {
   "1.1": {
-    "col_name": "cn_section_1_1",
+    "col_name": "section_1_1",
     "section_header": "Nazwa zamawiającego",
     "data_model": "core",
     "example_values": [
@@ -10,7 +10,7 @@
     ]
   },
   "1.2": {
-    "col_name": "cn_section_1_2",
+    "col_name": "section_1_2",
     "section_header": "Oddział zamawiającego",
     "data_model": "core",
     "example_values": [
@@ -20,7 +20,7 @@
     ]
   },
   "1.3": {
-    "col_name": "cn_section_1_3",
+    "col_name": "section_1_3",
     "section_header": "Krajowy Numer Identyfikacyjny",
     "data_model": "core",
     "example_values": [
@@ -30,7 +30,7 @@
     ]
   },
   "1.4.1": {
-    "col_name": "cn_section_1_4_1",
+    "col_name": "section_1_4_1",
     "section_header": "Ulica",
     "data_model": "core",
     "example_values": [
@@ -40,7 +40,7 @@
     ]
   },
   "1.4.2": {
-    "col_name": "cn_section_1_4_2",
+    "col_name": "section_1_4_2",
     "section_header": "Miejscowość",
     "data_model": "core",
     "example_values": [
@@ -50,7 +50,7 @@
     ]
   },
   "1.4.3": {
-    "col_name": "cn_section_1_4_3",
+    "col_name": "section_1_4_3",
     "section_header": "Kod pocztowy",
     "data_model": "core",
     "example_values": [
@@ -60,7 +60,7 @@
     ]
   },
   "1.4.4": {
-    "col_name": "cn_section_1_4_4",
+    "col_name": "section_1_4_4",
     "section_header": "Województwo",
     "data_model": "core",
     "example_values": [
@@ -70,7 +70,7 @@
     ]
   },
   "1.4.5": {
-    "col_name": "cn_section_1_4_5",
+    "col_name": "section_1_4_5",
     "section_header": "Kraj",
     "data_model": "core",
     "example_values": [
@@ -80,7 +80,7 @@
     ]
   },
   "1.4.6": {
-    "col_name": "cn_section_1_4_6",
+    "col_name": "section_1_4_6",
     "section_header": "Lokalizacja NUTS 3",
     "data_model": "core",
     "example_values": [
@@ -90,7 +90,7 @@
     ]
   },
   "1.4.7": {
-    "col_name": "cn_section_1_4_7",
+    "col_name": "section_1_4_7",
     "section_header": "Numer telefonu",
     "data_model": "core",
     "example_values": [
@@ -100,7 +100,7 @@
     ]
   },
   "1.4.8": {
-    "col_name": "cn_section_1_4_8",
+    "col_name": "section_1_4_8",
     "section_header": "Numer faksu",
     "data_model": "core",
     "example_values": [
@@ -110,7 +110,7 @@
     ]
   },
   "1.4.9": {
-    "col_name": "cn_section_1_4_9",
+    "col_name": "section_1_4_9",
     "section_header": "Adres poczty elektronicznej",
     "data_model": "core",
     "example_values": [
@@ -120,7 +120,7 @@
     ]
   },
   "1.4.10": {
-    "col_name": "cn_section_1_4_10",
+    "col_name": "section_1_4_10",
     "section_header": "Adres strony internetowej zamawiającego",
     "data_model": "core",
     "example_values": [
@@ -130,7 +130,7 @@
     ]
   },
   "1.5": {
-    "col_name": "cn_section_1_5",
+    "col_name": "section_1_5",
     "section_header": "Rodzaj zamawiającego",
     "data_model": "core",
     "example_values": [
@@ -140,7 +140,7 @@
     ]
   },
   "1.6": {
-    "col_name": "cn_section_1_6",
+    "col_name": "section_1_6",
     "section_header": "Przedmiot działalności zamawiającego",
     "data_model": "core",
     "example_values": [
@@ -150,7 +150,7 @@
     ]
   },
   "2.1": {
-    "col_name": "cn_section_2_1",
+    "col_name": "section_2_1",
     "section_header": "Numer ogłoszenia",
     "data_model": "core",
     "example_values": [
@@ -160,7 +160,7 @@
     ]
   },
   "2.2": {
-    "col_name": "cn_section_2_2",
+    "col_name": "section_2_2",
     "section_header": "Data ogłoszenia",
     "data_model": "core",
     "example_values": [
@@ -170,7 +170,7 @@
     ]
   },
   "3.1": {
-    "col_name": "cn_section_3_1",
+    "col_name": "section_3_1",
     "section_header": "Nazwa zmienianego ogłoszenia",
     "data_model": "core",
     "example_values": [
@@ -180,7 +180,7 @@
     ]
   },
   "3.2": {
-    "col_name": "cn_section_3_2",
+    "col_name": "section_3_2",
     "section_header": "Numer zmienianego ogłoszenia w BZP",
     "data_model": "core",
     "example_values": [
@@ -190,7 +190,7 @@
     ]
   },
   "3.3": {
-    "col_name": "cn_section_3_3",
+    "col_name": "section_3_3",
     "section_header": "Identyfikator ostatniej wersji zmienianego ogłoszenia",
     "data_model": "core",
     "example_values": [
@@ -198,7 +198,7 @@
     ]
   },
   "3.4": {
-    "col_name": "cn_section_3_4",
+    "col_name": "section_3_4",
     "section_header": "Identyfikator sekcji zmienianego ogłoszenia",
     "data_model": "part.core",
     "example_values": [
@@ -208,7 +208,7 @@
     ]
   },
   "3.4.1": {
-    "col_name": "cn_section_3_4_1",
+    "col_name": "section_3_4_1",
     "section_header": "Opis zmiany, w tym tekst, który należy dodać lub zmienić",
     "data_model": "part.part",
     "example_values": [

@@ -1,6 +1,6 @@
 {
   "1.1": {
-    "col_name": "cn_section_1_1",
+    "col_name": "section_1_1",
     "section_header": "Rola zamawiającego",
     "data_model": "core",
     "example_values": [
@@ -9,7 +9,7 @@
     ]
   },
   "1.2": {
-    "col_name": "cn_section_1_2",
+    "col_name": "section_1_2",
     "section_header": "Nazwa zamawiającego",
     "data_model": "core",
     "example_values": [
@@ -19,7 +19,7 @@
     ]
   },
   "1.3": {
-    "col_name": "cn_section_1_3",
+    "col_name": "section_1_3",
     "section_header": "Oddział zamawiającego",
     "data_model": "core",
     "example_values": [
@@ -29,7 +29,7 @@
     ]
   },
   "1.4": {
-    "col_name": "cn_section_1_4",
+    "col_name": "section_1_4",
     "section_header": "Krajowy Numer Identyfikacyjny",
     "data_model": "core",
     "example_values": [
@@ -39,7 +39,7 @@
     ]
   },
   "1.5.1": {
-    "col_name": "cn_section_1_5_1",
+    "col_name": "section_1_5_1",
     "section_header": "Ulica",
     "data_model": "core",
     "example_values": [
@@ -49,7 +49,7 @@
     ]
   },
   "1.5.2": {
-    "col_name": "cn_section_1_5_2",
+    "col_name": "section_1_5_2",
     "section_header": "Miejscowość",
     "data_model": "core",
     "example_values": [
@@ -59,7 +59,7 @@
     ]
   },
   "1.5.3": {
-    "col_name": "cn_section_1_5_3",
+    "col_name": "section_1_5_3",
     "section_header": "Kod pocztowy",
     "data_model": "core",
     "example_values": [
@@ -69,7 +69,7 @@
     ]
   },
   "1.5.4": {
-    "col_name": "cn_section_1_5_4",
+    "col_name": "section_1_5_4",
     "section_header": "Województwo",
     "data_model": "core",
     "example_values": [
@@ -79,7 +79,7 @@
     ]
   },
   "1.5.5": {
-    "col_name": "cn_section_1_5_5",
+    "col_name": "section_1_5_5",
     "section_header": "Kraj",
     "data_model": "core",
     "example_values": [
@@ -87,7 +87,7 @@
     ]
   },
   "1.5.6": {
-    "col_name": "cn_section_1_5_6",
+    "col_name": "section_1_5_6",
     "section_header": "Lokalizacja NUTS 3",
     "data_model": "core",
     "example_values": [
@@ -97,7 +97,7 @@
     ]
   },
   "1.5.7": {
-    "col_name": "cn_section_1_5_7",
+    "col_name": "section_1_5_7",
     "section_header": "Numer telefonu",
     "data_model": "core",
     "example_values": [
@@ -107,7 +107,7 @@
     ]
   },
   "1.5.8": {
-    "col_name": "cn_section_1_5_8",
+    "col_name": "section_1_5_8",
     "section_header": "Numer faksu",
     "data_model": "core",
     "example_values": [
@@ -117,7 +117,7 @@
     ]
   },
   "1.5.9": {
-    "col_name": "cn_section_1_5_9",
+    "col_name": "section_1_5_9",
     "section_header": "Adres poczty elektronicznej",
     "data_model": "core",
     "example_values": [
@@ -127,7 +127,7 @@
     ]
   },
   "1.5.10": {
-    "col_name": "cn_section_1_5_10",
+    "col_name": "section_1_5_10",
     "section_header": "Adres strony internetowej zamawiającego",
     "data_model": "core",
     "example_values": [
@@ -137,7 +137,7 @@
     ]
   },
   "1.6": {
-    "col_name": "cn_section_1_6",
+    "col_name": "section_1_6",
     "section_header": "Rodzaj zamawiającego",
     "data_model": "core",
     "example_values": [
@@ -147,7 +147,7 @@
     ]
   },
   "1.7": {
-    "col_name": "cn_section_1_7",
+    "col_name": "section_1_7",
     "section_header": "Przedmiot działalności zamawiającego",
     "data_model": "core",
     "example_values": [
@@ -157,7 +157,7 @@
     ]
   },
   "1.9.1": {
-    "col_name": "cn_section_1_9_1",
+    "col_name": "section_1_9_1",
     "section_header": "Nazwa podmiotu prowadzącego postępowanie",
     "data_model": "core",
     "example_values": [
@@ -167,7 +167,7 @@
     ]
   },
   "1.9.2": {
-    "col_name": "cn_section_1_9_2",
+    "col_name": "section_1_9_2",
     "section_header": "Krajowy Numer Identyfikacyjny",
     "data_model": "core",
     "example_values": [
@@ -177,7 +177,7 @@
     ]
   },
   "1.9.3": {
-    "col_name": "cn_section_1_9_3",
+    "col_name": "section_1_9_3",
     "section_header": "Ulica",
     "data_model": "core",
     "example_values": [
@@ -187,7 +187,7 @@
     ]
   },
   "1.9.4": {
-    "col_name": "cn_section_1_9_4",
+    "col_name": "section_1_9_4",
     "section_header": "Miejscowość",
     "data_model": "core",
     "example_values": [
@@ -197,7 +197,7 @@
     ]
   },
   "1.9.5": {
-    "col_name": "cn_section_1_9_5",
+    "col_name": "section_1_9_5",
     "section_header": "Kod pocztowy",
     "data_model": "core",
     "example_values": [
@@ -207,7 +207,7 @@
     ]
   },
   "1.9.6": {
-    "col_name": "cn_section_1_9_6",
+    "col_name": "section_1_9_6",
     "section_header": "Województwo",
     "data_model": "core",
     "example_values": [
@@ -217,7 +217,7 @@
     ]
   },
   "1.9.7": {
-    "col_name": "cn_section_1_9_7",
+    "col_name": "section_1_9_7",
     "section_header": "Kraj",
     "data_model": "core",
     "example_values": [
@@ -225,7 +225,7 @@
     ]
   },
   "1.9.8": {
-    "col_name": "cn_section_1_9_8",
+    "col_name": "section_1_9_8",
     "section_header": "Numer telefonu",
     "data_model": "core",
     "example_values": [
@@ -235,7 +235,7 @@
     ]
   },
   "1.9.9": {
-    "col_name": "cn_section_1_9_9",
+    "col_name": "section_1_9_9",
     "section_header": "Numer faksu",
     "data_model": "core",
     "example_values": [
@@ -243,7 +243,7 @@
     ]
   },
   "1.9.10": {
-    "col_name": "cn_section_1_9_10",
+    "col_name": "section_1_9_10",
     "section_header": "Adres poczty elektronicznej",
     "data_model": "core",
     "example_values": [
@@ -253,7 +253,7 @@
     ]
   },
   "1.9.11": {
-    "col_name": "cn_section_1_9_11",
+    "col_name": "section_1_9_11",
     "section_header": "Adres strony internetowej",
     "data_model": "core",
     "example_values": [
@@ -263,7 +263,7 @@
     ]
   },
   "2.1": {
-    "col_name": "cn_section_2_1",
+    "col_name": "section_2_1",
     "section_header": "Nazwa konkursu",
     "data_model": "core",
     "example_values": [
@@ -273,7 +273,7 @@
     ]
   },
   "2.2": {
-    "col_name": "cn_section_2_2",
+    "col_name": "section_2_2",
     "section_header": "Identyfikator konkursu",
     "data_model": "core",
     "example_values": [
@@ -283,7 +283,7 @@
     ]
   },
   "2.3": {
-    "col_name": "cn_section_2_3",
+    "col_name": "section_2_3",
     "section_header": "Numer ogłoszenia",
     "data_model": "core",
     "example_values": [
@@ -293,7 +293,7 @@
     ]
   },
   "2.4": {
-    "col_name": "cn_section_2_4",
+    "col_name": "section_2_4",
     "section_header": "Wersja ogłoszenia",
     "data_model": "core",
     "example_values": [
@@ -301,7 +301,7 @@
     ]
   },
   "2.5": {
-    "col_name": "cn_section_2_5",
+    "col_name": "section_2_5",
     "section_header": "Data ogłoszenia",
     "data_model": "core",
     "example_values": [
@@ -311,7 +311,7 @@
     ]
   },
   "2.7": {
-    "col_name": "cn_section_2_7",
+    "col_name": "section_2_7",
     "section_header": "Konkurs dotyczy projektu lub programu współfinansowanego ze środków Unii Europejskiej",
     "data_model": "core",
     "example_values": [
@@ -320,7 +320,7 @@
     ]
   },
   "2.8": {
-    "col_name": "cn_section_2_8",
+    "col_name": "section_2_8",
     "section_header": "Nazwa projektu lub programu",
     "data_model": "core",
     "example_values": [
@@ -330,7 +330,7 @@
     ]
   },
   "3.1": {
-    "col_name": "cn_section_3_1",
+    "col_name": "section_3_1",
     "section_header": "Procedura konkursu",
     "data_model": "core",
     "example_values": [
@@ -339,7 +339,7 @@
     ]
   },
   "3.2": {
-    "col_name": "cn_section_3_2",
+    "col_name": "section_3_2",
     "section_header": "Rodzaj konkursu",
     "data_model": "core",
     "example_values": [
@@ -348,7 +348,7 @@
     ]
   },
   "3.3": {
-    "col_name": "cn_section_3_3",
+    "col_name": "section_3_3",
     "section_header": "Termin składania prac konkursowych",
     "data_model": "core",
     "example_values": [
@@ -358,7 +358,7 @@
     ]
   },
   "3.4": {
-    "col_name": "cn_section_3_4",
+    "col_name": "section_3_4",
     "section_header": "Czy Zamawiający przewiduje ograniczenie liczby uczestników konkursu, którzy zostaną zaproszeni do drugiego etapu konkursu",
     "data_model": "core",
     "example_values": [
@@ -366,7 +366,7 @@
     ]
   },
   "3.4.1": {
-    "col_name": "cn_section_3_4_1",
+    "col_name": "section_3_4_1",
     "section_header": "Liczba uczestników konkursu, którzy zostaną zaproszeni do drugiego etapu konkursu oraz kryteria oceny opracowań studialnych wraz z podaniem znaczenia tych kryteriów",
     "data_model": "core",
     "example_values": [
@@ -375,7 +375,7 @@
     ]
   },
   "3.5": {
-    "col_name": "cn_section_3_5",
+    "col_name": "section_3_5",
     "section_header": "Termin składania opracowań studialnych",
     "data_model": "core",
     "example_values": [
@@ -384,7 +384,7 @@
     ]
   },
   "3.6": {
-    "col_name": "cn_section_3_6",
+    "col_name": "section_3_6",
     "section_header": "Termin składania wniosków o dopuszczenie do udziału w konkursie",
     "data_model": "core",
     "example_values": [
@@ -394,7 +394,7 @@
     ]
   },
   "3.7": {
-    "col_name": "cn_section_3_7",
+    "col_name": "section_3_7",
     "section_header": "Informacja o obiektywnych wymaganiach",
     "data_model": "core",
     "example_values": [
@@ -404,7 +404,7 @@
     ]
   },
   "4.1": {
-    "col_name": "cn_section_4_1",
+    "col_name": "section_4_1",
     "section_header": "Adres strony internetowej prowadzonego konkursu",
     "data_model": "core",
     "example_values": [
@@ -414,7 +414,7 @@
     ]
   },
   "4.2": {
-    "col_name": "cn_section_4_2",
+    "col_name": "section_4_2",
     "section_header": "Informacje na temat sposobu udostępnienia zastrzeżonych dokumentów konkursu",
     "data_model": "core",
     "example_values": [
@@ -423,7 +423,7 @@
     ]
   },
   "4.3": {
-    "col_name": "cn_section_4_3",
+    "col_name": "section_4_3",
     "section_header": "Komunikacja w konkursie wyłącznie elektroniczna",
     "data_model": "core",
     "example_values": [
@@ -432,7 +432,7 @@
     ]
   },
   "4.4": {
-    "col_name": "cn_section_4_4",
+    "col_name": "section_4_4",
     "section_header": "Adres WWW środka służącego do komunikacji w konkursie",
     "data_model": "core",
     "example_values": [
@@ -442,7 +442,7 @@
     ]
   },
   "4.5": {
-    "col_name": "cn_section_4_5",
+    "col_name": "section_4_5",
     "section_header": "Wymagania techniczne i organizacyjne dotyczące korespondencji elektronicznej",
     "data_model": "core",
     "example_values": [
@@ -452,7 +452,7 @@
     ]
   },
   "4.6": {
-    "col_name": "cn_section_4_6",
+    "col_name": "section_4_6",
     "section_header": "Adres strony internetowej, pod którym są dostępne narzędzia, urządzenia lub formaty plików, które nie są ogólnie dostępne",
     "data_model": "core",
     "example_values": [
@@ -460,7 +460,7 @@
     ]
   },
   "4.7": {
-    "col_name": "cn_section_4_7",
+    "col_name": "section_4_7",
     "section_header": "Narzędzia elektronicznego modelowania danych budowlanych",
     "data_model": "core",
     "example_values": [
@@ -468,7 +468,7 @@
     ]
   },
   "4.9": {
-    "col_name": "cn_section_4_9",
+    "col_name": "section_4_9",
     "section_header": "Przyczyny odstąpienia od komunikacji elektronicznej",
     "data_model": "core",
     "example_values": [
@@ -477,7 +477,7 @@
     ]
   },
   "4.10": {
-    "col_name": "cn_section_4_10",
+    "col_name": "section_4_10",
     "section_header": "Sposób nieelektronicznego składania prac konkursowych i wniosków",
     "data_model": "core",
     "example_values": [
@@ -487,7 +487,7 @@
     ]
   },
   "4.11": {
-    "col_name": "cn_section_4_11",
+    "col_name": "section_4_11",
     "section_header": "Język prac konkursowych i wniosków",
     "data_model": "core",
     "example_values": [
@@ -496,7 +496,7 @@
     ]
   },
   "4.12": {
-    "col_name": "cn_section_4_12",
+    "col_name": "section_4_12",
     "section_header": "RODO (obowiązek informacyjny)",
     "data_model": "core",
     "example_values": [
@@ -506,7 +506,7 @@
     ]
   },
   "4.13": {
-    "col_name": "cn_section_4_13",
+    "col_name": "section_4_13",
     "section_header": "RODO (ograniczenia stosowania)",
     "data_model": "core",
     "example_values": [
@@ -516,7 +516,7 @@
     ]
   },
   "5.1": {
-    "col_name": "cn_section_5_1",
+    "col_name": "section_5_1",
     "section_header": "Numer referencyjny konkursu",
     "data_model": "core",
     "example_values": [
@@ -526,7 +526,7 @@
     ]
   },
   "5.2": {
-    "col_name": "cn_section_5_2",
+    "col_name": "section_5_2",
     "section_header": "Czy konkurs poprzedza udzielenie zamówienia na usługi projektowania architektonicznego lub projektowania architektoniczno - budowlanego",
     "data_model": "core",
     "example_values": [
@@ -535,7 +535,7 @@
     ]
   },
   "5.3": {
-    "col_name": "cn_section_5_3",
+    "col_name": "section_5_3",
     "section_header": "Krótki opis przedmiotu konkursu",
     "data_model": "core",
     "example_values": [
@@ -545,7 +545,7 @@
     ]
   },
   "5.4": {
-    "col_name": "cn_section_5_4",
+    "col_name": "section_5_4",
     "section_header": "Główny kod CPV",
     "data_model": "core",
     "example_values": [
@@ -555,7 +555,7 @@
     ]
   },
   "5.5": {
-    "col_name": "cn_section_5_5",
+    "col_name": "section_5_5",
     "section_header": "Dodatkowy kod CPV",
     "data_model": "core",
     "example_values": [
@@ -565,7 +565,7 @@
     ]
   },
   "5.6": {
-    "col_name": "cn_section_5_6",
+    "col_name": "section_5_6",
     "section_header": "Aspekty społeczne i środowiskowe w opisie przedmiotu konkursu",
     "data_model": "core",
     "example_values": [
@@ -574,7 +574,7 @@
     ]
   },
   "6.1": {
-    "col_name": "cn_section_6_1",
+    "col_name": "section_6_1",
     "section_header": "Rodzaj nagrody",
     "data_model": "core",
     "example_values": [
@@ -583,7 +583,7 @@
     ]
   },
   "6.2": {
-    "col_name": "cn_section_6_2",
+    "col_name": "section_6_2",
     "section_header": "Liczba nagród dla autora wybranej pracy konkursowej lub autorów wybranych prac konkursowych",
     "data_model": "core",
     "example_values": [
@@ -593,7 +593,7 @@
     ]
   },
   "6.3": {
-    "col_name": "cn_section_6_3",
+    "col_name": "section_6_3",
     "section_header": "Liczba prac konkursowych, które zostaną nagrodzone",
     "data_model": "core",
     "example_values": [
@@ -603,7 +603,7 @@
     ]
   },
   "6.4": {
-    "col_name": "cn_section_6_4",
+    "col_name": "section_6_4",
     "section_header": "Wartość nagród pieniężnych lub rzeczowych",
     "data_model": "core",
     "example_values": [
@@ -613,7 +613,7 @@
     ]
   },
   "6.5.1": {
-    "col_name": "cn_section_6_5_1",
+    "col_name": "section_6_5_1",
     "section_header": "Wartość zamówienia",
     "data_model": "core",
     "example_values": [
@@ -623,7 +623,7 @@
     ]
   },
   "6.5.2": {
-    "col_name": "cn_section_6_5_2",
+    "col_name": "section_6_5_2",
     "section_header": "Tryb udzielenia zamówienia",
     "data_model": "core",
     "example_values": [
@@ -631,7 +631,7 @@
     ]
   },
   "7.1": {
-    "col_name": "cn_section_7_1",
+    "col_name": "section_7_1",
     "section_header": "Wymagania, jakie muszą spełnić uczestnicy konkursu",
     "data_model": "core",
     "example_values": [
@@ -641,7 +641,7 @@
     ]
   },
   "7.2": {
-    "col_name": "cn_section_7_2",
+    "col_name": "section_7_2",
     "section_header": "Czy ustanowiono  wymagania środowiskowe lub społeczne",
     "data_model": "core",
     "example_values": [
@@ -650,7 +650,7 @@
     ]
   },
   "7.3": {
-    "col_name": "cn_section_7_3",
+    "col_name": "section_7_3",
     "section_header": "Czy przepisy szczególne wymagają posiadania uprawnień do opracowania pracy konkursowej lub opracowania studialnego",
     "data_model": "core",
     "example_values": [
@@ -659,7 +659,7 @@
     ]
   },
   "7.4": {
-    "col_name": "cn_section_7_4",
+    "col_name": "section_7_4",
     "section_header": "Wymagany zawód/uprawnienia do wykonania pracy konkursowej lub opracowania studialnego",
     "data_model": "core",
     "example_values": [
@@ -669,7 +669,7 @@
     ]
   },
   "7.5": {
-    "col_name": "cn_section_7_5",
+    "col_name": "section_7_5",
     "section_header": "Wykaz podmiotowych środków dowodowych potwierdzających posiadanie wymaganych uprawnień",
     "data_model": "core",
     "example_values": [
@@ -679,7 +679,7 @@
     ]
   },
   "8.1": {
-    "col_name": "cn_section_8_1",
+    "col_name": "section_8_1",
     "section_header": "Rodzaj i nazwa kryteriów oceny prac konkursowych/opracowań studialnych",
     "data_model": "core",
     "example_values": [
@@ -689,7 +689,7 @@
     ]
   },
   "8.2": {
-    "col_name": "cn_section_8_2",
+    "col_name": "section_8_2",
     "section_header": "Znaczenie kryteriów oceny prac konkursowych/opracowań studialnych",
     "data_model": "core",
     "example_values": [
@@ -699,7 +699,7 @@
     ]
   },
   "8.3": {
-    "col_name": "cn_section_8_3",
+    "col_name": "section_8_3",
     "section_header": "Aspekty społeczne, środowiskowe albo innowacyjne w odniesieniu do kryteriów oceny ofert",
     "data_model": "core",
     "example_values": [

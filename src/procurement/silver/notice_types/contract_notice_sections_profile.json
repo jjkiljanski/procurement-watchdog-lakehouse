@@ -1,6 +1,6 @@
 {
   "1.1": {
-    "col_name": "cn_section_1_1",
+    "col_name": "section_1_1",
     "section_header": "Rola zamawiającego",
     "data_model": "core",
     "example_values": [
@@ -10,7 +10,7 @@
     ]
   },
   "1.2": {
-    "col_name": "cn_section_1_2",
+    "col_name": "section_1_2",
     "section_header": "Nazwa zamawiającego",
     "data_model": "client",
     "example_values": [
@@ -20,7 +20,7 @@
     ]
   },
   "1.3": {
-    "col_name": "cn_section_1_3",
+    "col_name": "section_1_3",
     "section_header": "Oddział zamawiającego",
     "data_model": "client",
     "example_values": [
@@ -30,7 +30,7 @@
     ]
   },
   "1.4": {
-    "col_name": "cn_section_1_4",
+    "col_name": "section_1_4",
     "section_header": "Krajowy Numer Identyfikacyjny",
     "data_model": "client",
     "example_values": [
@@ -40,7 +40,7 @@
     ]
   },
   "1.5.1": {
-    "col_name": "cn_section_1_5_1",
+    "col_name": "section_1_5_1",
     "section_header": "Ulica",
     "data_model": "client",
     "example_values": [
@@ -50,7 +50,7 @@
     ]
   },
   "1.5.2": {
-    "col_name": "cn_section_1_5_2",
+    "col_name": "section_1_5_2",
     "section_header": "Miejscowość",
     "data_model": "client",
     "example_values": [
@@ -60,7 +60,7 @@
     ]
   },
   "1.5.3": {
-    "col_name": "cn_section_1_5_3",
+    "col_name": "section_1_5_3",
     "section_header": "Kod pocztowy",
     "data_model": "client",
     "example_values": [
@@ -70,7 +70,7 @@
     ]
   },
   "1.5.4": {
-    "col_name": "cn_section_1_5_4",
+    "col_name": "section_1_5_4",
     "section_header": "Województwo",
     "data_model": "client",
     "example_values": [
@@ -80,7 +80,7 @@
     ]
   },
   "1.5.5": {
-    "col_name": "cn_section_1_5_5",
+    "col_name": "section_1_5_5",
     "section_header": "Kraj",
     "data_model": "client",
     "example_values": [
@@ -88,7 +88,7 @@
     ]
   },
   "1.5.6": {
-    "col_name": "cn_section_1_5_6",
+    "col_name": "section_1_5_6",
     "section_header": "Lokalizacja NUTS 3",
     "data_model": "client",
     "example_values": [
@@ -98,7 +98,7 @@
     ]
   },
   "1.5.7": {
-    "col_name": "cn_section_1_5_7",
+    "col_name": "section_1_5_7",
     "section_header": "Numer telefonu",
     "data_model": "client",
     "example_values": [
@@ -108,7 +108,7 @@
     ]
   },
   "1.5.8": {
-    "col_name": "cn_section_1_5_8",
+    "col_name": "section_1_5_8",
     "section_header": "Numer faksu",
     "data_model": "client",
     "example_values": [
@@ -118,7 +118,7 @@
     ]
   },
   "1.5.9": {
-    "col_name": "cn_section_1_5_9",
+    "col_name": "section_1_5_9",
     "section_header": "Adres poczty elektronicznej",
     "data_model": "client",
     "example_values": [
@@ -128,7 +128,7 @@
     ]
   },
   "1.5.10": {
-    "col_name": "cn_section_1_5_10",
+    "col_name": "section_1_5_10",
     "section_header": "Adres strony internetowej zamawiającego",
     "data_model": "client",
     "example_values": [
@@ -138,7 +138,7 @@
     ]
   },
   "1.6": {
-    "col_name": "cn_section_1_6",
+    "col_name": "section_1_6",
     "section_header": "Rodzaj zamawiającego",
     "data_model": "core",
     "example_values": [
@@ -148,7 +148,7 @@
     ]
   },
   "1.7": {
-    "col_name": "cn_section_1_7",
+    "col_name": "section_1_7",
     "section_header": "Przedmiot działalności zamawiającego",
     "data_model": "core",
     "example_values": [
@@ -158,7 +158,7 @@
     ]
   },
   "1.9": {
-    "col_name": "cn_section_1_9",
+    "col_name": "section_1_9",
     "section_header": "Podział obowiązków – zamówienie wspólne",
     "data_model": "core",
     "example_values": [
@@ -168,7 +168,7 @@
     ]
   },
   "1.11.1": {
-    "col_name": "cn_section_1_11_1",
+    "col_name": "section_1_11_1",
     "section_header": "Nazwa podmiotu prowadzącego postępowanie",
     "data_model": "core",
     "example_values": [
@@ -178,7 +178,7 @@
     ]
   },
   "1.11.2": {
-    "col_name": "cn_section_1_11_2",
+    "col_name": "section_1_11_2",
     "section_header": "Krajowy Numer Identyfikacyjny",
     "data_model": "core",
     "example_values": [
@@ -188,7 +188,7 @@
     ]
   },
   "1.11.3": {
-    "col_name": "cn_section_1_11_3",
+    "col_name": "section_1_11_3",
     "section_header": "Ulica",
     "data_model": "core",
     "example_values": [
@@ -198,7 +198,7 @@
     ]
   },
   "1.11.4": {
-    "col_name": "cn_section_1_11_4",
+    "col_name": "section_1_11_4",
     "section_header": "Miejscowość",
     "data_model": "core",
     "example_values": [
@@ -208,7 +208,7 @@
     ]
   },
   "1.11.5": {
-    "col_name": "cn_section_1_11_5",
+    "col_name": "section_1_11_5",
     "section_header": "Kod pocztowy",
     "data_model": "core",
     "example_values": [
@@ -218,7 +218,7 @@
     ]
   },
   "1.11.6": {
-    "col_name": "cn_section_1_11_6",
+    "col_name": "section_1_11_6",
     "section_header": "Województwo",
     "data_model": "core",
     "example_values": [
@@ -228,7 +228,7 @@
     ]
   },
   "1.11.7": {
-    "col_name": "cn_section_1_11_7",
+    "col_name": "section_1_11_7",
     "section_header": "Kraj",
     "data_model": "core",
     "example_values": [
@@ -236,7 +236,7 @@
     ]
   },
   "1.11.8": {
-    "col_name": "cn_section_1_11_8",
+    "col_name": "section_1_11_8",
     "section_header": "Lokalizacja NUTS 3",
     "data_model": "core",
     "example_values": [
@@ -246,7 +246,7 @@
     ]
   },
   "1.11.9": {
-    "col_name": "cn_section_1_11_9",
+    "col_name": "section_1_11_9",
     "section_header": "Numer telefonu",
     "data_model": "core",
     "example_values": [
@@ -256,7 +256,7 @@
     ]
   },
   "1.11.10": {
-    "col_name": "cn_section_1_11_10",
+    "col_name": "section_1_11_10",
     "section_header": "Numer faksu",
     "data_model": "core",
     "example_values": [
@@ -266,7 +266,7 @@
     ]
   },
   "1.11.11": {
-    "col_name": "cn_section_1_11_11",
+    "col_name": "section_1_11_11",
     "section_header": "Adres poczty elektronicznej",
     "data_model": "core",
     "example_values": [
@@ -276,7 +276,7 @@
     ]
   },
   "1.11.12": {
-    "col_name": "cn_section_1_11_12",
+    "col_name": "section_1_11_12",
     "section_header": "Adres strony internetowej",
     "data_model": "core",
     "example_values": [
@@ -286,7 +286,7 @@
     ]
   },
   "2.1": {
-    "col_name": "cn_section_2_1",
+    "col_name": "section_2_1",
     "section_header": "Ogłoszenie dotyczy",
     "data_model": "core",
     "example_values": [
@@ -295,7 +295,7 @@
     ]
   },
   "2.2": {
-    "col_name": "cn_section_2_2",
+    "col_name": "section_2_2",
     "section_header": "Ogłoszenie dotyczy usług społecznych i innych szczególnych usług",
     "data_model": "core",
     "example_values": [
@@ -304,7 +304,7 @@
     ]
   },
   "2.3": {
-    "col_name": "cn_section_2_3",
+    "col_name": "section_2_3",
     "section_header": "Nazwa zamówienia albo umowy ramowej",
     "data_model": "core",
     "example_values": [
@@ -314,7 +314,7 @@
     ]
   },
   "2.4": {
-    "col_name": "cn_section_2_4",
+    "col_name": "section_2_4",
     "section_header": "Identyfikator postępowania",
     "data_model": "core",
     "example_values": [
@@ -324,7 +324,7 @@
     ]
   },
   "2.5": {
-    "col_name": "cn_section_2_5",
+    "col_name": "section_2_5",
     "section_header": "Numer ogłoszenia",
     "data_model": "core",
     "example_values": [
@@ -334,7 +334,7 @@
     ]
   },
   "2.6": {
-    "col_name": "cn_section_2_6",
+    "col_name": "section_2_6",
     "section_header": "Wersja ogłoszenia",
     "data_model": "core",
     "example_values": [
@@ -342,7 +342,7 @@
     ]
   },
   "2.7": {
-    "col_name": "cn_section_2_7",
+    "col_name": "section_2_7",
     "section_header": "Data ogłoszenia",
     "data_model": "core",
     "example_values": [
@@ -352,7 +352,7 @@
     ]
   },
   "2.8": {
-    "col_name": "cn_section_2_8",
+    "col_name": "section_2_8",
     "section_header": "Zamówienie albo umowa ramowa zostały ujęte w planie postępowań",
     "data_model": "core",
     "example_values": [
@@ -361,7 +361,7 @@
     ]
   },
   "2.9": {
-    "col_name": "cn_section_2_9",
+    "col_name": "section_2_9",
     "section_header": "Numer planu postępowań w BZP",
     "data_model": "core",
     "example_values": [
@@ -371,7 +371,7 @@
     ]
   },
   "2.10": {
-    "col_name": "cn_section_2_10",
+    "col_name": "section_2_10",
     "section_header": "Identyfikator pozycji planu postępowań",
     "data_model": "core",
     "example_values": [
@@ -381,7 +381,7 @@
     ]
   },
   "2.11": {
-    "col_name": "cn_section_2_11",
+    "col_name": "section_2_11",
     "section_header": "O udzielenie zamówienia mogą ubiegać się wyłącznie wykonawcy, o których mowa w art. 94 ustawy",
     "data_model": "core",
     "example_values": [
@@ -390,7 +390,7 @@
     ]
   },
   "2.12": {
-    "col_name": "cn_section_2_12",
+    "col_name": "section_2_12",
     "section_header": "Rodzaj wykonawców, którzy mogą ubiegać się o udzielenie zamówienia",
     "data_model": "core",
     "example_values": [
@@ -400,7 +400,7 @@
     ]
   },
   "2.13": {
-    "col_name": "cn_section_2_13",
+    "col_name": "section_2_13",
     "section_header": "O zamówienie mogą ubiegać się wyłącznie wykonawcy, którzy spełniają warunki określone w art. 361 ustawy – usługi społeczne",
     "data_model": "core",
     "example_values": [
@@ -409,7 +409,7 @@
     ]
   },
   "2.14": {
-    "col_name": "cn_section_2_14",
+    "col_name": "section_2_14",
     "section_header": "Czy zamówienie albo umowa ramowa dotyczy projektu lub programu współfinansowanego ze środków Unii Europejskiej",
     "data_model": "core",
     "example_values": [
@@ -418,7 +418,7 @@
     ]
   },
   "2.15": {
-    "col_name": "cn_section_2_15",
+    "col_name": "section_2_15",
     "section_header": "Nazwa projektu lub programu",
     "data_model": "core",
     "example_values": [
@@ -428,7 +428,7 @@
     ]
   },
   "2.16": {
-    "col_name": "cn_section_2_16",
+    "col_name": "section_2_16",
     "section_header": "Tryb udzielenia zamówienia wraz z podstawą prawną",
     "data_model": "core",
     "example_values": [
@@ -438,7 +438,7 @@
     ]
   },
   "2.17": {
-    "col_name": "cn_section_2_17",
+    "col_name": "section_2_17",
     "section_header": "Tryb zawarcia umowy ramowej wraz z podstawą prawną",
     "data_model": "core",
     "example_values": [
@@ -447,7 +447,7 @@
     ]
   },
   "3.1": {
-    "col_name": "cn_section_3_1",
+    "col_name": "section_3_1",
     "section_header": "Adres strony internetowej prowadzonego postępowania",
     "data_model": "core",
     "example_values": [
@@ -457,7 +457,7 @@
     ]
   },
   "3.2": {
-    "col_name": "cn_section_3_2",
+    "col_name": "section_3_2",
     "section_header": "Zamawiający zastrzega dostęp do dokumentów zamówienia",
     "data_model": "core",
     "example_values": [
@@ -466,7 +466,7 @@
     ]
   },
   "3.3": {
-    "col_name": "cn_section_3_3",
+    "col_name": "section_3_3",
     "section_header": "Informacje na temat sposobu udostępnienia zastrzeżonych dokumentów zamówienia",
     "data_model": "core",
     "example_values": [
@@ -476,7 +476,7 @@
     ]
   },
   "3.4": {
-    "col_name": "cn_section_3_4",
+    "col_name": "section_3_4",
     "section_header": "Wykonawcy zobowiązani są do składania ofert, wniosków o dopuszczenie do udziału w postępowaniu, oświadczeń oraz innych dokumentów wyłącznie przy użyciu środków komunikacji elektronicznej",
     "data_model": "core",
     "example_values": [
@@ -485,7 +485,7 @@
     ]
   },
   "3.5": {
-    "col_name": "cn_section_3_5",
+    "col_name": "section_3_5",
     "section_header": "Informacje o środkach komunikacji elektronicznej, przy użyciu których zamawiający  będzie komunikował się z wykonawcami - adres strony internetowej",
     "data_model": "core",
     "example_values": [
@@ -495,7 +495,7 @@
     ]
   },
   "3.6": {
-    "col_name": "cn_section_3_6",
+    "col_name": "section_3_6",
     "section_header": "Wymagania techniczne i organizacyjne dotyczące korespondencji elektronicznej",
     "data_model": "core",
     "example_values": [
@@ -505,7 +505,7 @@
     ]
   },
   "3.7": {
-    "col_name": "cn_section_3_7",
+    "col_name": "section_3_7",
     "section_header": "Adres strony internetowej, pod którym są dostępne narzędzia, urządzenia lub formaty plików, które nie są ogólnie dostępne",
     "data_model": "core",
     "example_values": [
@@ -515,7 +515,7 @@
     ]
   },
   "3.8": {
-    "col_name": "cn_section_3_8",
+    "col_name": "section_3_8",
     "section_header": "Zamawiający wymaga sporządzenia i przedstawienia ofert przy użyciu narzędzi elektronicznego modelowania danych budowlanych lub innych podobnych narzędzi, które nie są ogólnie dostępne",
     "data_model": "core",
     "example_values": [
@@ -524,7 +524,7 @@
     ]
   },
   "3.9": {
-    "col_name": "cn_section_3_9",
+    "col_name": "section_3_9",
     "section_header": "Sposób dostępu do narzędzi elektronicznego modelowania danych budowlanych",
     "data_model": "core",
     "example_values": [
@@ -532,7 +532,7 @@
     ]
   },
   "3.10": {
-    "col_name": "cn_section_3_10",
+    "col_name": "section_3_10",
     "section_header": "Przyczyny odstąpienia od komunikacji elektronicznej",
     "data_model": "core",
     "example_values": [
@@ -542,7 +542,7 @@
     ]
   },
   "3.11": {
-    "col_name": "cn_section_3_11",
+    "col_name": "section_3_11",
     "section_header": "Sposób nieelektronicznego składania ofert, wniosków, oświadczeń oraz innych dokumentów",
     "data_model": "core",
     "example_values": [
@@ -552,7 +552,7 @@
     ]
   },
   "3.12": {
-    "col_name": "cn_section_3_12",
+    "col_name": "section_3_12",
     "section_header": "Oferta - katalog elektroniczny",
     "data_model": "core",
     "example_values": [
@@ -562,7 +562,7 @@
     ]
   },
   "3.14": {
-    "col_name": "cn_section_3_14",
+    "col_name": "section_3_14",
     "section_header": "Języki, w jakich mogą być sporządzane dokumenty składane w postępowaniu",
     "data_model": "core",
     "example_values": [
@@ -571,7 +571,7 @@
     ]
   },
   "3.15": {
-    "col_name": "cn_section_3_15",
+    "col_name": "section_3_15",
     "section_header": "RODO (obowiązek informacyjny)",
     "data_model": "core",
     "example_values": [
@@ -581,7 +581,7 @@
     ]
   },
   "3.16": {
-    "col_name": "cn_section_3_16",
+    "col_name": "section_3_16",
     "section_header": "RODO (ograniczenia stosowania)",
     "data_model": "core",
     "example_values": [
@@ -591,7 +591,7 @@
     ]
   },
   "4.1.1": {
-    "col_name": "cn_section_4_1_1",
+    "col_name": "section_4_1_1",
     "section_header": "Przed wszczęciem postępowania przeprowadzono konsultacje rynkowe",
     "data_model": "core",
     "example_values": [
@@ -600,7 +600,7 @@
     ]
   },
   "4.1.2": {
-    "col_name": "cn_section_4_1_2",
+    "col_name": "section_4_1_2",
     "section_header": "Numer referencyjny",
     "data_model": "core",
     "example_values": [
@@ -610,7 +610,7 @@
     ]
   },
   "4.1.3": {
-    "col_name": "cn_section_4_1_3",
+    "col_name": "section_4_1_3",
     "section_header": "Rodzaj zamówienia",
     "data_model": "core",
     "example_values": [
@@ -620,7 +620,7 @@
     ]
   },
   "4.1.4": {
-    "col_name": "cn_section_4_1_4",
+    "col_name": "section_4_1_4",
     "section_header": "Zamawiający udziela zamówienia w częściach, z których każda stanowi przedmiot odrębnego postępowania",
     "data_model": "core",
     "example_values": [
@@ -629,7 +629,7 @@
     ]
   },
   "4.1.5": {
-    "col_name": "cn_section_4_1_5",
+    "col_name": "section_4_1_5",
     "section_header": "Łączna wartość poszczególnych części zamówienia",
     "data_model": "core",
     "example_values": [
@@ -639,7 +639,7 @@
     ]
   },
   "4.1.6": {
-    "col_name": "cn_section_4_1_6",
+    "col_name": "section_4_1_6",
     "section_header": "Wartość zamówienia stanowiącego przedmiot tego postępowania (bez VAT)",
     "data_model": "core",
     "example_values": [
@@ -649,7 +649,7 @@
     ]
   },
   "4.1.7": {
-    "col_name": "cn_section_4_1_7",
+    "col_name": "section_4_1_7",
     "section_header": "Wartość umowy ramowej (bez VAT)",
     "data_model": "core",
     "example_values": [
@@ -657,7 +657,7 @@
     ]
   },
   "4.1.8": {
-    "col_name": "cn_section_4_1_8",
+    "col_name": "section_4_1_8",
     "section_header": "Możliwe jest składanie ofert częściowych",
     "data_model": "core",
     "example_values": [
@@ -666,7 +666,7 @@
     ]
   },
   "4.1.9": {
-    "col_name": "cn_section_4_1_9",
+    "col_name": "section_4_1_9",
     "section_header": "Liczba części",
     "data_model": "core",
     "example_values": [
@@ -676,7 +676,7 @@
     ]
   },
   "4.1.11": {
-    "col_name": "cn_section_4_1_11",
+    "col_name": "section_4_1_11",
     "section_header": "Zamawiający ogranicza liczbę części zamówienia, którą można udzielić jednemu wykonawcy",
     "data_model": "core",
     "example_values": [
@@ -685,7 +685,7 @@
     ]
   },
   "4.1.12": {
-    "col_name": "cn_section_4_1_12",
+    "col_name": "section_4_1_12",
     "section_header": "Maksymalna liczba części, jaka może zostać udzielona jednemu wykonawcy",
     "data_model": "core",
     "example_values": [
@@ -695,7 +695,7 @@
     ]
   },
   "4.1.13": {
-    "col_name": "cn_section_4_1_13",
+    "col_name": "section_4_1_13",
     "section_header": "Zamawiający uwzględnia aspekty społeczne, środowiskowe lub etykiety w opisie przedmiotu zamówienia",
     "data_model": "core",
     "example_values": [
@@ -704,7 +704,7 @@
     ]
   },
   "4.1.14": {
-    "col_name": "cn_section_4_1_14",
+    "col_name": "section_4_1_14",
     "section_header": "Określenie aspektów społecznych, środowiskowych lub etykiet w opisie przedmiotu zamówienia",
     "data_model": "core",
     "example_values": [
@@ -714,7 +714,7 @@
     ]
   },
   "4.2.2": {
-    "col_name": "cn_section_4_2_2",
+    "col_name": "section_4_2_2",
     "section_header": "Krótki opis przedmiotu zamówienia",
     "data_model": "part",
     "example_values": [
@@ -724,7 +724,7 @@
     ]
   },
   "4.2.4": {
-    "col_name": "cn_section_4_2_4",
+    "col_name": "section_4_2_4",
     "section_header": "Zapotrzebowa",
     "data_model": "part",
     "example_values": [
@@ -733,7 +733,7 @@
     ]
   },
   "4.2.5": {
-    "col_name": "cn_section_4_2_5",
+    "col_name": "section_4_2_5",
     "section_header": "Wartość części",
     "data_model": "part",
     "example_values": [
@@ -743,7 +743,7 @@
     ]
   },
   "4.2.6": {
-    "col_name": "cn_section_4_2_6",
+    "col_name": "section_4_2_6",
     "section_header": "Główny kod CPV",
     "data_model": "part",
     "example_values": [
@@ -753,7 +753,7 @@
     ]
   },
   "4.2.7": {
-    "col_name": "cn_section_4_2_7",
+    "col_name": "section_4_2_7",
     "section_header": "Dodatkowy kod CPV",
     "data_model": "part",
     "example_values": [
@@ -763,7 +763,7 @@
     ]
   },
   "4.2.8": {
-    "col_name": "cn_section_4_2_8",
+    "col_name": "section_4_2_8",
     "section_header": "Zamówienie obejmuje opcje",
     "data_model": "part",
     "example_values": [
@@ -772,7 +772,7 @@
     ]
   },
   "4.2.9": {
-    "col_name": "cn_section_4_2_9",
+    "col_name": "section_4_2_9",
     "section_header": "Rodzaj i maksymalna wartość opcji oraz okoliczności skorzystania z opcji",
     "data_model": "part",
     "example_values": [
@@ -782,7 +782,7 @@
     ]
   },
   "4.2.10": {
-    "col_name": "cn_section_4_2_10",
+    "col_name": "section_4_2_10",
     "section_header": "Okres realizacji zamówienia albo umowy ramowej",
     "data_model": "part",
     "example_values": [
@@ -792,7 +792,7 @@
     ]
   },
   "4.2.11": {
-    "col_name": "cn_section_4_2_11",
+    "col_name": "section_4_2_11",
     "section_header": "Zamawiający przewiduje wznowienia",
     "data_model": "part",
     "example_values": [
@@ -801,7 +801,7 @@
     ]
   },
   "4.2.12": {
-    "col_name": "cn_section_4_2_12",
+    "col_name": "section_4_2_12",
     "section_header": "Opis wznowienia",
     "data_model": "part",
     "example_values": [
@@ -811,7 +811,7 @@
     ]
   },
   "4.2.13": {
-    "col_name": "cn_section_4_2_13",
+    "col_name": "section_4_2_13",
     "section_header": "Zamawiający przewiduje udzielenie dotychczasowemu wykonawcy zamówień na podobne usługi lub roboty budowlane",
     "data_model": "part",
     "example_values": [
@@ -820,7 +820,7 @@
     ]
   },
   "4.2.14": {
-    "col_name": "cn_section_4_2_14",
+    "col_name": "section_4_2_14",
     "section_header": "Przedmiot, wielkość lub zakres oraz warunki zamówień na podobne usługi lub roboty budowlane",
     "data_model": "part",
     "example_values": [
@@ -830,7 +830,7 @@
     ]
   },
   "4.3.1": {
-    "col_name": "cn_section_4_3_1",
+    "col_name": "section_4_3_1",
     "section_header": "Sposób oceny ofert",
     "data_model": "part",
     "example_values": [
@@ -840,7 +840,7 @@
     ]
   },
   "4.3.2": {
-    "col_name": "cn_section_4_3_2",
+    "col_name": "section_4_3_2",
     "section_header": "Sposób określania wagi kryteriów oceny ofert",
     "data_model": "part",
     "example_values": [
@@ -850,7 +850,7 @@
     ]
   },
   "4.3.3": {
-    "col_name": "cn_section_4_3_3",
+    "col_name": "section_4_3_3",
     "section_header": "Stosowane kryteria oceny ofert",
     "data_model": "part",
     "example_values": [
@@ -860,7 +860,7 @@
     ]
   },
   "4.3.4": {
-    "col_name": "cn_section_4_3_4",
+    "col_name": "section_4_3_4",
     "section_header": "Rodzaj kryterium",
     "data_model": "part",
     "example_values": [
@@ -870,7 +870,7 @@
     ]
   },
   "4.3.5": {
-    "col_name": "cn_section_4_3_5",
+    "col_name": "section_4_3_5",
     "section_header": "Nazwa kryterium",
     "data_model": "part",
     "example_values": [
@@ -880,7 +880,7 @@
     ]
   },
   "4.3.6": {
-    "col_name": "cn_section_4_3_6",
+    "col_name": "section_4_3_6",
     "section_header": "Waga",
     "data_model": "part",
     "example_values": [
@@ -890,7 +890,7 @@
     ]
   },
   "4.3.7": {
-    "col_name": "cn_section_4_3_7",
+    "col_name": "section_4_3_7",
     "section_header": "Kolejność kryterium",
     "data_model": "part",
     "example_values": [
@@ -900,7 +900,7 @@
     ]
   },
   "4.3.10": {
-    "col_name": "cn_section_4_3_10",
+    "col_name": "section_4_3_10",
     "section_header": "Zamawiający określa  aspekty społeczne, środowiskowe lub innowacyjne, żąda etykiet lub stosuje rachunek kosztów cyklu życia w odniesieniu do kryterium oceny ofert",
     "data_model": "part",
     "example_values": [
@@ -909,7 +909,7 @@
     ]
   },
   "4.3.11": {
-    "col_name": "cn_section_4_3_11",
+    "col_name": "section_4_3_11",
     "section_header": "Określenie aspektów społecznych, środowiskowych lub innowacyjnych, etykiet lub rachunku  kosztów cyklu życia w odniesieniu do kryteriów oceny ofert",
     "data_model": "part",
     "example_values": [
@@ -919,7 +919,7 @@
     ]
   },
   "5.1": {
-    "col_name": "cn_section_5_1",
+    "col_name": "section_5_1",
     "section_header": "Zamawiający przewiduje fakultatywne podstawy wykluczenia",
     "data_model": "core",
     "example_values": [
@@ -928,7 +928,7 @@
     ]
   },
   "5.2": {
-    "col_name": "cn_section_5_2",
+    "col_name": "section_5_2",
     "section_header": "Fakultatywne podstawy wykluczenia",
     "data_model": "core",
     "example_values": [
@@ -938,7 +938,7 @@
     ]
   },
   "5.3": {
-    "col_name": "cn_section_5_3",
+    "col_name": "section_5_3",
     "section_header": "Warunki udziału w postępowaniu",
     "data_model": "core",
     "example_values": [
@@ -947,7 +947,7 @@
     ]
   },
   "5.4": {
-    "col_name": "cn_section_5_4",
+    "col_name": "section_5_4",
     "section_header": "Nazwa i opis warunków udziału w postępowaniu.",
     "data_model": "core",
     "example_values": [
@@ -957,7 +957,7 @@
     ]
   },
   "5.5": {
-    "col_name": "cn_section_5_5",
+    "col_name": "section_5_5",
     "section_header": "Zamawiający wymaga złożenia oświadczenia, o którym mowa w art.125 ust. 1 ustawy",
     "data_model": "core",
     "example_values": [
@@ -966,7 +966,7 @@
     ]
   },
   "5.6": {
-    "col_name": "cn_section_5_6",
+    "col_name": "section_5_6",
     "section_header": "Wykaz podmiotowych środków dowodowych na potwierdzenie niepodlegania wykluczeniu",
     "data_model": "core",
     "example_values": [
@@ -976,7 +976,7 @@
     ]
   },
   "5.7": {
-    "col_name": "cn_section_5_7",
+    "col_name": "section_5_7",
     "section_header": "Wykaz podmiotowych środków dowodowych na potwierdzenie spełniania warunków udziału w postępowaniu",
     "data_model": "core",
     "example_values": [
@@ -986,7 +986,7 @@
     ]
   },
   "5.8": {
-    "col_name": "cn_section_5_8",
+    "col_name": "section_5_8",
     "section_header": "Wykaz przedmiotowych środków dowodowych",
     "data_model": "core",
     "example_values": [
@@ -996,7 +996,7 @@
     ]
   },
   "5.9": {
-    "col_name": "cn_section_5_9",
+    "col_name": "section_5_9",
     "section_header": "Zamawiający przewiduje uzupełnienie przedmiotowych środków dowodowych",
     "data_model": "core",
     "example_values": [
@@ -1005,7 +1005,7 @@
     ]
   },
   "5.10": {
-    "col_name": "cn_section_5_10",
+    "col_name": "section_5_10",
     "section_header": "Przedmiotowe środki dowodowe podlegające uzupełnieniu po złożeniu oferty",
     "data_model": "core",
     "example_values": [
@@ -1015,7 +1015,7 @@
     ]
   },
   "5.11": {
-    "col_name": "cn_section_5_11",
+    "col_name": "section_5_11",
     "section_header": "Wykaz innych wymaganych oświadczeń lub dokumentów",
     "data_model": "core",
     "example_values": [
@@ -1025,7 +1025,7 @@
     ]
   },
   "6.1": {
-    "col_name": "cn_section_6_1",
+    "col_name": "section_6_1",
     "section_header": "Zamawiający wymaga albo dopuszcza oferty wariantowe",
     "data_model": "core",
     "example_values": [
@@ -1034,7 +1034,7 @@
     ]
   },
   "6.2": {
-    "col_name": "cn_section_6_2",
+    "col_name": "section_6_2",
     "section_header": "Oferty wariantowe wraz ze złożeniem ofert podstawowej albo zamiast oferty podstawowej",
     "data_model": "core",
     "example_values": [
@@ -1042,7 +1042,7 @@
     ]
   },
   "6.3": {
-    "col_name": "cn_section_6_3",
+    "col_name": "section_6_3",
     "section_header": "Zamawiający przewiduje aukcję elektroniczną",
     "data_model": "core",
     "example_values": [
@@ -1051,7 +1051,7 @@
     ]
   },
   "6.3.1": {
-    "col_name": "cn_section_6_3_1",
+    "col_name": "section_6_3_1",
     "section_header": "Adres internetowy aukcji",
     "data_model": "core",
     "example_values": [
@@ -1059,7 +1059,7 @@
     ]
   },
   "6.3.2": {
-    "col_name": "cn_section_6_3_2",
+    "col_name": "section_6_3_2",
     "section_header": "Opis aukcji elektronicznej",
     "data_model": "core",
     "example_values": [
@@ -1069,7 +1069,7 @@
     ]
   },
   "6.4": {
-    "col_name": "cn_section_6_4",
+    "col_name": "section_6_4",
     "section_header": "Zamawiający wymaga wadium",
     "data_model": "core",
     "example_values": [
@@ -1078,7 +1078,7 @@
     ]
   },
   "6.4.1": {
-    "col_name": "cn_section_6_4_1",
+    "col_name": "section_6_4_1",
     "section_header": "Informacje dotyczące wadium",
     "data_model": "core",
     "example_values": [
@@ -1088,7 +1088,7 @@
     ]
   },
   "6.5": {
-    "col_name": "cn_section_6_5",
+    "col_name": "section_6_5",
     "section_header": "Zamawiający wymaga zabezpieczenia należytego wykonania umowy",
     "data_model": "core",
     "example_values": [
@@ -1097,7 +1097,7 @@
     ]
   },
   "6.6": {
-    "col_name": "cn_section_6_6",
+    "col_name": "section_6_6",
     "section_header": "Wymagania dotyczące składania oferty przez wykonawców wspólnie ubiegających się o udzielenie zamówienia",
     "data_model": "core",
     "example_values": [
@@ -1107,7 +1107,7 @@
     ]
   },
   "6.7": {
-    "col_name": "cn_section_6_7",
+    "col_name": "section_6_7",
     "section_header": "Zamawiający przewiduje unieważnienie postępowania, jeśli środki publiczne, które zamierzał przeznaczyć na sfinansowanie całości lub części zamówienia nie zostały przyznane",
     "data_model": "core",
     "example_values": [
@@ -1116,7 +1116,7 @@
     ]
   },
   "7.1": {
-    "col_name": "cn_section_7_1",
+    "col_name": "section_7_1",
     "section_header": "Zamawiający przewiduje udzielenia zaliczek",
     "data_model": "core",
     "example_values": [
@@ -1125,7 +1125,7 @@
     ]
   },
   "7.2": {
-    "col_name": "cn_section_7_2",
+    "col_name": "section_7_2",
     "section_header": "Informacje na temat zaliczek",
     "data_model": "core",
     "example_values": [
@@ -1135,7 +1135,7 @@
     ]
   },
   "7.3": {
-    "col_name": "cn_section_7_3",
+    "col_name": "section_7_3",
     "section_header": "Zamawiający przewiduje zmiany umowy",
     "data_model": "core",
     "example_values": [
@@ -1144,7 +1144,7 @@
     ]
   },
   "7.4": {
-    "col_name": "cn_section_7_4",
+    "col_name": "section_7_4",
     "section_header": "Rodzaj i zakres zmian umowy oraz warunki ich wprowadzenia",
     "data_model": "core",
     "example_values": [
@@ -1154,7 +1154,7 @@
     ]
   },
   "7.5": {
-    "col_name": "cn_section_7_5",
+    "col_name": "section_7_5",
     "section_header": "Zamawiający uwzględnił aspekty społeczne, środowiskowe, innowacyjne lub etykiety związane z realizacją zamówienia",
     "data_model": "core",
     "example_values": [
@@ -1163,7 +1163,7 @@
     ]
   },
   "7.6": {
-    "col_name": "cn_section_7_6",
+    "col_name": "section_7_6",
     "section_header": "Zamawiający przewiduje następujące wymagania związane z realizacją zamówienia",
     "data_model": "core",
     "example_values": [
@@ -1173,7 +1173,7 @@
     ]
   },
   "8.1": {
-    "col_name": "cn_section_8_1",
+    "col_name": "section_8_1",
     "section_header": "Termin składania ofert",
     "data_model": "core",
     "example_values": [
@@ -1183,7 +1183,7 @@
     ]
   },
   "8.2": {
-    "col_name": "cn_section_8_2",
+    "col_name": "section_8_2",
     "section_header": "Miejsce składania ofert",
     "data_model": "core",
     "example_values": [
@@ -1193,7 +1193,7 @@
     ]
   },
   "8.3": {
-    "col_name": "cn_section_8_3",
+    "col_name": "section_8_3",
     "section_header": "Termin otwarcia ofert",
     "data_model": "core",
     "example_values": [
@@ -1203,7 +1203,7 @@
     ]
   },
   "8.4": {
-    "col_name": "cn_section_8_4",
+    "col_name": "section_8_4",
     "section_header": "Termin związania ofertą",
     "data_model": "core",
     "example_values": [
@@ -1213,7 +1213,7 @@
     ]
   },
   "8.5": {
-    "col_name": "cn_section_8_5",
+    "col_name": "section_8_5",
     "section_header": "Zamawiający przewiduje wybór najkorzystniejszej oferty z możliwością negocjacji",
     "data_model": "core",
     "example_values": [
@@ -1223,7 +1223,7 @@
     ]
   },
   "8.6": {
-    "col_name": "cn_section_8_6",
+    "col_name": "section_8_6",
     "section_header": "Maksymalna liczba wykonawców, którzy zostaną zaproszeni do negocjacji",
     "data_model": "core",
     "example_values": [
@@ -1233,7 +1233,7 @@
     ]
   },
   "8.7": {
-    "col_name": "cn_section_8_7",
+    "col_name": "section_8_7",
     "section_header": "Kryteria oceny ofert, które zamawiający zamierza stosować w celu ograniczenia liczby wykonawców",
     "data_model": "core",
     "example_values": [
@@ -1243,7 +1243,7 @@
     ]
   },
   "8.9": {
-    "col_name": "cn_section_8_9",
+    "col_name": "section_8_9",
     "section_header": "Termin składania wniosków o dopuszczenie do udziału w postępowaniu",
     "data_model": "core",
     "example_values": [
@@ -1252,7 +1252,7 @@
     ]
   },
   "8.10": {
-    "col_name": "cn_section_8_10",
+    "col_name": "section_8_10",
     "section_header": "Miejsce składania wniosków o dopuszczenie do udziału w postępowaniu",
     "data_model": "core",
     "example_values": [
@@ -1261,7 +1261,7 @@
     ]
   },
   "8.11": {
-    "col_name": "cn_section_8_11",
+    "col_name": "section_8_11",
     "section_header": "Termin otwarcia wniosków o dopuszczenie do udziału w postępowaniu",
     "data_model": "core",
     "example_values": [
@@ -1270,7 +1270,7 @@
     ]
   },
   "8.18": {
-    "col_name": "cn_section_8_18",
+    "col_name": "section_8_18",
     "section_header": "Zamawiający przewiduje podział negocjacji na etapy w celu ograniczenia liczby ofert",
     "data_model": "core",
     "example_values": [
@@ -1278,7 +1278,7 @@
     ]
   },
   "8.19": {
-    "col_name": "cn_section_8_19",
+    "col_name": "section_8_19",
     "section_header": "Umowa ramowa",
     "data_model": "core",
     "example_values": [
@@ -1287,7 +1287,7 @@
     ]
   },
   "8.20": {
-    "col_name": "cn_section_8_20",
+    "col_name": "section_8_20",
     "section_header": "Przewiduje się ograniczenie liczby uczestników umowy ramowej",
     "data_model": "core",
     "example_values": [
@@ -1296,7 +1296,7 @@
     ]
   },
   "8.21": {
-    "col_name": "cn_section_8_21",
+    "col_name": "section_8_21",
     "section_header": "Maksymalna liczba wykonawców, z którymi zamawiający zawrze umowę ramową",
     "data_model": "core",
     "example_values": [
@@ -1306,7 +1306,7 @@
     ]
   },
   "8.22": {
-    "col_name": "cn_section_8_22",
+    "col_name": "section_8_22",
     "section_header": "Zamawiający udziela zamówień na podstawie art. 314 ust. 1 pkt 1, 2 albo 3 ustawy",
     "data_model": "core",
     "example_values": [

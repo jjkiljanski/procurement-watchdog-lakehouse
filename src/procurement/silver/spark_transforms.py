@@ -36,18 +36,22 @@ from pyspark.sql.types import (
 
 from procurement.dictionaries import client_type_names, order_type_names, province_names
 from procurement.silver.html_parser import (
+    _extract_address,
+    parse_html,
+)
+from procurement.silver.html_value_parsers.common_values import (
     classify_contractor_id_for_notice,
     normalize_tender_result_contractors,
     parse_cpv_codes,
-    parse_html,
-    parse_html_address_light,
-    parse_html_agreement_intention_light,
-    parse_html_competition_light,
-    parse_html_contract_performing_light,
 )
-from procurement.silver.notice_types.contract_notice_split_models import (
-    ContractNoticeCoreRaw,
-    ContractNoticePartRaw,
+from procurement.gold.notice_types.agreement_intention_notice import (
+    parse_html_agreement_intention_light,
+)
+from procurement.gold.notice_types.competition_notice import (
+    parse_html_competition_light,
+)
+from procurement.gold.notice_types.contract_performing_notice import (
+    parse_html_contract_performing_light,
 )
 
 log = logging.getLogger(__name__)
@@ -270,7 +274,9 @@ def _parse_html_address_safe(html: str | None, notice_type: str | None) -> dict 
     if not html:
         return None
     try:
-        return parse_html_address_light(html, notice_type=notice_type)
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(html, "lxml")
+        return _extract_address(soup, notice_type=notice_type)
     except Exception:
         log.warning("Failed to parse HTML address (len=%d)", len(html), exc_info=True)
         return None

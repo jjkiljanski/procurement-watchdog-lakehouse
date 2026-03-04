@@ -222,3 +222,64 @@ def classify_national_id_by_country(
         return raw, raw, "foreign"
     parsed, id_type = classify_polish_national_id(raw)
     return raw, parsed, id_type
+
+
+def _classify_contractor_id(
+    country: str | None,
+    raw_id: str | None,
+) -> tuple[str | None, str | None, str | None]:
+    """Return (raw, parsed, type) for contractor ID."""
+    return classify_national_id_by_country(country, raw_id)
+
+
+def classify_contractor_id_for_notice(
+    country: str | None,
+    raw_id: str | None,
+) -> tuple[str | None, str | None, str | None]:
+    """Public helper used across notice-specific transforms."""
+    return _classify_contractor_id(country, raw_id)
+
+
+def normalize_tender_result_contractors(
+    contractors: list[dict] | None,
+) -> list[dict] | None:
+    """Normalize TRN contractor IDs to raw/parsed/type fields."""
+    if not contractors:
+        return contractors
+    out: list[dict] = []
+    for contractor in contractors:
+        if isinstance(contractor, dict):
+            row = dict(contractor)
+        elif hasattr(contractor, "asDict"):
+            row = contractor.asDict(recursive=True)
+        else:
+            continue
+        raw_id = row.pop("contractorNationalId", None)
+        country = row.get("contractorCountry")
+        raw, parsed, id_type = _classify_contractor_id(country, raw_id)
+        row["contractorNationalId_raw"] = raw
+        row["contractorNationalId_parsed"] = parsed
+        row["contractorNationalId_type"] = id_type
+        out.append(row)
+    return out
+
+
+def parse_date_from_text(raw: str | None) -> str | None:
+    """Extract ISO date string (YYYY-MM-DD) from raw text."""
+    if not raw:
+        return None
+    m = re.search(r"(\d{4}-\d{2}-\d{2})", raw)
+    return m.group(1) if m else None
+
+
+def parse_int_from_text(raw: str | None) -> int | None:
+    """Extract first integer from raw text."""
+    if not raw:
+        return None
+    m = re.search(r"\d+", raw)
+    if not m:
+        return None
+    try:
+        return int(m.group(0))
+    except ValueError:
+        return None

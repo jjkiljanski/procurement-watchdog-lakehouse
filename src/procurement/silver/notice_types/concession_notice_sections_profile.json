@@ -1,6 +1,6 @@
 {
   "1.1": {
-    "col_name": "cn_section_1_1",
+    "col_name": "section_1_1",
     "section_header": "Nazwa zamawiającego",
     "data_model": "core",
     "example_values": [
@@ -10,7 +10,7 @@
     ]
   },
   "1.3": {
-    "col_name": "cn_section_1_3",
+    "col_name": "section_1_3",
     "section_header": "Krajowy Numer Identyfikacyjny",
     "data_model": "core",
     "example_values": [
@@ -20,7 +20,7 @@
     ]
   },
   "1.4.1": {
-    "col_name": "cn_section_1_4_1",
+    "col_name": "section_1_4_1",
     "section_header": "Ulica",
     "data_model": "core",
     "example_values": [
@@ -30,7 +30,7 @@
     ]
   },
   "1.4.2": {
-    "col_name": "cn_section_1_4_2",
+    "col_name": "section_1_4_2",
     "section_header": "Miejscowość",
     "data_model": "core",
     "example_values": [
@@ -40,7 +40,7 @@
     ]
   },
   "1.4.3": {
-    "col_name": "cn_section_1_4_3",
+    "col_name": "section_1_4_3",
     "section_header": "Kod pocztowy",
     "data_model": "core",
     "example_values": [
@@ -50,7 +50,7 @@
     ]
   },
   "1.4.4": {
-    "col_name": "cn_section_1_4_4",
+    "col_name": "section_1_4_4",
     "section_header": "Województwo",
     "data_model": "core",
     "example_values": [
@@ -60,7 +60,7 @@
     ]
   },
   "1.4.5": {
-    "col_name": "cn_section_1_4_5",
+    "col_name": "section_1_4_5",
     "section_header": "Kraj",
     "data_model": "core",
     "example_values": [
@@ -68,7 +68,7 @@
     ]
   },
   "1.4.6": {
-    "col_name": "cn_section_1_4_6",
+    "col_name": "section_1_4_6",
     "section_header": "Lokalizacja NUTS 3",
     "data_model": "core",
     "example_values": [
@@ -78,7 +78,7 @@
     ]
   },
   "1.4.7": {
-    "col_name": "cn_section_1_4_7",
+    "col_name": "section_1_4_7",
     "section_header": "Numer telefonu",
     "data_model": "core",
     "example_values": [
@@ -87,7 +87,7 @@
     ]
   },
   "1.4.8": {
-    "col_name": "cn_section_1_4_8",
+    "col_name": "section_1_4_8",
     "section_header": "Numer faksu",
     "data_model": "core",
     "example_values": [
@@ -96,7 +96,7 @@
     ]
   },
   "1.4.9": {
-    "col_name": "cn_section_1_4_9",
+    "col_name": "section_1_4_9",
     "section_header": "Adres poczty elektronicznej",
     "data_model": "core",
     "example_values": [
@@ -106,7 +106,7 @@
     ]
   },
   "1.4.10": {
-    "col_name": "cn_section_1_4_10",
+    "col_name": "section_1_4_10",
     "section_header": "Adres strony internetowej zamawiającego",
     "data_model": "core",
     "example_values": [
@@ -116,7 +116,7 @@
     ]
   },
   "1.5": {
-    "col_name": "cn_section_1_5",
+    "col_name": "section_1_5",
     "section_header": "Rodzaj zamawiającego",
     "data_model": "core",
     "example_values": [
@@ -125,7 +125,7 @@
     ]
   },
   "1.6": {
-    "col_name": "cn_section_1_6",
+    "col_name": "section_1_6",
     "section_header": "Przedmiot działalności zamawiającego",
     "data_model": "core",
     "example_values": [
@@ -133,7 +133,7 @@
     ]
   },
   "1.7": {
-    "col_name": "cn_section_1_7",
+    "col_name": "section_1_7",
     "section_header": "Czy postępowanie przeprowadza podmiot, któremu zamawiający powierzył prowadzenie postępowania",
     "data_model": "core",
     "example_values": [
@@ -141,7 +141,7 @@
     ]
   },
   "2.1": {
-    "col_name": "cn_section_2_1",
+    "col_name": "section_2_1",
     "section_header": "Nazwa umowy koncesji",
     "data_model": "core",
     "example_values": [
@@ -151,7 +151,7 @@
     ]
   },
   "2.2": {
-    "col_name": "cn_section_2_2",
+    "col_name": "section_2_2",
     "section_header": "Identyfikator postępowania",
     "data_model": "core",
     "example_values": [
@@ -161,7 +161,7 @@
     ]
   },
   "2.3": {
-    "col_name": "cn_section_2_3",
+    "col_name": "section_2_3",
     "section_header": "Numer ogłoszenia",
     "data_model": "core",
     "example_values": [
@@ -171,7 +171,7 @@
     ]
   },
   "2.4": {
-    "col_name": "cn_section_2_4",
+    "col_name": "section_2_4",
     "section_header": "Wersja ogłoszenia",
     "data_model": "core",
     "example_values": [
@@ -179,7 +179,7 @@
     ]
   },
   "2.5": {
-    "col_name": "cn_section_2_5",
+    "col_name": "section_2_5",
     "section_header": "Data ogłoszenia",
     "data_model": "core",
     "example_values": [
@@ -189,7 +189,7 @@
     ]
   },
   "2.6.1": {
-    "col_name": "cn_section_2_6_1",
+    "col_name": "section_2_6_1",
     "section_header": "O zawarcie umowy koncesji mogą się ubiegać wyłącznie wykonawcy, o których mowa w art. 34 ustawy",
     "data_model": "core",
     "example_values": [
@@ -197,7 +197,7 @@
     ]
   },
   "2.7": {
-    "col_name": "cn_section_2_7",
+    "col_name": "section_2_7",
     "section_header": "Czy umowa koncesji dotyczy projektu lub programu współfinansowanego ze środków Unii Europejskiej",
     "data_model": "core",
     "example_values": [
@@ -205,7 +205,7 @@
     ]
   },
   "3.1": {
-    "col_name": "cn_section_3_1",
+    "col_name": "section_3_1",
     "section_header": "Adres strony internetowej prowadzonego postępowania",
     "data_model": "core",
     "example_values": [
@@ -215,7 +215,7 @@
     ]
   },
   "3.2": {
-    "col_name": "cn_section_3_2",
+    "col_name": "section_3_2",
     "section_header": "Zamawiający zastrzega dostęp do dokumentów koncesji",
     "data_model": "core",
     "example_values": [
@@ -224,7 +224,7 @@
     ]
   },
   "3.3": {
-    "col_name": "cn_section_3_3",
+    "col_name": "section_3_3",
     "section_header": "Uzasadnienie zastrzeżenia części dokumentów koncesji, sposób przekazywania zastrzeżonej częsci dokumentów oraz wymagania związane z ochroną poufnego charakteru informacji",
     "data_model": "core",
     "example_values": [
@@ -232,7 +232,7 @@
     ]
   },
   "3.4": {
-    "col_name": "cn_section_3_4",
+    "col_name": "section_3_4",
     "section_header": "Sposób albo sposoby komunikowania się z wykonawcami w postępowaniu",
     "data_model": "core",
     "example_values": [
@@ -242,7 +242,7 @@
     ]
   },
   "3.5": {
-    "col_name": "cn_section_3_5",
+    "col_name": "section_3_5",
     "section_header": "Wymagania techniczne i organizacyjne dot. korespondencji elektronicznej",
     "data_model": "core",
     "example_values": [
@@ -252,7 +252,7 @@
     ]
   },
   "3.6": {
-    "col_name": "cn_section_3_6",
+    "col_name": "section_3_6",
     "section_header": "Informacje o środkach komunikacji elektronicznej, przy użyciu których zamawiający będzie komunikował się z wykonawcami - adres strony internetowej",
     "data_model": "core",
     "example_values": [
@@ -262,7 +262,7 @@
     ]
   },
   "3.7": {
-    "col_name": "cn_section_3_7",
+    "col_name": "section_3_7",
     "section_header": "Zamawiający dopuszcza składanie ofert albo wniosków o dopuszczenie do udziału w postępowaniu o zawarcie umowy koncesji oraz oświadczeń",
     "data_model": "core",
     "example_values": [
@@ -271,7 +271,7 @@
     ]
   },
   "3.8": {
-    "col_name": "cn_section_3_8",
+    "col_name": "section_3_8",
     "section_header": "Zamawiający dopuszcza sporządzenie i przedstawienie ofert przy użyciu narzędzi elektronicznego modelowania danych budowlanych lub innych podobnych narzędzi, które nie są ogólnie dostępne",
     "data_model": "core",
     "example_values": [
@@ -279,7 +279,7 @@
     ]
   },
   "3.10": {
-    "col_name": "cn_section_3_10",
+    "col_name": "section_3_10",
     "section_header": "Język ofert, wniosków oraz dokumentów potwierdzających spełnianie kryteriów kwalifikacji oraz braku podstaw wykluczena",
     "data_model": "core",
     "example_values": [
@@ -287,7 +287,7 @@
     ]
   },
   "3.11": {
-    "col_name": "cn_section_3_11",
+    "col_name": "section_3_11",
     "section_header": "RODO (obowiązek informacyjny)",
     "data_model": "core",
     "example_values": [
@@ -297,7 +297,7 @@
     ]
   },
   "3.12": {
-    "col_name": "cn_section_3_12",
+    "col_name": "section_3_12",
     "section_header": "RODO (ograniczenia stosowania)",
     "data_model": "core",
     "example_values": [
@@ -306,7 +306,7 @@
     ]
   },
   "4.1": {
-    "col_name": "cn_section_4_1",
+    "col_name": "section_4_1",
     "section_header": "Numer referencyjny postępowania",
     "data_model": "core",
     "example_values": [
@@ -316,7 +316,7 @@
     ]
   },
   "4.2": {
-    "col_name": "cn_section_4_2",
+    "col_name": "section_4_2",
     "section_header": "Rodzaj koncesji",
     "data_model": "core",
     "example_values": [
@@ -325,7 +325,7 @@
     ]
   },
   "4.3": {
-    "col_name": "cn_section_4_3",
+    "col_name": "section_4_3",
     "section_header": "Zamawiający udziela koncesji w częściach, z których każda stanowi przedmiot odrębnego postępowania",
     "data_model": "core",
     "example_values": [
@@ -333,7 +333,7 @@
     ]
   },
   "4.5": {
-    "col_name": "cn_section_4_5",
+    "col_name": "section_4_5",
     "section_header": "Koncesja jest podzielona na części",
     "data_model": "core",
     "example_values": [
@@ -341,7 +341,7 @@
     ]
   },
   "4.6": {
-    "col_name": "cn_section_4_6",
+    "col_name": "section_4_6",
     "section_header": "Krótki opis przedmiotu umowy koncesji",
     "data_model": "core",
     "example_values": [
@@ -351,7 +351,7 @@
     ]
   },
   "4.7": {
-    "col_name": "cn_section_4_7",
+    "col_name": "section_4_7",
     "section_header": "Głowny kod CPV",
     "data_model": "core",
     "example_values": [
@@ -361,7 +361,7 @@
     ]
   },
   "4.8": {
-    "col_name": "cn_section_4_8",
+    "col_name": "section_4_8",
     "section_header": "Dodatkowy kod CPV",
     "data_model": "core",
     "example_values": [
@@ -371,7 +371,7 @@
     ]
   },
   "4.9": {
-    "col_name": "cn_section_4_9",
+    "col_name": "section_4_9",
     "section_header": "Opis potrzeb, oczekiwań i wymagań zamawiającego, które powinny zostać spełnione w ramach danego postępowania o zawarcie umowy koncesji albo w ramach danej części postępowania",
     "data_model": "core",
     "example_values": [
@@ -381,7 +381,7 @@
     ]
   },
   "4.10": {
-    "col_name": "cn_section_4_10",
+    "col_name": "section_4_10",
     "section_header": "Umowa koncesji obejmuje opcje",
     "data_model": "core",
     "example_values": [
@@ -389,7 +389,7 @@
     ]
   },
   "4.11": {
-    "col_name": "cn_section_4_11",
+    "col_name": "section_4_11",
     "section_header": "Zamawiający przewiduje przedłużenie umowy koncesji",
     "data_model": "core",
     "example_values": [
@@ -398,7 +398,7 @@
     ]
   },
   "4.11.1": {
-    "col_name": "cn_section_4_11_1",
+    "col_name": "section_4_11_1",
     "section_header": "Opis umowy koncesji w przedłużonym okresie jej obowiązywania",
     "data_model": "core",
     "example_values": [
@@ -406,7 +406,7 @@
     ]
   },
   "4.12": {
-    "col_name": "cn_section_4_12",
+    "col_name": "section_4_12",
     "section_header": "Przewidywany okres obowiązywania umowy koncesji",
     "data_model": "core",
     "example_values": [
@@ -416,7 +416,7 @@
     ]
   },
   "4.13": {
-    "col_name": "cn_section_4_13",
+    "col_name": "section_4_13",
     "section_header": "Czy w odniesieniu do opisu przedmiotu umowy koncesji zamawiający uwzględnił wymagania dotyczące poziomów oddziaływania na środowisko i klimat lub wymagania dostosowania do określonych potrzeb (projektowania z przeznaczeniem dla wszystkich użytkowników), w tym potrzeb osób niepełnosprawnych",
     "data_model": "core",
     "example_values": [
@@ -425,7 +425,7 @@
     ]
   },
   "5.1": {
-    "col_name": "cn_section_5_1",
+    "col_name": "section_5_1",
     "section_header": "Etapy przebiegu postępowania o zawarcie umowy koncesji",
     "data_model": "core",
     "example_values": [
@@ -433,7 +433,7 @@
     ]
   },
   "5.2": {
-    "col_name": "cn_section_5_2",
+    "col_name": "section_5_2",
     "section_header": "Zamawiający zaprasza do",
     "data_model": "core",
     "example_values": [
@@ -441,7 +441,7 @@
     ]
   },
   "5.3": {
-    "col_name": "cn_section_5_3",
+    "col_name": "section_5_3",
     "section_header": "Warunki, jakim ma odpowiadać wniosek o dopuszczenie do udziału w postępowaniu o zawarcie umowy koncesji albo oferta pod rygorem ich odrzucenia",
     "data_model": "core",
     "example_values": [
@@ -451,7 +451,7 @@
     ]
   },
   "5.4": {
-    "col_name": "cn_section_5_4",
+    "col_name": "section_5_4",
     "section_header": "Czy zamawiający przewiduje ograniczenie liczby wykonawców, którzy zostaną zaproszeni do udziału w postępowaniu",
     "data_model": "core",
     "example_values": [
@@ -459,7 +459,7 @@
     ]
   },
   "5.6": {
-    "col_name": "cn_section_5_6",
+    "col_name": "section_5_6",
     "section_header": "Zamawiający dopuszcza składanie ofert wariantowych",
     "data_model": "core",
     "example_values": [
@@ -467,7 +467,7 @@
     ]
   },
   "5.8": {
-    "col_name": "cn_section_5_8",
+    "col_name": "section_5_8",
     "section_header": "Zamawiający wymaga złożenia wraz z ofertami oferty wariantowej",
     "data_model": "core",
     "example_values": [
@@ -475,7 +475,7 @@
     ]
   },
   "5.9.2": {
-    "col_name": "cn_section_5_9_2",
+    "col_name": "section_5_9_2",
     "section_header": "Termin składania ofert",
     "data_model": "core",
     "example_values": [
@@ -485,7 +485,7 @@
     ]
   },
   "5.9.3": {
-    "col_name": "cn_section_5_9_3",
+    "col_name": "section_5_9_3",
     "section_header": "Miejsce składania wniosków/ofert",
     "data_model": "core",
     "example_values": [
@@ -495,7 +495,7 @@
     ]
   },
   "5.12": {
-    "col_name": "cn_section_5_12",
+    "col_name": "section_5_12",
     "section_header": "Zamawiający wymaga wadium",
     "data_model": "core",
     "example_values": [
@@ -504,7 +504,7 @@
     ]
   },
   "5.12.1": {
-    "col_name": "cn_section_5_12_1",
+    "col_name": "section_5_12_1",
     "section_header": "Wysokość wadium oraz dopuszczalne formy, w jakich wadium może być składane",
     "data_model": "core",
     "example_values": [
@@ -513,7 +513,7 @@
     ]
   },
   "5.13.1": {
-    "col_name": "cn_section_5_13_1",
+    "col_name": "section_5_13_1",
     "section_header": "Sposób określania wagi kryteriów oceny ofert",
     "data_model": "core",
     "example_values": [
@@ -522,7 +522,7 @@
     ]
   },
   "5.13.2": {
-    "col_name": "cn_section_5_13_2",
+    "col_name": "section_5_13_2",
     "section_header": "Rodzaj kryterium",
     "data_model": "criterion_procedure",
     "example_values": [
@@ -530,7 +530,7 @@
     ]
   },
   "5.13.3": {
-    "col_name": "cn_section_5_13_3",
+    "col_name": "section_5_13_3",
     "section_header": "Nazwa kryterium",
     "data_model": "criterion_procedure",
     "example_values": [
@@ -540,7 +540,7 @@
     ]
   },
   "5.13.4": {
-    "col_name": "cn_section_5_13_4",
+    "col_name": "section_5_13_4",
     "section_header": "Waga",
     "data_model": "criterion_procedure",
     "example_values": [
@@ -550,7 +550,7 @@
     ]
   },
   "5.13.6": {
-    "col_name": "cn_section_5_13_6",
+    "col_name": "section_5_13_6",
     "section_header": "Wzór matematyczny lub opis ważenia kryterium",
     "data_model": "criterion_procedure",
     "example_values": [
@@ -560,7 +560,7 @@
     ]
   },
   "5.13.7": {
-    "col_name": "cn_section_5_13_7",
+    "col_name": "section_5_13_7",
     "section_header": "Opis kryterium",
     "data_model": "criterion_procedure",
     "example_values": [
@@ -570,7 +570,7 @@
     ]
   },
   "5.14": {
-    "col_name": "cn_section_5_14",
+    "col_name": "section_5_14",
     "section_header": "Informacja, czy zamawiający przewiduje zastosowanie aukcji elektronicznej",
     "data_model": "core",
     "example_values": [
@@ -578,7 +578,7 @@
     ]
   },
   "5.15": {
-    "col_name": "cn_section_5_15",
+    "col_name": "section_5_15",
     "section_header": "Zamawiający przewiduje unieważnienie postępowania o zawarcie umowy koncesji, jeżeli środki, które zamierzał przeznaczyć na sfinansowanie całości lub części umowy koncesji nie zostaną mu przyznane",
     "data_model": "core",
     "example_values": [
@@ -587,7 +587,7 @@
     ]
   },
   "6.1.1": {
-    "col_name": "cn_section_6_1_1",
+    "col_name": "section_6_1_1",
     "section_header": "Rodzaj kryterium kwalifikacji",
     "data_model": "criterion_qualification",
     "example_values": [
@@ -597,7 +597,7 @@
     ]
   },
   "6.1.2": {
-    "col_name": "cn_section_6_1_2",
+    "col_name": "section_6_1_2",
     "section_header": "Nazwa kryterium kwalifikacji",
     "data_model": "criterion_qualification",
     "example_values": [
@@ -607,7 +607,7 @@
     ]
   },
   "6.1.3": {
-    "col_name": "cn_section_6_1_3",
+    "col_name": "section_6_1_3",
     "section_header": "Krótki opis kryterium kwalifikacji, w tym wymagania minimalne dotyczące oczekiwanego przez zamawiającego poziomu spełnienia kryterium",
     "data_model": "criterion_qualification",
     "example_values": [
@@ -617,7 +617,7 @@
     ]
   },
   "6.1.4": {
-    "col_name": "cn_section_6_1_4",
+    "col_name": "section_6_1_4",
     "section_header": "Krótki opis sposobu zastosowania kryterium",
     "data_model": "criterion_qualification",
     "example_values": [
@@ -627,7 +627,7 @@
     ]
   },
   "6.1.5": {
-    "col_name": "cn_section_6_1_5",
+    "col_name": "section_6_1_5",
     "section_header": "Zamawiający wymaga przedłożenia dokumentów na potwierdzenie kryterium kwalifikacji",
     "data_model": "criterion_qualification",
     "example_values": [
@@ -635,7 +635,7 @@
     ]
   },
   "6.1.6": {
-    "col_name": "cn_section_6_1_6",
+    "col_name": "section_6_1_6",
     "section_header": "Dokumenty wymagane na potwierdzenie kryterium kwalifikacji, sposób ich przedłożenia oraz zakres",
     "data_model": "criterion_qualification",
     "example_values": [
@@ -645,7 +645,7 @@
     ]
   },
   "6.2": {
-    "col_name": "cn_section_6_2",
+    "col_name": "section_6_2",
     "section_header": "Zasady przedkładania zobowiązań innych podmiotów, na których zdolnościach polega wykonawca w celu spełniania kryteriów kwalifikacji",
     "data_model": "core",
     "example_values": [
@@ -655,7 +655,7 @@
     ]
   },
   "6.3": {
-    "col_name": "cn_section_6_3",
+    "col_name": "section_6_3",
     "section_header": "Podstawy wykluczenia wykonawcy w oparciu o art. 32 ust. 1 ustawy o umowie koncesji na roboty budowlane lub usługi",
     "data_model": "core",
     "example_values": [
@@ -663,7 +663,7 @@
     ]
   },
   "6.3.1": {
-    "col_name": "cn_section_6_3_1",
+    "col_name": "section_6_3_1",
     "section_header": "Dokumenty wymagane na potwierdzenie braku podstaw wykluczenia, sposób ich sporządzenia oraz zakres",
     "data_model": "core",
     "example_values": [
@@ -673,7 +673,7 @@
     ]
   },
   "6.4": {
-    "col_name": "cn_section_6_4",
+    "col_name": "section_6_4",
     "section_header": "Czy zamawiający przewiduje podstawy wykluczenia z art. 32 ust. 2 ustawy o umowie koncesji na roboty budowlane lub usługi?",
     "data_model": "core",
     "example_values": [
@@ -682,7 +682,7 @@
     ]
   },
   "6.4.1": {
-    "col_name": "cn_section_6_4_1",
+    "col_name": "section_6_4_1",
     "section_header": "Wykaz podstaw wykluczenia",
     "data_model": "core",
     "example_values": [
@@ -691,7 +691,7 @@
     ]
   },
   "6.4.2": {
-    "col_name": "cn_section_6_4_2",
+    "col_name": "section_6_4_2",
     "section_header": "Dokumenty wymagane na potwierdzenie braku podstaw wykluczenia, sposób ich sporządzenia oraz zakres",
     "data_model": "core",
     "example_values": [
@@ -701,7 +701,7 @@
     ]
   },
   "6.5": {
-    "col_name": "cn_section_6_5",
+    "col_name": "section_6_5",
     "section_header": "Zasady składania przez wykonawców oświadczeń o spełnieniu kryterium kwalifikacji oraz braku podstaw wykluczenia",
     "data_model": "core",
     "example_values": [
@@ -711,7 +711,7 @@
     ]
   },
   "7.1": {
-    "col_name": "cn_section_7_1",
+    "col_name": "section_7_1",
     "section_header": "Podstawowe informacje na temat realizacji umowy koncesji (np.rezultaty pośrednie, rekompensata za szkody, prawa własności intelektualnej)",
     "data_model": "core",
     "example_values": [
@@ -720,7 +720,7 @@
     ]
   },
   "7.2": {
-    "col_name": "cn_section_7_2",
+    "col_name": "section_7_2",
     "section_header": "Czy zamawiający wymaga, żeby grupa koncesjonariuszy, z którą zostanie zawarta umowa koncesji przyjęła określoną formę prawną?",
     "data_model": "core",
     "example_values": [
@@ -729,7 +729,7 @@
     ]
   },
   "7.3": {
-    "col_name": "cn_section_7_3",
+    "col_name": "section_7_3",
     "section_header": "Główne informacje na temat finansowania i płatności realizowanych przez zamawiającego lub wskazanie podstaw prawnych, na podstawie których się one odbywają",
     "data_model": "core",
     "example_values": [
@@ -737,7 +737,7 @@
     ]
   },
   "7.4": {
-    "col_name": "cn_section_7_4",
+    "col_name": "section_7_4",
     "section_header": "Zamawiający przewiduje możliwość zmian umowy koncesji",
     "data_model": "core",
     "example_values": [
@@ -746,7 +746,7 @@
     ]
   },
   "7.5": {
-    "col_name": "cn_section_7_5",
+    "col_name": "section_7_5",
     "section_header": "Informacje na temat zakresu i charakteru oraz warunków wprowadzenia zmian umowy",
     "data_model": "core",
     "example_values": [
@@ -756,7 +756,7 @@
     ]
   },
   "7.6": {
-    "col_name": "cn_section_7_6",
+    "col_name": "section_7_6",
     "section_header": "Zamawiający przewiduje następujące wymagania związane z realizacją umowy koncesji",
     "data_model": "core",
     "example_values": [
