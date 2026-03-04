@@ -8,13 +8,32 @@ docs/data_model/html_structure.md for the full field reference.
 from __future__ import annotations
 
 import re
-import unicodedata
 from datetime import date
 from html import unescape
 
 from bs4 import BeautifulSoup, Tag
 from pydantic import ValidationError
 
+from procurement.silver.html_common import (
+    _collect_p_text,
+    _collect_p_values,
+    _extract_h3_field_fast,
+    _field_marker_re,
+    _field_num,
+    _find_all_h3,
+    _find_h3,
+    _find_h3_by_label,
+    _normalize_label_text,
+    _span_value,
+    _text_after_h3,
+)
+from procurement.silver.html_value_parsers.common_values import (
+    _extract_currency,
+    _parse_criterion_weight,
+    _parse_pln_value,
+    _parse_tak_nie,
+    parse_cpv_codes,
+)
 from procurement.silver.models import (
     ChangeEntry,
     ContractExecution,
@@ -39,153 +58,11 @@ from procurement.silver.notice_types.contract_notice_split_models import (
 )
 from procurement.silver.notice_types.section_models_registry import NOTICE_TYPE_SECTION_MODELS
 
-# Regex for parsing "1234,56 PLN" style values from span text
-_PLN_NUM_RE = re.compile(r"([\d\s\xa0,.]+?)\s*(?:\xa0)?\s*(?:PLN|EUR|USD|GBP|CHF)?$")
 _SPAN_NORMAL_RE = re.compile(
     r"<span[^>]*class=['\"]normal['\"][^>]*>(.*?)</span>",
     re.IGNORECASE | re.DOTALL,
 )
 _TAG_RE = re.compile(r"<[^>]+>")
-
-
-def _field_marker_re(field_num: str) -> re.Pattern[str]:
-    """Regex for exact field markers like '4.4.)' (not matching '1.4.4.)')."""
-    return re.compile(rf"(?<![\d.]){re.escape(field_num)}\)")
-
-
-def _find_h3(soup: BeautifulSoup, field_num: str) -> Tag | None:
-    """Find the first <h3> whose text starts with a given field number."""
-    marker_re = _field_marker_re(field_num)
-    for h3 in soup.find_all("h3"):
-        if marker_re.search(h3.get_text()):
-            return h3
-    return None
-
-
-def _find_all_h3(soup: BeautifulSoup, field_num: str) -> list[Tag]:
-    """Find all <h3> tags matching a given field number."""
-    results = []
-    marker_re = _field_marker_re(field_num)
-    for h3 in soup.find_all("h3"):
-        if marker_re.search(h3.get_text()):
-            results.append(h3)
-    return results
-
-
-def _span_value(h3: Tag | None) -> str | None:
-    """Extract text from <span class='normal'> inside an h3."""
-    if h3 is None:
-        return None
-    span = h3.find("span", class_="normal")
-    if span is None:
-        return None
-    text = span.get_text().strip()
-    return text or None
-
-
-def _find_h3_by_label(soup: BeautifulSoup, patterns: list[str]) -> Tag | None:
-    """Find h3 by case-insensitive label fragments in text content."""
-    lowered_patterns = [_normalize_label_text(p) for p in patterns]
-    for h3 in soup.find_all("h3"):
-        text = _normalize_label_text(h3.get_text(separator=" ", strip=True))
-        if all(pattern in text for pattern in lowered_patterns):
-            return h3
-    return None
-
-
-def _normalize_label_text(text: str) -> str:
-    """Normalize text for robust label matching across encoding variants."""
-    lowered = text.casefold()
-    # Common mojibake fragments seen in current fixtures/docs.
-    replacements = {
-        "Ä…": "a",
-        "Ä‡": "c",
-        "Ä™": "e",
-        "Ĺ‚": "l",
-        "Ĺ„": "n",
-        "Ăł": "o",
-        "Ĺ›": "s",
-        "Ĺş": "z",
-        "ĹĽ": "z",
-        "Ă„â€¦": "a",
-        "Ă„â€ˇ": "c",
-        "Ă„â„˘": "e",
-        "Äąâ€š": "l",
-        "Äąâ€ž": "n",
-        "Ä‚Ĺ‚": "o",
-        "Äąâ€ş": "s",
-        "ÄąÂş": "z",
-        "ÄąÂĽ": "z",
-    }
-    for src, dst in replacements.items():
-        lowered = lowered.replace(src, dst)
-    lowered = unicodedata.normalize("NFKD", lowered)
-    lowered = "".join(ch for ch in lowered if not unicodedata.combining(ch))
-    return re.sub(r"\s+", " ", lowered).strip()
-
-
-def _field_num(h3: Tag | None) -> str | None:
-    """Extract a field number prefix from an h3 (e.g. 6.2.)."""
-    if h3 is None:
-        return None
-    text = h3.get_text(separator=" ", strip=True)
-    m = re.search(r"(\d+\.\d+(?:\.\d+)?\.)\)", text)
-    if m is None:
-        return None
-    return m.group(1)
-
-
-def _parse_pln_value(raw: str | None) -> float | None:
-    """Parse a monetary value string into a float.
-
-    Handles formats: "465163,88 PLN", "1 000 000,00 PLN", "130.000,00 PLN",
-    "295590 PLN", "295590", "25399,50" (no currency suffix).
-    """
-    if raw is None:
-        return None
-    raw = raw.strip()
-    if not raw:
-        return None
-
-    match = _PLN_NUM_RE.match(raw)
-    if match is None:
-        # Try bare number (SmallContractNotice has no currency suffix)
-        match = re.match(r"([\d\s\xa0,.]+)", raw)
-        if match is None:
-            return None
-
-    num_str = match.group(1).strip()
-    # Remove thousand separators (spaces, non-breaking spaces)
-    num_str = num_str.replace("\xa0", "").replace(" ", "")
-    # Handle dot as thousands separator when comma is also present
-    if "." in num_str and "," in num_str:
-        num_str = num_str.replace(".", "")
-    # Convert comma decimal to dot
-    num_str = num_str.replace(",", ".")
-    try:
-        return float(num_str)
-    except ValueError:
-        return None
-
-
-def _extract_currency(soup: BeautifulSoup, field_num: str) -> str:
-    """Extract currency code from a 'Kod waluty' field, default PLN."""
-    raw = _span_value(_find_h3(soup, field_num))
-    if raw and raw.strip() in ("PLN", "EUR", "USD", "GBP", "CHF"):
-        return raw.strip()
-    return "PLN"
-
-
-def _parse_tak_nie(raw: str | None) -> bool | None:
-    """Parse a Polish 'Tak'/'Nie' value into a boolean."""
-    if raw is None:
-        return None
-    cleaned = raw.strip()
-    if cleaned == "Tak":
-        return True
-    if cleaned == "Nie":
-        return False
-    return None
 
 
 def _is_poland_country(raw: str | None) -> bool:
@@ -352,94 +229,6 @@ def normalize_tender_result_contractors(
         row["contractorNationalId_type"] = id_type
         out.append(row)
     return out
-
-
-def _parse_criterion_weight(raw: str | None) -> int | None:
-    """Parse criterion weight from strings like '60', '60,00', '40.00', '100 %'."""
-    if raw is None:
-        return None
-    cleaned = raw.strip().replace("\xa0", " ")
-    if not cleaned:
-        return None
-
-    # Keep only numeric prefix, allowing local decimal separators.
-    m = re.search(r"([0-9][0-9\s.,]*)", cleaned)
-    if m is None:
-        return None
-
-    num = m.group(1).replace(" ", "")
-    if "." in num and "," in num:
-        num = num.replace(".", "")
-    num = num.replace(",", ".")
-
-    try:
-        return int(round(float(num)))
-    except ValueError:
-        return None
-
-
-def _text_after_h3(h3: Tag | None) -> str | None:
-    """Extract plain text that follows an <h3> as a sibling text node.
-
-    Handles the pattern where the value is NOT inside a <span> but is a
-    bare text node after the h3 (e.g. field 4.2 or 3.4).
-    """
-    if h3 is None:
-        return None
-    from bs4 import NavigableString
-
-    sibling = h3.next_sibling
-    while sibling is not None:
-        if isinstance(sibling, NavigableString):
-            text = sibling.strip()
-            if text:
-                return text
-        elif hasattr(sibling, "name"):
-            if sibling.name in ("h3", "h2"):
-                break
-            if sibling.name == "br":
-                sibling = sibling.next_sibling
-                continue
-            break
-        sibling = sibling.next_sibling
-    return None
-
-
-def _collect_p_text(h3: Tag) -> str | None:
-    """Collect text from sibling <p> tags after an h3 until the next h3/h2.
-
-    Used for change descriptions (3.4.1) that span multiple <p> elements.
-    """
-    parts: list[str] = []
-    sibling = h3.next_sibling
-    while sibling is not None:
-        if hasattr(sibling, "name"):
-            if sibling.name in ("h3", "h2"):
-                break
-            if sibling.name == "p":
-                text = sibling.get_text(separator=" ", strip=True)
-                if text:
-                    parts.append(text)
-        sibling = sibling.next_sibling
-    return "\n".join(parts) if parts else None
-
-
-def _collect_p_values(h3: Tag | None) -> list[str]:
-    """Collect plain values from sibling <p> tags after an h3 until next h3/h2."""
-    if h3 is None:
-        return []
-    parts: list[str] = []
-    sibling = h3.next_sibling
-    while sibling is not None:
-        if hasattr(sibling, "name"):
-            if sibling.name in ("h3", "h2"):
-                break
-            if sibling.name == "p":
-                text = sibling.get_text(separator=" ", strip=True)
-                if text:
-                    parts.append(text)
-        sibling = sibling.next_sibling
-    return parts
 
 
 # --- Address extraction (shared across types) ---
@@ -1358,23 +1147,6 @@ _DETAIL_EXTRACTORS: dict[str, tuple[str, object]] = {
 }
 
 
-# --- CPV code parsing ---
-
-
-def parse_cpv_codes(cpv_raw: str) -> list[str]:
-    """Parse cpvCode string into canonical CPV codes only.
-
-    Input:  "45000000-7 (Roboty budowlane),90620000-9 (Uslugi odsniezania)"
-    Output: ["45000000-7", "90620000-9"]
-    """
-    # Keep only canonical code tokens; ignore human-readable descriptions.
-    matches = re.findall(r"\b(\d{8}-\d)\b", cpv_raw)
-    if not matches:
-        return []
-    # Preserve order and deduplicate.
-    return list(dict.fromkeys(matches))
-
-
 # --- Main parse entry point ---
 
 
@@ -1578,32 +1350,6 @@ def parse_html_address_light(html: str, notice_type: str | None = None) -> dict[
         "nuts3_code": nuts3_code,
         "nuts3_name": nuts3_name,
     }
-
-
-def _extract_h3_field_fast(html: str, field_num: str) -> str | None:
-    marker_re = _field_marker_re(field_num)
-    match = marker_re.search(html)
-    if match is None:
-        return None
-    idx = match.start()
-    start = html.rfind("<h3", 0, idx)
-    end = html.find("</h3>", idx)
-    if start < 0 or end < 0:
-        return None
-    snippet = html[start : end + 5]
-
-    span = _SPAN_NORMAL_RE.search(snippet)
-    if span:
-        text = unescape(_TAG_RE.sub(" ", span.group(1)))
-        text = re.sub(r"\s+", " ", text).strip()
-        return text or None
-
-    rel_idx = max(0, idx - start)
-    tail = snippet[rel_idx + len(field_num) + 1 :]
-    text = unescape(_TAG_RE.sub(" ", tail))
-    text = re.sub(r"\s+", " ", text).strip(" :\u00a0\t\r\n")
-    return text or None
-
 
 def parse_html_agreement_intention_light(html: str) -> dict[str, object]:
     """Fast targeted extraction for AgreementIntentionNotice."""
