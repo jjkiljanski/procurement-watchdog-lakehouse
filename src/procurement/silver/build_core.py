@@ -374,7 +374,10 @@ def run_silver_day_core(
                         / f"publicationDateDay={target_date}"
                     )
                     _safe_rmtree(model_day_dir, f"section table noticeType={notice_token} model={model}")
-                    model_df.write.mode("overwrite").parquet(str(model_day_dir))
+                    # Use append (not overwrite) — rmtree above already cleared the dir,
+                    # so append = fresh write without Spark's partition-clearing logic,
+                    # which is not safe across concurrent jobs sharing a parent dir.
+                    model_df.write.mode("append").parquet(str(model_day_dir))
                     log.info(
                         "Wrote section table noticeType=%s model=%s -> %s",
                         notice_token, model, model_day_dir,
@@ -425,9 +428,13 @@ def run_silver_day_core(
                         .parquet(str(quarantine_root))
                     )
 
-                # Write directly to the final envelope dir — no tmp intermediate needed.
+                # Write to a per-batch subdir inside the tmp dir.  Concurrent Spark
+                # jobs sharing the same _temporary/0/ staging path corrupt each other
+                # when using mode("append") to a shared directory; isolated subdirs
+                # avoid that.  All batches are merged into envelope_day_dir afterwards.
                 envelope_df = _select_existing(valid_batch, ENVELOPE_COLUMNS)
-                envelope_df.write.mode("append").parquet(str(envelope_day_dir))
+                batch_envelope_tmp = envelope_tmp_dir / f"batch={notice_token}"
+                envelope_df.write.mode("overwrite").parquet(str(batch_envelope_tmp))
 
                 batch_profile["validation"] = batch_validation
                 batch_profile["invalid_rows"] = batch_invalid_rows
@@ -465,7 +472,10 @@ def run_silver_day_core(
         total_invalid_rows = _accum["invalid"]
         profile["batches"] = _accum["profiles"]
 
-        # Validate the combined envelope written directly to the day partition.
+        # Merge per-batch envelope subdirs into the final day partition.
+        envelope_day_df = spark.read.parquet(str(envelope_tmp_dir))
+        envelope_day_df.write.mode("overwrite").parquet(str(envelope_day_dir))
+        _safe_rmtree(envelope_tmp_dir, "envelope tmp dir")
         envelope_validation_df = spark.read.parquet(str(envelope_day_dir))
         validation_metrics = validate_common_envelope(envelope_validation_df, target_date=target_date)
 
