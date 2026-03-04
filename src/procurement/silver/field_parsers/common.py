@@ -7,7 +7,7 @@ from datetime import date
 
 from bs4 import BeautifulSoup
 
-from procurement.silver.parser_utils import _find_h3, _normalize_label_text, _span_value
+from procurement.silver.html_parsing.utils import _find_h3, _normalize_label_text, _span_value
 
 _PLN_NUM_RE = re.compile(r"([\d\s\xa0,.]+?)\s*(?:\xa0)?\s*(?:PLN|EUR|USD|GBP|CHF)?$")
 

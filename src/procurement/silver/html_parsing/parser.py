@@ -20,14 +20,14 @@ from __future__ import annotations
 
 from bs4 import BeautifulSoup
 
-from procurement.silver.parser_utils import (
+from procurement.silver.html_parsing.utils import (
     _find_h3,
     _find_h3_by_label,
     _span_value,
 )
 # Re-exported from their new homes for backward compatibility with existing callers.
 # Remove these once all callers have been updated to import directly.
-from procurement.silver.html_value_parsers.common_values import (
+from procurement.silver.field_parsers.common import (
     _parse_pln_value,
     _parse_tak_nie,
     classify_contractor_id_for_notice,
@@ -47,11 +47,8 @@ from procurement.silver.models import (
     ExtractedValues,
     HtmlExtracted,
 )
-from procurement.silver.raw_html_sections_parser import (
+from procurement.silver.section_pipeline.html_extractor import (
     build_notice_sections_model as _build_notice_sections_model,
-)
-from procurement.silver.notice_types.contract_notice_split_models import (
-    ContractNoticeCoreRaw,
 )
 
 

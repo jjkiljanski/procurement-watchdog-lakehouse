@@ -20,7 +20,7 @@ from importlib import import_module
 
 from pyspark.sql import DataFrame
 
-from procurement.silver.sections_profile import NOTICE_TYPE_TO_PROFILE_KEY
+from procurement.silver.section_pipeline.profile import NOTICE_TYPE_TO_PROFILE_KEY
 
 log = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ def get_pydantic_model_class(notice_type: str, model: str):
     profile_key = NOTICE_TYPE_TO_PROFILE_KEY.get(notice_type)
     if profile_key is None:
         return None
-    module_name = f"procurement.silver.notice_types.{profile_key}_models"
+    module_name = f"procurement.silver.notice_sections.{profile_key}_models"
     suffix = _MODEL_SUFFIX.get(model, model.title())
     class_name = f"{notice_type}{suffix}Model"
     try:
@@ -87,8 +87,8 @@ def validate_section_models(
     Parameters
     ----------
     section_tables:
-        Output of :func:`~procurement.silver.sections_spark.build_section_tables`
-        (possibly after :func:`~procurement.silver.sections_spark.apply_column_parsers`).
+        Output of :func:`~procurement.silver.section_pipeline.spark.build_section_tables`
+        (possibly after :func:`~procurement.silver.section_pipeline.spark.apply_column_parsers`).
     notice_type:
         CamelCase notice type name, or ``None`` (in which case validation is skipped).
 

@@ -5,8 +5,8 @@ typed output value.  Format:  fn_name -> (callable, Spark DataType).
 
 Allowed source modules
 ----------------------
-- common   : procurement.silver.html_value_parsers.common_values
-- per-type : procurement.silver.html_value_parsers.<snake_type_name>
+- common   : procurement.silver.field_parsers.common
+- per-type : procurement.silver.field_parsers.<snake_type_name>
 
 Configuring a parser for a column (via "parser" key in the sections profile
 JSON) will change that column's Spark type.  The corresponding Pydantic section
@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from pyspark.sql.types import ArrayType, BooleanType, DoubleType, IntegerType, StringType
 
-from procurement.silver.html_value_parsers.common_values import (
+from procurement.silver.field_parsers.common import (
     _parse_criterion_weight,
     _parse_pln_value,
     _parse_tak_nie,

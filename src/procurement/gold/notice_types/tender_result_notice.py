@@ -10,13 +10,13 @@ import re
 
 from bs4 import BeautifulSoup, Tag
 
-from procurement.silver.parser_utils import (
+from procurement.silver.html_parsing.utils import (
     _field_num,
     _find_h3,
     _span_value,
     _text_after_h3,
 )
-from procurement.silver.html_value_parsers.common_values import (
+from procurement.silver.field_parsers.common import (
     _parse_pln_value,
     _parse_tak_nie,
     parse_cpv_codes,

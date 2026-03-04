@@ -5,7 +5,7 @@ Thin wrapper over the current profile-driven section parser.
 
 from __future__ import annotations
 
-from procurement.silver.raw_html_sections_parser import (
+from procurement.silver.section_pipeline.html_extractor import (
     build_notice_sections_model,
     extract_contract_notice_section_number,
     extract_contract_notice_section_value,

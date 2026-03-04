@@ -1,6 +1,6 @@
 """NoticeType-specific Silver table definitions."""
 
-from procurement.silver.notice_types.definitions import (
+from procurement.silver.notice_sections.definitions import (
     NOTICE_TYPE_HTML_EXTRACTED_FIELDS,
     NOTICE_TYPE_SPECIFIC_COLUMNS,
     html_extracted_fields_for_notice_type,

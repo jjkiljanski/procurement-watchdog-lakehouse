@@ -6,8 +6,8 @@ from typing import Any
 
 from bs4 import BeautifulSoup
 
-from procurement.silver.html_sections_parser import build_notice_sections_model
-from procurement.silver.html_value_parsers import parse_notice_values
+from procurement.silver.html_parsing.sections_parser import build_notice_sections_model
+from procurement.silver.field_parsers import parse_notice_values
 
 
 def parse_notice_html(

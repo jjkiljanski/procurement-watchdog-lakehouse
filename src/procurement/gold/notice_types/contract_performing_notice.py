@@ -11,7 +11,7 @@ from html import unescape
 
 from bs4 import BeautifulSoup
 
-from procurement.silver.parser_utils import (
+from procurement.silver.html_parsing.utils import (
     _collect_p_values,
     _extract_h3_field_fast,
     _field_marker_re,
@@ -22,7 +22,7 @@ from procurement.silver.parser_utils import (
     _span_value,
     _text_after_h3,
 )
-from procurement.silver.html_value_parsers.common_values import (
+from procurement.silver.field_parsers.common import (
     _classify_contractor_id,
     _extract_currency,
     _parse_pln_value,

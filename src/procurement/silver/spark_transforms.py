@@ -35,11 +35,11 @@ from pyspark.sql.types import (
 )
 
 from procurement.dictionaries import client_type_names, order_type_names, province_names
-from procurement.silver.html_parser import (
+from procurement.silver.html_parsing.parser import (
     _extract_address,
     parse_html,
 )
-from procurement.silver.html_value_parsers.common_values import (
+from procurement.silver.field_parsers.common import (
     classify_contractor_id_for_notice,
     normalize_tender_result_contractors,
     parse_cpv_codes,

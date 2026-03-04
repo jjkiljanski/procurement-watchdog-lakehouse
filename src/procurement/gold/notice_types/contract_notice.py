@@ -11,12 +11,12 @@ import re
 from bs4 import BeautifulSoup
 from pydantic import ValidationError
 
-from procurement.silver.parser_utils import (
+from procurement.silver.html_parsing.utils import (
     _find_h3,
     _span_value,
     _text_after_h3,
 )
-from procurement.silver.html_value_parsers.common_values import (
+from procurement.silver.field_parsers.common import (
     _parse_criterion_weight,
     _parse_pln_value,
     _parse_tak_nie,
@@ -27,16 +27,13 @@ from procurement.silver.models import (
     EvalCriterion,
     ExtractedValues,
 )
-from procurement.silver.raw_html_sections_parser import (
+from procurement.silver.section_pipeline.html_extractor import (
     extract_contract_notice_section_number as _extract_contract_notice_section_number,
     extract_contract_notice_section_value as _extract_contract_notice_section_value,
     section_to_field_name as _section_to_field_name,
 )
 # TODO: ContractNoticePartRaw will be removed; _extract_contract_notice_parts
 #       must be rewritten to read from Silver section-column tables.
-from procurement.silver.notice_types.contract_notice_split_models import (
-    ContractNoticePartRaw,
-)
 
 
 def _extract_description(soup: BeautifulSoup) -> str | None:
@@ -102,7 +99,7 @@ def _map_cn_offers_scope(raw: str | None) -> str | None:
     """Map raw 4.1.10 content to canonical categories."""
     if not raw:
         return None
-    from procurement.silver.parser_utils import _normalize_label_text
+    from procurement.silver.html_parsing.utils import _normalize_label_text
     normalized = _normalize_label_text(raw or "")
     normalized = re.sub(r"^\s*4\.1\.10\.\)\s*", "", normalized).strip()
     if not normalized:

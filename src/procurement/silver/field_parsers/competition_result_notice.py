@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from procurement.silver.html_value_parsers.types import ParsedValues
+from procurement.silver.field_parsers.types import ParsedValues
 
 
 def parse_competition_result_notice(*, sections_model, soup, procedure_result) -> ParsedValues:

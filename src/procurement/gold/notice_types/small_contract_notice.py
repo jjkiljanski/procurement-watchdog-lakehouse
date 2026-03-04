@@ -8,8 +8,8 @@ from __future__ import annotations
 
 from bs4 import BeautifulSoup
 
-from procurement.silver.parser_utils import _find_h3, _span_value
-from procurement.silver.html_value_parsers.common_values import (
+from procurement.silver.html_parsing.utils import _find_h3, _span_value
+from procurement.silver.field_parsers.common import (
     _extract_currency,
     _parse_pln_value,
 )

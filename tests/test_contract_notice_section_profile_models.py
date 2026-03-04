@@ -6,7 +6,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from procurement.silver.notice_types.contract_notice_section_profile_models import (
+from procurement.silver.notice_sections.contract_notice_section_profile_models import (
     ContractNoticeSectionProfile,
 )
 

@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-_PROFILES_DIR = Path(__file__).parent / "notice_types"
+_PROFILES_DIR = Path(__file__).parent.parent / "notice_sections"
 
 # Maps camelCase notice type name -> snake_case profile file stem
 NOTICE_TYPE_TO_PROFILE_KEY: dict[str, str] = {

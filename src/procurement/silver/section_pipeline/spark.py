@@ -25,8 +25,8 @@ from pyspark.sql.functions import col, from_json, get_json_object, lit, posexplo
 from pyspark.sql.types import ArrayType, StringType, StructField, StructType
 from pyspark.sql.functions import udf
 
-from procurement.silver.column_parser_registry import get_parser_entry
-from procurement.silver.sections_profile import (
+from procurement.silver.section_pipeline.column_parsers import get_parser_entry
+from procurement.silver.section_pipeline.profile import (
     model_core_col_names,
     model_sub_info,
     section_parsers,
@@ -64,7 +64,7 @@ def make_html_sections_udf(all_profiles: dict):
 
         import json as _json
         from bs4 import BeautifulSoup
-        from procurement.silver.raw_html_sections_parser import build_notice_sections_model
+        from procurement.silver.section_pipeline.html_extractor import build_notice_sections_model
 
         soup = BeautifulSoup(html, "lxml")
         result = build_notice_sections_model(soup, notice_type, profiles)
@@ -231,7 +231,7 @@ def apply_column_parsers(
     Columns without a parser configuration remain as StringType (unchanged).
 
     The parser function must be registered in
-    :mod:`procurement.silver.column_parser_registry` under the given ``fn`` name.
+    :mod:`procurement.silver.section_pipeline.column_parsers` under the given ``fn`` name.
     Notice-type-specific parsers take precedence over common ones when names clash.
 
     Parameters

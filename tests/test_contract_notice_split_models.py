@@ -7,7 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from procurement.silver.notice_types.contract_notice_split_models import (  # noqa: E402
+from procurement.silver.notice_sections.contract_notice_split_models import (  # noqa: E402
     ContractNoticeCoreRaw,
 )
 

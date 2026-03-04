@@ -7,7 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from procurement.silver.html_parser import (
+from procurement.silver.html_parsing.parser import (
     _parse_pln_value,
     normalize_tender_result_contractors,
     parse_html_agreement_intention_light,
@@ -1196,27 +1196,27 @@ class TestNoticeChange:
 
 class TestParseTakNie:
     def test_tak(self):
-        from procurement.silver.html_parser import _parse_tak_nie
+        from procurement.silver.html_parsing.parser import _parse_tak_nie
 
         assert _parse_tak_nie("Tak") is True
 
     def test_nie(self):
-        from procurement.silver.html_parser import _parse_tak_nie
+        from procurement.silver.html_parsing.parser import _parse_tak_nie
 
         assert _parse_tak_nie("Nie") is False
 
     def test_none(self):
-        from procurement.silver.html_parser import _parse_tak_nie
+        from procurement.silver.html_parsing.parser import _parse_tak_nie
 
         assert _parse_tak_nie(None) is None
 
     def test_whitespace(self):
-        from procurement.silver.html_parser import _parse_tak_nie
+        from procurement.silver.html_parsing.parser import _parse_tak_nie
 
         assert _parse_tak_nie("  Tak  ") is True
 
     def test_unexpected_value(self):
-        from procurement.silver.html_parser import _parse_tak_nie
+        from procurement.silver.html_parsing.parser import _parse_tak_nie
 
         assert _parse_tak_nie("Maybe") is None
 

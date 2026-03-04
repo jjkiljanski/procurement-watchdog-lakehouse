@@ -10,13 +10,13 @@ import re
 
 from bs4 import BeautifulSoup
 
-from procurement.silver.parser_utils import (
+from procurement.silver.html_parsing.utils import (
     _extract_h3_field_fast,
     _find_h3,
     _span_value,
     _text_after_h3,
 )
-from procurement.silver.html_value_parsers.common_values import _parse_pln_value
+from procurement.silver.field_parsers.common import _parse_pln_value
 
 
 def _extract_competition_notice_fields(

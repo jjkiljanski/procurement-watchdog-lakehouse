@@ -14,12 +14,12 @@ from pathlib import Path
 
 from procurement.common.locks import acquire_directory_lock, release_directory_lock_if_owner
 from procurement.lineage import atomic_write_json, git_commit_sha, now_utc_iso, script_hashes, sha256_file
-from procurement.silver.notice_types import (
+from procurement.silver.notice_sections import (
     normalized_notice_type_token,
 )
-from procurement.silver.sections_profile import load_all_profiles
-from procurement.silver.section_model_validation import validate_section_models
-from procurement.silver.sections_spark import apply_column_parsers, build_section_tables, make_html_sections_udf
+from procurement.silver.section_pipeline.profile import load_all_profiles
+from procurement.silver.section_pipeline.validation import validate_section_models
+from procurement.silver.section_pipeline.spark import apply_column_parsers, build_section_tables, make_html_sections_udf
 from procurement.silver.spark_transforms import (
     build_silver_for_notice_type,
 )
