@@ -24,6 +24,7 @@ from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, from_json, get_json_object, lit, posexplode
 from pyspark.sql.types import ArrayType, StringType, StructField, StructType
 from pyspark.sql.functions import udf
+from pyspark.storagelevel import StorageLevel
 
 from procurement.silver.section_pipeline.column_parsers import get_parser_entry
 from procurement.silver.section_pipeline.profile import (
@@ -56,19 +57,23 @@ def make_html_sections_udf(all_profiles: dict):
         if not html or not notice_type:
             return None
 
+        # On the first call in each worker process, populate the cache with the
+        # deserialized profiles and the imported function/class references.
+        # Subsequent calls skip all imports and JSON parsing entirely.
         if "_profiles" not in _cache:
             import json as _json
+            from bs4 import BeautifulSoup as _BeautifulSoup
+            from procurement.silver.section_pipeline.html_extractor import (
+                build_notice_sections_model as _build,
+            )
             _cache["_profiles"] = _json.loads(profiles_json_str)
+            _cache["_json"] = _json
+            _cache["_BeautifulSoup"] = _BeautifulSoup
+            _cache["_build"] = _build
 
-        profiles = _cache["_profiles"]
-
-        import json as _json
-        from bs4 import BeautifulSoup
-        from procurement.silver.section_pipeline.html_extractor import build_notice_sections_model
-
-        soup = BeautifulSoup(html, "lxml")
-        result = build_notice_sections_model(soup, notice_type, profiles)
-        return _json.dumps(result, ensure_ascii=False)
+        soup = _cache["_BeautifulSoup"](html, "lxml")
+        result = _cache["_build"](soup, notice_type, _cache["_profiles"])
+        return _cache["_json"].dumps(result, ensure_ascii=False)
 
     return udf(_parse_html_sections, StringType())
 
@@ -125,7 +130,7 @@ def build_section_tables(
     notice_type: str | None,
     profile: dict,
     sections_udf,
-) -> dict[str, DataFrame]:
+) -> tuple[dict[str, DataFrame], DataFrame | None]:
     """Build one DataFrame per data_model from the HTML sections of a notice-type batch.
 
     Parameters
@@ -138,21 +143,24 @@ def build_section_tables(
 
     Returns
     -------
-    dict mapping model name (e.g. 'core', 'part', 'client') -> DataFrame.
-    Empty dict if profile is empty or notice_type is None.
+    (section_tables, sections_df) — sections_df is persisted in MEMORY_AND_DISK so that
+    writing N model tables only parses HTML once instead of N times per notice type.
+    The caller **must** call ``sections_df.unpersist()`` after all writes complete.
+    Returns ({}, None) if profile is empty or notice_type is None.
     """
     if not profile or notice_type is None:
-        return {}
+        return {}, None
 
     models = top_level_models(profile)
     if not models:
-        return {}
+        return {}, None
 
-    # Parse HTML into sections JSON once per row; reused across all models
+    # Parse HTML into sections JSON once per row; persist so N model writes
+    # reuse the cached result instead of re-parsing HTML each time.
     df_with_sections = df.withColumn(
         "_sections_json",
         sections_udf(col("htmlBody"), lit(notice_type)),
-    )
+    ).persist(StorageLevel.MEMORY_AND_DISK)
 
     result: dict[str, DataFrame] = {}
 
@@ -216,7 +224,7 @@ def build_section_tables(
             len(core_cols),
         )
 
-    return result
+    return result, df_with_sections
 
 
 def apply_column_parsers(

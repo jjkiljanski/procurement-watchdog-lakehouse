@@ -7,8 +7,10 @@ import logging
 import os
 import shutil
 import sys
+import threading
 import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -93,6 +95,7 @@ def build_spark_session(master: str, app_name: str):
         .config("spark.pyspark.driver.python", sys.executable)
         .config("spark.sql.ansi.enabled", "false")
         .config("spark.sql.mapKeyDedupPolicy", "LAST_WIN")
+        .config("spark.scheduler.mode", "FAIR")
         .getOrCreate()
     )
 
@@ -289,16 +292,30 @@ def run_silver_day_core(
         spark.conf.set("spark.sql.sources.partitionOverwriteMode", "dynamic")
         _safe_rmtree(envelope_day_dir, "envelope day dir")
         _safe_rmtree(quarantine_day_dir, "quarantine day dir")
+        envelope_day_dir.mkdir(parents=True, exist_ok=True)
+
+        # Set shuffle partitions once globally — per-batch setting races across threads.
+        _default_parallelism = spark.sparkContext.defaultParallelism
+        _global_shuffle = (
+            cfg.shuffle_partitions
+            if cfg.shuffle_partitions > 0
+            else max(4, min(_default_parallelism * 2, 32))
+        )
+        spark.conf.set("spark.sql.shuffle.partitions", str(_global_shuffle))
 
         run_start = time.perf_counter()
         profile: dict = {"target_date": target_date, "input_layer": "bronze" if use_bronze else "raw", "batches": []}
-        total_rows = 0
-        total_invalid_rows = 0
+        required_columns = set(ENVELOPE_COLUMNS)
+        _lock = threading.Lock()
+        _accum: dict = {"rows": 0, "invalid": 0, "profiles": []}
 
-        for notice_type, batch_path in notice_batches:
+        def _process_batch(notice_type: str | None, batch_path: str | None) -> None:
             batch_t0 = time.perf_counter()
             notice_token = normalized_notice_type_token(notice_type)
-            batch_profile: dict = {"noticeType": notice_token}
+            batch_profile: dict = {
+                "noticeType": notice_token,
+                "shuffle_partitions": _global_shuffle,
+            }
             if use_bronze:
                 assert batch_path is not None
                 batch_raw = spark.read.option("basePath", str(bronze_root)).parquet(batch_path)
@@ -311,56 +328,45 @@ def run_silver_day_core(
                     batch_raw = df_raw.filter(col("noticeType") == lit(notice_type))
                 batch_profile["read_mode"] = "raw_filter"
 
-            count_t0 = time.perf_counter()
-            batch_count = batch_raw.count()
-            batch_profile["count_sec"] = round(time.perf_counter() - count_t0, 3)
-            batch_profile["rows"] = batch_count
-            total_rows += batch_count
-
-            if cfg.shuffle_partitions <= 0:
-                per_batch_shuffle = (
-                    cfg.repartition
-                    if cfg.repartition > 0
-                    else _adaptive_target_partitions(notice_type, batch_count, spark.sparkContext.defaultParallelism)
-                )
-                spark.conf.set("spark.sql.shuffle.partitions", str(per_batch_shuffle))
-                batch_profile["shuffle_partitions"] = per_batch_shuffle
-            else:
-                batch_profile["shuffle_partitions"] = cfg.shuffle_partitions
-
-            batch_raw = _maybe_repartition_batch(
-                df=batch_raw,
-                notice_type=notice_type,
-                row_count=batch_count,
-                repartition_arg=cfg.repartition,
-                spark=spark,
-                notice_type_token=notice_token,
-            )
-
             # Ensure publicationDateDay is present on the raw batch for section tables.
             batch_raw = batch_raw.withColumn(
                 "publicationDateDay", to_date(col("publicationDate")).cast("string")
             )
 
-            required_columns = set(ENVELOPE_COLUMNS)
+            # Persist raw batch: avoids re-reading Parquet for count(), sections UDF, envelope UDF.
+            _raw_cache = batch_raw.persist(StorageLevel.MEMORY_AND_DISK)
+            _sections_cache = None
+            _envelope_cache = None
+            batch_count = 0
+            batch_invalid_rows = 0
 
-            cached_batch = None
             try:
-                # --- Section tables (new profile-driven path) ---
+                count_t0 = time.perf_counter()
+                batch_count = _raw_cache.count()
+                batch_profile["count_sec"] = round(time.perf_counter() - count_t0, 3)
+                batch_profile["rows"] = batch_count
+
+                batch_raw = _maybe_repartition_batch(
+                    df=_raw_cache,
+                    notice_type=notice_type,
+                    row_count=batch_count,
+                    repartition_arg=cfg.repartition,
+                    spark=spark,
+                    notice_type_token=notice_token,
+                )
+
+                # --- Section tables (profile-driven) ---
                 notice_profile = all_profiles.get(notice_type or "", {})
-                section_tables = build_section_tables(
+                section_tables, _sections_cache = build_section_tables(
                     batch_raw,
                     notice_type=notice_type,
                     profile=notice_profile,
                     sections_udf=sections_udf,
                 )
-                section_tables = apply_column_parsers(
-                    section_tables,
-                    notice_profile,
-                    notice_type,
-                )
+                section_tables = apply_column_parsers(section_tables, notice_profile, notice_type)
                 section_tables = validate_section_models(section_tables, notice_type)
-                for model, model_df in section_tables.items():
+
+                def _write_section(model: str, model_df) -> None:
                     model_day_dir = (
                         specific_root
                         / f"noticeType={notice_token}"
@@ -374,7 +380,19 @@ def run_silver_day_core(
                         notice_token, model, model_day_dir,
                     )
 
-                # --- Envelope (derived from bronze metadata, no HTML) ---
+                # Write all section models in parallel when there are multiple.
+                if len(section_tables) > 1:
+                    with ThreadPoolExecutor(max_workers=len(section_tables)) as _pool:
+                        _futs = [_pool.submit(_write_section, m, df) for m, df in section_tables.items()]
+                        for _f in as_completed(_futs):
+                            _f.result()
+                else:
+                    for m, df in section_tables.items():
+                        _write_section(m, df)
+
+                batch_profile["section_models"] = sorted(section_tables.keys())
+
+                # --- Common envelope (legacy soup path) ---
                 batch_silver = build_silver_for_notice_type(
                     batch_raw,
                     notice_type=notice_type,
@@ -383,23 +401,21 @@ def run_silver_day_core(
                     "caseId_shard",
                     when(col("caseId").isNotNull(), pmod(xxhash64(col("caseId")), lit(64)).cast("int")),
                 )
-
                 batch_silver, validation_rules = with_notice_validation_errors(
                     batch_silver,
                     target_date=target_date,
                     notice_type=notice_type,
                 )
-                cached_batch = batch_silver.persist(StorageLevel.MEMORY_AND_DISK)
+                _envelope_cache = batch_silver.persist(StorageLevel.MEMORY_AND_DISK)
                 batch_validation = summarize_notice_validation(
-                    cached_batch,
+                    _envelope_cache,
                     target_date=target_date,
                     notice_type=notice_type,
                     rules=validation_rules,
                 )
-                invalid_batch = cached_batch.filter(size(col("__validation_errors")) > 0)
-                valid_batch = cached_batch.filter(size(col("__validation_errors")) == 0).drop("__validation_errors")
+                invalid_batch = _envelope_cache.filter(size(col("__validation_errors")) > 0)
+                valid_batch = _envelope_cache.filter(size(col("__validation_errors")) == 0).drop("__validation_errors")
                 batch_invalid_rows = int(batch_validation.get("invalid_rows", 0))
-                total_invalid_rows += batch_invalid_rows
 
                 if batch_invalid_rows > 0:
                     (
@@ -409,30 +425,47 @@ def run_silver_day_core(
                         .parquet(str(quarantine_root))
                     )
 
+                # Write directly to the final envelope dir — no tmp intermediate needed.
                 envelope_df = _select_existing(valid_batch, ENVELOPE_COLUMNS)
-                envelope_df.write.mode("append").parquet(str(envelope_tmp_dir))
+                envelope_df.write.mode("append").parquet(str(envelope_day_dir))
 
                 batch_profile["validation"] = batch_validation
                 batch_profile["invalid_rows"] = batch_invalid_rows
                 batch_profile["valid_rows"] = batch_count - batch_invalid_rows
-                batch_profile["section_models"] = sorted(section_tables.keys())
             finally:
-                if cached_batch is not None:
-                    cached_batch.unpersist()
+                if _sections_cache is not None:
+                    _sections_cache.unpersist()
+                if _envelope_cache is not None:
+                    _envelope_cache.unpersist()
+                _raw_cache.unpersist()
 
             batch_profile["batch_total_sec"] = round(time.perf_counter() - batch_t0, 3)
             batch_profile["batch_path"] = batch_path
-            profile["batches"].append(batch_profile)
             log.info(
                 "Batch noticeType=%s rows=%d wrote specific+envelope in %.2fs",
                 notice_token,
                 batch_count,
                 time.perf_counter() - batch_t0,
             )
+            with _lock:
+                _accum["rows"] += batch_count
+                _accum["invalid"] += batch_invalid_rows
+                _accum["profiles"].append(batch_profile)
 
-        envelope_day_df = spark.read.parquet(str(envelope_tmp_dir))
-        envelope_day_df.write.mode("overwrite").parquet(str(envelope_day_dir))
-        _safe_rmtree(envelope_tmp_dir, "envelope tmp dir")
+        # Run all notice-type batches in parallel.
+        with ThreadPoolExecutor(max_workers=len(notice_batches)) as _executor:
+            _futures = {
+                _executor.submit(_process_batch, nt, bp): (nt, bp)
+                for nt, bp in notice_batches
+            }
+            for _fut in as_completed(_futures):
+                _fut.result()  # re-raise any exception from the batch worker
+
+        total_rows = _accum["rows"]
+        total_invalid_rows = _accum["invalid"]
+        profile["batches"] = _accum["profiles"]
+
+        # Validate the combined envelope written directly to the day partition.
         envelope_validation_df = spark.read.parquet(str(envelope_day_dir))
         validation_metrics = validate_common_envelope(envelope_validation_df, target_date=target_date)
 
