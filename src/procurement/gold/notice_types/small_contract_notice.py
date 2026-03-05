@@ -13,7 +13,7 @@ from procurement.silver.field_parsers.common import (
     _extract_currency,
     _parse_pln_value,
 )
-from procurement.silver.models import ExtractedValues
+from procurement.silver.legacy.models import ExtractedValues
 
 
 def _extract_values_small_contract(soup: BeautifulSoup) -> ExtractedValues | None:

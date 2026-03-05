@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 
 from procurement.silver.html_parsing.utils import _find_h3, _span_value
 from procurement.silver.field_parsers.common import _parse_pln_value
-from procurement.silver.models import ExtractedValues
+from procurement.silver.legacy.models import ExtractedValues
 
 
 def _extract_values_agreement_update(soup: BeautifulSoup) -> ExtractedValues | None:

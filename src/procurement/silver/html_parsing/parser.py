@@ -43,7 +43,7 @@ from procurement.gold.notice_types.competition_notice import (
 from procurement.gold.notice_types.contract_performing_notice import (
     parse_html_contract_performing_light,
 )
-from procurement.silver.models import (
+from procurement.silver.legacy.models import (
     ExtractedValues,
     HtmlExtracted,
 )

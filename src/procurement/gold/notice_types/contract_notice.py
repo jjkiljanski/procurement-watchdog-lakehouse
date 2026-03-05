@@ -22,7 +22,7 @@ from procurement.silver.field_parsers.common import (
     _parse_tak_nie,
     parse_cpv_codes,
 )
-from procurement.silver.models import (
+from procurement.silver.legacy.models import (
     ContractNoticePart,
     EvalCriterion,
     ExtractedValues,

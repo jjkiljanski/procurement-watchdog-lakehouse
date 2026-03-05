@@ -28,7 +28,7 @@ from procurement.silver.field_parsers.common import (
     _parse_pln_value,
     _parse_tak_nie,
 )
-from procurement.silver.models import (
+from procurement.silver.legacy.models import (
     ContractExecution,
     ExtractedValues,
 )

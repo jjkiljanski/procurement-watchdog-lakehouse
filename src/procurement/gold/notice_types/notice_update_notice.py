@@ -14,7 +14,7 @@ from procurement.silver.html_parsing.utils import (
     _span_value,
     _text_after_h3,
 )
-from procurement.silver.models import ChangeEntry, NoticeChange
+from procurement.silver.legacy.models import ChangeEntry, NoticeChange
 
 
 def _extract_details_notice_update(soup: BeautifulSoup) -> NoticeChange | None:
