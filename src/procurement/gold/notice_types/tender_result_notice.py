@@ -10,7 +10,7 @@ import re
 
 from bs4 import BeautifulSoup, Tag
 
-from procurement.silver.html_parsing.utils import (
+from procurement.silver.section_pipeline.parser_utils import (
     _field_num,
     _find_h3,
     _span_value,

@@ -11,7 +11,7 @@ from html import unescape
 
 from bs4 import BeautifulSoup
 
-from procurement.silver.html_parsing.utils import (
+from procurement.silver.section_pipeline.parser_utils import (
     _collect_p_values,
     _extract_h3_field_fast,
     _field_marker_re,

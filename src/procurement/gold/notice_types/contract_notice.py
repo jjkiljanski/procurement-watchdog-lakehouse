@@ -11,7 +11,7 @@ import re
 from bs4 import BeautifulSoup
 from pydantic import ValidationError
 
-from procurement.silver.html_parsing.utils import (
+from procurement.silver.section_pipeline.parser_utils import (
     _find_h3,
     _span_value,
     _text_after_h3,
@@ -99,7 +99,7 @@ def _map_cn_offers_scope(raw: str | None) -> str | None:
     """Map raw 4.1.10 content to canonical categories."""
     if not raw:
         return None
-    from procurement.silver.html_parsing.utils import _normalize_label_text
+    from procurement.silver.section_pipeline.parser_utils import _normalize_label_text
     normalized = _normalize_label_text(raw or "")
     normalized = re.sub(r"^\s*4\.1\.10\.\)\s*", "", normalized).strip()
     if not normalized:
