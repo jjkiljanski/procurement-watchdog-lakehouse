@@ -1,106 +1,192 @@
-# Silver Layer
+# Silver Layer — Pipeline Architecture
 
-Purpose:
+The Silver layer converts raw Bronze Parquet notices into structured, typed
+tables partitioned by `noticeType` and `publicationDateDay`.
 
-- Convert raw records into a conformed analytical schema.
-- Enrich with parsed HTML-derived fields and normalized identifiers.
-- Provide deterministic, joinable daily parquet for downstream Gold and run-stats.
+---
 
-Inputs:
+## Directory layout
 
-- Preferred: `data/bronze/notices/noticeType=*/publicationDateDay=YYYY-MM-DD/`
-- Fallback: `data/raw/bzp_YYYY-MM-DD.json` (legacy compatibility)
+```
+silver/
+├── build_core.py              Entry point: run_silver_day_core()
+├── common_envelope.py         build_envelope_df() + validate_envelope_schema()
+│
+├── section_pipeline/          ◄ PRIMARY: profile-driven section tables
+│   ├── profile.py             Load & query *_sections_profile.json files
+│   ├── html_extractor.py      HTML → sections model (BeautifulSoup + profile)
+│   │                          Also contains low-level soup helpers (_find_h3, _span_value, …)
+│   ├── spark.py               Spark: build + explode section DataFrames; apply column parsers
+│   ├── column_parsers.py      Registry of str→typed column-level parsers
+│   └── validation.py          Driver-side Pydantic schema check per section table
+│
+├── field_parsers/             Column-level value parsers (str → typed)
+│   ├── common.py              Shared: parse_tak_nie, parse_pln_value,
+│   │                          parse_date_from_text, parse_cpv_codes,
+│   │                          classify_polish_national_id, _normalize_label_text, …
+│   ├── types.py               ParsedValues type alias
+│   └── <notice_type>.py       Per-type placeholders — implement here, then register
+│                              in section_pipeline/column_parsers.py
+│
+├── notice_sections/           Per-notice-type schemas
+│   ├── __init__.py            normalized_notice_type_token()
+│   ├── *_sections_profile.json  Section number → {col_name, data_model, parser?}
+│   └── *_models.py            Pydantic models (all fields str|None until typed)
+│
+└── legacy/                    Old HTML-parsing pipeline preserved for reference
+```
 
-Primary build entrypoint:
+---
 
-- `scripts/pipeline/build_silver.py`
-- `scripts/pipeline/build_case_derived_facts.py` (separate lifecycle projection job)
+## Two parallel pipelines
 
-Operational modes:
+### 1. Section table pipeline  *(primary, new)*
 
-- Daily: build one day from Bronze and run `case_derived_facts` in `incremental` mode.
-- Backfill: process many days from Bronze, then run `case_derived_facts` `full` for initial snapshot.
+Converts each HTML notice into one Parquet table **per data model** (core, part, client, …).
+Every section becomes a column; values are raw strings until column parsers are configured.
 
-Outputs:
+```
+Bronze Parquet
+    │
+    ▼  make_html_sections_udf()          [section_pipeline/spark.py]
+    │  BeautifulSoup + profile JSON  →  JSON { "core": {…}, "part": [{…}] }
+    │
+    ▼  build_section_tables()            [section_pipeline/spark.py]
+    │  from_json / posexplode  →  one DataFrame per data_model
+    │
+    ▼  apply_column_parsers()            [section_pipeline/spark.py]
+    │  UDF per column where profile has "parser": {"fn": "…"}
+    │  (all parsers currently null → no-op; activated as field_parsers are implemented)
+    │
+    ▼  validate_section_models()         [section_pipeline/validation.py]
+    │  Driver-side: import *_models.py, warn on missing columns
+    │
+    ▼  Parquet write
+       data/silver/notice_type_tables/
+         noticeType=<TYPE>/
+           data_model=<MODEL>/
+             publicationDateDay=<DATE>/
+```
 
-- `data/silver/common_envelope/publicationDateDay=YYYY-MM-DD/`
-- `data/silver/notice_type_tables/noticeType=<TYPE>/publicationDateDay=YYYY-MM-DD/`
-- `data/silver/case_derived_facts/asOfDate=YYYY-MM-DD/` (built by `build_case_derived_facts.py`)
-- `data/silver/_quarantine/notice_rows/publicationDateDay=YYYY-MM-DD/` (rows failing Silver row-level validation)
+**How to add a column parser:**
+1. Implement the function in `field_parsers/common.py` (shared across types) or
+   `field_parsers/<snake_type_name>.py` (type-specific).
+2. Register it in `section_pipeline/column_parsers.py` → `COMMON_PARSERS`
+   (or `NOTICE_TYPE_PARSERS["MyType"]` for a type-specific one).
+3. Add `"parser": {"fn": "my_fn"}` to the relevant entry in
+   `notice_sections/<type>_sections_profile.json`.
+4. Update the corresponding Pydantic field in `notice_sections/<type>_models.py`
+   to match the function's return type.
 
-Processing model:
+### 2. Envelope pipeline  *(simplified, no HTML parsing)*
 
-- Input is processed in sorted `noticeType` batches.
-- Each batch is transformed with `build_silver_for_notice_type(...)`.
-- Shared columns go to `common_envelope`.
-- Notice-specific payload goes to `notice_type_tables`.
-- `noticeType` folder tokens are normalized; null maps to `__NULL__`.
-- Process/lifecycle case metrics are built in a second Spark job and written to `case_derived_facts`.
+Produces the `common_envelope` table: all Bronze structured columns (except the
+internal `recordHash` hash and the `htmlBody` blob) plus a small set of derived
+columns that require only dictionary lookups or pure Spark expressions.
+Defined in `common_envelope.py`.
 
-Core transformation module:
+```
+Bronze Parquet
+    │
+    ▼  build_envelope_df()               [common_envelope.py]
+    │  All Bronze structured cols + clientTypeName, provinceName,
+    │  caseId (coalesce tenderId/objectId), noticeStage (from noticeType)
+    │
+    ▼  validate_envelope_schema()        [common_envelope.py]
+    │  Driver-side column-presence check (warns on drift)
+    │
+    ▼  Parquet write
+       data/silver/common_envelope/publicationDateDay=<DATE>/
+```
 
-- `src/procurement/silver/spark_transforms.py`
+The Pydantic model `CommonEnvelopeRow` in `common_envelope.py` documents the
+expected schema and is used for driver-side validation.
 
-Key semantics:
+---
 
-- `caseId` as canonical case key (`tenderId` fallback to `objectId`).
-- `noticeStage` classification (`INIT`, `UPDATE`, `RESULT`, `EXECUTION`).
-- `htmlExtracted` nested struct for parsed values/lots/execution/change fields.
-- derived operational fields (`biddingWindowDays`, `priceWeight`, `paidRatio`, change flags, execution risk flags).
-- `cpvCodes` is kept in noticeType-specific tables, not in the envelope.
-- `submittingOffersDate` is kept in specific tables (`ContractNotice`, `ConcessionNotice`), not in the envelope.
-- `street` and `postal_code` are promoted to envelope columns for cross-type joins.
-- `organizationId` and `organizationName` are kept in envelope and are not duplicated into specific tables.
-- notice-type tables intentionally avoid process/lifecycle fields that are mostly null outside relevant notice classes.
-- `hasTenderResult` and `hasContractExecution` are not materialized in Silver; use `noticeType` semantics directly.
-- `procedureResult` and `procedureResultParsed` are emitted only for `TenderResultNotice` specific tables.
-- `AgreementIntentionNotice` specific table emits focused columns:
-- `ai_street_512`, `value_estimated_procurement_ai_35`, `ai_prior_market_consultation_31` (without `htmlExtracted`,
-- and without criteria/weight/contractor-normalization fields that are null for this type).
-- `AgreementUpdateNotice` specific table drops `numCriteria`, `priceWeight`, `nonPriceWeightSum`, `contractorNameNormalized`, and `htmlExtracted`.
-- `ContractNotice` specific table drops `contractors`, `contractorNameNormalized`, and `htmlExtracted`, and emits:
-- `cn_notice_concerns`, `cn_partial_offers_allowed_418`, `cn_offers_scope_4110`, `cn_award_criteria_by_part`, `cn_criteria_aspects_4310`,
-- `cn_criteria_aspects_4310_flag`, `cn_description_by_part`.
-- ContractNotice is also written in split form:
-- core rows in `noticeType=ContractNotice` (one row per notice),
-- part rows in `noticeType=ContractNotice_parts` (one row per part, linked by `objectId`).
-- `ContractPerformingNotice` specific table drops `htmlExtracted`, `numCriteria`, `priceWeight`, `nonPriceWeightSum`,
-- `contractorNameNormalized`,
-- and emits contractor HTML fallback fields:
-- `contractor_id_raw`, `contractor_id_parsed`, `contractor_id_type`,
-- `cpn_contractor_cities_434`, `cpn_contractor_provinces_436`, `value_contract_reported_execution_44`, `value_paid_total_55`.
-- `NoticeUpdateNotice` specific table drops `cpvCodes`, `contractors`, criteria/weight fields and `htmlExtracted`,
-- and emits flattened change columns: `changed_notice_number`, `changed_notice_version`, `changes`.
-- `TenderResultNotice` specific table drops `numCriteria`, `priceWeight`, `nonPriceWeightSum`,
-- `contractorNameNormalized`, and `htmlExtracted`, and emits:
-- `trn_notice_concerns`, `trn_parts` (part-level `opis`, `mainCPV`, `secondaryCPV`, `value_estimated_procurement`).
-- Spark validation runs after each day write (`build_silver.py`, `build_silver_backfill.py`) and reports:
-- `street` non-null/non-empty coverage,
-- `postal_code` format validity (`XX-XXX`) for present values.
-- Additional batch-level checks: required key nulls (`objectId`, `organizationId`, `caseId`),
-- publication date parseability + day/partition consistency, duplicate `objectId`,
-- `noticeStage` consistency by `noticeType`, CPV code format, negative `biddingWindowDays`,
-- invalid `submittingOffersDate`, and missing `procedureResultParsed` for `TenderResultNotice`.
-- Rows failing row-level checks are skipped from main Silver outputs and written to `_quarantine`
-- with `__validation_errors` and `validation_notice_type` for triage.
-- `CircumstancesFulfillmentNotice` specific table drops `numCriteria`, `priceWeight`,
-- `nonPriceWeightSum`, `contractorNameNormalized`, and `htmlExtracted`.
-- `SmallContractNotice` specific table drops `contractors`, `numCriteria`, `priceWeight`,
-- `nonPriceWeightSum`, `contractorNameNormalized`, and `htmlExtracted`.
-- `CompetitionNotice` specific table drops `contractors`, `numCriteria`, `priceWeight`,
-- `nonPriceWeightSum`, `contractorNameNormalized`, and `htmlExtracted`, and emits:
-- `comp_num_awarded_63`, `value_competition_prizes_64`, `value_competition_followon_order_651`, `comp_requirements_72`.
-- `ConcessionNotice` specific table drops `contractors`, `numCriteria`, `priceWeight`,
-- `nonPriceWeightSum`, `contractorNameNormalized`, and `htmlExtracted`.
-- `case_derived_facts` is case-grain lifecycle state with two modes:
-- `full`: rebuild from all Silver notices up to `asOfDate`.
-- `incremental`: recompute only cases touched by latest daily notices and merge with prior snapshot.
+## Section profile JSON schema
 
-See also:
+Each entry in `notice_sections/<type>_sections_profile.json`:
 
-- `docs/runbooks/OPERATING_MODES.md`
+```json
+"2.7": {
+  "col_name":       "section_2_7",
+  "section_header": "Czy dopuszcza się złożenie oferty częściowej",
+  "data_model":     "core",
+  "example_values": ["Tak", "Nie"],
+  "parser":         null
+}
+```
 
-Reporting:
+| Key | Meaning |
+|---|---|
+| `col_name` | Spark / Parquet column name |
+| `section_header` | Polish section title (informational) |
+| `data_model` | `core` (one row/notice) · `part` · `client` · `part.part` (two-level) · … |
+| `example_values` | Representative real values (informational) |
+| `parser` | `null` or `{"fn": "parse_tak_nie"}` — activates a column-level UDF |
 
-- lightweight daily run stats are generated by `scripts/pipeline/build_run_stats.py` and written to
-  `data/reports/run_stats/run_stats_YYYY-MM-DD.{json,md}`.
+---
+
+## Data model hierarchy
+
+| `data_model` value | Table shape | Example notice types |
+|---|---|---|
+| `core` | 1 row per notice | all |
+| `client` | 1 row per buyer | ContractNotice, TenderResultNotice |
+| `part` | 1 row per contract part | ContractNotice, TenderResultNotice, … |
+| `part.core` | 1 row per part (core fields) | ContractNotice |
+| `part.part` | 1 row per sub-item within a part | NoticeUpdateNotice |
+| `criterion_procedure` | 1 row per evaluation criterion | CompetitionNotice, ConcessionNotice |
+| `criterion_qualification` | 1 row per qualification criterion | ConcessionNotice |
+| `change_matter` | 1 row per contract change | ContractPerformingNotice |
+
+---
+
+## Running the pipeline
+
+### Development workflow (no rebuild on code changes)
+
+Build the deps-only image **once** (or after adding/upgrading dependencies).
+The `--build-arg DEV=1` flag installs only the Python dependencies without
+baking in the source code:
+
+```bash
+docker build --build-arg DEV=1 -t procurement-silver:deps .
+```
+
+Run with source/scripts/refs mounted — code changes are picked up immediately,
+no image rebuild needed:
+
+```bash
+MSYS_NO_PATHCONV=1 docker run --rm \
+  -v "<repo-root>/src:/app/src:ro" \
+  -v "<repo-root>/scripts:/app/scripts:ro" \
+  -v "<repo-root>/refs:/app/refs:ro" \
+  -v "<bronze-root>:/data/bronze:ro" \
+  -v "<silver-root>:/data/silver" \
+  procurement-silver:deps \
+  python scripts/pipeline/build_silver_day.py 2025-10-01 \
+    --bronze-dir /data/bronze \
+    --silver-dir /data/silver \
+    --spark-master "local[*]"
+```
+
+### Production / CI workflow
+
+Build the full self-contained image (bakes source in, no volumes needed):
+
+```bash
+docker build -t procurement-silver:latest .
+```
+
+```bash
+MSYS_NO_PATHCONV=1 docker run --rm \
+  -v "<bronze-root>:/data/bronze:ro" \
+  -v "<silver-root>:/data/silver" \
+  procurement-silver:latest \
+  python scripts/pipeline/build_silver_day.py 2025-10-01 \
+    --bronze-dir /data/bronze \
+    --silver-dir /data/silver \
+    --spark-master "local[*]"
+```
