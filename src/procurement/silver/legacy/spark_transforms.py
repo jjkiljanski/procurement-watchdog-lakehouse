@@ -35,7 +35,7 @@ from pyspark.sql.types import (
 )
 
 from procurement.dictionaries import client_type_names, order_type_names, province_names
-from procurement.silver.html_parsing.parser import (
+from procurement.silver.legacy.html_parsing.parser import (
     _extract_address,
     parse_html,
 )
