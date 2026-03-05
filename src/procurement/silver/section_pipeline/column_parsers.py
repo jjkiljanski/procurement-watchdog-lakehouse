@@ -43,7 +43,7 @@ COMMON_PARSERS: dict[str, tuple] = {
 # Notice-type-specific parsers — extend or override common parsers.
 # Keyed by camelCase notice type name (same as NOTICE_TYPE_TO_PROFILE_KEY keys).
 # Populate when notice-type-specific column parsers are implemented in
-# html_value_parsers/<snake_type>.py and expose them here.
+# field_parsers/<snake_type_name>.py and registered here.
 # ---------------------------------------------------------------------------
 
 NOTICE_TYPE_PARSERS: dict[str, dict[str, tuple]] = {
