@@ -27,7 +27,15 @@
       "REGON 510743410",
       "REGON 770979499",
       "REGON 291009745"
-    ]
+    ],
+    "derived_cols": {
+      "section_1_3": {
+        "fn": "parse_national_id_value"
+      },
+      "section_1_3_type": {
+        "fn": "parse_national_id_type"
+      }
+    }
   },
   "1.4.1": {
     "col_name": "section_1_4_1",
@@ -85,7 +93,15 @@
       "PL622 - Olsztyński",
       "PL636 - Słupski",
       "PL721 - Kielecki"
-    ]
+    ],
+    "derived_cols": {
+      "section_1_4_6_code": {
+        "fn": "parse_nuts3_code"
+      },
+      "section_1_4_6_name": {
+        "fn": "parse_nuts3_name"
+      }
+    }
   },
   "1.4.7": {
     "col_name": "section_1_4_7",
@@ -193,7 +209,10 @@
       "2025-01-02",
       "2025-01-03",
       "2025-01-07"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_date_from_text"
+    }
   },
   "2.6.1": {
     "col_name": "section_2_6_1",
@@ -202,7 +221,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "2.6.2": {
     "col_name": "section_2_6_2",
@@ -241,7 +263,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "3.4": {
     "col_name": "section_3_4",
@@ -291,7 +316,10 @@
       "90641000-2 - Usługi oczyszczania kanałów ściekowych",
       "70100000-2 - Usługi w zakresie obsługi nieruchomości własnych",
       "90610000-6 - Usługi sprzątania i zamiatania ulic"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_cpv_codes"
+    }
   },
   "3.9": {
     "col_name": "section_3_9",
@@ -301,7 +329,10 @@
       "90918000-5 - Usługi czyszczenia pojemników na odpadki 77310000-6 - Usługi sadzenia roślin oraz utrzymania terenów zielonych",
       "90512000-9 - Usługi transportu odpadów 90513100-7 - Usługi wywozu odpadów pochodzących z gospodarstw domowych",
       "90511000-2 - Usługi wywozu odpadów 90512000-9 - Usługi transportu odpadów 90513100-7 - Usługi wywozu odpadów pochodzących z gospodarstw domowych 90533000-2 - Usługi gospodarki odpadami"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_cpv_codes"
+    }
   },
   "4.1": {
     "col_name": "section_4_1",
@@ -341,7 +372,15 @@
       "7450001718",
       "8421769765",
       "6572438901"
-    ]
+    ],
+    "derived_cols": {
+      "section_4_3_2": {
+        "fn": "parse_national_id_value"
+      },
+      "section_4_3_2_type": {
+        "fn": "parse_national_id_type"
+      }
+    }
   },
   "4.3.3": {
     "col_name": "section_4_3_3",
@@ -398,6 +437,29 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
-  }
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
+  },
+  "_computed_cols": [
+    {
+      "col_name": "section_4_2",
+      "fn": "compute_duration_days",
+      "sources": [
+        "section_4_1",
+        "section_4_2"
+      ],
+      "data_model": "core"
+    },
+    {
+      "col_name": "section_4_1_and_2_contract_end",
+      "fn": "compute_contract_end_date",
+      "sources": [
+        "section_4_1",
+        "section_4_2"
+      ],
+      "data_model": "core"
+    }
+  ]
 }

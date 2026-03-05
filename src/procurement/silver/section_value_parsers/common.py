@@ -290,34 +290,39 @@ def _add_calendar_months(d: date, months: int) -> date:
 
 
 # Matches Polish duration tokens: "238 dni", "12 miesiące", "3 tygodnie", "2 lata",
-# and fixed end-date: "do 2024-12-13"
+# fixed end-date "do 2024-12-13", and explicit date range "od 2024-01-01 do 2024-12-31".
+# The date-range alternative is listed first so it wins over the plain "do ..." branch.
 _DURATION_RE = re.compile(
-    r"do\s+(\d{4}-\d{2}-\d{2})"                   # fixed end-date
-    r"|(\d+)\s+d(?:ni|nia|zień|zien)"              # days
-    r"|(\d+)\s+tyg(?:odn|odni|odnie|odniu|odn)?"  # weeks
-    r"|(\d+)\s+miesi(?:ąc|ac|ę|e|ę|ecy|ąca)"      # months
-    r"|(\d+)\s+(?:lat|lata|roku?)",                # years
+    r"od\s+(\d{4}-\d{2}-\d{2})\s+do\s+(\d{4}-\d{2}-\d{2})"  # explicit range
+    r"|do\s+(\d{4}-\d{2}-\d{2})"                              # fixed end-date
+    r"|(\d+)\s+d(?:ni|nia|zień|zien)"                         # days
+    r"|(\d+)\s+tyg(?:odn|odni|odnie|odniu|odn)?"              # weeks
+    r"|(\d+)\s+miesi(?:ąc|ac|ę|e|ę|ecy|ąca)"                 # months
+    r"|(\d+)\s+(?:lat|lata|roku?)",                            # years
     re.IGNORECASE | re.UNICODE,
 )
 
 
 def _parse_raw_duration(
     raw: str,
-) -> tuple[str | None, int | str | None]:
+) -> tuple[str | None, object]:
     """Parse a Polish duration/end-date string into (kind, value).
 
     Returns:
-        ('end_date', 'YYYY-MM-DD') for "do YYYY-MM-DD"
-        ('days',  N)   for "N dni"
-        ('weeks', N)   for "N tygodnie"
-        ('months', N)  for "N miesiące"
-        ('years', N)   for "N lat"
-        (None, None)   when unrecognised
+        ('date_range', ('YYYY-MM-DD', 'YYYY-MM-DD')) for "od … do …"
+        ('end_date',  'YYYY-MM-DD')                  for "do YYYY-MM-DD"
+        ('days',   N)                                for "N dni"
+        ('weeks',  N)                                for "N tygodnie"
+        ('months', N)                                for "N miesiące"
+        ('years',  N)                                for "N lat"
+        (None, None)                                 when unrecognised
     """
     m = _DURATION_RE.search(raw.strip())
     if not m:
         return None, None
-    end_date, days, weeks, months, years = m.groups()
+    od_start, od_end, end_date, days, weeks, months, years = m.groups()
+    if od_start and od_end:
+        return "date_range", (od_start, od_end)
     if end_date:
         return "end_date", end_date
     if days:
@@ -337,22 +342,28 @@ def compute_duration_days(
 ) -> int | None:
     """Return the contract duration in calendar days.
 
-    Requires the start date so that months and years can be resolved to
-    exact day counts, and "do YYYY-MM-DD" end-dates can be differenced.
+    For "od YYYY-MM-DD do YYYY-MM-DD" the two embedded dates are used directly
+    and start_date_iso is ignored.  For all other patterns start_date_iso
+    provides the reference point so that months/years resolve to exact day counts.
 
     Parameters
     ----------
     start_date_iso:
-        The contract signing date as an ISO string (section_4_1 after parsing).
+        The contract signing date as an ISO string (section_4_1).
     raw_duration:
         The raw Polish duration string from section_4_2.
     """
-    if not start_date_iso or not raw_duration:
+    if not raw_duration:
         return None
     kind, value = _parse_raw_duration(raw_duration)
     if kind is None:
         return None
     try:
+        if kind == "date_range":
+            range_start, range_end = value
+            return (date.fromisoformat(range_end) - date.fromisoformat(range_start)).days
+        if not start_date_iso:
+            return None
         start = date.fromisoformat(start_date_iso)
         if kind == "days":
             return int(value)
@@ -375,19 +386,26 @@ def compute_contract_end_date(
 ) -> str | None:
     """Return the contract end date as an ISO string.
 
+    For "od YYYY-MM-DD do YYYY-MM-DD" the embedded end date is returned directly
+    and start_date_iso is ignored.
+
     Parameters
     ----------
     start_date_iso:
-        The contract signing date as an ISO string (section_4_1 after parsing).
+        The contract signing date as an ISO string (section_4_1).
     raw_duration:
         The raw Polish duration string from section_4_2.
     """
-    if not start_date_iso or not raw_duration:
+    if not raw_duration:
         return None
     kind, value = _parse_raw_duration(raw_duration)
     if kind is None:
         return None
     try:
+        if kind == "date_range":
+            return str(value[1])
+        if not start_date_iso:
+            return None
         start = date.fromisoformat(start_date_iso)
         if kind == "days":
             return (start + timedelta(days=int(value))).isoformat()
