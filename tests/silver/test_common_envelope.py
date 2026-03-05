@@ -8,8 +8,9 @@ from pathlib import Path
 
 import pytest
 from pyspark.sql import SparkSession
+from pyspark.sql.types import StringType, StructField, StructType
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
 
 from procurement.silver.common_envelope import (  # noqa: E402
     ENVELOPE_COLUMNS,
@@ -27,6 +28,7 @@ def spark():
         .master("local[1]")
         .config("spark.pyspark.python", sys.executable)
         .config("spark.pyspark.driver.python", sys.executable)
+        .config("spark.sql.execution.pyspark.udf.faulthandler.enabled", "true")
         .getOrCreate()
     )
     yield session
@@ -55,22 +57,25 @@ def test_validate_envelope_schema_warns_on_missing(spark):
     assert "noticeType" in result["missing_columns"]
 
 
+_ENVELOPE_TEST_SCHEMA = StructType([
+    StructField("objectId", StringType()),
+    StructField("noticeType", StringType()),
+    StructField("tenderId", StringType()),
+    StructField("clientType", StringType()),
+    StructField("organizationProvince", StringType()),
+    StructField("publicationDate", StringType()),
+    StructField("publicationDateDay", StringType()),
+])
+
+
 def test_build_envelope_df_notice_stage(spark):
     rows = [
-        {"objectId": "1", "noticeType": "ContractNotice",
-         "tenderId": None, "clientType": None, "organizationProvince": None,
-         "publicationDate": "2025-10-01T00:00:00Z", "publicationDateDay": "2025-10-01"},
-        {"objectId": "2", "noticeType": "TenderResultNotice",
-         "tenderId": "t2", "clientType": None, "organizationProvince": None,
-         "publicationDate": "2025-10-01T00:00:00Z", "publicationDateDay": "2025-10-01"},
-        {"objectId": "3", "noticeType": "ContractPerformingNotice",
-         "tenderId": None, "clientType": None, "organizationProvince": None,
-         "publicationDate": "2025-10-01T00:00:00Z", "publicationDateDay": "2025-10-01"},
-        {"objectId": "4", "noticeType": "NoticeUpdateNotice",
-         "tenderId": "t4", "clientType": None, "organizationProvince": None,
-         "publicationDate": "2025-10-01T00:00:00Z", "publicationDateDay": "2025-10-01"},
+        ("1", "ContractNotice", None, None, None, "2025-10-01T00:00:00Z", "2025-10-01"),
+        ("2", "TenderResultNotice", "t2", None, None, "2025-10-01T00:00:00Z", "2025-10-01"),
+        ("3", "ContractPerformingNotice", None, None, None, "2025-10-01T00:00:00Z", "2025-10-01"),
+        ("4", "NoticeUpdateNotice", "t4", None, None, "2025-10-01T00:00:00Z", "2025-10-01"),
     ]
-    df_in = spark.createDataFrame(rows)
+    df_in = spark.createDataFrame(rows, schema=_ENVELOPE_TEST_SCHEMA)
     df_out = build_envelope_df(df_in)
 
     stage_by_id = {r["objectId"]: r["noticeStage"] for r in df_out.select("objectId", "noticeStage").collect()}
@@ -82,14 +87,10 @@ def test_build_envelope_df_notice_stage(spark):
 
 def test_build_envelope_df_case_id_fallback(spark):
     rows = [
-        {"objectId": "o1", "tenderId": "t1", "noticeType": "ContractNotice",
-         "clientType": None, "organizationProvince": None,
-         "publicationDate": "2025-10-01T00:00:00Z", "publicationDateDay": "2025-10-01"},
-        {"objectId": "o2", "tenderId": None, "noticeType": "ContractNotice",
-         "clientType": None, "organizationProvince": None,
-         "publicationDate": "2025-10-01T00:00:00Z", "publicationDateDay": "2025-10-01"},
+        ("o1", "ContractNotice", "t1", None, None, "2025-10-01T00:00:00Z", "2025-10-01"),
+        ("o2", "ContractNotice", None, None, None, "2025-10-01T00:00:00Z", "2025-10-01"),
     ]
-    df_out = build_envelope_df(spark.createDataFrame(rows))
+    df_out = build_envelope_df(spark.createDataFrame(rows, schema=_ENVELOPE_TEST_SCHEMA))
     case_by_id = {r["objectId"]: r["caseId"] for r in df_out.select("objectId", "caseId").collect()}
     assert case_by_id["o1"] == "t1"
     assert case_by_id["o2"] == "o2"

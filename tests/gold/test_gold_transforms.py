@@ -18,7 +18,7 @@ from pyspark.sql.types import (
     StructType,
 )
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
 
 from procurement.gold.spark_transforms import (  # noqa: E402
     build_gold_buyer_mart,

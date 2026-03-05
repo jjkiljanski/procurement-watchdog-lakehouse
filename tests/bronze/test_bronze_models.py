@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 # Allow imports from src/
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
 
 from procurement.bronze.models import (
     NOTICE_TYPES,
@@ -21,7 +21,7 @@ from procurement.bronze.models import (
 )
 from pydantic import ValidationError
 
-FIXTURES = Path(__file__).resolve().parent / "fixtures"
+FIXTURES = Path(__file__).resolve().parent.parent / "fixtures"
 
 
 @pytest.fixture
