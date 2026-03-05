@@ -1,17 +1,15 @@
-"""NoticeType-specific Silver table definitions."""
+"""Notice-type section profiles and utilities."""
 
-from procurement.silver.notice_sections.definitions import (
-    NOTICE_TYPE_HTML_EXTRACTED_FIELDS,
-    NOTICE_TYPE_SPECIFIC_COLUMNS,
-    html_extracted_fields_for_notice_type,
-    normalized_notice_type_token,
-    specific_columns_for_notice_type,
-)
+from __future__ import annotations
 
-__all__ = [
-    "NOTICE_TYPE_HTML_EXTRACTED_FIELDS",
-    "NOTICE_TYPE_SPECIFIC_COLUMNS",
-    "html_extracted_fields_for_notice_type",
-    "normalized_notice_type_token",
-    "specific_columns_for_notice_type",
-]
+import re
+
+
+def normalized_notice_type_token(notice_type: str | None) -> str:
+    if notice_type is None:
+        return "__NULL__"
+    normalized = re.sub(r"[^A-Za-z0-9_.-]+", "_", str(notice_type)).strip("_")
+    return normalized or "__EMPTY__"
+
+
+__all__ = ["normalized_notice_type_token"]
