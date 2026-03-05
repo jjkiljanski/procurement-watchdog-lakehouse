@@ -26,10 +26,11 @@ from pyspark.sql.types import ArrayType, StringType, StructField, StructType
 from pyspark.sql.functions import udf
 from pyspark.storagelevel import StorageLevel
 
-from procurement.silver.section_pipeline.parser_registry import get_parser_entry
+from procurement.silver.section_pipeline.parser_registry import get_computed_entry, get_parser_entry
 from procurement.silver.section_pipeline.notice_schema_reader import (
     model_core_col_names,
     model_sub_info,
+    section_computed_cols,
     section_derived_cols,
     section_parsers,
     top_level_models,
@@ -259,8 +260,9 @@ def apply_column_parsers(
     """
     col_parsers = section_parsers(profile)
     derived = section_derived_cols(profile)
+    computed_specs = section_computed_cols(profile)
 
-    if not section_tables or (not col_parsers and not derived):
+    if not section_tables or (not col_parsers and not derived and not computed_specs):
         return section_tables
 
     result: dict[str, DataFrame] = {}
@@ -329,6 +331,61 @@ def apply_column_parsers(
                     notice_type,
                 )
             df_out = df_out.drop(temp_col)
+
+        # Computed columns: multi-source → single typed output.
+        # Sources that collide with any output col_name are temp-renamed
+        # before any UDF runs so all UDFs read the original raw value.
+        computed_for_model = [
+            s for s in computed_specs if s.get("data_model") == model
+        ]
+        if computed_for_model:
+            all_output_names = {
+                s["col_name"] for s in computed_for_model if "col_name" in s
+            }
+            all_sources = {
+                src
+                for s in computed_for_model
+                for src in s.get("sources", [])
+            }
+            conflict_cols = (all_output_names & all_sources) & set(df_out.columns)
+
+            temp_mapping: dict[str, str] = {}
+            for conflict_col in conflict_cols:
+                temp_name = f"_computed_src_{conflict_col}"
+                df_out = df_out.withColumnRenamed(conflict_col, temp_name)
+                temp_mapping[conflict_col] = temp_name
+
+            for spec in computed_for_model:
+                fn_name = spec.get("fn")
+                out_col = spec.get("col_name")
+                sources = spec.get("sources", [])
+                if not fn_name or not out_col or not sources:
+                    continue
+                entry = get_computed_entry(fn_name)
+                if entry is None:
+                    log.warning(
+                        "apply_column_parsers: unknown computed fn=%s "
+                        "notice_type=%s col=%s; skipping",
+                        fn_name,
+                        notice_type,
+                        out_col,
+                    )
+                    continue
+                computed_fn, return_type = entry
+                computed_udf = udf(computed_fn, return_type)
+                resolved = [col(temp_mapping.get(s, s)) for s in sources]
+                df_out = df_out.withColumn(out_col, computed_udf(*resolved))
+                log.debug(
+                    "Applied computed fn=%s sources=%s out=%s model=%s notice_type=%s",
+                    fn_name,
+                    sources,
+                    out_col,
+                    model,
+                    notice_type,
+                )
+
+            for temp_name in temp_mapping.values():
+                df_out = df_out.drop(temp_name)
 
         result[model] = df_out
 

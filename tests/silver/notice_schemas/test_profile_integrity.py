@@ -23,11 +23,15 @@ from procurement.silver.section_pipeline.notice_schema_reader import (
     load_profile,
     model_core_col_names,
     model_sub_info,
+    section_computed_cols,
     section_derived_cols,
     section_parsers,
     top_level_models,
 )
-from procurement.silver.section_pipeline.parser_registry import registered_fn_names
+from procurement.silver.section_pipeline.parser_registry import (
+    registered_computed_fn_names,
+    registered_fn_names,
+)
 
 # ---------------------------------------------------------------------------
 # Known good sets — update here when the pipeline intentionally gains new
@@ -70,6 +74,8 @@ def test_every_entry_has_required_keys(notice_type):
     """col_name, data_model, and section_header must be present and non-empty."""
     profile = load_profile(notice_type)
     for section_num, cfg in profile.items():
+        if not isinstance(cfg, dict):
+            continue  # skip non-section entries like _computed_cols
         assert "col_name" in cfg and cfg["col_name"], (
             f"{notice_type} section {section_num}: missing or empty col_name"
         )
@@ -86,6 +92,8 @@ def test_all_data_model_values_are_known(notice_type):
     """No data_model value outside the declared set."""
     profile = load_profile(notice_type)
     for section_num, cfg in profile.items():
+        if not isinstance(cfg, dict):
+            continue
         dm = cfg.get("data_model", "")
         assert dm in _KNOWN_DATA_MODELS, (
             f"{notice_type} section {section_num}: unexpected data_model={dm!r}"
@@ -98,6 +106,8 @@ def test_col_names_unique_within_profile(notice_type):
     profile = load_profile(notice_type)
     seen: dict[str, str] = {}
     for section_num, cfg in profile.items():
+        if not isinstance(cfg, dict):
+            continue
         col = cfg.get("col_name", "")
         assert col not in seen, (
             f"{notice_type}: col_name {col!r} used by both section "
@@ -136,6 +146,20 @@ def test_derived_cols_fn_references_are_registered(notice_type):
                 f"{notice_type} source={source_col!r} derived={derived_col!r}: "
                 f"fn {fn!r} is not registered"
             )
+
+
+@pytest.mark.parametrize("notice_type", _ALL_NOTICE_TYPES)
+def test_computed_cols_fn_references_are_registered(notice_type):
+    """Every fn referenced inside a _computed_cols spec must exist in COMPUTED_PARSERS."""
+    profile = load_profile(notice_type)
+    computed = section_computed_cols(profile)
+    available = registered_computed_fn_names()
+    for spec in computed:
+        fn = spec.get("fn", "")
+        assert fn in available, (
+            f"{notice_type} computed col {spec.get('col_name')!r}: "
+            f"fn {fn!r} is not registered in COMPUTED_PARSERS"
+        )
 
 
 # ===========================================================================

@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import re
 import unicodedata
-from datetime import date
+import calendar
+from datetime import date, timedelta
 
 from bs4 import BeautifulSoup
 
@@ -277,6 +278,130 @@ def normalize_tender_result_contractors(
         row["contractorNationalId_type"] = id_type
         out.append(row)
     return out
+
+
+def _add_calendar_months(d: date, months: int) -> date:
+    """Add N calendar months to a date, clamping overflow (e.g. Jan 31 + 1M → Feb 28)."""
+    total = d.month + months
+    year = d.year + (total - 1) // 12
+    month = (total - 1) % 12 + 1
+    day = min(d.day, calendar.monthrange(year, month)[1])
+    return date(year, month, day)
+
+
+# Matches Polish duration tokens: "238 dni", "12 miesiące", "3 tygodnie", "2 lata",
+# and fixed end-date: "do 2024-12-13"
+_DURATION_RE = re.compile(
+    r"do\s+(\d{4}-\d{2}-\d{2})"                   # fixed end-date
+    r"|(\d+)\s+d(?:ni|nia|zień|zien)"              # days
+    r"|(\d+)\s+tyg(?:odn|odni|odnie|odniu|odn)?"  # weeks
+    r"|(\d+)\s+miesi(?:ąc|ac|ę|e|ę|ecy|ąca)"      # months
+    r"|(\d+)\s+(?:lat|lata|roku?)",                # years
+    re.IGNORECASE | re.UNICODE,
+)
+
+
+def _parse_raw_duration(
+    raw: str,
+) -> tuple[str | None, int | str | None]:
+    """Parse a Polish duration/end-date string into (kind, value).
+
+    Returns:
+        ('end_date', 'YYYY-MM-DD') for "do YYYY-MM-DD"
+        ('days',  N)   for "N dni"
+        ('weeks', N)   for "N tygodnie"
+        ('months', N)  for "N miesiące"
+        ('years', N)   for "N lat"
+        (None, None)   when unrecognised
+    """
+    m = _DURATION_RE.search(raw.strip())
+    if not m:
+        return None, None
+    end_date, days, weeks, months, years = m.groups()
+    if end_date:
+        return "end_date", end_date
+    if days:
+        return "days", int(days)
+    if weeks:
+        return "weeks", int(weeks)
+    if months:
+        return "months", int(months)
+    if years:
+        return "years", int(years)
+    return None, None
+
+
+def compute_duration_days(
+    start_date_iso: str | None,
+    raw_duration: str | None,
+) -> int | None:
+    """Return the contract duration in calendar days.
+
+    Requires the start date so that months and years can be resolved to
+    exact day counts, and "do YYYY-MM-DD" end-dates can be differenced.
+
+    Parameters
+    ----------
+    start_date_iso:
+        The contract signing date as an ISO string (section_4_1 after parsing).
+    raw_duration:
+        The raw Polish duration string from section_4_2.
+    """
+    if not start_date_iso or not raw_duration:
+        return None
+    kind, value = _parse_raw_duration(raw_duration)
+    if kind is None:
+        return None
+    try:
+        start = date.fromisoformat(start_date_iso)
+        if kind == "days":
+            return int(value)
+        if kind == "weeks":
+            return int(value) * 7
+        if kind == "months":
+            return (_add_calendar_months(start, int(value)) - start).days
+        if kind == "years":
+            return (_add_calendar_months(start, int(value) * 12) - start).days
+        if kind == "end_date":
+            return (date.fromisoformat(value) - start).days
+    except (ValueError, TypeError):
+        return None
+    return None
+
+
+def compute_contract_end_date(
+    start_date_iso: str | None,
+    raw_duration: str | None,
+) -> str | None:
+    """Return the contract end date as an ISO string.
+
+    Parameters
+    ----------
+    start_date_iso:
+        The contract signing date as an ISO string (section_4_1 after parsing).
+    raw_duration:
+        The raw Polish duration string from section_4_2.
+    """
+    if not start_date_iso or not raw_duration:
+        return None
+    kind, value = _parse_raw_duration(raw_duration)
+    if kind is None:
+        return None
+    try:
+        start = date.fromisoformat(start_date_iso)
+        if kind == "days":
+            return (start + timedelta(days=int(value))).isoformat()
+        if kind == "weeks":
+            return (start + timedelta(days=int(value) * 7)).isoformat()
+        if kind == "months":
+            return _add_calendar_months(start, int(value)).isoformat()
+        if kind == "years":
+            return _add_calendar_months(start, int(value) * 12).isoformat()
+        if kind == "end_date":
+            return str(value)
+    except (ValueError, TypeError):
+        return None
+    return None
 
 
 def parse_nuts3_code(raw: str | None) -> str | None:

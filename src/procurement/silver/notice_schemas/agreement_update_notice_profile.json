@@ -27,7 +27,15 @@
       "REGON 910866459",
       "REGON 000714952",
       "REGON 790317038"
-    ]
+    ],
+    "derived_cols": {
+      "section_1_3": {
+        "fn": "parse_national_id_value"
+      },
+      "section_1_3_type": {
+        "fn": "parse_national_id_type"
+      }
+    }
   },
   "1.4.1": {
     "col_name": "section_1_4_1",
@@ -85,7 +93,15 @@
       "PL619 - Włocławski",
       "PL218 - Nowosądecki",
       "PL843 - Suwalski"
-    ]
+    ],
+    "derived_cols": {
+      "section_1_4_6_code": {
+        "fn": "parse_nuts3_code"
+      },
+      "section_1_4_6_name": {
+        "fn": "parse_nuts3_name"
+      }
+    }
   },
   "1.4.7": {
     "col_name": "section_1_4_7",
@@ -181,7 +197,10 @@
       "2025-01-01",
       "2025-01-02",
       "2025-01-03"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_date_from_text"
+    }
   },
   "3.1": {
     "col_name": "section_3_1",
@@ -190,7 +209,10 @@
     "example_values": [
       "Tak",
       "Nie"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "3.1.1": {
     "col_name": "section_3_1_1",
@@ -209,7 +231,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "3.3": {
     "col_name": "section_3_3",
@@ -269,7 +294,10 @@
       "71000000-8 - Usługi architektoniczne, budowlane, inżynieryjne i kontrolne",
       "45212330-8 - Roboty budowlane w zakresie bibliotek",
       "55321000-6 - Usługi przygotowywania posiłków"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_cpv_codes"
+    }
   },
   "3.9": {
     "col_name": "section_3_9",
@@ -279,7 +307,10 @@
       "45400000-1 - Roboty wykończeniowe w zakresie obiektów budowlanych 45111300-1 - Roboty rozbiórkowe 45300000-0 - Roboty instalacyjne w budynkach",
       "55322000-3 - Usługi gotowania posiłków 55320000-9 - Usługi podawania posiłków",
       "71355000-1 - Usługi pomiarowe 71250000-5 - Usługi architektoniczne, inżynieryjne i pomiarowe 71330000-0 - Różne usługi inżynieryjne"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_cpv_codes"
+    }
   },
   "4.1": {
     "col_name": "section_4_1",
@@ -289,7 +320,10 @@
       "2024-04-23",
       "2024-11-04",
       "2024-02-01"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_date_from_text"
+    }
   },
   "4.2": {
     "col_name": "section_4_2",
@@ -327,7 +361,15 @@
       "7642304113",
       "REGON: 363160478",
       "8581199070"
-    ]
+    ],
+    "derived_cols": {
+      "section_4_3_2": {
+        "fn": "parse_national_id_value"
+      },
+      "section_4_3_2_type": {
+        "fn": "parse_national_id_type"
+      }
+    }
   },
   "4.3.3": {
     "col_name": "section_4_3_3",
@@ -385,7 +427,10 @@
       "197599,50                PLN",
       "256767,41                PLN",
       "867181,68                PLN"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_pln_value"
+    }
   },
   "4.5": {
     "col_name": "section_4_5",
@@ -405,7 +450,10 @@
       "2024-11-15",
       "2024-12-30",
       "2024-12-31"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_date_from_text"
+    }
   },
   "5.2": {
     "col_name": "section_5_2",
@@ -444,7 +492,10 @@
       "97628,86",
       "258315,00",
       "1628,00"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_pln_value"
+    }
   },
   "5.5.2": {
     "col_name": "section_5_5_2",
@@ -461,7 +512,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "5.6": {
     "col_name": "section_5_6",
@@ -470,7 +524,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "5.7": {
     "col_name": "section_5_7",
@@ -481,5 +538,25 @@
       "2024/BZP 00292609/01",
       "2024/BZP 00301305/01,                2024/BZP 00588862/01"
     ]
-  }
+  },
+  "_computed_cols": [
+    {
+      "col_name": "section_4_2",
+      "fn": "compute_duration_days",
+      "sources": [
+        "section_4_1",
+        "section_4_2"
+      ],
+      "data_model": "core"
+    },
+    {
+      "col_name": "section_4_1_and_2_contract_end",
+      "fn": "compute_contract_end_date",
+      "sources": [
+        "section_4_1",
+        "section_4_2"
+      ],
+      "data_model": "core"
+    }
+  ]
 }

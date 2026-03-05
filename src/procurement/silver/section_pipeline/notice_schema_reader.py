@@ -55,6 +55,8 @@ def top_level_models(profile: dict) -> list[str]:
     """
     seen: set[str] = set()
     for cfg in profile.values():
+        if not isinstance(cfg, dict):
+            continue
         dm = cfg.get("data_model")
         if dm:
             seen.add(dm.split(".")[0])
@@ -73,6 +75,8 @@ def model_core_col_names(profile: dict, model: str) -> list[str]:
     result: list[str] = []
     seen: set[str] = set()
     for cfg in profile.values():
+        if not isinstance(cfg, dict):
+            continue
         dm = cfg.get("data_model", "")
         tokens = dm.split(".")
         top = tokens[0]
@@ -96,6 +100,8 @@ def section_derived_cols(profile: dict) -> dict[str, dict[str, dict]]:
     """
     result: dict[str, dict[str, dict]] = {}
     for cfg in profile.values():
+        if not isinstance(cfg, dict):
+            continue
         dc = cfg.get("derived_cols")
         if not isinstance(dc, dict) or not dc:
             continue
@@ -105,18 +111,45 @@ def section_derived_cols(profile: dict) -> dict[str, dict[str, dict]]:
     return result
 
 
+def section_computed_cols(profile: dict) -> list[dict]:
+    """Return the list of multi-source computed column specs from the profile.
+
+    Specs live under the top-level ``"_computed_cols"`` key and have the form::
+
+        {
+          "col_name": "section_4_2",
+          "fn": "compute_duration_days",
+          "sources": ["section_4_1", "section_4_2"],
+          "data_model": "core"
+        }
+
+    Returns an empty list when the key is absent or not a list.
+    """
+    specs = profile.get("_computed_cols", [])
+    if not isinstance(specs, list):
+        return []
+    return [s for s in specs if isinstance(s, dict)]
+
+
 def model_output_col_names(profile: dict, model: str) -> list[str]:
-    """Like :func:`model_core_col_names`, but expands ``derived_cols`` entries.
+    """Like :func:`model_core_col_names`, but expands ``derived_cols`` entries
+    and appends new columns introduced by ``_computed_cols`` specs.
 
     Source cols that have a ``derived_cols`` mapping are replaced by their
     derived col names in the returned list.  Source cols without
-    ``derived_cols`` are kept as-is.  Use this to compare against Pydantic
-    model fields *after* :func:`~spark_table_builder.apply_column_parsers` has run.
+    ``derived_cols`` are kept as-is.  Computed cols whose ``col_name`` already
+    appears in the profile (i.e. they replace an existing column) are not
+    duplicated; new computed cols are appended.
+
+    Use this to compare against Pydantic model fields *after*
+    :func:`~spark_table_builder.apply_column_parsers` has run.
     """
     derived = section_derived_cols(profile)
     result: list[str] = []
     seen: set[str] = set()
     for cfg in profile.values():
+        if not isinstance(cfg, dict):
+            continue
         dm = cfg.get("data_model", "")
         tokens = dm.split(".")
         top = tokens[0]
@@ -135,6 +168,18 @@ def model_output_col_names(profile: dict, model: str) -> list[str]:
             if col not in seen:
                 result.append(col)
                 seen.add(col)
+    # Append computed col names that are new (not already in result)
+    for spec in section_computed_cols(profile):
+        dm = spec.get("data_model", "")
+        tokens = dm.split(".")
+        top = tokens[0]
+        leaf = tokens[-1] if len(tokens) > 1 else "core"
+        if top != model or leaf != "core":
+            continue
+        out_col = spec.get("col_name")
+        if out_col and out_col not in seen:
+            result.append(out_col)
+            seen.add(out_col)
     return result
 
 
@@ -150,6 +195,8 @@ def section_parsers(profile: dict) -> dict[str, dict]:
     """
     result: dict[str, dict] = {}
     for cfg in profile.values():
+        if not isinstance(cfg, dict):
+            continue
         parser = cfg.get("parser")
         if not isinstance(parser, dict) or not parser.get("fn"):
             continue
@@ -170,6 +217,8 @@ def model_sub_info(profile: dict, model: str) -> tuple[str | None, list[str]]:
     sub_entries: dict[str, list[str]] = {}
     seen: dict[str, set[str]] = {}
     for cfg in profile.values():
+        if not isinstance(cfg, dict):
+            continue
         dm = cfg.get("data_model", "")
         tokens = dm.split(".")
         if len(tokens) < 2:

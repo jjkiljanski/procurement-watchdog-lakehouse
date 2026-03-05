@@ -21,6 +21,8 @@ from procurement.silver.section_value_parsers.common import (
     _parse_criterion_weight,
     _parse_pln_value,
     _parse_tak_nie,
+    compute_contract_end_date,
+    compute_duration_days,
     parse_cpv_codes,
     parse_date_from_text,
     parse_int_from_text,
@@ -46,6 +48,28 @@ COMMON_PARSERS: dict[str, tuple] = {
     "parse_national_id_value": (parse_national_id_value, StringType()),
     "parse_national_id_type": (parse_national_id_type, StringType()),
 }
+
+# ---------------------------------------------------------------------------
+# Multi-source computed parsers — take N column values, produce one output.
+# Registered separately from single-arg parsers because their UDFs are called
+# with multiple column arguments by apply_column_parsers.
+# ---------------------------------------------------------------------------
+
+COMPUTED_PARSERS: dict[str, tuple] = {
+    "compute_duration_days":      (compute_duration_days,      IntegerType()),
+    "compute_contract_end_date":  (compute_contract_end_date,  StringType()),
+}
+
+
+def get_computed_entry(fn_name: str) -> tuple | None:
+    """Return (callable, Spark DataType) for a multi-arg computed function."""
+    return COMPUTED_PARSERS.get(fn_name)
+
+
+def registered_computed_fn_names() -> set[str]:
+    """Return all registered computed function names."""
+    return set(COMPUTED_PARSERS)
+
 
 # ---------------------------------------------------------------------------
 # Notice-type-specific parsers — extend or override common parsers.
