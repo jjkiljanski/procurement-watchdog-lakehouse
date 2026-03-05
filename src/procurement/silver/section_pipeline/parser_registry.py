@@ -5,8 +5,8 @@ typed output value.  Format:  fn_name -> (callable, Spark DataType).
 
 Allowed source modules
 ----------------------
-- common   : procurement.silver.field_parsers.common
-- per-type : procurement.silver.field_parsers.<snake_type_name>
+- common   : procurement.silver.section_value_parsers.common
+- per-type : procurement.silver.section_value_parsers.<snake_type_name>
 
 Configuring a parser for a column (via "parser" key in the sections profile
 JSON) will change that column's Spark type.  The corresponding Pydantic section
@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from pyspark.sql.types import ArrayType, BooleanType, DoubleType, IntegerType, StringType
 
-from procurement.silver.field_parsers.common import (
+from procurement.silver.section_value_parsers.common import (
     _parse_criterion_weight,
     _parse_pln_value,
     _parse_tak_nie,
@@ -43,7 +43,7 @@ COMMON_PARSERS: dict[str, tuple] = {
 # Notice-type-specific parsers — extend or override common parsers.
 # Keyed by camelCase notice type name (same as NOTICE_TYPE_TO_PROFILE_KEY keys).
 # Populate when notice-type-specific column parsers are implemented in
-# field_parsers/<snake_type_name>.py and registered here.
+# section_value_parsers/<snake_type_name>.py and registered here.
 # ---------------------------------------------------------------------------
 
 NOTICE_TYPE_PARSERS: dict[str, dict[str, tuple]] = {

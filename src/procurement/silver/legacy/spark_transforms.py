@@ -39,7 +39,7 @@ from procurement.silver.legacy.html_parsing.parser import (
     _extract_address,
     parse_html,
 )
-from procurement.silver.field_parsers.common import (
+from procurement.silver.section_value_parsers.common import (
     classify_contractor_id_for_notice,
     normalize_tender_result_contractors,
     parse_cpv_codes,

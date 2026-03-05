@@ -34,7 +34,7 @@ from procurement.common.locks import acquire_directory_lock, release_directory_l
 setup_logging()
 log = logging.getLogger(__name__)
 
-from procurement.silver.notice_sections import (
+from procurement.silver.notice_schemas import (
     html_extracted_fields_for_notice_type,
     normalized_notice_type_token,
     specific_columns_for_notice_type,

@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-_PROFILES_DIR = Path(__file__).parent.parent / "notice_sections"
+_PROFILES_DIR = Path(__file__).parent.parent / "notice_schemas"
 
 # Maps camelCase notice type name -> snake_case profile file stem
 NOTICE_TYPE_TO_PROFILE_KEY: dict[str, str] = {
@@ -36,7 +36,7 @@ def load_profile(notice_type: str) -> dict:
     key = NOTICE_TYPE_TO_PROFILE_KEY.get(notice_type)
     if key is None:
         return {}
-    path = _PROFILES_DIR / f"{key}_sections_profile.json"
+    path = _PROFILES_DIR / f"{key}_profile.json"
     if not path.exists():
         return {}
     return json.loads(path.read_text(encoding="utf-8"))

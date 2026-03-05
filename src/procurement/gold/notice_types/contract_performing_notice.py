@@ -22,7 +22,7 @@ from procurement.silver.section_pipeline.parser_utils import (
     _span_value,
     _text_after_h3,
 )
-from procurement.silver.field_parsers.common import (
+from procurement.silver.section_value_parsers.common import (
     _classify_contractor_id,
     _extract_currency,
     _parse_pln_value,

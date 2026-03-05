@@ -16,7 +16,7 @@ from procurement.silver.section_pipeline.parser_utils import (
     _span_value,
     _text_after_h3,
 )
-from procurement.silver.field_parsers.common import (
+from procurement.silver.section_value_parsers.common import (
     _parse_pln_value,
     _parse_tak_nie,
     parse_cpv_codes,

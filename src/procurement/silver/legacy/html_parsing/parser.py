@@ -27,7 +27,7 @@ from procurement.silver.section_pipeline.parser_utils import (
 )
 # Re-exported from their new homes for backward compatibility with existing callers.
 # Remove these once all callers have been updated to import directly.
-from procurement.silver.field_parsers.common import (
+from procurement.silver.section_value_parsers.common import (
     _parse_pln_value,
     _parse_tak_nie,
     classify_contractor_id_for_notice,
@@ -47,7 +47,7 @@ from procurement.silver.legacy.models import (
     ExtractedValues,
     HtmlExtracted,
 )
-from procurement.silver.section_pipeline.html_extractor import (
+from procurement.silver.section_pipeline.raw_section_extractor import (
     build_notice_sections_model as _build_notice_sections_model,
 )
 

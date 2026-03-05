@@ -9,7 +9,7 @@ from __future__ import annotations
 from bs4 import BeautifulSoup
 
 from procurement.silver.section_pipeline.parser_utils import _find_h3, _span_value
-from procurement.silver.field_parsers.common import _parse_pln_value
+from procurement.silver.section_value_parsers.common import _parse_pln_value
 from procurement.silver.legacy.models import ExtractedValues
 
 

@@ -16,7 +16,7 @@ from pathlib import Path
 
 from procurement.common.locks import acquire_directory_lock, release_directory_lock_if_owner
 from procurement.lineage import atomic_write_json, git_commit_sha, now_utc_iso, script_hashes, sha256_file
-from procurement.silver.notice_sections import (
+from procurement.silver.notice_schemas import (
     normalized_notice_type_token,
 )
 from procurement.silver.common_envelope import (
@@ -24,9 +24,9 @@ from procurement.silver.common_envelope import (
     build_envelope_df,
     validate_envelope_schema,
 )
-from procurement.silver.section_pipeline.profile import load_all_profiles
-from procurement.silver.section_pipeline.validation import validate_section_models
-from procurement.silver.section_pipeline.spark import apply_column_parsers, build_section_tables, make_html_sections_udf
+from procurement.silver.section_pipeline.notice_schema_reader import load_all_profiles
+from procurement.silver.section_pipeline.final_schema_validator import validate_section_models
+from procurement.silver.section_pipeline.spark_table_builder import apply_column_parsers, build_section_tables, make_html_sections_udf
 
 log = logging.getLogger(__name__)
 

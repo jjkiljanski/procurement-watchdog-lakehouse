@@ -1,6 +1,6 @@
 """Pydantic section models for AgreementIntentionNotice.
 
-Auto-generated from agreement_intention_notice_sections_profile.json.
+Auto-generated from agreement_intention_notice_profile.json.
 All field types are str | None; richer types will be added in Gold.
 """
 

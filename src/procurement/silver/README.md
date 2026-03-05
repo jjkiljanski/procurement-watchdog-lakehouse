@@ -13,24 +13,24 @@ silver/
 ├── common_envelope.py         build_envelope_df() + validate_envelope_schema()
 │
 ├── section_pipeline/          ◄ PRIMARY: profile-driven section tables
-│   ├── profile.py             Load & query *_sections_profile.json files
-│   ├── html_extractor.py      HTML → sections model (BeautifulSoup + profile)
-│   │                          Also contains low-level soup helpers (_find_h3, _span_value, …)
-│   ├── spark.py               Spark: build + explode section DataFrames; apply column parsers
-│   ├── column_parsers.py      Registry of str→typed column-level parsers
-│   └── validation.py          Driver-side Pydantic schema check per section table
+│   ├── notice_schema_reader.py  Load & query notice_schemas/*_profile.json files
+│   ├── raw_section_extractor.py HTML → raw section dict (BeautifulSoup + profile)
+│   │                            Also contains low-level soup helpers (_find_h3, _span_value, …)
+│   ├── spark_table_builder.py   Spark: build + explode section DataFrames; apply column parsers
+│   ├── parser_registry.py       Registry of str→typed column-level parsers
+│   └── final_schema_validator.py  Driver-side Pydantic schema check per section table
 │
-├── field_parsers/             Column-level value parsers (str → typed)
+├── section_value_parsers/     Column-level value parsers (str → typed)
 │   ├── common.py              Shared: parse_tak_nie, parse_pln_value,
 │   │                          parse_date_from_text, parse_cpv_codes,
 │   │                          classify_polish_national_id, _normalize_label_text, …
 │   ├── types.py               ParsedValues type alias
 │   └── <notice_type>.py       Per-type placeholders — implement here, then register
-│                              in section_pipeline/column_parsers.py
+│                              in section_pipeline/parser_registry.py
 │
-├── notice_sections/           Per-notice-type schemas
+├── notice_schemas/            Per-notice-type schemas
 │   ├── __init__.py            normalized_notice_type_token()
-│   ├── *_sections_profile.json  Section number → {col_name, data_model, parser?}
+│   ├── *_profile.json         Section number → {col_name, data_model, parser?}
 │   └── *_models.py            Pydantic models (all fields str|None until typed)
 │
 └── legacy/                    Old HTML-parsing pipeline preserved for reference
@@ -48,17 +48,17 @@ Every section becomes a column; values are raw strings until column parsers are 
 ```
 Bronze Parquet
     │
-    ▼  make_html_sections_udf()          [section_pipeline/spark.py]
+    ▼  make_html_sections_udf()          [section_pipeline/spark_table_builder.py]
     │  BeautifulSoup + profile JSON  →  JSON { "core": {…}, "part": [{…}] }
     │
-    ▼  build_section_tables()            [section_pipeline/spark.py]
+    ▼  build_section_tables()            [section_pipeline/spark_table_builder.py]
     │  from_json / posexplode  →  one DataFrame per data_model
     │
-    ▼  apply_column_parsers()            [section_pipeline/spark.py]
+    ▼  apply_column_parsers()            [section_pipeline/spark_table_builder.py]
     │  UDF per column where profile has "parser": {"fn": "…"}
-    │  (all parsers currently null → no-op; activated as field_parsers are implemented)
+    │  (all parsers currently null → no-op; activated as section_value_parsers are implemented)
     │
-    ▼  validate_section_models()         [section_pipeline/validation.py]
+    ▼  validate_section_models()         [section_pipeline/final_schema_validator.py]
     │  Driver-side: import *_models.py, warn on missing columns
     │
     ▼  Parquet write
@@ -69,13 +69,13 @@ Bronze Parquet
 ```
 
 **How to add a column parser:**
-1. Implement the function in `field_parsers/common.py` (shared across types) or
-   `field_parsers/<snake_type_name>.py` (type-specific).
-2. Register it in `section_pipeline/column_parsers.py` → `COMMON_PARSERS`
+1. Implement the function in `section_value_parsers/common.py` (shared across types) or
+   `section_value_parsers/<snake_type_name>.py` (type-specific).
+2. Register it in `section_pipeline/parser_registry.py` → `COMMON_PARSERS`
    (or `NOTICE_TYPE_PARSERS["MyType"]` for a type-specific one).
 3. Add `"parser": {"fn": "my_fn"}` to the relevant entry in
-   `notice_sections/<type>_sections_profile.json`.
-4. Update the corresponding Pydantic field in `notice_sections/<type>_models.py`
+   `notice_schemas/<type>_profile.json`.
+4. Update the corresponding Pydantic field in `notice_schemas/<type>_models.py`
    to match the function's return type.
 
 ### 2. Envelope pipeline  *(simplified, no HTML parsing)*
@@ -106,7 +106,7 @@ expected schema and is used for driver-side validation.
 
 ## Section profile JSON schema
 
-Each entry in `notice_sections/<type>_sections_profile.json`:
+Each entry in `notice_schemas/<type>_profile.json`:
 
 ```json
 "2.7": {

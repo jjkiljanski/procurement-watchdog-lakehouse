@@ -16,7 +16,7 @@ from procurement.silver.section_pipeline.parser_utils import (
     _span_value,
     _text_after_h3,
 )
-from procurement.silver.field_parsers.common import (
+from procurement.silver.section_value_parsers.common import (
     _parse_criterion_weight,
     _parse_pln_value,
     _parse_tak_nie,
@@ -27,7 +27,7 @@ from procurement.silver.legacy.models import (
     EvalCriterion,
     ExtractedValues,
 )
-from procurement.silver.section_pipeline.html_extractor import (
+from procurement.silver.section_pipeline.raw_section_extractor import (
     extract_contract_notice_section_number as _extract_contract_notice_section_number,
     extract_contract_notice_section_value as _extract_contract_notice_section_value,
     section_to_field_name as _section_to_field_name,

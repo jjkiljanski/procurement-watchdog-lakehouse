@@ -33,7 +33,7 @@ os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
 from procurement.logging import setup_logging
 from procurement.lineage import atomic_write_json, git_commit_sha, now_utc_iso, script_hashes
 from procurement.common.locks import acquire_directory_lock, release_directory_lock_if_owner
-from procurement.silver.notice_sections import (
+from procurement.silver.notice_schemas import (
     html_extracted_fields_for_notice_type,
     normalized_notice_type_token,
     specific_columns_for_notice_type,

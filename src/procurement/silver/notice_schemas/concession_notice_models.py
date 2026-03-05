@@ -1,6 +1,6 @@
 """Pydantic section models for ConcessionNotice.
 
-Auto-generated from concession_notice_sections_profile.json.
+Auto-generated from concession_notice_profile.json.
 All field types are str | None; richer types will be added in Gold.
 """
 

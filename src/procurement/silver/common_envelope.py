@@ -143,7 +143,7 @@ def validate_envelope_schema(df: "DataFrame") -> dict:
     """Warn about columns missing from or added to the envelope DataFrame.
 
     This is a driver-side check (no Spark action) analogous to
-    :func:`section_pipeline.validation.validate_section_models`.
+    :func:`section_pipeline.final_schema_validator.validate_section_models`.
     Returns a metrics dict suitable for embedding in the run lineage.
     """
     actual = set(df.columns)
