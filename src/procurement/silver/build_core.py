@@ -405,10 +405,10 @@ def run_silver_day_core(
         code_paths = list(script_paths or [])
         core_paths = [
             Path(__file__).resolve(),
-            repo_root / "src" / "procurement" / "silver" / "sections_profile.py",
-            repo_root / "src" / "procurement" / "silver" / "sections_spark.py",
-            repo_root / "src" / "procurement" / "silver" / "raw_html_sections_parser.py",
-            repo_root / "src" / "procurement" / "silver" / "spark_transforms.py",
+            repo_root / "src" / "procurement" / "silver" / "common_envelope.py",
+            repo_root / "src" / "procurement" / "silver" / "section_pipeline" / "spark.py",
+            repo_root / "src" / "procurement" / "silver" / "section_pipeline" / "profile.py",
+            repo_root / "src" / "procurement" / "silver" / "section_pipeline" / "html_extractor.py",
         ]
         for p in core_paths:
             if p not in code_paths:

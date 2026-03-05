@@ -44,23 +44,37 @@ See `docs/runbooks/OPERATING_MODES.md` for exact sequencing and retry semantics.
 
 ### Silver
 
-Built by `scripts/pipeline/build_silver.py` (reads Bronze Parquet by default, raw fallback):
+Built by `scripts/pipeline/build_silver_day.py` (reads Bronze Parquet by default):
+
+**Two parallel pipelines:**
+
+**1. Section table pipeline** — profile-driven HTML → structured section columns per `data_model`:
+
+- `data/silver/notice_type_tables/noticeType=<TYPE>/data_model=<MODEL>/publicationDateDay=YYYY-MM-DD/`
+
+  Each notice type has a `notice_sections/<type>_sections_profile.json` mapping section numbers to
+  column names and data models. `data_model` values: `core` (one row/notice), `part`, `client`,
+  `change_matter`, `criterion_procedure`, etc. All section columns are raw strings at Silver;
+  typed parsing happens in Gold.
+
+**2. Common envelope pipeline** — structured Bronze columns only, no HTML parsing:
 
 - `data/silver/common_envelope/publicationDateDay=YYYY-MM-DD/`
-- `data/silver/notice_type_tables/noticeType=<TYPE>/publicationDateDay=YYYY-MM-DD/`
+
+  Contains all Bronze structured fields plus small derived columns: `clientTypeName`,
+  `provinceName`, `caseId` (coalesce of `tenderId`/`objectId`), `noticeStage`.
 
 Built by `scripts/pipeline/build_case_derived_facts.py`:
 
 - `data/silver/case_derived_facts/asOfDate=YYYY-MM-DD/`
-- `data/silver/_meta/day=YYYY-MM-DD.json` (lineage/performance metadata)
+
+Lineage/performance metadata: `data/silver/_meta/day=YYYY-MM-DD.json`
 
 Notes:
 
-- Ingest is processed in sorted notice-type batches.
-- Envelope stores shared columns used across types.
-- Notice-type tables store type-specific payloads and remove mostly-null cross-type columns.
-- Address fields (`ulica`, `kod_pocztowy`) are promoted to envelope.
-- `procedureResult` and `procedureResultParsed` are kept only for `TenderResultNotice` specific output.
+- Ingest is processed in parallel notice-type batches.
+- Section profiles live in `src/procurement/silver/notice_sections/`.
+- See `src/procurement/silver/PIPELINE.md` for full architecture details.
 
 ### Gold
 
@@ -80,7 +94,7 @@ Built by `scripts/pipeline/build_gold.py`:
 
 - `scripts/pipeline/fetch_bzp_yesterday.py` - fetch daily API payloads to `bronze_raw`
 - `scripts/pipeline/build_bronze.py` - validate + write canonical Bronze Parquet
-- `scripts/pipeline/build_silver.py` - notice-ingest Silver build
+- `scripts/pipeline/build_silver_day.py` - Silver build for a single day (active)
 - `scripts/pipeline/build_case_derived_facts.py` - case-grain Silver derived layer (`full` / `incremental`)
 - `scripts/pipeline/build_gold.py` - Gold marts/signals
 - `scripts/pipeline/build_run_stats.py` - run-level reporting artifacts
@@ -117,7 +131,7 @@ Recommended (Docker Spark runtime):
 docker build -t procurement-pipeline .
 docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/pipeline/fetch_bzp_yesterday.py 2025-10-01
 docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/pipeline/build_bronze.py 2025-10-01
-docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/pipeline/build_silver.py 2025-10-01
+docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/pipeline/build_silver_day.py 2025-10-01 --bronze-dir data/bronze --silver-dir data/silver
 docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/pipeline/build_case_derived_facts.py 2025-10-01 --mode full
 docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/pipeline/build_gold.py 2025-10-01 --scope daily
 ```

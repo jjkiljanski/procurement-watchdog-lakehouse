@@ -38,9 +38,9 @@ from procurement.silver.notice_sections import (
     normalized_notice_type_token,
     specific_columns_for_notice_type,
 )
-from procurement.silver.spark_transforms import build_silver_for_notice_type
-from procurement.silver.spark_transforms import build_contract_notice_parts_table
-from procurement.silver.validation import (
+from procurement.silver.legacy.spark_transforms import build_silver_for_notice_type
+from procurement.silver.legacy.spark_transforms import build_contract_notice_parts_table
+from procurement.silver.legacy.validation import (
     summarize_notice_validation,
     validate_common_envelope,
     with_notice_validation_errors,
