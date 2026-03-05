@@ -8,7 +8,7 @@ import pytest
 
 
 def _load_build_silver_module():
-    return importlib.import_module("procurement.silver.build_core")
+    return importlib.import_module("procurement.silver.pipeline_orchestrator")
 
 
 def test_acquire_day_lock_creates_owner_file(tmp_path: Path):

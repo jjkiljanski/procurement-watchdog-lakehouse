@@ -9,7 +9,7 @@ tables partitioned by `noticeType` and `publicationDateDay`.
 
 ```
 silver/
-├── build_core.py              Entry point: run_silver_day_core()
+├── pipeline_orchestrator.py   Entry point: run_silver_day_core()
 ├── common_envelope.py         build_envelope_df() + validate_envelope_schema()
 │
 ├── section_pipeline/          ◄ PRIMARY: profile-driven section tables

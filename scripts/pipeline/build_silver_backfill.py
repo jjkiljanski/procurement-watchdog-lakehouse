@@ -18,7 +18,7 @@ os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
 
 from procurement.lineage import atomic_write_json, now_utc_iso
 from procurement.logging import setup_logging
-from procurement.silver.build_core import CoreRunConfig, build_spark_session, run_silver_day_core
+from procurement.silver.pipeline_orchestrator import CoreRunConfig, build_spark_session, run_silver_day_core
 
 setup_logging()
 import logging
