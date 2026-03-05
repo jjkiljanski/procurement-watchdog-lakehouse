@@ -30,6 +30,7 @@ from procurement.silver.section_pipeline.parser_registry import get_parser_entry
 from procurement.silver.section_pipeline.notice_schema_reader import (
     model_core_col_names,
     model_sub_info,
+    section_derived_cols,
     section_parsers,
     top_level_models,
 )
@@ -257,12 +258,16 @@ def apply_column_parsers(
     now carry the parser's return type instead of StringType.
     """
     col_parsers = section_parsers(profile)
-    if not col_parsers or not section_tables:
+    derived = section_derived_cols(profile)
+
+    if not section_tables or (not col_parsers and not derived):
         return section_tables
 
     result: dict[str, DataFrame] = {}
     for model, df in section_tables.items():
         df_out = df
+
+        # In-place column type replacement (parser key in profile)
         for col_name, parser_cfg in col_parsers.items():
             if col_name not in df_out.columns:
                 continue
@@ -288,6 +293,43 @@ def apply_column_parsers(
                 model,
                 notice_type,
             )
+
+        # Derived columns: one source col → multiple typed output cols.
+        # The source col is renamed to a temp name first so that all derived
+        # UDFs read from the original raw value, even when one derived col
+        # reuses the same name as the source.
+        for source_col, derived_map in derived.items():
+            if source_col not in df_out.columns:
+                continue
+            temp_col = f"_derived_src_{source_col}"
+            df_out = df_out.withColumnRenamed(source_col, temp_col)
+            for derived_col, parser_cfg in derived_map.items():
+                fn_name = parser_cfg.get("fn")
+                if not fn_name:
+                    continue
+                entry = get_parser_entry(fn_name, notice_type)
+                if entry is None:
+                    log.warning(
+                        "apply_column_parsers: unknown fn=%s notice_type=%s "
+                        "derived_col=%s; skipping",
+                        fn_name,
+                        notice_type,
+                        derived_col,
+                    )
+                    continue
+                parser_fn, return_type = entry
+                parser_udf = udf(parser_fn, return_type)
+                df_out = df_out.withColumn(derived_col, parser_udf(col(temp_col)))
+                log.debug(
+                    "Applied derived parser fn=%s source=%s derived=%s model=%s notice_type=%s",
+                    fn_name,
+                    source_col,
+                    derived_col,
+                    model,
+                    notice_type,
+                )
+            df_out = df_out.drop(temp_col)
+
         result[model] = df_out
 
     return result

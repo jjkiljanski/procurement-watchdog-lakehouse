@@ -24,6 +24,10 @@ from procurement.silver.section_value_parsers.common import (
     parse_cpv_codes,
     parse_date_from_text,
     parse_int_from_text,
+    parse_national_id_type,
+    parse_national_id_value,
+    parse_nuts3_code,
+    parse_nuts3_name,
 )
 
 # ---------------------------------------------------------------------------
@@ -37,6 +41,10 @@ COMMON_PARSERS: dict[str, tuple] = {
     "parse_cpv_codes": (parse_cpv_codes, ArrayType(StringType())),
     "parse_date_from_text": (parse_date_from_text, StringType()),
     "parse_int_from_text": (parse_int_from_text, IntegerType()),
+    "parse_nuts3_code": (parse_nuts3_code, StringType()),
+    "parse_nuts3_name": (parse_nuts3_name, StringType()),
+    "parse_national_id_value": (parse_national_id_value, StringType()),
+    "parse_national_id_type": (parse_national_id_type, StringType()),
 }
 
 # ---------------------------------------------------------------------------

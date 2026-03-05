@@ -86,6 +86,58 @@ def model_core_col_names(profile: dict, model: str) -> list[str]:
     return result
 
 
+def section_derived_cols(profile: dict) -> dict[str, dict[str, dict]]:
+    """Return derived-column definitions keyed by their source col_name.
+
+    For profile entries that have a ``"derived_cols"`` mapping, returns:
+        {source_col: {derived_col_name: {fn: "<parser_fn>", ...}, ...}, ...}
+
+    Entries without ``"derived_cols"`` are omitted.
+    """
+    result: dict[str, dict[str, dict]] = {}
+    for cfg in profile.values():
+        dc = cfg.get("derived_cols")
+        if not isinstance(dc, dict) or not dc:
+            continue
+        col_name = cfg.get("col_name")
+        if col_name:
+            result[col_name] = dc
+    return result
+
+
+def model_output_col_names(profile: dict, model: str) -> list[str]:
+    """Like :func:`model_core_col_names`, but expands ``derived_cols`` entries.
+
+    Source cols that have a ``derived_cols`` mapping are replaced by their
+    derived col names in the returned list.  Source cols without
+    ``derived_cols`` are kept as-is.  Use this to compare against Pydantic
+    model fields *after* :func:`~spark_table_builder.apply_column_parsers` has run.
+    """
+    derived = section_derived_cols(profile)
+    result: list[str] = []
+    seen: set[str] = set()
+    for cfg in profile.values():
+        dm = cfg.get("data_model", "")
+        tokens = dm.split(".")
+        top = tokens[0]
+        leaf = tokens[-1] if len(tokens) > 1 else "core"
+        if top != model or leaf != "core":
+            continue
+        col = cfg.get("col_name")
+        if not col:
+            continue
+        if col in derived:
+            for derived_col in derived[col]:
+                if derived_col not in seen:
+                    result.append(derived_col)
+                    seen.add(derived_col)
+        else:
+            if col not in seen:
+                result.append(col)
+                seen.add(col)
+    return result
+
+
 def section_parsers(profile: dict) -> dict[str, dict]:
     """Return {col_name: parser_config} for sections that have a non-null parser.
 

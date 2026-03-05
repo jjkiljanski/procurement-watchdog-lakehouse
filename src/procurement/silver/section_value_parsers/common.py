@@ -279,6 +279,43 @@ def normalize_tender_result_contractors(
     return out
 
 
+def parse_nuts3_code(raw: str | None) -> str | None:
+    """Extract the NUTS-3 code from 'PL21A - Oświęcimski' → 'PL21A'."""
+    if not raw or " - " not in raw:
+        return None
+    return raw.split(" - ", 1)[0].strip() or None
+
+
+def parse_nuts3_name(raw: str | None) -> str | None:
+    """Extract the NUTS-3 region name from 'PL21A - Oświęcimski' → 'Oświęcimski'."""
+    if not raw or " - " not in raw:
+        return None
+    return raw.split(" - ", 1)[1].strip() or None
+
+
+def parse_national_id_value(raw: str | None) -> str | None:
+    """Extract the normalised digits from a Polish national ID string.
+
+    Accepts prefixed formats like 'REGON 276258032' or 'REGON: 000515885'
+    and returns only the canonical digit string, or ``None`` when unrecognised.
+    """
+    if not raw:
+        return None
+    parsed, id_type = classify_polish_national_id(raw.strip())
+    return parsed
+
+
+def parse_national_id_type(raw: str | None) -> str | None:
+    """Return the type label (NIP / REGON / PESEL / foreign) for a national ID string.
+
+    Returns ``None`` when the value cannot be classified.
+    """
+    if not raw:
+        return None
+    _, id_type = classify_polish_national_id(raw.strip())
+    return id_type if id_type != "not_recognized" else None
+
+
 def parse_date_from_text(raw: str | None) -> str | None:
     """Extract ISO date string (YYYY-MM-DD) from raw text."""
     if not raw:

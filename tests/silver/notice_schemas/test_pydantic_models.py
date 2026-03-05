@@ -24,7 +24,7 @@ from procurement.silver.section_pipeline.final_schema_validator import get_pydan
 from procurement.silver.section_pipeline.notice_schema_reader import (
     NOTICE_TYPE_TO_PROFILE_KEY,
     load_all_profiles,
-    model_core_col_names,
+    model_output_col_names,
     model_sub_info,
     top_level_models,
 )
@@ -100,7 +100,7 @@ def test_profile_col_names_present_in_pydantic_model(notice_type, model):
       - A section renamed in the JSON without updating the model.
     """
     profile = _profiles[notice_type]
-    expected_cols = set(model_core_col_names(profile, model))
+    expected_cols = set(model_output_col_names(profile, model))
     cls = get_pydantic_model_class(notice_type, model)
     model_fields = set(cls.model_fields.keys())
 
@@ -123,7 +123,7 @@ def test_pydantic_model_fields_match_profile_exactly(notice_type, model):
     corresponding section in the profile JSON.
     """
     profile = _profiles[notice_type]
-    expected_cols = set(model_core_col_names(profile, model))
+    expected_cols = set(model_output_col_names(profile, model))
     cls = get_pydantic_model_class(notice_type, model)
     model_fields = set(cls.model_fields.keys())
 

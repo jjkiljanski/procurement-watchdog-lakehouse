@@ -23,6 +23,7 @@ from procurement.silver.section_pipeline.notice_schema_reader import (
     load_profile,
     model_core_col_names,
     model_sub_info,
+    section_derived_cols,
     section_parsers,
     top_level_models,
 )
@@ -123,16 +124,18 @@ def test_parser_fn_references_are_registered(notice_type):
 
 
 @pytest.mark.parametrize("notice_type", _ALL_NOTICE_TYPES)
-def test_section_parsers_currently_all_null(notice_type):
-    """Guard that no profile accidentally gains a parser entry without a test update.
-
-    Remove this test (or convert to a whitelist) when the first real parser
-    is wired up.
-    """
+def test_derived_cols_fn_references_are_registered(notice_type):
+    """Every fn referenced inside a derived_cols mapping must exist in the registry."""
     profile = load_profile(notice_type)
-    assert section_parsers(profile) == {}, (
-        f"{notice_type}: unexpected parser entries — update tests to cover them"
-    )
+    derived = section_derived_cols(profile)
+    available = registered_fn_names(notice_type)
+    for source_col, derived_map in derived.items():
+        for derived_col, parser_cfg in derived_map.items():
+            fn = parser_cfg.get("fn", "")
+            assert fn in available, (
+                f"{notice_type} source={source_col!r} derived={derived_col!r}: "
+                f"fn {fn!r} is not registered"
+            )
 
 
 # ===========================================================================

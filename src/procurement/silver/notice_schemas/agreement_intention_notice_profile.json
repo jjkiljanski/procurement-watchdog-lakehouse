@@ -37,7 +37,11 @@
       "REGON 276258032",
       "REGON 001024043",
       "REGON 141032404"
-    ]
+    ],
+    "derived_cols": {
+      "section_1_4": {"fn": "parse_national_id_value"},
+      "section_1_4_type": {"fn": "parse_national_id_type"}
+    }
   },
   "1.5.1": {
     "col_name": "section_1_5_1",
@@ -97,7 +101,11 @@
       "PL21A - Oświęcimski",
       "PL912 - Warszawski wschodni",
       "PL911 - Miasto Warszawa"
-    ]
+    ],
+    "derived_cols": {
+      "section_1_5_6_code": {"fn": "parse_nuts3_code"},
+      "section_1_5_6_name": {"fn": "parse_nuts3_name"}
+    }
   },
   "1.5.7": {
     "col_name": "section_1_5_7",
@@ -177,7 +185,11 @@
       "REGON: 000515885",
       "021916234",
       "8762272847"
-    ]
+    ],
+    "derived_cols": {
+      "section_1_9_2": {"fn": "parse_national_id_value"},
+      "section_1_9_2_type": {"fn": "parse_national_id_type"}
+    }
   },
   "1.9.3": {
     "col_name": "section_1_9_3",
@@ -235,7 +247,11 @@
       "PL22B - Sosnowiecki",
       "PL518 - Wrocławski",
       "PL616 - Grudziądzki"
-    ]
+    ],
+    "derived_cols": {
+      "section_1_9_8_code": {"fn": "parse_nuts3_code"},
+      "section_1_9_8_name": {"fn": "parse_nuts3_name"}
+    }
   },
   "1.9.9": {
     "col_name": "section_1_9_9",
@@ -321,7 +337,8 @@
       "2025-01-02",
       "2025-01-03",
       "2025-01-07"
-    ]
+    ],
+    "parser": {"fn": "parse_date_from_text"}
   },
   "2.6": {
     "col_name": "section_2_6",
@@ -330,7 +347,8 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {"fn": "parse_tak_nie"}
   },
   "2.7": {
     "col_name": "section_2_7",
@@ -359,7 +377,8 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {"fn": "parse_tak_nie"}
   },
   "2.10": {
     "col_name": "section_2_10",
@@ -368,7 +387,8 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {"fn": "parse_tak_nie"}
   },
   "2.11": {
     "col_name": "section_2_11",
@@ -377,7 +397,7 @@
     "example_values": [
       "Projekt: PolFEL – Polski Laser na Swobodnych Elektronach, faza 1.1, Finansowanie Projektu: Krajowy Plan Odbudowy i Zwiększania Odporności.",
       "Plan Strategiczny dla Wspólnej Polityki Rolnej na lata 2023-2027",
-      "projekcie „Zbudowanie systemu koordynacji i monitorowania regionalnych działań na rzecz kształcenia zawodowego, szkolnictwa wyższego oraz uczenia się przez całe życie, w tym uczenia się dorosłych”, który finansowany jest ze środków Krajowego Planu Odbudowy i Zwiększania Odporności."
+      "projekcie „Zbudowanie systemu koordynacji i monitorowania regionalnych działań na rzecz kształcenia zawodowego, szkolnictwa wyższego oraz uczenia się przez całe życie, w tym uczenia się dorosłych\", który finansowany jest ze środków Krajowego Planu Odbudowy i Zwiększania Odporności."
     ]
   },
   "3.1": {
@@ -387,7 +407,8 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {"fn": "parse_tak_nie"}
   },
   "3.2": {
     "col_name": "section_3_2",
@@ -416,27 +437,30 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {"fn": "parse_tak_nie"}
   },
   "3.5": {
     "col_name": "section_3_5",
     "section_header": "Wartość zamówienia",
     "data_model": "core",
     "example_values": [
-      "190080,00                     PLN",
-      "322116,41                     PLN",
-      "126072,49                     PLN"
-    ]
+      "190080,00                     PLN",
+      "322116,41                     PLN",
+      "126072,49                     PLN"
+    ],
+    "parser": {"fn": "parse_pln_value"}
   },
   "3.5.1": {
     "col_name": "section_3_5_1",
     "section_header": "Wartość zamówienia stanowiącego przedmiot tego postępowania (bez VAT)",
     "data_model": "core",
     "example_values": [
-      "90000                 PLN",
-      "171000                 PLN",
-      "10078,05                 PLN"
-    ]
+      "90000                 PLN",
+      "171000                 PLN",
+      "10078,05                 PLN"
+    ],
+    "parser": {"fn": "parse_pln_value"}
   },
   "3.6": {
     "col_name": "section_3_6",
@@ -445,7 +469,8 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {"fn": "parse_tak_nie"}
   },
   "3.7": {
     "col_name": "section_3_7",
@@ -454,7 +479,8 @@
     "example_values": [
       "5",
       "6"
-    ]
+    ],
+    "parser": {"fn": "parse_int_from_text"}
   },
   "3.8": {
     "col_name": "section_3_8",
@@ -474,17 +500,19 @@
       "1219512,20                            PLN",
       "7601626,02                            PLN",
       "569105,69                            PLN"
-    ]
+    ],
+    "parser": {"fn": "parse_pln_value"}
   },
   "3.10": {
     "col_name": "section_3_10",
     "section_header": "Główny kod CPV",
     "data_model": "part",
     "example_values": [
-      "48000000-8 - Pakiety oprogramowania i systemy informatyczne",
+      "48000000-8 - Pakiety oprogramowania i systemy informatyczne",
       "85311000-2 - Usługi opieki społecznej obejmujące miejsca noclegowe",
       "24322310-3 - Glikol etylenu"
-    ]
+    ],
+    "parser": {"fn": "parse_cpv_codes"}
   },
   "3.11": {
     "col_name": "section_3_11",
@@ -492,9 +520,10 @@
     "data_model": "part",
     "example_values": [
       "03114100-4 - Słoma",
-      "50700000-2 - Usługi w zakresie napraw i konserwacji instalacji budynkowych 50800000-3 - Różne usługi w zakresie napraw i konserwacji 90610000-6 - Usługi sprzątania i zamiatania ulic 90620000-9 - Usługi odśnieżania 90630000-2 - Usługi usuwania oblodzeń 90911200-8 - Usługi sprzątania budynków 90914000-7 - Usługi sprzątania parkingów",
+      "50700000-2 - Usługi w zakresie napraw i konserwacji instalacji budynkowych 50800000-3 - Różne usługi w zakresie napraw i konserwacji 90610000-6 - Usługi sprzątania i zamiatania ulic 90620000-9 - Usługi odśnieżania 90630000-2 - Usługi usuwania oblodzeń 90911200-8 - Usługi sprzątania budynków 90914000-7 - Usługi sprzątania parkingów",
       "90919200-4 - Usługi sprzątania biur 33761000-2 - Papier toaletowy 33711900-6 - Mydło"
-    ]
+    ],
+    "parser": {"fn": "parse_cpv_codes"}
   },
   "4.1": {
     "col_name": "section_4_1",
