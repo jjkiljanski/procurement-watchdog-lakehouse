@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from datetime import date
 
 from bs4 import BeautifulSoup
-
-from procurement.silver.section_pipeline.parser_utils import _find_h3, _normalize_label_text, _span_value
 
 _PLN_NUM_RE = re.compile(r"([\d\s\xa0,.]+?)\s*(?:\xa0)?\s*(?:PLN|EUR|USD|GBP|CHF)?$")
 
@@ -86,6 +85,22 @@ def parse_cpv_codes(cpv_raw: str) -> list[str]:
     if not matches:
         return []
     return list(dict.fromkeys(matches))
+
+
+def _normalize_label_text(text: str) -> str:
+    """Normalize text for robust label matching across encoding variants."""
+    lowered = text.casefold()
+    replacements = {
+        "Ä…": "a", "Ä‡": "c", "Ä™": "e", "Ĺ‚": "l", "Ĺ„": "n",
+        "Ăł": "o", "Ĺ›": "s", "Ĺş": "z", "ĹĽ": "z",
+        "Ă„â€¦": "a", "Ă„â€ˇ": "c", "Ă„â„˘": "e", "Äąâ€š": "l",
+        "Äąâ€ž": "n", "Ä‚Ĺ‚": "o", "Äąâ€ş": "s", "ÄąÂş": "z", "ÄąÂĽ": "z",
+    }
+    for src, dst in replacements.items():
+        lowered = lowered.replace(src, dst)
+    lowered = unicodedata.normalize("NFKD", lowered)
+    lowered = "".join(ch for ch in lowered if not unicodedata.combining(ch))
+    return re.sub(r"\s+", " ", lowered).strip()
 
 
 def _is_poland_country(raw: str | None) -> bool:
