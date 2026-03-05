@@ -9,12 +9,29 @@ WORKDIR /app
 
 COPY pyproject.toml ./
 COPY src/ src/
-RUN pip install --no-cache-dir .
+
+# DEV=1  → install dependencies only; source is supplied via a volume mount
+#           that shadows /app/src at runtime.
+# DEV=0  → install the full package (default, for CI / production images).
+ARG DEV=0
+RUN if [ "$DEV" = "1" ]; then \
+        pip install --no-cache-dir \
+            "pydantic>=2.12,<3" \
+            "requests>=2.32,<3" \
+            "beautifulsoup4>=4.12,<5" \
+            "lxml>=5,<6" \
+            "pyspark>=3.5,<4"; \
+    else \
+        pip install --no-cache-dir .; \
+    fi
 
 COPY scripts/ scripts/
 COPY apps/ apps/
 COPY refs/ refs/
 
+# Ensures /app/src is importable whether the package was pip-installed or
+# only mounted as a volume (DEV mode).
+ENV PYTHONPATH=/app/src
+
 ENV PORT=8080
 CMD ["python", "apps/launcher/main.py"]
-

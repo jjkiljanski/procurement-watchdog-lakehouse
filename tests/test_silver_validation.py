@@ -1,4 +1,4 @@
-"""Tests for Silver Spark-side validation rules."""
+"""Tests for Silver envelope validation and schema."""
 
 from __future__ import annotations
 
@@ -11,10 +11,10 @@ from pyspark.sql import SparkSession
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from procurement.silver.validation import (  # noqa: E402
-    summarize_notice_validation,
-    validate_common_envelope,
-    with_notice_validation_errors,
+from procurement.silver.common_envelope import (  # noqa: E402
+    ENVELOPE_COLUMNS,
+    build_envelope_df,
+    validate_envelope_schema,
 )
 
 
@@ -33,60 +33,63 @@ def spark():
     session.stop()
 
 
-def test_common_envelope_postal_rule_depends_on_country(spark):
+def test_validate_envelope_schema_all_present(spark):
     df = spark.createDataFrame(
-        [
-            {
-                "street": "ul. Testowa 1",
-                "postal_code": "00123",  # invalid PL format
-                "organizationCountry": "PL",
-            },
-            {
-                "street": "Rue de Test 2",
-                "postal_code": "75008",  # valid abroad (non-PL rule)
-                "organizationCountry": "FR",
-            },
-        ]
+        [{"objectId": "x", "noticeType": "ContractNotice"}]
     )
+    # Add all expected columns as nulls to simulate a full envelope
+    for col in ENVELOPE_COLUMNS:
+        if col not in df.columns:
+            from pyspark.sql.functions import lit
+            df = df.withColumn(col, lit(None).cast("string"))
 
-    metrics = validate_common_envelope(df, target_date="2025-07-03")
-    assert metrics["total_rows"] == 2
-    assert metrics["postal_present_rows"] == 2
-    assert metrics["postal_invalid_rows"] == 1
+    result = validate_envelope_schema(df)
+    assert result["missing_columns"] == [], result["missing_columns"]
 
 
-def test_notice_validation_postal_rule_depends_on_country(spark):
-    df = spark.createDataFrame(
-        [
-            {
-                "objectId": "o1",
-                "publicationDate": "2025-07-03T10:00:00Z",
-                "noticeType": "ContractNotice",
-                "organizationId": "1",
-                "caseId": "c1",
-                "street": "ul. Testowa 1",
-                "postal_code": "00123",  # invalid for PL
-                "organizationCountry": "PL",
-            },
-            {
-                "objectId": "o2",
-                "publicationDate": "2025-07-03T11:00:00Z",
-                "noticeType": "ContractNotice",
-                "organizationId": "2",
-                "caseId": "c2",
-                "street": "Rue de Test 2",
-                "postal_code": "75008",  # accepted for non-PL
-                "organizationCountry": "FR",
-            },
-        ]
-    )
+def test_validate_envelope_schema_warns_on_missing(spark):
+    # DataFrame with only objectId — everything else missing
+    df = spark.createDataFrame([{"objectId": "x"}])
+    result = validate_envelope_schema(df)
+    assert len(result["missing_columns"]) > 0
+    assert "noticeType" in result["missing_columns"]
 
-    df_err, rules = with_notice_validation_errors(df, target_date="2025-07-03", notice_type="ContractNotice")
-    metrics = summarize_notice_validation(
-        df_with_errors=df_err,
-        target_date="2025-07-03",
-        notice_type="ContractNotice",
-        rules=rules,
-    )
-    assert metrics["postal_invalid_rows"] == 1
-    assert metrics["invalid_rows"] >= 1
+
+def test_build_envelope_df_notice_stage(spark):
+    rows = [
+        {"objectId": "1", "noticeType": "ContractNotice",
+         "tenderId": None, "clientType": None, "organizationProvince": None,
+         "publicationDate": "2025-10-01T00:00:00Z", "publicationDateDay": "2025-10-01"},
+        {"objectId": "2", "noticeType": "TenderResultNotice",
+         "tenderId": "t2", "clientType": None, "organizationProvince": None,
+         "publicationDate": "2025-10-01T00:00:00Z", "publicationDateDay": "2025-10-01"},
+        {"objectId": "3", "noticeType": "ContractPerformingNotice",
+         "tenderId": None, "clientType": None, "organizationProvince": None,
+         "publicationDate": "2025-10-01T00:00:00Z", "publicationDateDay": "2025-10-01"},
+        {"objectId": "4", "noticeType": "NoticeUpdateNotice",
+         "tenderId": "t4", "clientType": None, "organizationProvince": None,
+         "publicationDate": "2025-10-01T00:00:00Z", "publicationDateDay": "2025-10-01"},
+    ]
+    df_in = spark.createDataFrame(rows)
+    df_out = build_envelope_df(df_in)
+
+    stage_by_id = {r["objectId"]: r["noticeStage"] for r in df_out.select("objectId", "noticeStage").collect()}
+    assert stage_by_id["1"] == "INIT"
+    assert stage_by_id["2"] == "RESULT"
+    assert stage_by_id["3"] == "EXECUTION"
+    assert stage_by_id["4"] == "UPDATE"
+
+
+def test_build_envelope_df_case_id_fallback(spark):
+    rows = [
+        {"objectId": "o1", "tenderId": "t1", "noticeType": "ContractNotice",
+         "clientType": None, "organizationProvince": None,
+         "publicationDate": "2025-10-01T00:00:00Z", "publicationDateDay": "2025-10-01"},
+        {"objectId": "o2", "tenderId": None, "noticeType": "ContractNotice",
+         "clientType": None, "organizationProvince": None,
+         "publicationDate": "2025-10-01T00:00:00Z", "publicationDateDay": "2025-10-01"},
+    ]
+    df_out = build_envelope_df(spark.createDataFrame(rows))
+    case_by_id = {r["objectId"]: r["caseId"] for r in df_out.select("objectId", "caseId").collect()}
+    assert case_by_id["o1"] == "t1"
+    assert case_by_id["o2"] == "o2"

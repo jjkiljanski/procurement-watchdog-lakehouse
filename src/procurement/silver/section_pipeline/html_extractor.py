@@ -17,7 +17,7 @@ def extract_contract_notice_section_number(h3_text: str) -> str | None:
 
 
 def section_to_field_name(section_number: str) -> str:
-    return f"cn_section_{section_number.replace('.', '_')}"
+    return f"section_{section_number.replace('.', '_')}"
 
 
 def section_number_key(section_number: str) -> tuple[int, ...]:

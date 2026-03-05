@@ -77,27 +77,29 @@ Bronze Parquet
 3. Update the corresponding Pydantic field in `notice_sections/<type>_models.py`
    to match the function's return type.
 
-### 2. Envelope pipeline  *(legacy, still active)*
+### 2. Envelope pipeline  *(simplified, no HTML parsing)*
 
-Produces the `common_envelope` table (shared columns used across all notice types)
-and the `htmlExtracted` struct (soup-based typed fields per notice type).
-Implemented in `spark_transforms.py` + `html_parsing/parser.py`.
+Produces the `common_envelope` table: all Bronze structured columns (except the
+internal `recordHash` hash and the `htmlBody` blob) plus a small set of derived
+columns that require only dictionary lookups or pure Spark expressions.
+Defined in `common_envelope.py`.
 
 ```
 Bronze Parquet
     │
-    ▼  build_silver_for_notice_type()    [spark_transforms.py]
-    │  Metadata columns + legacy soup extraction (parse_html UDF)
+    ▼  build_envelope_df()               [common_envelope.py]
+    │  All Bronze structured cols + clientTypeName, provinceName,
+    │  caseId (coalesce tenderId/objectId), noticeStage (from noticeType)
     │
-    ▼  with_notice_validation_errors()   [validation.py]
+    ▼  validate_envelope_schema()        [common_envelope.py]
+    │  Driver-side column-presence check (warns on drift)
     │
     ▼  Parquet write
        data/silver/common_envelope/publicationDateDay=<DATE>/
 ```
 
-> **Roadmap**: once the section table pipeline covers all typed fields, the envelope
-> pipeline will be simplified to metadata-only (no soup extraction) and
-> `html_parsing/parser.py` will move to `legacy/`.
+The Pydantic model `CommonEnvelopeRow` in `common_envelope.py` documents the
+expected schema and is used for driver-side validation.
 
 ---
 
@@ -140,20 +142,48 @@ Each entry in `notice_sections/<type>_sections_profile.json`:
 
 ## Running the pipeline
 
+### Development workflow (no rebuild on code changes)
+
+Build the deps-only image **once** (or after adding/upgrading dependencies).
+The `--build-arg DEV=1` flag installs only the Python dependencies without
+baking in the source code:
+
 ```bash
-# Inside the procurement-silver:dev Docker image (Dockerfile.launcher)
+docker build --build-arg DEV=1 -t procurement-silver:deps .
+```
+
+Run with source/scripts/refs mounted — code changes are picked up immediately,
+no image rebuild needed:
+
+```bash
 MSYS_NO_PATHCONV=1 docker run --rm \
+  -v "<repo-root>/src:/app/src:ro" \
+  -v "<repo-root>/scripts:/app/scripts:ro" \
+  -v "<repo-root>/refs:/app/refs:ro" \
   -v "<bronze-root>:/data/bronze:ro" \
   -v "<silver-root>:/data/silver" \
-  procurement-silver:dev \
+  procurement-silver:deps \
   python scripts/pipeline/build_silver_day.py 2025-10-01 \
     --bronze-dir /data/bronze \
     --silver-dir /data/silver \
     --spark-master "local[*]"
 ```
 
-Build the image (only needed after code changes):
+### Production / CI workflow
+
+Build the full self-contained image (bakes source in, no volumes needed):
 
 ```bash
-docker build -f Dockerfile.launcher -t procurement-silver:dev .
+docker build -t procurement-silver:latest .
+```
+
+```bash
+MSYS_NO_PATHCONV=1 docker run --rm \
+  -v "<bronze-root>:/data/bronze:ro" \
+  -v "<silver-root>:/data/silver" \
+  procurement-silver:latest \
+  python scripts/pipeline/build_silver_day.py 2025-10-01 \
+    --bronze-dir /data/bronze \
+    --silver-dir /data/silver \
+    --spark-master "local[*]"
 ```
