@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent / "s
 from procurement.silver.section_value_parsers.common import (
     _parse_criterion_weight,
     _parse_pln_value,
+    _parse_raw_duration,
     _parse_tak_nie,
     _validate_nip,
     _validate_pesel,
@@ -24,10 +25,16 @@ from procurement.silver.section_value_parsers.common import (
     _validate_regon14,
     classify_national_id_by_country,
     classify_polish_national_id,
+    compute_contract_end_date,
+    compute_duration_days,
     normalize_tender_result_contractors,
     parse_cpv_codes,
     parse_date_from_text,
     parse_int_from_text,
+    parse_national_id_type,
+    parse_national_id_value,
+    parse_nuts3_code,
+    parse_nuts3_name,
 )
 
 # ---------------------------------------------------------------------------
@@ -526,3 +533,211 @@ class TestNormalizeTenderResultContractors:
         snapshot = copy.deepcopy(original)
         normalize_tender_result_contractors(original)
         assert original == snapshot
+
+
+# ===========================================================================
+# parse_nuts3_code / parse_nuts3_name
+# ===========================================================================
+
+
+class TestParseNuts3:
+    def test_code_extracted(self):
+        assert parse_nuts3_code("PL21A - Oświęcimski") == "PL21A"
+
+    def test_name_extracted(self):
+        assert parse_nuts3_name("PL21A - Oświęcimski") == "Oświęcimski"
+
+    def test_short_code(self):
+        assert parse_nuts3_code("PL619 - Włocławski") == "PL619"
+        assert parse_nuts3_name("PL619 - Włocławski") == "Włocławski"
+
+    def test_no_separator_code_returns_none(self):
+        assert parse_nuts3_code("PL619") is None
+
+    def test_no_separator_name_returns_none(self):
+        assert parse_nuts3_name("PL619") is None
+
+    def test_none_code_returns_none(self):
+        assert parse_nuts3_code(None) is None
+
+    def test_none_name_returns_none(self):
+        assert parse_nuts3_name(None) is None
+
+    def test_empty_string_returns_none(self):
+        assert parse_nuts3_code("") is None
+        assert parse_nuts3_name("") is None
+
+
+# ===========================================================================
+# parse_national_id_value / parse_national_id_type
+# ===========================================================================
+
+
+class TestParseNationalId:
+    def test_plain_nip_value(self):
+        assert parse_national_id_value(VALID_NIP) == VALID_NIP
+
+    def test_plain_nip_type(self):
+        assert parse_national_id_type(VALID_NIP) == "NIP"
+
+    def test_regon_with_prefix_value(self):
+        assert parse_national_id_value(f"REGON {VALID_REGON9}") == VALID_REGON9
+
+    def test_regon_with_prefix_type(self):
+        assert parse_national_id_type(f"REGON {VALID_REGON9}") == "REGON"
+
+    def test_regon_with_colon_prefix(self):
+        assert parse_national_id_value(f"REGON: {VALID_REGON9}") == VALID_REGON9
+
+    def test_unrecognised_returns_none_value(self):
+        assert parse_national_id_value("1234567") is None
+
+    def test_unrecognised_returns_none_type(self):
+        assert parse_national_id_type("1234567") is None
+
+    def test_none_input_value(self):
+        assert parse_national_id_value(None) is None
+
+    def test_none_input_type(self):
+        assert parse_national_id_type(None) is None
+
+    def test_empty_string_value(self):
+        assert parse_national_id_value("") is None
+
+    def test_empty_string_type(self):
+        assert parse_national_id_type("") is None
+
+
+# ===========================================================================
+# _parse_raw_duration
+# ===========================================================================
+
+
+class TestParseRawDuration:
+    def test_days(self):
+        assert _parse_raw_duration("238 dni") == ("days", 238)
+
+    def test_days_variant_nia(self):
+        assert _parse_raw_duration("1 dnia") == ("days", 1)
+
+    def test_weeks(self):
+        assert _parse_raw_duration("3 tygodnie") == ("weeks", 3)
+
+    def test_months(self):
+        assert _parse_raw_duration("12 miesiące") == ("months", 12)
+
+    def test_months_variant_ac(self):
+        assert _parse_raw_duration("6 miesiac") == ("months", 6)
+
+    def test_years(self):
+        assert _parse_raw_duration("2 lata") == ("years", 2)
+
+    def test_years_variant_lat(self):
+        assert _parse_raw_duration("3 lat") == ("years", 3)
+
+    def test_end_date(self):
+        assert _parse_raw_duration("do 2024-12-13") == ("end_date", "2024-12-13")
+
+    def test_date_range(self):
+        assert _parse_raw_duration("od 2024-01-01 do 2024-12-31") == (
+            "date_range", ("2024-01-01", "2024-12-31"),
+        )
+
+    def test_date_range_wins_over_plain_end_date(self):
+        # The "od ... do ..." branch must match before "do ..." alone
+        kind, value = _parse_raw_duration("od 2024-01-01 do 2024-12-31")
+        assert kind == "date_range"
+
+    def test_unrecognised_returns_none(self):
+        assert _parse_raw_duration("brak informacji") == (None, None)
+
+    def test_empty_returns_none(self):
+        assert _parse_raw_duration("") == (None, None)
+
+
+# ===========================================================================
+# compute_duration_days
+# ===========================================================================
+
+
+class TestComputeDurationDays:
+    def test_plain_days(self):
+        assert compute_duration_days("2024-04-23", "238 dni") == 238
+
+    def test_weeks(self):
+        assert compute_duration_days("2024-04-23", "2 tygodnie") == 14
+
+    def test_months_calendar_accurate(self):
+        # Jan 31 + 1 month = Feb 29 (2024 is leap); Feb 29 - Jan 31 = 29 days
+        assert compute_duration_days("2024-01-31", "1 miesiące") == 29
+
+    def test_months_non_leap(self):
+        # Jan 31 + 1 month in non-leap year = Feb 28; Feb 28 - Jan 31 = 28 days
+        assert compute_duration_days("2023-01-31", "1 miesiące") == 28
+
+    def test_years_leap(self):
+        # 2024-01-01 + 1 year = 2025-01-01 → 366 days (2024 is leap)
+        assert compute_duration_days("2024-01-01", "1 lata") == 366
+
+    def test_end_date(self):
+        from datetime import date
+        expected = (date(2024, 12, 31) - date(2024, 4, 23)).days
+        assert compute_duration_days("2024-04-23", "do 2024-12-31") == expected
+
+    def test_date_range_ignores_start_date_iso(self):
+        # "od 2024-01-01 do 2024-12-31": 2024 is leap → 365 days
+        assert compute_duration_days("2024-04-23", "od 2024-01-01 do 2024-12-31") == 365
+
+    def test_date_range_start_date_iso_can_be_none(self):
+        assert compute_duration_days(None, "od 2024-01-01 do 2024-12-31") == 365
+
+    def test_none_duration_returns_none(self):
+        assert compute_duration_days("2024-04-23", None) is None
+
+    def test_none_start_non_range_returns_none(self):
+        assert compute_duration_days(None, "12 miesiące") is None
+
+    def test_unrecognised_duration_returns_none(self):
+        assert compute_duration_days("2024-04-23", "nieokreślony") is None
+
+
+# ===========================================================================
+# compute_contract_end_date
+# ===========================================================================
+
+
+class TestComputeContractEndDate:
+    def test_plain_days(self):
+        assert compute_contract_end_date("2024-04-23", "238 dni") == "2024-12-17"
+
+    def test_weeks(self):
+        assert compute_contract_end_date("2024-01-01", "2 tygodnie") == "2024-01-15"
+
+    def test_months_leap_overflow(self):
+        # Jan 31 + 1 month → Feb 29 (2024 leap)
+        assert compute_contract_end_date("2024-01-31", "1 miesiące") == "2024-02-29"
+
+    def test_months_non_leap_overflow(self):
+        # Jan 31 + 1 month → Feb 28 (2023 non-leap)
+        assert compute_contract_end_date("2023-01-31", "1 miesiące") == "2023-02-28"
+
+    def test_years(self):
+        assert compute_contract_end_date("2023-03-15", "1 lata") == "2024-03-15"
+
+    def test_end_date_passthrough(self):
+        assert compute_contract_end_date("2024-04-23", "do 2024-12-13") == "2024-12-13"
+
+    def test_date_range_returns_end(self):
+        assert compute_contract_end_date("2024-04-23", "od 2024-01-01 do 2024-12-31") == "2024-12-31"
+
+    def test_date_range_start_date_iso_can_be_none(self):
+        assert compute_contract_end_date(None, "od 2024-01-01 do 2024-12-31") == "2024-12-31"
+
+    def test_none_duration_returns_none(self):
+        assert compute_contract_end_date("2024-04-23", None) is None
+
+    def test_none_start_non_range_returns_none(self):
+        assert compute_contract_end_date(None, "12 miesiące") is None
+
+    def test_unrecognised_duration_returns_none(self):
+        assert compute_contract_end_date("2024-04-23", "nieokreślony") is None
