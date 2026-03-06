@@ -10,6 +10,7 @@ from datetime import date, timedelta
 from bs4 import BeautifulSoup
 
 _PLN_NUM_RE = re.compile(r"([\d\s\xa0,.]+?)\s*(?:\xa0)?\s*(?:PLN|EUR|USD|GBP|CHF)?$")
+_CURRENCY_RE = re.compile(r"\b(PLN|EUR|USD|GBP|CHF)\b")
 
 
 def _parse_pln_value(raw: str | None) -> float | None:
@@ -464,6 +465,28 @@ def parse_date_from_text(raw: str | None) -> str | None:
     if not raw:
         return None
     m = re.search(r"(\d{4}-\d{2}-\d{2})", raw)
+    return m.group(1) if m else None
+
+
+def parse_datetime_from_text(raw: str | None) -> str | None:
+    """Extract ISO datetime string (YYYY-MM-DDTHH:MM) from raw text.
+
+    Falls back to date-only (YYYY-MM-DD) when no time component is found.
+    """
+    if not raw:
+        return None
+    m = re.search(r"(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})", raw)
+    if m:
+        return f"{m.group(1)}T{m.group(2)}"
+    m = re.search(r"(\d{4}-\d{2}-\d{2})", raw)
+    return m.group(1) if m else None
+
+
+def parse_currency_code(raw: str | None) -> str | None:
+    """Extract currency code (PLN/EUR/USD/GBP/CHF) from a monetary value string."""
+    if not raw:
+        return None
+    m = _CURRENCY_RE.search(raw)
     return m.group(1) if m else None
 
 

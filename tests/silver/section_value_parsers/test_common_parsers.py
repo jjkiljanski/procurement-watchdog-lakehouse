@@ -29,7 +29,9 @@ from procurement.silver.section_value_parsers.common import (
     compute_duration_days,
     normalize_tender_result_contractors,
     parse_cpv_codes,
+    parse_currency_code,
     parse_date_from_text,
+    parse_datetime_from_text,
     parse_int_from_text,
     parse_national_id_type,
     parse_national_id_value,
@@ -741,3 +743,74 @@ class TestComputeContractEndDate:
 
     def test_unrecognised_duration_returns_none(self):
         assert compute_contract_end_date("2024-04-23", "nieokreślony") is None
+
+
+# ===========================================================================
+# parse_datetime_from_text
+# ===========================================================================
+
+
+class TestParseDatetimeFromText:
+    def test_date_and_time_space_separated(self):
+        assert parse_datetime_from_text("2025-01-20 13:00") == "2025-01-20T13:00"
+
+    def test_date_and_time_t_separator(self):
+        assert parse_datetime_from_text("2025-01-20T09:00") == "2025-01-20T09:00"
+
+    def test_date_only_falls_back_to_date(self):
+        assert parse_datetime_from_text("2025-02-05") == "2025-02-05"
+
+    def test_datetime_embedded_in_text(self):
+        assert parse_datetime_from_text("Termin składania: 2025-04-04 11:30 godz.") == "2025-04-04T11:30"
+
+    def test_returns_first_datetime_when_multiple(self):
+        assert parse_datetime_from_text("od 2025-01-01 09:00 do 2025-12-31 17:00") == "2025-01-01T09:00"
+
+    def test_none_returns_none(self):
+        assert parse_datetime_from_text(None) is None
+
+    def test_empty_returns_none(self):
+        assert parse_datetime_from_text("") is None
+
+    def test_no_date_in_text_returns_none(self):
+        assert parse_datetime_from_text("brak daty") is None
+
+    def test_midnight_preserved(self):
+        assert parse_datetime_from_text("2025-05-20 00:00") == "2025-05-20T00:00"
+
+
+# ===========================================================================
+# parse_currency_code
+# ===========================================================================
+
+
+class TestParseCurrencyCode:
+    def test_pln_extracted(self):
+        assert parse_currency_code("60000,00             PLN") == "PLN"
+
+    def test_eur_extracted(self):
+        assert parse_currency_code("5000 EUR") == "EUR"
+
+    def test_usd_extracted(self):
+        assert parse_currency_code("1000 USD") == "USD"
+
+    def test_gbp_extracted(self):
+        assert parse_currency_code("250 GBP") == "GBP"
+
+    def test_chf_extracted(self):
+        assert parse_currency_code("100 CHF") == "CHF"
+
+    def test_currency_without_amount(self):
+        assert parse_currency_code("PLN") == "PLN"
+
+    def test_none_returns_none(self):
+        assert parse_currency_code(None) is None
+
+    def test_empty_returns_none(self):
+        assert parse_currency_code("") is None
+
+    def test_no_currency_in_text_returns_none(self):
+        assert parse_currency_code("100000") is None
+
+    def test_nbsp_separated_amount_and_currency(self):
+        assert parse_currency_code("50000\xa0PLN") == "PLN"

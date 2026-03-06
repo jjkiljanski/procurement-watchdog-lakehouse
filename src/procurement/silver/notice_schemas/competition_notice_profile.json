@@ -36,7 +36,11 @@
       "REGON 490781058",
       "REGON 001022890",
       "REGON 519483005"
-    ]
+    ],
+    "derived_cols": {
+      "section_1_4": {"fn": "parse_national_id_value"},
+      "section_1_4_type": {"fn": "parse_national_id_type"}
+    }
   },
   "1.5.1": {
     "col_name": "section_1_5_1",
@@ -94,7 +98,11 @@
       "PL218 - Nowosądecki",
       "PL711 - Miasto Łódź",
       "PL622 - Olsztyński"
-    ]
+    ],
+    "derived_cols": {
+      "section_1_5_6_code": {"fn": "parse_nuts3_code"},
+      "section_1_5_6_name": {"fn": "parse_nuts3_name"}
+    }
   },
   "1.5.7": {
     "col_name": "section_1_5_7",
@@ -174,7 +182,11 @@
       "8761026980",
       "5342201170",
       "9540016305"
-    ]
+    ],
+    "derived_cols": {
+      "section_1_9_2": {"fn": "parse_national_id_value"},
+      "section_1_9_2_type": {"fn": "parse_national_id_type"}
+    }
   },
   "1.9.3": {
     "col_name": "section_1_9_3",
@@ -308,7 +320,18 @@
       "2025-01-09",
       "2025-01-23",
       "2025-02-05"
-    ]
+    ],
+    "parser": {"fn": "parse_date_from_text"}
+  },
+  "2.6": {
+    "col_name": "section_2_6",
+    "section_header": "Konkurs zastrzeżony",
+    "data_model": "core",
+    "example_values": [
+      "Tak",
+      "Nie"
+    ],
+    "parser": {"fn": "parse_tak_nie"}
   },
   "2.7": {
     "col_name": "section_2_7",
@@ -317,14 +340,15 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {"fn": "parse_tak_nie"}
   },
   "2.8": {
     "col_name": "section_2_8",
     "section_header": "Nazwa projektu lub programu",
     "data_model": "core",
     "example_values": [
-      "Zamówienie, będące nagrodą w konkursie, jest współfinansowane ze środków Unii Europejskiej z programu/ w ramach projektu 2.23. FEPZ pn.”Pomorze Zachodnie – Zielony Region- etap II”",
+      "Zamówienie, będące nagrodą w konkursie, jest współfinansowane ze środków Unii Europejskiej z programu/ w ramach projektu 2.23. FEPZ pn.\u201cPomorze Zachodnie \u2013 Zielony Region- etap II\u201d",
       "Konkurs dotyczy planowanego projektu w ramach programu Fundusze Europejskie dla Świętokrzyskiego 2021-2027",
       "Program Fundusze Europejskie dla Śląskiego 2021-2027 r."
     ]
@@ -355,7 +379,8 @@
       "2025-01-20 13:00",
       "2025-01-21 09:00",
       "2025-02-17 10:00"
-    ]
+    ],
+    "parser": {"fn": "parse_datetime_from_text"}
   },
   "3.4": {
     "col_name": "section_3_4",
@@ -363,7 +388,8 @@
     "data_model": "core",
     "example_values": [
       "Tak"
-    ]
+    ],
+    "parser": {"fn": "parse_tak_nie"}
   },
   "3.4.1": {
     "col_name": "section_3_4_1",
@@ -381,7 +407,8 @@
     "example_values": [
       "2025-02-20 10:00",
       "2025-05-20 10:00"
-    ]
+    ],
+    "parser": {"fn": "parse_datetime_from_text"}
   },
   "3.6": {
     "col_name": "section_3_6",
@@ -391,7 +418,8 @@
       "2025-04-04 11:30",
       "2025-05-16 12:00",
       "2025-04-23 09:00"
-    ]
+    ],
+    "parser": {"fn": "parse_datetime_from_text"}
   },
   "3.7": {
     "col_name": "section_3_7",
@@ -429,7 +457,8 @@
     "example_values": [
       "Tak",
       "Nie"
-    ]
+    ],
+    "parser": {"fn": "parse_tak_nie"}
   },
   "4.4": {
     "col_name": "section_4_4",
@@ -465,7 +494,8 @@
     "data_model": "core",
     "example_values": [
       "Nie"
-    ]
+    ],
+    "parser": {"fn": "parse_tak_nie"}
   },
   "4.9": {
     "col_name": "section_4_9",
@@ -501,7 +531,6 @@
     "data_model": "core",
     "example_values": [
       "jak w Regulaminie",
-      "Zgodnie z art. 13 ust. 1 i 2 rozporządzenia Parlamentu Europejskiego i Rady (UE) 2016/679 z dnia 27 kwietnia 2016 r. w sprawie ochrony osób fizycznych w związku z przetwarzaniem danych osobowych i w sprawie swobodnego przepływu takich danych oraz uchylenia dyrektywy 95/46/WE (ogólne rozporządzenie o danych) (Dz. U. UE L119 z dnia 4 maja 2016 r., str.1; zwanym dalej „RODO”) informujemy, że: 1)administratorem Pani/Pana danych osobowych jest Dyrektor Izby Administracji Skarbowej w Łodzi z siedzibą przy al. T. Kościuszki 83, 90 – 436 Łódź; 2)administrator wyznaczył Inspektora Danych Osobowych, z którym można się kontaktować pod adresem e-mail: iod.lodz@mf.gov.pl; 3)Pani/Pana dane osobowe przetwarzane będą na podstawie art. 6 ust. 1 lit. c RODO w celu związanym z postępowaniem konkursowym na opracowanie koncepcji architektonicznej budynku Izby Administracji Skarbowej w Łodzi zlokalizowanego w Łodzi przy ul. Gibalskiego 2/4 -1001-ILZ.260.49.2024;4) odbiorcami Pani/Pana danych osobowych będą: a)osoby lub podmioty, którym udostępniona zostanie dokumentacja postępowania w oparciu o art. 18 oraz art. 74 ustawy Pzp; b)upoważnieni pracownicy Izby Administracji Skarbowej w Łodzi; c)spółka Otwarty Rynek Elektroniczny S.A. z siedzibą w Warszawie, ul. Domaniewska 49,  02-672 Warszawa, wpisana do rejestru przedsiębiorców Krajowego Rejestru Sądowego prowadzonego przez Sąd Rejonowy dla m. st. Warszawy w Warszawie, XIII Wydział Gospodarczy Krajowego Rejestru Sądowego pod numerem KRS: 0000041441, NIP: 526-25-35-153, REGON: 017282436, jako właściciel Platformy, na której Izba Administracji Skarbowej w Łodzi prowadzi postępowania o udzielenie zamówienia publicznego, działającej pod adresem: https://iaslodz.ezamawiajacy.pl,5)w związku z jawnością postępowania konkursowego Państwa dane mogą być przekazywane do państw z poza EOG z zastrzeżeniem, iż ograniczenie dostępu do Państwa danych może wystąpić jedynie w szczególnych przypadkach, jeśli jest to uzasadnione ochroną prywatności zgodnie z ustawą Pzp;6)Pani/Pana dane osobowe będą przechowywane, zgodnie z art. 358 ust. 1 ustawy Pzp przez okres 4 lat od dnia ustalenia wyników konkursu, a jeżeli czas trwania umowy przekracza 4 lata, okres przechowywania obejmuje cały czas trwania umowy;7)podanie danych osobowych jest dobrowolne. Jednak chęć wzięcia udziału w konkursie wywołuje konieczność podania przez Panią/Pana danych osobowych bezpośrednio Pani/Pana dotyczących, jako wymóg ustawowy określony w przepisach ustawy Pzp, związany z udziałem w konkursie. Konsekwencje niepodania określonych danych wynikają z ustawy Pzp;8)w odniesieniu do Pani/Pana danych osobowych decyzje nie będą podejmowane w sposób zautomatyzowany, stosownie do art. 22 RODO;9) zasada jawności, o której mowa w art. 74 ust 1 i 2 ustawy Pzp ma zastosowanie do wszystkich danych osobowych, z wyjątkiem danych, o których mowa w art. 9 ust. 1 RODO (tj. danych osobowych ujawniających pochodzenie rasowe lub etniczne,poglądy polityczne, przekonania religijne lub światopoglądowe, przynależność do związków zawodowych oraz danych genetycznych, biometrycznych, danych dotyczących zdrowia, seksualności lub orientacji seksualnej) zebranych w toku konkursu. Ograniczenia zasady jawności, o których mowa w art. 74 ust. 3 i art. 18 ust. 3-6 ustawy Pzp, stosuje się odpowiednio;10)od dnia zakończenia konkursu, w przypadku gdy wniesienie żądania, o którym mowa w art. 18 ust. 1 RODO, spowoduje ograniczenie przetwarzania danych osobowych zawartych w protokole i załącznikach do protokołu, Zamawiający nie udostępnia tych danych zawartych w protokole i załącznikach do protokołu, chyba że zachodzą przesłanki, o których mowa w art. 18 ust. 2 RODO (ustalenie, dochodzenie lub obrona roszczeń, ochrona praw innej osoby fizycznej lub prawnej, z uwagi na ważne względy interesu publicznego Unii Europejskiej lub państwa członkowskiego(...). Dalsza część klauzuli zamieszczona w Rozdziale XXIII Regulaminu konkursu.",
       "zgodnie z Regulaminem"
     ]
   },
@@ -532,15 +561,16 @@
     "example_values": [
       "Tak",
       "Nie"
-    ]
+    ],
+    "parser": {"fn": "parse_tak_nie"}
   },
   "5.3": {
     "col_name": "section_5_3",
     "section_header": "Krótki opis przedmiotu konkursu",
     "data_model": "core",
     "example_values": [
-      "1.\tPrzedmiotem niniejszego konkursu jest opracowanie koncepcji architektoniczno - przestrzennej zadania pod nazwą „Budowa  budynków  mieszkalnych wielorodzinnych z lokalami usługowymi i biurowymi („Osiedle Centrum”) – Segment B, z garażami podziemnymi, zagospodarowaniem terenu oraz infrastrukturą techniczną, zlokalizowanego na dz. nr. 103/38 , obr. 120, przy ul. Myśliwskiej w Nowym Sączu. Opracowanie projektu banneru reklamowego na tle otoczenia.",
-      "1.\tPrzedmiotem niniejszego konkursu jest opracowanie koncepcji architektoniczno - przestrzennej zadania pod nazwą „Budowa  budynków  mieszkalnych wielorodzinnych z lokalami usługowymi i biurowymi („Osiedle Centrum”) – Segment C, z garażami podziemnymi, zagospodarowaniem terenu oraz infrastrukturą techniczną, zlokalizowanego na dz. nr. 103/38 , obr. 120, przy ul. Myśliwskiej w Nowym Sączu. Opracowanie projektu banneru reklamowego na tle otoczenia.",
+      "Przedmiotem niniejszego konkursu jest opracowanie koncepcji architektoniczno-przestrzennej – Segment B",
+      "Przedmiotem niniejszego konkursu jest opracowanie koncepcji architektoniczno-przestrzennej – Segment C",
       "Przedmiotem konkursu jest opracowanie koncepcji architektonicznej przebudowy, rozbudowy i nadbudowy istniejącego"
     ]
   },
@@ -552,17 +582,19 @@
       "71220000-6 - Usługi projektowania architektonicznego",
       "39221000-7 - Sprzęt kuchenny",
       "45442110-1 - Malowanie budynków"
-    ]
+    ],
+    "parser": {"fn": "parse_cpv_codes"}
   },
   "5.5": {
     "col_name": "section_5_5",
     "section_header": "Dodatkowy kod CPV",
     "data_model": "core",
     "example_values": [
-      "71221000-3 - Usługi architektoniczne w zakresie obiektów budowlanych 71222000-0 - Usługi architektoniczne w zakresie przestrzeni",
+      "71221000-3 - Usługi architektoniczne w zakresie obiektów budowlanych 71222000-0 - Usługi architektoniczne w zakresie przestrzeni",
       "45233221-4 - Malowanie nawierzchi 92312000-1 - Usługi artystyczne",
-      "71220000-6 - Usługi projektowania architektonicznego 71400000-2 - Usługi architektoniczne dotyczące planowania przestrzennego i zagospodarowania terenu 71420000-8 - Architektoniczne usługi zagospodarowania terenu 71248000-8 - Nadzór nad projektem i dokumentacją"
-    ]
+      "71220000-6 - Usługi projektowania architektonicznego 71400000-2 - Usługi architektoniczne dotyczące planowania przestrzennego i zagospodarowania terenu 71420000-8 - Architektoniczne usługi zagospodarowania terenu 71248000-8 - Nadzór nad projektem i dokumentacją"
+    ],
+    "parser": {"fn": "parse_cpv_codes"}
   },
   "5.6": {
     "col_name": "section_5_6",
@@ -590,7 +622,8 @@
       "1",
       "11",
       "2"
-    ]
+    ],
+    "parser": {"fn": "parse_int_from_text"}
   },
   "6.3": {
     "col_name": "section_6_3",
@@ -600,17 +633,22 @@
       "1",
       "11",
       "3"
-    ]
+    ],
+    "parser": {"fn": "parse_int_from_text"}
   },
   "6.4": {
     "col_name": "section_6_4",
     "section_header": "Wartość nagród pieniężnych lub rzeczowych",
     "data_model": "core",
     "example_values": [
-      "60000,00             PLN",
-      "50000             PLN",
-      "100000             PLN"
-    ]
+      "60000,00             PLN",
+      "50000             PLN",
+      "100000             PLN"
+    ],
+    "derived_cols": {
+      "section_6_4": {"fn": "parse_pln_value"},
+      "section_6_4_currency": {"fn": "parse_currency_code"}
+    }
   },
   "6.5.1": {
     "col_name": "section_6_5_1",
@@ -620,7 +658,8 @@
       "950000",
       "617886,18",
       "240000"
-    ]
+    ],
+    "parser": {"fn": "parse_pln_value"}
   },
   "6.5.2": {
     "col_name": "section_6_5_2",
@@ -647,7 +686,8 @@
     "example_values": [
       "Tak",
       "Nie"
-    ]
+    ],
+    "parser": {"fn": "parse_tak_nie"}
   },
   "7.3": {
     "col_name": "section_7_3",
@@ -656,7 +696,8 @@
     "example_values": [
       "Tak",
       "Nie"
-    ]
+    ],
+    "parser": {"fn": "parse_tak_nie"}
   },
   "7.4": {
     "col_name": "section_7_4",
