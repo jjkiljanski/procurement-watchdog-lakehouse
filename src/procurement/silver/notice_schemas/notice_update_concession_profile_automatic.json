@@ -1,0 +1,205 @@
+{
+  "1.1": {
+    "col_name": "section_1_1",
+    "section_header": "Nazwa zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "GMINA DOBROSZYCE",
+      "Mogileńskie Przedsiębiorstwo Gospodarki Komunalnej sp. z o.o."
+    ]
+  },
+  "1.3": {
+    "col_name": "section_1_3",
+    "section_header": "Krajowy Numer Identyfikacyjny",
+    "data_model": "core",
+    "example_values": [
+      "REGON 931934779",
+      "REGON 340433075"
+    ],
+    "derived_cols": {
+      "section_1_3_value": {
+        "fn": "parse_national_id_value"
+      },
+      "section_1_3_type": {
+        "fn": "parse_national_id_type"
+      }
+    }
+  },
+  "1.4.1": {
+    "col_name": "section_1_4_1",
+    "section_header": "Ulica",
+    "data_model": "core",
+    "example_values": [
+      "Rynek 16",
+      "Witosa 6"
+    ]
+  },
+  "1.4.2": {
+    "col_name": "section_1_4_2",
+    "section_header": "Miejscowość",
+    "data_model": "core",
+    "example_values": [
+      "Dobroszyce",
+      "Mogilno"
+    ]
+  },
+  "1.4.3": {
+    "col_name": "section_1_4_3",
+    "section_header": "Kod pocztowy",
+    "data_model": "core",
+    "example_values": [
+      "56-410",
+      "88-300"
+    ]
+  },
+  "1.4.4": {
+    "col_name": "section_1_4_4",
+    "section_header": "Województwo",
+    "data_model": "core",
+    "example_values": [
+      "dolnośląskie",
+      "kujawsko-pomorskie"
+    ]
+  },
+  "1.4.5": {
+    "col_name": "section_1_4_5",
+    "section_header": "Kraj",
+    "data_model": "core",
+    "example_values": [
+      "Polska"
+    ]
+  },
+  "1.4.6": {
+    "col_name": "section_1_4_6",
+    "section_header": "Lokalizacja NUTS 3",
+    "data_model": "core",
+    "example_values": [
+      "PL518 - Wrocławski",
+      "PL617 - Inowrocławski"
+    ],
+    "derived_cols": {
+      "section_1_4_6_code": {
+        "fn": "parse_nuts3_code"
+      },
+      "section_1_4_6_name": {
+        "fn": "parse_nuts3_name"
+      }
+    }
+  },
+  "1.4.7": {
+    "col_name": "section_1_4_7",
+    "section_header": "Numer telefonu",
+    "data_model": "core",
+    "example_values": [
+      "052 315 22 35"
+    ]
+  },
+  "1.4.8": {
+    "col_name": "section_1_4_8",
+    "section_header": "Numer faksu",
+    "data_model": "core",
+    "example_values": [
+      "052 315 12 33"
+    ]
+  },
+  "1.4.9": {
+    "col_name": "section_1_4_9",
+    "section_header": "Adres poczty elektronicznej",
+    "data_model": "core",
+    "example_values": [
+      "zamowieniapubliczne@dobroszyce.pl",
+      "mpgk@mpgk.mogilno.pl"
+    ]
+  },
+  "1.4.10": {
+    "col_name": "section_1_4_10",
+    "section_header": "Adres strony internetowej zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "https://www.dobroszyce.pl/",
+      "mpgk.mogilno.pl"
+    ]
+  },
+  "1.5": {
+    "col_name": "section_1_5",
+    "section_header": "Rodzaj zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Zamawiający publiczny - jednostka sektora finansów publicznych - jednostka samorządu terytorialnego",
+      "Zamawiający publiczny - osoba prawna, o której mowa w art. 4 pkt 3 ustawy (podmiot prawa publicznego)"
+    ]
+  },
+  "1.6": {
+    "col_name": "section_1_6",
+    "section_header": "Przedmiot działalności zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Ogólne usługi publiczne"
+    ]
+  },
+  "1.7": {
+    "col_name": "section_1_7",
+    "section_header": "Czy postępowanie przeprowadza podmiot, któremu zamawiający powierzył prowadzenie postępowania",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
+  },
+  "2.1": {
+    "col_name": "section_2_1",
+    "section_header": "Numer ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "2025/BZP 00108661",
+      "2025/BZP 00206453"
+    ]
+  },
+  "2.2": {
+    "col_name": "section_2_2",
+    "section_header": "Data ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "2025-02-18",
+      "2025-04-25"
+    ],
+    "parser": {
+      "fn": "parse_date_from_text"
+    }
+  },
+  "3.2": {
+    "col_name": "section_3_2",
+    "section_header": "Numer zmienianego ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "2025/BZP 00091122",
+      "2025/BZP 00185905"
+    ]
+  },
+  "3.3": {
+    "col_name": "section_3_3",
+    "section_header": "Identyfikator ostatniej wersji zmienianego ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "01"
+    ]
+  },
+  "3.4.1": {
+    "col_name": "section_3_4_1",
+    "section_header": "Opis zmiany, w tym tekst, który należy dodać lub zmienić",
+    "data_model": "part.part",
+    "example_values": [
+      "Termin składania ofert Przed zmianą: 2025-05-07 13:00 Po zmianie: 2025-05-13 13:00"
+    ]
+  },
+  "4.1": {
+    "col_name": "section_4_1",
+    "section_header": "Identyfikator sekcji zmienianego ogłoszenia",
+    "data_model": "part.core",
+    "example_values": [
+      "SEKCJA V – PROCEDURA"
+    ]
+  }
+}

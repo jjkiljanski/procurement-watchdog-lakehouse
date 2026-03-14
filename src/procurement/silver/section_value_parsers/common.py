@@ -553,3 +553,43 @@ def parse_duration_end_date(raw: str | None) -> str | None:
     if kind == "end_date":
         return str(value)
     return None
+
+
+def parse_duration_iso(raw: str | None) -> str | None:
+    """Return an ISO 8601 duration string for relative Polish duration expressions.
+
+    - "24 miesiące" → "P24M"
+    - "30 dni"      → "P30D"
+    - "2 lata"      → "P2Y"
+    - "3 tygodnie"  → "P3W"
+
+    Returns None for absolute date ranges ("od … do …") and end-date-only
+    ("do YYYY-MM-DD") expressions — those are captured by _start_date / _end_date
+    derived columns.
+    """
+    if not raw:
+        return None
+    kind, value = _parse_raw_duration(raw)
+    if kind == "days":
+        return f"P{value}D"
+    if kind == "weeks":
+        return f"P{value}W"
+    if kind == "months":
+        return f"P{value}M"
+    if kind == "years":
+        return f"P{value}Y"
+    return None
+
+
+def parse_duration_start_date(raw: str | None) -> str | None:
+    """Extract start date from an explicit date-range duration string.
+
+    Only handles "od YYYY-MM-DD do YYYY-MM-DD" → returns the start date.
+    Returns None for all other formats (relative durations, end-date only).
+    """
+    if not raw:
+        return None
+    kind, value = _parse_raw_duration(raw)
+    if kind == "date_range":
+        return str(value[0])
+    return None

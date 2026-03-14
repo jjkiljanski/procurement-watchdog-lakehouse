@@ -1,0 +1,801 @@
+{
+  "1.1": {
+    "col_name": "section_1_1",
+    "section_header": "Nazwa zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Gmina Ozorków",
+      "GMINA DOBROSZYCE",
+      "CZĘSTOCHOWSKIE PRZEDSIĘBIORSTWO KOMUNALNE SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ"
+    ]
+  },
+  "1.3": {
+    "col_name": "section_1_3",
+    "section_header": "Krajowy Numer Identyfikacyjny",
+    "data_model": "core",
+    "example_values": [
+      "REGON 472057796",
+      "REGON 931934779",
+      "REGON 150370893"
+    ],
+    "derived_cols": {
+      "section_1_3_value": {
+        "fn": "parse_national_id_value"
+      },
+      "section_1_3_type": {
+        "fn": "parse_national_id_type"
+      }
+    }
+  },
+  "1.4.1": {
+    "col_name": "section_1_4_1",
+    "section_header": "Ulica",
+    "data_model": "core",
+    "example_values": [
+      "Wigury 14",
+      "Rynek 16",
+      "ul. Konwaliowa 1"
+    ]
+  },
+  "1.4.2": {
+    "col_name": "section_1_4_2",
+    "section_header": "Miejscowość",
+    "data_model": "core",
+    "example_values": [
+      "Ozorków",
+      "Dobroszyce",
+      "Sobuczyna"
+    ]
+  },
+  "1.4.3": {
+    "col_name": "section_1_4_3",
+    "section_header": "Kod pocztowy",
+    "data_model": "core",
+    "example_values": [
+      "95-035",
+      "56-410",
+      "42-263"
+    ]
+  },
+  "1.4.4": {
+    "col_name": "section_1_4_4",
+    "section_header": "Województwo",
+    "data_model": "core",
+    "example_values": [
+      "łódzkie",
+      "dolnośląskie",
+      "śląskie"
+    ]
+  },
+  "1.4.5": {
+    "col_name": "section_1_4_5",
+    "section_header": "Kraj",
+    "data_model": "core",
+    "example_values": [
+      "Polska"
+    ]
+  },
+  "1.4.6": {
+    "col_name": "section_1_4_6",
+    "section_header": "Lokalizacja NUTS 3",
+    "data_model": "core",
+    "example_values": [
+      "PL712 - Łódzki",
+      "PL518 - Wrocławski",
+      "PL224 - Częstochowski"
+    ],
+    "derived_cols": {
+      "section_1_4_6_code": {
+        "fn": "parse_nuts3_code"
+      },
+      "section_1_4_6_name": {
+        "fn": "parse_nuts3_name"
+      }
+    }
+  },
+  "1.4.7": {
+    "col_name": "section_1_4_7",
+    "section_header": "Numer telefonu",
+    "data_model": "core",
+    "example_values": [
+      "34) 327 53 20"
+    ]
+  },
+  "1.4.9": {
+    "col_name": "section_1_4_9",
+    "section_header": "Adres poczty elektronicznej",
+    "data_model": "core",
+    "example_values": [
+      "gmina@ug-ozorkow.pl",
+      "zamowieniapubliczne@dobroszyce.pl",
+      "sekretariat@czpk.czest.pl"
+    ]
+  },
+  "1.4.10": {
+    "col_name": "section_1_4_10",
+    "section_header": "Adres strony internetowej zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "www.ug-ozorkow.pl",
+      "https://www.dobroszyce.pl/",
+      "www.czpk.czest.pl"
+    ]
+  },
+  "1.5": {
+    "col_name": "section_1_5",
+    "section_header": "Rodzaj zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Zamawiający publiczny - jednostka sektora finansów publicznych - jednostka samorządu terytorialnego",
+      "Zamawiający publiczny - osoba prawna, o której mowa w art. 4 pkt 3 ustawy (podmiot prawa publicznego)"
+    ]
+  },
+  "1.6": {
+    "col_name": "section_1_6",
+    "section_header": "Przedmiot działalności zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Ogólne usługi publiczne",
+      "Inna działalność"
+    ]
+  },
+  "1.6.1": {
+    "col_name": "section_1_6_1",
+    "section_header": "Inna działalność",
+    "data_model": "core",
+    "example_values": [
+      "Gospodarka odpadami"
+    ]
+  },
+  "1.7": {
+    "col_name": "section_1_7",
+    "section_header": "Czy postępowanie przeprowadza podmiot, któremu zamawiający powierzył prowadzenie postępowania",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
+  },
+  "2.1": {
+    "col_name": "section_2_1",
+    "section_header": "Zawarcie umowy koncesji było poprzedzone ogłoszeniem o koncesji albo ogłoszeniem o zamiarze zawarcia umowy koncesji",
+    "data_model": "core",
+    "example_values": [
+      "Tak",
+      "Nie"
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
+  },
+  "2.2": {
+    "col_name": "section_2_2",
+    "section_header": "Numer ogłoszenia o koncesji /ogłoszenia o zamiarze zawarcia umowy",
+    "data_model": "core",
+    "example_values": [
+      "2024/BZP 00625753",
+      "2025/BZP 00091122",
+      "2025/BZP 00451385"
+    ]
+  },
+  "2.3": {
+    "col_name": "section_2_3",
+    "section_header": "Nazwa koncesji",
+    "data_model": "core",
+    "example_values": [
+      "świadczenie usługi w zakresie zbiorowego zaopatrzenia w wodę na terenie Gminy Ozorków",
+      "Pełnienie funkcji operatora i zarządcy dobroszyckiej sieci telekomunikacyjnej, będącej własnością Gminy Dobroszyce.",
+      "Świadczenie usługi polegającej na pozyskaniu, zagospodarowaniu i przetworzeniu w użyteczne formy energii elektrycznej, biogazu wytwarzanego na składowisku odpadów w Sobuczynie"
+    ]
+  },
+  "2.4": {
+    "col_name": "section_2_4",
+    "section_header": "Identyfikator postępowania",
+    "data_model": "core",
+    "example_values": [
+      "ocds-148610-c4cbd8ce-f6e4-4af1-ae3e-08312c66f199",
+      "ocds-148610-47759500-b03d-4691-ba11-f9f4ea15cb6f",
+      "ocds-148610-27102629-1db5-415e-bcaa-ca7a2e7f2df2"
+    ]
+  },
+  "2.5": {
+    "col_name": "section_2_5",
+    "section_header": "Numer ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "2025/BZP 00119731",
+      "2025/BZP 00178037",
+      "2025/BZP 00180962"
+    ]
+  },
+  "2.6": {
+    "col_name": "section_2_6",
+    "section_header": "Wersja ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "01"
+    ]
+  },
+  "2.7": {
+    "col_name": "section_2_7",
+    "section_header": "Data ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "2025-02-25",
+      "2025-04-04",
+      "2025-04-08"
+    ],
+    "parser": {
+      "fn": "parse_date_from_text"
+    }
+  },
+  "2.8": {
+    "col_name": "section_2_8",
+    "section_header": "Czy umowa koncesji dotyczy projektu lub programu współfinansowanego ze środków Unii Europejskiej",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
+  },
+  "3.1": {
+    "col_name": "section_3_1",
+    "section_header": "Numer referencyjny postępowania",
+    "data_model": "core",
+    "example_values": [
+      "ZP.271.8.2025",
+      "07/2025",
+      "ZP.271.6.2025"
+    ]
+  },
+  "3.2": {
+    "col_name": "section_3_2",
+    "section_header": "Zamawiający udziela koncesji w częściach, z których każda stanowi przedmiot odrębnego postępowania",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
+  },
+  "3.3.1": {
+    "col_name": "section_3_3_1",
+    "section_header": "Szacunkowa wartość umowy koncesji",
+    "data_model": "core",
+    "example_values": [
+      "5666558,00 PLN",
+      "58750,00 PLN",
+      "1455755,95 PLN"
+    ],
+    "derived_cols": {
+      "section_3_3_1_value": {
+        "fn": "parse_pln_value"
+      },
+      "section_3_3_1_currency": {
+        "fn": "parse_currency_code"
+      }
+    }
+  },
+  "3.4": {
+    "col_name": "section_3_4",
+    "section_header": "Koncesja jest podzielona na części",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
+  },
+  "3.5": {
+    "col_name": "section_3_5",
+    "section_header": "Rodzaj koncesji",
+    "data_model": "core",
+    "example_values": [
+      "usługi"
+    ]
+  },
+  "3.6": {
+    "col_name": "section_3_6",
+    "section_header": "Krótki opis przedmiotu umowy koncesji",
+    "data_model": "core",
+    "example_values": [
+      "Przedmiotem umowy koncesji jest świadczenie usługi w okresie od 1 kwietnia 2025r. do 31 marca 2029r. w zakresie zbiorowego zaopatrzenia w wodę na terenie Gminy Ozorków oraz obsługa urządzeń wodociągowych zbiorowego zaopatrzenia w wodę zlokalizowanych na terenie Gminy Ozorków, zgodnie z ustawą z dnia 7 czerwca 2001 r. o zbiorowym zaopatrzeniu w wodę i zbiorowym odprowadzaniu ścieków (Dz.U. z 2024r. poz. 757).",
+      "1.\tSzczegółowe warunki realizacji umowy koncesji, wraz z przedmiotem koncesji oraz obowiązkami przyszłego Koncesjonariusza, ujęte zostały we wzorze umowy, stanowiącym załącznik nr 2 do OWK. 2.\tZamawiający wskazuje, iż w każdym przypadku, gdzie w niniejszym OWK użyto definicji z dużej litery, należy jej nadać znaczenie jak w ramach wzoru umowy, który stanowi załącznik nr 2 do OWK.",
+      "Przedmiot umowy koncesji opisany został w następujących dokumentach: 1)\tOpis przedmiotu koncesji (OPK) 2)\tUmowa dotycząca wykonywania koncesji na usługi 3)\tUmowa dzierżawy terenu Przedmiotem koncesji jest świadczenie przez Koncesjonariusza usługi polegającej na odprowadzeniu biogazu ze składowiska odpadów innych niż niebezpieczne i obojętne zlokalizowanego w Sobuczynie przy ul. Konwaliowej 1, do którego tytuł prawny posiada Koncesjonodawca, kwatera I i II., jego oczyszczeniu i uzdatnieniu oraz energetycznym wykorzystaniu, w tym poprzez produkcję energii elektrycznej i jej sprzedaż oraz uzyskiwaniu związanych z tym przysporzeń, a także zarządzeniu tą usługą, za wynagrodzeniem którym jest wyłącznie prawo do wykonywania tejże usługi."
+    ]
+  },
+  "3.7": {
+    "col_name": "section_3_7",
+    "section_header": "Główny kod CPV",
+    "data_model": "core",
+    "example_values": [
+      "65100000-4 - Usługi przesyłu wody i podobne",
+      "64200000-8 - Usługi telekomunikacyjne",
+      "71314200-4 - Usługi zarządzania energią"
+    ],
+    "parser": {
+      "fn": "parse_cpv_codes"
+    }
+  },
+  "3.8": {
+    "col_name": "section_3_8",
+    "section_header": "Dodatkowy kod CPV",
+    "data_model": "core",
+    "example_values": [
+      "65111000-4 - Przesył wody pitnej 65130000-3 - Obsługa stacji wody",
+      "31200000-8 - Aparatura do przesyłu i eksploatacji energii elektrycznej 51112000-0 - Usługi instalowania sprzętu sterowania i przesyłu energii elektrycznej 90531000-8 - Usługi zarządzania wysypiskami",
+      "65111000-4 - Przesył wody pitnej 65130000-3 - Obsługa stacji wody 90000000-7 - Usługi odbioru ścieków, usuwania odpadów, czyszczenia/sprzątania i usługi ekologiczne"
+    ],
+    "parser": {
+      "fn": "parse_cpv_codes"
+    }
+  },
+  "4.1": {
+    "col_name": "section_4_1",
+    "section_header": "Procedura zastosowana w postępowaniu o zawarcie umowy koncesji",
+    "data_model": "core",
+    "example_values": [
+      "art. 29 ust. 1 pkt 1",
+      "art. 29 ust. 1 pkt 3"
+    ]
+  },
+  "4.2": {
+    "col_name": "section_4_2",
+    "section_header": "Postępowanie o zawarcie umowy koncesji zostało przeprowadzone bez uprzedniej publikacji ogłoszenia o koncesji",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
+  },
+  "4.2.1": {
+    "col_name": "section_4_2_1",
+    "section_header": "Podstawa prawna",
+    "data_model": "core",
+    "example_values": [
+      "art. 20 ust. 1 pkt 1 lit. a"
+    ]
+  },
+  "4.2.2": {
+    "col_name": "section_4_2_2",
+    "section_header": "Uzasadnienie faktyczne i prawne",
+    "data_model": "core",
+    "example_values": [
+      "UZASADNIENIE FAKTYCZNE I PRAWNE DLA POSTĘPOWANIA O ZAWARCIE UMOWY KONCESJI (patrz SEKCJA VIII, pkt 8.1. Ogłoszenia)."
+    ]
+  },
+  "4.3.1": {
+    "col_name": "section_4_3_1",
+    "section_header": "Sposób określania wagi kryteriów oceny ofert",
+    "data_model": "core",
+    "example_values": [
+      "Procentowo"
+    ]
+  },
+  "4.3.2": {
+    "col_name": "section_4_3_2",
+    "section_header": "Rodzaj kryterium",
+    "data_model": "criterion_procedure",
+    "example_values": [
+      "inne"
+    ]
+  },
+  "4.3.3": {
+    "col_name": "section_4_3_3",
+    "section_header": "Nazwa kryterium",
+    "data_model": "criterion_procedure",
+    "example_values": [
+      "czas przystąpienia do usuwania awarii : znaczenie - maksymalnie 30,00 punktów",
+      "wysokość cen i stawek opłat za wodę : znaczenie - maksymalnie 20,00 punktów",
+      "opłata abonamentowa : znaczenie – maksymalnie 20,00 punktów"
+    ]
+  },
+  "4.3.4": {
+    "col_name": "section_4_3_4",
+    "section_header": "Waga",
+    "data_model": "criterion_procedure",
+    "example_values": [
+      "100"
+    ],
+    "parser": {
+      "fn": "parse_criterion_weight"
+    }
+  },
+  "4.3.7": {
+    "col_name": "section_4_3_7",
+    "section_header": "Opis kryterium",
+    "data_model": "criterion_procedure",
+    "example_values": [
+      "Wykonawca jest zobowiązany do wpisania czasu przystąpienia do usuwania awarii na stacji lub sieci wodociągowych, uniemożliwiającej funkcjonowanie wodociągu, w postaci ilości minut jakie upłyną od momentu zawiadomienia koncesjonariusza - zgłoszenia lub stwierdzenia awarii, do momentu przystąpienia przez koncesjonariusza do dokonania naprawy. Wykonawca może zaoferować czas przystąpienia do usuwania awarii nie dłuższy niż 60 minut. W przypadku zaoferowania przez Wykonawcę czasu przystąpienia do usuwania awarii dłuższego niż 60 minut, bądź wynoszącego 0 minut, Zamawiający odrzuci ofertę Wykonawcy. W przypadku zaoferowania przez Koncesjonariusza czasu przystąpienia do usuwania awarii krótszego niż 30 minut, do oceny oferty zostanie przyjęty czas przystąpienia do usuwania awarii wynoszący 30 minut. Ilość punktów, jakie otrzyma badana oferta w przedmiotowym kryterium, zostanie wyliczona według wzoru zawartego OPZ",
+      "Wykonawca jest zobowiązany do złożenia oświadczenia dotyczącego wysokości taryfy za zbiorowe zaopatrzenie w wodę na terenie gminy Ozorków w okresie obowiązywania przedmiotowej umowy koncesji na usługi. Obecnie wysokość cen i stawek opłat za wodę określa decyzja Państwowego Gospodarstwa Wodnego Wody Polskie Dyrektor Regionalnego Zarządu Gospodarki Wodnej w Warszawie znak: WA.RZT.70.115.2023/6 z dnia 19.12.2023r. w sprawie zatwierdzenia taryfy za zbiorowe zaopatrzenie w wodę na terenie Gminy Ozorków na okres 3 lat. Decyzja weszła w życie z dniem 12.01.2024r. Szczegółowe informacje zawiera OPZ",
+      "Wykonawca jest zobowiązany do złożenia oświadczenia dotyczącego wprowadzenia lub oświadczenia, iż Wykonawca nie wprowadzi stawki opłaty abonamentowej, o której mowa w rozporządzeniu Ministra Budownictwa w sprawie określania taryf, wzoru wniosku o zatwierdzenie taryf oraz warunków rozliczeń za zbiorowe zaopatrzenie w wodę i zbiorowe odprowadzanie ścieków. W przypadku, gdy Wykonawca przewiduje wprowadzenie stawki opłaty abonamentowej, zobowiązany jest podać termin jej wprowadzenia, w postaci roku świadczenia usługi w zakresie zbiorowego zaopatrzenia w wodę. Szczegółowe informacje zawiera OPZ"
+    ]
+  },
+  "4.4.1": {
+    "col_name": "section_4_4_1",
+    "section_header": "Do wyboru najkorzystniejszej oferty zastosowano aukcję elektroniczną",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
+  },
+  "4.4.2": {
+    "col_name": "section_4_4_2",
+    "section_header": "Liczba wykonawców wykluczonych z postępowania",
+    "data_model": "core",
+    "example_values": [
+      "0"
+    ],
+    "parser": {
+      "fn": "parse_int_from_text"
+    }
+  },
+  "5.1": {
+    "col_name": "section_5_1",
+    "section_header": "Liczba złożonych ofert",
+    "data_model": "core",
+    "example_values": [
+      "1"
+    ],
+    "parser": {
+      "fn": "parse_int_from_text"
+    }
+  },
+  "5.2": {
+    "col_name": "section_5_2",
+    "section_header": "Liczba ofert wariantowych",
+    "data_model": "core",
+    "example_values": [
+      "0"
+    ],
+    "parser": {
+      "fn": "parse_int_from_text"
+    }
+  },
+  "5.3": {
+    "col_name": "section_5_3",
+    "section_header": "Liczba ofert złożonych przez mikro, małych i średnich przedsiębiorców",
+    "data_model": "core",
+    "example_values": [
+      "1"
+    ],
+    "parser": {
+      "fn": "parse_int_from_text"
+    }
+  },
+  "5.4": {
+    "col_name": "section_5_4",
+    "section_header": "Liczba ofert wykonawców z siedzibą w państwach EOG innych niż państwo zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "0"
+    ],
+    "parser": {
+      "fn": "parse_int_from_text"
+    }
+  },
+  "5.5": {
+    "col_name": "section_5_5",
+    "section_header": "Liczba ofert wykonawców z siedzibą w państwie spoza EOG",
+    "data_model": "core",
+    "example_values": [
+      "0"
+    ],
+    "parser": {
+      "fn": "parse_int_from_text"
+    }
+  },
+  "5.6": {
+    "col_name": "section_5_6",
+    "section_header": "Liczba ofert odrzuconych",
+    "data_model": "core",
+    "example_values": [
+      "0"
+    ],
+    "parser": {
+      "fn": "parse_int_from_text"
+    }
+  },
+  "5.7": {
+    "col_name": "section_5_7",
+    "section_header": "Najkorzystniejsza oferta wykonawcy, któremu udzielono zamówienia, jest ofertą wariantową",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
+  },
+  "6.1": {
+    "col_name": "section_6_1",
+    "section_header": "Czy umowa zawarta z koncesjonariuszami wspólnie ubiegającymi się o zawarcie umowy koncesji",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
+  },
+  "6.1.1": {
+    "col_name": "section_6_1_1",
+    "section_header": "Nazwa  (firma) albo imię i nazwisko koncesjonariusza",
+    "data_model": "core",
+    "example_values": [
+      "BAKUPI Spółka z o.o.",
+      "CZARNET Sp. z o.o. ul. Wspólna 1/o, 45-837 Opole",
+      "NEO BIO ENERGY Sp. z o.o."
+    ]
+  },
+  "6.1.2": {
+    "col_name": "section_6_1_2",
+    "section_header": "Ulica",
+    "data_model": "core",
+    "example_values": [
+      "WSPÓLNA"
+    ]
+  },
+  "6.1.3": {
+    "col_name": "section_6_1_3",
+    "section_header": "Miejscowość",
+    "data_model": "core",
+    "example_values": [
+      "Boczki 30",
+      "OPOLE",
+      "Warszawa"
+    ]
+  },
+  "6.1.4": {
+    "col_name": "section_6_1_4",
+    "section_header": "Kod pocztowy",
+    "data_model": "core",
+    "example_values": [
+      "95-035",
+      "45-837",
+      "02-797"
+    ]
+  },
+  "6.1.5": {
+    "col_name": "section_6_1_5",
+    "section_header": "Województwo",
+    "data_model": "core",
+    "example_values": [
+      "łódzkie",
+      "opolskie",
+      "mazowieckie"
+    ]
+  },
+  "6.1.6": {
+    "col_name": "section_6_1_6",
+    "section_header": "Kraj",
+    "data_model": "core",
+    "example_values": [
+      "Polska"
+    ]
+  },
+  "6.1.7": {
+    "col_name": "section_6_1_7",
+    "section_header": "Krajowy numer identyfikacyjny",
+    "data_model": "core",
+    "example_values": [
+      "7321919414",
+      "6351766819",
+      "1080008836"
+    ],
+    "derived_cols": {
+      "section_6_1_7_value": {
+        "fn": "parse_national_id_value"
+      },
+      "section_6_1_7_type": {
+        "fn": "parse_national_id_type"
+      }
+    }
+  },
+  "6.1.8": {
+    "col_name": "section_6_1_8",
+    "section_header": "Wielkość przedsiębiorstwa koncesjonariusza",
+    "data_model": "core",
+    "example_values": [
+      "Mikro przedsiębiorca",
+      "Średni przedsiębiorca"
+    ]
+  },
+  "6.1.9": {
+    "col_name": "section_6_1_9",
+    "section_header": "Koncesjonariusz pochodzi z innego państwa EOG",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
+  },
+  "6.1.10": {
+    "col_name": "section_6_1_10",
+    "section_header": "Koncesjonariusz pochodzi z innego państwa spoza EOG",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
+  },
+  "7.1": {
+    "col_name": "section_7_1",
+    "section_header": "Data zawarcia umowy koncesji",
+    "data_model": "core",
+    "example_values": [
+      "2025-02-06",
+      "2025-04-01",
+      "2025-03-26"
+    ],
+    "parser": {
+      "fn": "parse_date_from_text"
+    }
+  },
+  "7.2": {
+    "col_name": "section_7_2",
+    "section_header": "Okres realizacji umowy koncesji",
+    "data_model": "core",
+    "example_values": [
+      "od 2025-04-01 do 2029-03-31",
+      "60 miesiące",
+      "od 2025-04-01 do 2025-12-31"
+    ],
+    "derived_cols": {
+      "section_7_2_start_date": {
+        "fn": "parse_duration_start_date"
+      },
+      "section_7_2_end_date": {
+        "fn": "parse_duration_end_date"
+      },
+      "section_7_2_days": {
+        "fn": "parse_duration_days_from_range"
+      }
+    }
+  },
+  "7.3": {
+    "col_name": "section_7_3",
+    "section_header": "Wartość umowy koncesji",
+    "data_model": "core",
+    "example_values": [
+      "6119882,64 PLN",
+      "94456,80 PLN",
+      "103414,73 PLN"
+    ],
+    "derived_cols": {
+      "section_7_3_value": {
+        "fn": "parse_pln_value"
+      },
+      "section_7_3_currency": {
+        "fn": "parse_currency_code"
+      }
+    }
+  },
+  "7.4": {
+    "col_name": "section_7_4",
+    "section_header": "Przychody koncesjonariusza, które mają pochodzić od użytkowników koncesji (np. opłaty i kary)",
+    "data_model": "core",
+    "example_values": [
+      "przychody uzyskane z poboru należnoci za zużytą wodę od wszystkich odbiorców usług wodociągowych objetych umową koncesji",
+      "0",
+      "10 540 305,37"
+    ]
+  },
+  "7.5": {
+    "col_name": "section_7_5",
+    "section_header": "Przychody koncesjonariusza, które mają pochodzić od zamawiającego (np. nagrody i płatności)",
+    "data_model": "core",
+    "example_values": [
+      "0,00",
+      "0"
+    ],
+    "derived_cols": {
+      "section_7_5_value": {
+        "fn": "parse_pln_value"
+      },
+      "section_7_5_currency": {
+        "fn": "parse_currency_code"
+      }
+    }
+  },
+  "7.6": {
+    "col_name": "section_7_6",
+    "section_header": "Umowa koncesji obejmuje opcje",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
+  },
+  "7.8": {
+    "col_name": "section_7_8",
+    "section_header": "Zamawiający przewiduje przedłużenie umowy koncesji",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
+  },
+  "7.9": {
+    "col_name": "section_7_9",
+    "section_header": "Opis umowy koncesji w przedłużonym okresie jej obowiązywania",
+    "data_model": "core",
+    "example_values": [
+      "1.\tZamawiający przewiduje możliwość zmiany niniejszej umowy w zakresie terminu jej obowiązywania tj. możliwość jej przedłużenia o okres nie dłuższy niż 3 miesiące. 2. Prawa do wystąpienia z wnioskiem o przedłużenie obowiązywania umowy przysługuje wyłącznie Zamawiającemu, który może z takim wnioskiem wystąpić tylko wtedy gdy z przyczyn od niego niezależnych nie będzie w stanie samodzielnie realizować czynności związanych z skutecznym odgazowaniem Składowiska i wytwarzaniem energii elektrycznej z biogazu, co dotyczy sytuacji, w której Obiekt Koncesjonodawcy nie zapewni skutecznego przetworzenie Biogazu w energię z uwagi na ilość tego Biogazu."
+    ]
+  },
+  "7.10": {
+    "col_name": "section_7_10",
+    "section_header": "Powierzenie realizacji częsci umowy koncesji podwykonawcom",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
+  },
+  "7.11": {
+    "col_name": "section_7_11",
+    "section_header": "Umowa koncesji przewiduje wymagania dotyczące zatrudnienia przez koncesjonariusza lub jego podwykonawcę na podstawie umowy o pracę osób realizujących umowę",
+    "data_model": "core",
+    "example_values": [
+      "Tak",
+      "Nie"
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
+  },
+  "7.12": {
+    "col_name": "section_7_12",
+    "section_header": "Umowa koncesji przewiduje wymagania obejmujące aspekty społeczne, środowiskowe lub innowacyjne",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
+  },
+  "7.13": {
+    "col_name": "section_7_13",
+    "section_header": "Umowa koncesji została zawarta w ramach partnerstwa publiczno-prywatnego",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
+  },
+  "8.1": {
+    "col_name": "section_8_1",
+    "section_header": "Informacje dodatkowe",
+    "data_model": "core",
+    "example_values": [
+      "UZASADNIENIE FAKTYCZNE I PRAWNE (patrz pkt 4.2.2.) Ogłoszenia): Mając na względzie ciążący na Koncesjonodawcy obowiązek ustawowy dalszego odgazowania składowiska odpadów, który wynika z §8 Rozporządzenia M.Ś.  z dnia 30.04.13r. w sprawie składowisk odpadów, koniecznym okazało się zawarcie umowy o udzielenia prawa do świadczenia usługi polegającej na pozyskaniu, zagospodarowaniu i przetworzeniu w użyteczne formy energii elektrycznej, biogazu wytarzanego na składowisku odpadów w Sobuczynie, na podstawie zapisów ustawy  z dnia 21.10.1016r. o umowie koncesji na roboty budowlane lub usługi – dalej w skrócie Ustawa. Usługi świadczone przez Koncesjonariusza stanowić będą uzupełnienie działań Koncesjonodawcy, które polegają na wykorzystywaniu biogazu w celach energetycznych we własnej elektrowni biogazowej o mocy 0,355 MW. Elektrownia Koncesjonariusza oraz Koncesjonodawcy zasilana będzie biogazem doprowadzonym tym samym kolektorem zbiorczym z trójnika gazowego. Uwzględniając potrzebę stabilnej eksploatacji pola gazowego Koncesjonariusz winien uwzględnić ograniczenie mocy instalacji własnej do 200 kW, przy czym moc ta może być zwiększona tylko w przypadkach opisanych w dokumentacji koncesji. Zaznaczyć należy, że żaden inny podmiot (w tym CzPK) nie dysponuje dodatkowym przyłączem do sieci dystrybucji energii elektrycznej, które to przyłącze warunkuje możliwość produkcji energii elektrycznej z biogazu i jej sprzedaż z dodatkowego źródła wytwórczego. Jedynym podmiotem, który takim przyłączem dysponuje jest Neo Bio Energy Sp. z o.o. Stąd w oparciu o art.17 pkt.3), art.28 w zw. z art.20 ust.1 pkt.1 lit.a) Ustawy  postanowiono o zawarciu tejże umowy w oparciu o zaproszenie do ubiegania się o zawarcie umowy koncesji skierowane do wykonawcy, który z powodów technicznych (tj. jedyny który posiada wspomniane powyżej przyłącze) jako jedyny może świadczyć przedmiotową usługę odgazowania i przetworzenia biogazu w energię elektryczną. Jednocześnie umowa ta zawierana jest wyłącznie na okres 9 miesięcy tj. czas którym dokonana zostanie oceny czy zasadne jest i przez jaki okres korzystanie z instalacji odgazowania składowiska z elektrownią o mocy większej niż 355 kW.  Jednocześnie Spółka stwierdza, iż nie zachodzą przesłanki negatywne dla zawarcia umowy w trybie określonym w art.17 pkt.3), art.28 w związku z art.20 ust.1 pkt.1 lit.a) Ustawy, tj. : - nie istnieje żadne rozsądne rozwiązanie alternatywne lub zastępcze w tym zakresie Spółka ma co prawda możliwość prowadzenia odgazowania składowiska i spalania biogazu w pochodni, ale rozwiązanie to nie jest \"rozsądne” albowiem uniemożliwia produkcję energii elektrycznej i pozyskiwania dodatkowego strumienia przychodu z tego tytułu oraz jest niekorzystne dla środowiska z uwagi na emisję do atmosfery produktów po spalaniu biogazu; - brak konkurencji nie jest wynikiem  celowego zawężenia warunków zawarcia umowy koncesji: w tym zakresie powyższy opis stanu faktycznego oraz podejmowanych przez Spółkę czynności z jednej strony potwierdza, realizację czynności zmierzających do zagwarantowania warunków konkurencyjnych, a z drugiej strony celem tych działań jest poszukiwanie wariantu optymalnego realizacji przedmiotowego przedsięwzięcia wobec zmieniających się dynamicznie uwarunkowań prawno-ekonomicznych dotyczących wytwarzania energii ze źródeł odnawialnych. Jednocześnie informujemy, że ze względu na ograniczoną ilości znaków w rubryce ogłoszenia, pełna wersja uzasadnienia znajduje się u Zamawiającego w dokumentacji postepowania. DODATKOWE INFORMACJE (uzasadnienie trybu): Postępowanie zostało przeprowadzone na podstawie ustawy o umowie koncesji na roboty budowlane lub usługi Dz.U.2023.140, przepisów wykonawczych wydanych na jej podstawie oraz opisu postępowania o zawarcie umowy koncesji – zaproszenie do ubiegania się o zawarcie umowy koncesji zostało przekazane wybranemu przez Zamawiającego, Wykonawcy. Postępowanie zostało wszczęte w oparciu o art.17 pkt.3), art.28 w związku z art.20 ust.1 pkt.1 lit.a) w/w Ustawy"
+    ]
+  }
+}

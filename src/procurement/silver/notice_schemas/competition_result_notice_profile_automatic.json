@@ -1,0 +1,606 @@
+{
+  "1.1": {
+    "col_name": "section_1_1",
+    "section_header": "Rola zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Postępowanie prowadzone jest samodzielnie przez zamawiającego",
+      "Postępowanie prowadzi podmiot, któremu powierzono przeprowadzenie postępowania"
+    ]
+  },
+  "1.2": {
+    "col_name": "section_1_2",
+    "section_header": "Nazwa zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Zespół Opieki Zdrowotnej w Szczytnie",
+      "Gmina Miejska Głogów",
+      "Poleski Park Narodowy"
+    ]
+  },
+  "1.3": {
+    "col_name": "section_1_3",
+    "section_header": "Oddział zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "ZOZ Szczytno",
+      "Poleski Park Narodowy",
+      "sp. z o.o."
+    ]
+  },
+  "1.4": {
+    "col_name": "section_1_4",
+    "section_header": "Krajowy Numer Identyfikacyjny",
+    "data_model": "core",
+    "example_values": [
+      "REGON 519483005",
+      "REGON 390647297",
+      "REGON 061360188"
+    ],
+    "derived_cols": {
+      "section_1_4_value": {"fn": "parse_national_id_value"},
+      "section_1_4_type":  {"fn": "parse_national_id_type"}
+    }
+  },
+  "1.5.1": {
+    "col_name": "section_1_5_1",
+    "section_header": "Ulica",
+    "data_model": "core",
+    "example_values": [
+      "ul. M.C. Skłodowskiej12",
+      "Rynek 10",
+      "Lubelska 3a"
+    ]
+  },
+  "1.5.2": {
+    "col_name": "section_1_5_2",
+    "section_header": "Miejscowość",
+    "data_model": "core",
+    "example_values": [
+      "Szczytno",
+      "Głogów",
+      "Urszulin"
+    ]
+  },
+  "1.5.3": {
+    "col_name": "section_1_5_3",
+    "section_header": "Kod pocztowy",
+    "data_model": "core",
+    "example_values": [
+      "12-100",
+      "67-200",
+      "22-234"
+    ]
+  },
+  "1.5.4": {
+    "col_name": "section_1_5_4",
+    "section_header": "Województwo",
+    "data_model": "core",
+    "example_values": [
+      "warmińsko-mazurskie",
+      "dolnośląskie",
+      "lubelskie"
+    ]
+  },
+  "1.5.5": {
+    "col_name": "section_1_5_5",
+    "section_header": "Kraj",
+    "data_model": "core",
+    "example_values": [
+      "Polska"
+    ]
+  },
+  "1.5.6": {
+    "col_name": "section_1_5_6",
+    "section_header": "Lokalizacja NUTS 3",
+    "data_model": "core",
+    "example_values": [
+      "PL622 - Olsztyński",
+      "PL516 - Legnicko-głogowski",
+      "PL811 - Bialski"
+    ],
+    "derived_cols": {
+      "section_1_5_6_code": {"fn": "parse_nuts3_code"},
+      "section_1_5_6_name": {"fn": "parse_nuts3_name"}
+    }
+  },
+  "1.5.7": {
+    "col_name": "section_1_5_7",
+    "section_header": "Numer telefonu",
+    "data_model": "core",
+    "example_values": [
+      "825713071",
+      "422899764",
+      "22 211 90 01/02"
+    ]
+  },
+  "1.5.8": {
+    "col_name": "section_1_5_8",
+    "section_header": "Numer faksu",
+    "data_model": "core",
+    "example_values": [
+      "825713003",
+      "91 38 53 207"
+    ]
+  },
+  "1.5.9": {
+    "col_name": "section_1_5_9",
+    "section_header": "Adres poczty elektronicznej",
+    "data_model": "core",
+    "example_values": [
+      "bdiakow@szpital.szczytno.pl",
+      "bzp@glogow.um.gov.pl",
+      "poleskipn@poleskipn.pl"
+    ]
+  },
+  "1.5.10": {
+    "col_name": "section_1_5_10",
+    "section_header": "Adres strony internetowej zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "http://szpital.szczytno.pl",
+      "www.glogow.pl",
+      "www.poleskipn.pl"
+    ]
+  },
+  "1.6": {
+    "col_name": "section_1_6",
+    "section_header": "Adres strony internetowej organizowanego konkursu",
+    "data_model": "core",
+    "example_values": [
+      "https://ezamowienia.gov.pl/mp-client/search/list/ocds-148610-e5e42ded-96ee-44b6-9573-0b8683890cca",
+      "https://glogow-um.ezamawiajacy.pl",
+      "https://ezamowienia.gov.pl/mp-client/search/list/ocds-148610-95055a09-8ac9-4634-91e7-66a4babe8247"
+    ]
+  },
+  "1.7": {
+    "col_name": "section_1_7",
+    "section_header": "Rodzaj zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Zamawiający publiczny - jednostka sektora finansów publicznych - samodzielny publiczny zakład opieki zdrowotnej",
+      "Zamawiający publiczny - jednostka sektora finansów publicznych - jednostka samorządu terytorialnego",
+      "Zamawiający publiczny - osoba prawna, o której mowa w art. 4 pkt 3 ustawy (podmiot prawa publicznego)"
+    ]
+  },
+  "1.8": {
+    "col_name": "section_1_8",
+    "section_header": "Przedmiot działalności zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Zdrowie",
+      "Ogólne usługi publiczne",
+      "Środowisko"
+    ]
+  },
+  "1.10.1": {
+    "col_name": "section_1_10_1",
+    "section_header": "Nazwa podmiotu prowadzącego postępowanie",
+    "data_model": "core",
+    "example_values": [
+      "Grzegorz Modrzejewski",
+      "Stowarzyszenie Architektów Polskich Oddział Koszalin"
+    ]
+  },
+  "1.10.3": {
+    "col_name": "section_1_10_3",
+    "section_header": "Krajowy Numer Identyfikacyjny",
+    "data_model": "core",
+    "example_values": [
+      "8761026980",
+      "NIP 669 18 77 558"
+    ],
+    "derived_cols": {
+      "section_1_10_3_value": {"fn": "parse_national_id_value"},
+      "section_1_10_3_type":  {"fn": "parse_national_id_type"}
+    }
+  },
+  "1.10.4": {
+    "col_name": "section_1_10_4",
+    "section_header": "Ulica",
+    "data_model": "core",
+    "example_values": [
+      "Dębowa 31",
+      "Piastowska 21"
+    ]
+  },
+  "1.10.5": {
+    "col_name": "section_1_10_5",
+    "section_header": "Miejscowość",
+    "data_model": "core",
+    "example_values": [
+      "Grudziądz",
+      "Grudziadz",
+      "Koszalin"
+    ]
+  },
+  "1.10.6": {
+    "col_name": "section_1_10_6",
+    "section_header": "Kod pocztowy",
+    "data_model": "core",
+    "example_values": [
+      "86-300",
+      "75-400"
+    ]
+  },
+  "1.10.7": {
+    "col_name": "section_1_10_7",
+    "section_header": "Województwo",
+    "data_model": "core",
+    "example_values": [
+      "kujawsko-pomorskie",
+      "zachodniopomorskie"
+    ]
+  },
+  "1.10.8": {
+    "col_name": "section_1_10_8",
+    "section_header": "Kraj",
+    "data_model": "core",
+    "example_values": [
+      "Polska"
+    ]
+  },
+  "1.10.9": {
+    "col_name": "section_1_10_9",
+    "section_header": "Lokalizacja NUTS 3",
+    "data_model": "core",
+    "example_values": [
+      "PL616 - Grudziądzki",
+      "PL426 - Koszaliński"
+    ],
+    "derived_cols": {
+      "section_1_10_9_code": {"fn": "parse_nuts3_code"},
+      "section_1_10_9_name": {"fn": "parse_nuts3_name"}
+    }
+  },
+  "1.10.10": {
+    "col_name": "section_1_10_10",
+    "section_header": "Numer telefonu",
+    "data_model": "core",
+    "example_values": [
+      "602535142",
+      "94 342 64 90"
+    ]
+  },
+  "1.10.11": {
+    "col_name": "section_1_10_11",
+    "section_header": "Numer faksu",
+    "data_model": "core",
+    "example_values": [
+      "94 342 64 90"
+    ]
+  },
+  "1.10.12": {
+    "col_name": "section_1_10_12",
+    "section_header": "Adres poczty elektronicznej",
+    "data_model": "core",
+    "example_values": [
+      "modrzej244@wp.pl",
+      "koszalin@sarp.org.pl"
+    ]
+  },
+  "1.10.13": {
+    "col_name": "section_1_10_13",
+    "section_header": "Adres strony internetowej",
+    "data_model": "core",
+    "example_values": [
+      "http://stbs-nowysacz.pl",
+      "https://www.sarpkoszalin.pl/"
+    ]
+  },
+  "2.1": {
+    "col_name": "section_2_1",
+    "section_header": "Nazwa konkursu",
+    "data_model": "core",
+    "example_values": [
+      "Konkurs na dzierżawę wyznaczonych powierzchni ścian i podłóg w salach chorych oraz w przestrzeni ogólnej w budynkach Szpitala",
+      "Konkurs architektoniczno-rzeźbiarski na opracowanie projektu pomnika Bolesława Chrobrego  wraz z koncepcją zagospodarowania otoczenia pomnika.",
+      "Wydawnictwo (Pakiet  edukacyjny) \"Poznaj łosia!\""
+    ]
+  },
+  "2.2": {
+    "col_name": "section_2_2",
+    "section_header": "Identyfikator konkursu",
+    "data_model": "core",
+    "example_values": [
+      "ocds-148610-e5e42ded-96ee-44b6-9573-0b8683890cca",
+      "ocds-148610-89894110-9961-46f3-aa01-681472426927",
+      "ocds-148610-95055a09-8ac9-4634-91e7-66a4babe8247"
+    ]
+  },
+  "2.3": {
+    "col_name": "section_2_3",
+    "section_header": "Numer ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "2025/BZP 00000919",
+      "2025/BZP 00026114",
+      "2025/BZP 00030140"
+    ]
+  },
+  "2.4": {
+    "col_name": "section_2_4",
+    "section_header": "Wersja ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "01"
+    ]
+  },
+  "2.5": {
+    "col_name": "section_2_5",
+    "section_header": "Data ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "2025-01-02",
+      "2025-01-13",
+      "2025-01-14"
+    ],
+    "parser": {"fn": "parse_date_from_text"}
+  },
+  "2.6": {
+    "col_name": "section_2_6",
+    "section_header": "Numer ogłoszenia o konkursie",
+    "data_model": "core",
+    "example_values": [
+      "2024/BZP 00427325",
+      "2024/BZP 00537709",
+      "2024/BZP 00652499"
+    ]
+  },
+  "2.8": {
+    "col_name": "section_2_8",
+    "section_header": "Konkurs dotyczy projektu lub programu współfinansowanego ze środków Unii Europejskiej",
+    "data_model": "core",
+    "example_values": [
+      "Nie",
+      "Tak"
+    ],
+    "parser": {"fn": "parse_tak_nie"}
+  },
+  "2.9": {
+    "col_name": "section_2_9",
+    "section_header": "Nazwa projektu lub programu",
+    "data_model": "core",
+    "example_values": [
+      "Fundusze Europejskie dla Polski Wschodniej 2021-2027 priorytet FEPW.02 Energia i klimat, Działanie: 2.3 Bioróżnorodność Typ projektu: Podnoszenie świadomości ekologicznej i promowanie postaw proekologicznych, nabór nr FEPW.02.03-IW.01-003/23",
+      "Konkurs dotyczy planowanego projektu w ramach programu Fundusze Europejskie dla Świętokrzyskiego 2021-2027",
+      "Program Fundusze Europejskie dla Śląskiego 2021-2027 r."
+    ]
+  },
+  "3.1": {
+    "col_name": "section_3_1",
+    "section_header": "Procedura konkursu",
+    "data_model": "core",
+    "example_values": [
+      "Konkurs - nieograniczony",
+      "Konkurs - ograniczony"
+    ]
+  },
+  "3.2": {
+    "col_name": "section_3_2",
+    "section_header": "Rodzaj konkursu",
+    "data_model": "core",
+    "example_values": [
+      "Konkurs jednoetapowy",
+      "Konkurs dwuetapowy"
+    ]
+  },
+  "4.1": {
+    "col_name": "section_4_1",
+    "section_header": "Numer referencyjny konkursu",
+    "data_model": "core",
+    "example_values": [
+      "ZOZ-2-K/2023",
+      "BZP.271.37.2024",
+      "ED 630-14/2024"
+    ]
+  },
+  "4.2": {
+    "col_name": "section_4_2",
+    "section_header": "Krótki opis przedmiotu konkursu",
+    "data_model": "core",
+    "example_values": [
+      "telewizja",
+      "Przedmiotem Konkursu jest opracowanie, na podstawie wytycznych określonych w Regulaminie oraz załączników merytorycznych, projektu pomnika wraz z zagospodarowaniem terenu w jego najbliższym otoczeniu. Praca powinna uwzględniać uwarunkowania lokalizacyjne, usytuowanie oraz wielkość pomnika, osie widokowe, przebieg infrastruktury technicznej oraz założone wytyczne organizatora określone w Regulaminie, w tym w ust. 3 niniejszego Rozdziału.",
+      "Projekt Wydawnictwa powinien zawierać:"
+    ]
+  },
+  "4.3": {
+    "col_name": "section_4_3",
+    "section_header": "Główny kod CPV",
+    "data_model": "core",
+    "example_values": [
+      "51312000-2 - Usługi instalowania urządzeń telewizyjnych",
+      "92312230-2 - Usługi świadczone przez rzeźbiarzy",
+      "22120000-7 - Wydawnictwa"
+    ],
+    "parser": {"fn": "parse_cpv_codes"}
+  },
+  "4.4": {
+    "col_name": "section_4_4",
+    "section_header": "Dodatkowy kod CPV",
+    "data_model": "core",
+    "example_values": [
+      "92312200-3 - Usługi świadczone przez autorów, kompozytorów, rzeźbiarzy, animatorów kultury oraz pozostałych artystów 71220000-6 - Usługi projektowania architektonicznego 45212314-0 - Roboty budowlane w zakresie pomników historycznych lub miejsc pamięci",
+      "71221000-3 - Usługi architektoniczne w zakresie obiektów budowlanych 71222000-0 - Usługi architektoniczne w zakresie przestrzeni",
+      "71222000-0 - Usługi architektoniczne w zakresie przestrzeni 71420000-8 - Architektoniczne usługi zagospodarowania terenu"
+    ],
+    "parser": {"fn": "parse_cpv_codes"}
+  },
+  "5.1": {
+    "col_name": "section_5_1",
+    "section_header": "Konkurs zakończony rozstrzygnięciem czy unieważnieniem",
+    "data_model": "core",
+    "example_values": [
+      "rozstrzygnięcie",
+      "unieważnienie"
+    ]
+  },
+  "5.2": {
+    "col_name": "section_5_2",
+    "section_header": "Podstawa prawna unieważnienia konkursu",
+    "data_model": "core",
+    "example_values": [
+      "art. 355 ust. 1 pkt 1"
+    ]
+  },
+  "5.3": {
+    "col_name": "section_5_3",
+    "section_header": "Data zatwierdzenia rozstrzygnięcia konkursu/unieważnienia konkursu",
+    "data_model": "core",
+    "example_values": [
+      "2024-12-09",
+      "2024-12-20",
+      "2025-01-14"
+    ],
+    "parser": {"fn": "parse_date_from_text"}
+  },
+  "5.4": {
+    "col_name": "section_5_4",
+    "section_header": "Liczba otrzymanych prac konkursowych",
+    "data_model": "core",
+    "example_values": [
+      "2",
+      "10",
+      "1"
+    ],
+    "parser": {"fn": "parse_int_from_text"}
+  },
+  "5.5": {
+    "col_name": "section_5_5",
+    "section_header": "Liczba prac konkursowych niepodlegających ocenie",
+    "data_model": "core",
+    "example_values": [
+      "0",
+      "3"
+    ],
+    "parser": {"fn": "parse_int_from_text"}
+  },
+  "5.6": {
+    "col_name": "section_5_6",
+    "section_header": "Liczba wybranych prac konkursowych",
+    "data_model": "core",
+    "example_values": [
+      "1",
+      "4",
+      "3"
+    ],
+    "parser": {"fn": "parse_int_from_text"}
+  },
+  "5.7.1": {
+    "col_name": "section_5_7_1",
+    "section_header": "Nazwa autora",
+    "data_model": "author",
+    "example_values": [
+      "ENERGIAGRATIS Sp. z o.o.;",
+      "Rafał Nowak",
+      "Miłosz Prajsnar"
+    ]
+  },
+  "5.7.2": {
+    "col_name": "section_5_7_2",
+    "section_header": "Ulica",
+    "data_model": "author",
+    "example_values": [
+      "ul. A. Ostrowskiego 30/110,",
+      "Sypniewo 19",
+      "Straszewskiego 1/2a"
+    ]
+  },
+  "5.7.3": {
+    "col_name": "section_5_7_3",
+    "section_header": "Miejscowość",
+    "data_model": "author",
+    "example_values": [
+      "Wrocław",
+      "Sypniewo",
+      "Kraków"
+    ]
+  },
+  "5.7.4": {
+    "col_name": "section_5_7_4",
+    "section_header": "Kod pocztowy",
+    "data_model": "author",
+    "example_values": [
+      "53-238",
+      "61-327",
+      "31-101"
+    ]
+  },
+  "5.7.5": {
+    "col_name": "section_5_7_5",
+    "section_header": "Województwo",
+    "data_model": "author",
+    "example_values": [
+      "dolnośląskie",
+      "wielkopolskie",
+      "małopolskie"
+    ]
+  },
+  "5.7.6": {
+    "col_name": "section_5_7_6",
+    "section_header": "Kraj",
+    "data_model": "author",
+    "example_values": [
+      "Afganistan",
+      "Polska"
+    ]
+  },
+  "5.7.7": {
+    "col_name": "section_5_7_7",
+    "section_header": "Krajowy numer identyfikacyjny",
+    "data_model": "author",
+    "example_values": [
+      "8943216976",
+      "8421540152",
+      "6571219338"
+    ],
+    "derived_cols": {
+      "section_5_7_7_value": {"fn": "parse_national_id_value"},
+      "section_5_7_7_type":  {"fn": "parse_national_id_type"}
+    }
+  },
+  "5.8": {
+    "col_name": "section_5_8",
+    "section_header": "Miejsce lub wyróżnienie jakie otrzymała praca konkursowa",
+    "data_model": "author",
+    "example_values": [
+      "Miejsce - 1",
+      "Miejsce - 2",
+      "Miejsce - 3"
+    ]
+  },
+  "5.9": {
+    "col_name": "section_5_9",
+    "section_header": "Rodzaj nagrody",
+    "data_model": "author",
+    "example_values": [
+      "Zaproszenie do negocjacji w celu wykonania usługi na podstawie wybranej pracy konkursowej",
+      "Nagroda pieniężna",
+      "Nagroda rzeczowa"
+    ]
+  },
+  "5.10": {
+    "col_name": "section_5_10",
+    "section_header": "Wartość",
+    "data_model": "author",
+    "example_values": [
+      "11000",
+      "5500",
+      "3500"
+    ],
+    "derived_cols": {
+      "section_5_10_value":    {"fn": "parse_pln_value"},
+      "section_5_10_currency": {"fn": "parse_currency_code"}
+    }
+  },
+  "5.11": {
+    "col_name": "section_5_11",
+    "section_header": "Wybrana praca uwzględnia aspekty środowiskowe/społeczne/innowacyjne",
+    "data_model": "core",
+    "example_values": [
+      "aspekty środowiskowe",
+      "aspekty społeczne"
+    ]
+  }
+}

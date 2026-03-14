@@ -1,0 +1,408 @@
+{
+  "1.1": {
+    "col_name": "section_1_1",
+    "section_header": "Nazwa zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "GMINA SUBKOWY"
+    ]
+  },
+  "1.3": {
+    "col_name": "section_1_3",
+    "section_header": "Krajowy Numer Identyfikacyjny",
+    "data_model": "core",
+    "example_values": [
+      "REGON 191675356"
+    ],
+    "derived_cols": {
+      "section_1_3_value": {
+        "fn": "parse_national_id_value"
+      },
+      "section_1_3_type": {
+        "fn": "parse_national_id_type"
+      }
+    }
+  },
+  "1.4.1": {
+    "col_name": "section_1_4_1",
+    "section_header": "Ulica",
+    "data_model": "core",
+    "example_values": [
+      "ul. Józefa Wybickiego 19 A"
+    ]
+  },
+  "1.4.2": {
+    "col_name": "section_1_4_2",
+    "section_header": "Miejscowość",
+    "data_model": "core",
+    "example_values": [
+      "Subkowy"
+    ]
+  },
+  "1.4.3": {
+    "col_name": "section_1_4_3",
+    "section_header": "Kod pocztowy",
+    "data_model": "core",
+    "example_values": [
+      "83-120"
+    ]
+  },
+  "1.4.4": {
+    "col_name": "section_1_4_4",
+    "section_header": "Województwo",
+    "data_model": "core",
+    "example_values": [
+      "pomorskie"
+    ]
+  },
+  "1.4.5": {
+    "col_name": "section_1_4_5",
+    "section_header": "Kraj",
+    "data_model": "core",
+    "example_values": [
+      "Polska"
+    ]
+  },
+  "1.4.6": {
+    "col_name": "section_1_4_6",
+    "section_header": "Lokalizacja NUTS 3",
+    "data_model": "core",
+    "example_values": [
+      "PL638 - Starogardzki"
+    ],
+    "derived_cols": {
+      "section_1_4_6_code": {
+        "fn": "parse_nuts3_code"
+      },
+      "section_1_4_6_name": {
+        "fn": "parse_nuts3_name"
+      }
+    }
+  },
+  "1.4.9": {
+    "col_name": "section_1_4_9",
+    "section_header": "Adres poczty elektronicznej",
+    "data_model": "core",
+    "example_values": [
+      "urzad@subkowy.pl"
+    ]
+  },
+  "1.4.10": {
+    "col_name": "section_1_4_10",
+    "section_header": "Adres strony internetowej zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "http://bip.ugsubkowy.nv.pl/"
+    ]
+  },
+  "1.5": {
+    "col_name": "section_1_5",
+    "section_header": "Rodzaj zamawiającego",
+    "data_model": "core",
+    "example_values": [
+      "Zamawiający publiczny - jednostka sektora finansów publicznych - jednostka samorządu terytorialnego"
+    ]
+  },
+  "2.1": {
+    "col_name": "section_2_1",
+    "section_header": "Identyfikator postępowania",
+    "data_model": "core",
+    "example_values": [
+      "ocds-148610-0b017e76-2af7-11ee-a60c-9ec5599dddc1"
+    ]
+  },
+  "2.2": {
+    "col_name": "section_2_2",
+    "section_header": "Numer ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "2025/BZP 00432640"
+    ]
+  },
+  "2.3": {
+    "col_name": "section_2_3",
+    "section_header": "Wersja ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "01"
+    ]
+  },
+  "2.4": {
+    "col_name": "section_2_4",
+    "section_header": "Data ogłoszenia",
+    "data_model": "core",
+    "example_values": [
+      "2025-09-19"
+    ],
+    "parser": {
+      "fn": "parse_date_from_text"
+    }
+  },
+  "2.5": {
+    "col_name": "section_2_5",
+    "section_header": "Numer ogłoszenia o koncesji lub ogłoszenia o zamiarze zawarcia umowy koncesji",
+    "data_model": "core",
+    "example_values": [
+      "2023/BZP 00324949"
+    ]
+  },
+  "2.6": {
+    "col_name": "section_2_6",
+    "section_header": "Numer ogłoszenia o zawarciu umowy koncesji",
+    "data_model": "core",
+    "example_values": [
+      "2023/BZP 00387780"
+    ]
+  },
+  "3.1": {
+    "col_name": "section_3_1",
+    "section_header": "Nazwa koncesji",
+    "data_model": "core",
+    "example_values": [
+      "WYBÓR PRZEDSIĘBIORSTWA, KTÓRE BĘDZIE ŚWIADCZYĆ USŁUGI ZBIOROWEGO ZAOPATRZENIA W WODĘ I ZBIOROWEGO ODPROWADZANIA ŚCIEKÓW WRAZ Z EKSPLOATACJĄ I KONSERWACJĄ MIENIA WODOCIĄGOWO – KANALIZACYJNEGO"
+    ]
+  },
+  "3.2": {
+    "col_name": "section_3_2",
+    "section_header": "Zamawiający udziela koncesji w częściach, z których każda stanowi przedmiot odrębnego postępowania",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
+  },
+  "3.3": {
+    "col_name": "section_3_3",
+    "section_header": "Koncesja jest podzielona na części",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
+  },
+  "3.4": {
+    "col_name": "section_3_4",
+    "section_header": "Zmiana umowy koncesji",
+    "data_model": "core",
+    "example_values": [
+      "Tak"
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
+  },
+  "3.5": {
+    "col_name": "section_3_5",
+    "section_header": "Rodzaj koncesji",
+    "data_model": "core",
+    "example_values": [
+      "usługi"
+    ]
+  },
+  "3.6": {
+    "col_name": "section_3_6",
+    "section_header": "Krótki opis przedmiotu umowy koncesji",
+    "data_model": "core",
+    "example_values": [
+      "Przedmiotem umowy koncesji jest realizacja usługi zbiorowego zaopatrzenia w wodę i zbiorowego odprowadzania ścieków wraz z eksploatacją i konserwacją mienia wodociągowo – kanalizacyjnych. Przedmiot umowy koncesji nie obejmuje budowy, rozbudowy, modernizacji sieci i urządzeń wodociągowych/kanalizacyjnych oraz opracowywania wieloletnich planów rozwoju i modernizacji sieci wodociągowej."
+    ]
+  },
+  "3.7": {
+    "col_name": "section_3_7",
+    "section_header": "Główny kod CPV",
+    "data_model": "core",
+    "example_values": [
+      "41110000-3 - Woda pitna"
+    ],
+    "parser": {
+      "fn": "parse_cpv_codes"
+    }
+  },
+  "3.8": {
+    "col_name": "section_3_8",
+    "section_header": "Dodatkowy kod CPV",
+    "data_model": "core",
+    "example_values": [
+      "65100000-4 - Usługi przesyłu wody i podobne 65111000-4 - Przesył wody pitnej 65130000-3 - Obsługa stacji wody 90480000-5 - Usługi gospodarki ściekowej 90481000-2 - Eksploatacja zakładów oczyszczania ścieków 90000000-7 - Usługi odbioru ścieków, usuwania odpadów, czyszczenia/sprzątania i usługi ekologiczne"
+    ],
+    "parser": {
+      "fn": "parse_cpv_codes"
+    }
+  },
+  "4.1": {
+    "col_name": "section_4_1",
+    "section_header": "Data zawarcia umowy koncesji",
+    "data_model": "core",
+    "example_values": [
+      "2023-08-30"
+    ],
+    "parser": {
+      "fn": "parse_date_from_text"
+    }
+  },
+  "4.2": {
+    "col_name": "section_4_2",
+    "section_header": "Okres obowiązywania umowy koncesji",
+    "data_model": "core",
+    "example_values": [
+      "24 miesiące"
+    ],
+    "derived_cols": {
+      "section_4_2_start_date": {
+        "fn": "parse_duration_start_date"
+      },
+      "section_4_2_end_date": {
+        "fn": "parse_duration_end_date"
+      },
+      "section_4_2_duration": {
+        "fn": "parse_duration_iso"
+      }
+    }
+  },
+  "4.3": {
+    "col_name": "section_4_3",
+    "section_header": "Wartość umowy koncesji",
+    "data_model": "core",
+    "example_values": [
+      "278160,00"
+    ],
+    "derived_cols": {
+      "section_4_3_value": {
+        "fn": "parse_pln_value"
+      },
+      "section_4_3_currency": {
+        "fn": "parse_currency_code"
+      }
+    }
+  },
+  "4.4": {
+    "col_name": "section_4_4",
+    "section_header": "Czy umowa zawarta z koncesjonariuszami wspólnie ubiegającymi się o zawarcie umowy koncesji",
+    "data_model": "core",
+    "example_values": [
+      "Nie"
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
+  },
+  "4.4.1": {
+    "col_name": "section_4_4_1",
+    "section_header": "Nazwa  (firma) albo imię i nazwisko koncesjonariusza",
+    "data_model": "core",
+    "example_values": [
+      "Spółdzielnia Kółek Rolniczych"
+    ]
+  },
+  "4.4.2": {
+    "col_name": "section_4_4_2",
+    "section_header": "Ulica",
+    "data_model": "core",
+    "example_values": [
+      "Wodna 2"
+    ]
+  },
+  "4.4.3": {
+    "col_name": "section_4_4_3",
+    "section_header": "Miejscowość",
+    "data_model": "core",
+    "example_values": [
+      "Subkowy"
+    ]
+  },
+  "4.4.4": {
+    "col_name": "section_4_4_4",
+    "section_header": "Kod poczty",
+    "data_model": "core",
+    "example_values": [
+      "83-120"
+    ]
+  },
+  "4.4.5": {
+    "col_name": "section_4_4_5",
+    "section_header": "Województwo",
+    "data_model": "core",
+    "example_values": [
+      "pomorskie"
+    ]
+  },
+  "4.4.6": {
+    "col_name": "section_4_4_6",
+    "section_header": "Kraj",
+    "data_model": "core",
+    "example_values": [
+      "Polska"
+    ]
+  },
+  "4.4.7": {
+    "col_name": "section_4_4_7",
+    "section_header": "Krajowy numer identyfikacyjny",
+    "data_model": "core",
+    "example_values": [
+      "5930104788"
+    ],
+    "derived_cols": {
+      "section_4_4_7_value": {
+        "fn": "parse_national_id_value"
+      },
+      "section_4_4_7_type": {
+        "fn": "parse_national_id_type"
+      }
+    }
+  },
+  "5.1": {
+    "col_name": "section_5_1",
+    "section_header": "Data zmiany umowy koncesji",
+    "data_model": "core",
+    "example_values": [
+      "2025-08-29"
+    ],
+    "parser": {
+      "fn": "parse_date_from_text"
+    }
+  },
+  "5.2": {
+    "col_name": "section_5_2",
+    "section_header": "Podstawa prawna zmiany umowy koncesji",
+    "data_model": "core",
+    "example_values": [
+      "art. 46 ust. 1 pkt 3)"
+    ]
+  },
+  "5.3": {
+    "col_name": "section_5_3",
+    "section_header": "Przyczyny dokonywania zmian umowy koncesji",
+    "data_model": "core",
+    "example_values": [
+      "Przedłużenie terminu obowiązywania umowy"
+    ]
+  },
+  "5.4": {
+    "col_name": "section_5_4",
+    "section_header": "Krótki opis zmiany",
+    "data_model": "core",
+    "example_values": [
+      "Czas trwania umowy: 28 miesięcy, od 1 września 2023 r. do 31 grudnia 2025 r."
+    ]
+  },
+  "5.5.1": {
+    "col_name": "section_5_5_1",
+    "section_header": "Szacunkowe przychody koncesjonariusza, które mają pochodzić od użytkowników koncesji (np. opłaty i kary)",
+    "data_model": "core",
+    "example_values": [
+      "opłaty z tytułu dostaw wody i odprowadzania ścieków"
+    ]
+  },
+  "5.5.2": {
+    "col_name": "section_5_5_2",
+    "section_header": "Szacunkowe przychody koncesjonariusza pochodzące od zamawiającego (np. nagrody i płatności)",
+    "data_model": "core",
+    "example_values": [
+      "brak"
+    ]
+  }
+}

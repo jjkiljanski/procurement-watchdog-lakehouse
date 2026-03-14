@@ -32,6 +32,8 @@ from procurement.silver.section_value_parsers.common import (
     parse_currency_code,
     parse_date_from_text,
     parse_datetime_from_text,
+    parse_duration_iso,
+    parse_duration_start_date,
     parse_int_from_text,
     parse_list_from_newlines,
     parse_national_id_type,
@@ -854,3 +856,68 @@ class TestParseCurrencyCode:
 
     def test_nbsp_separated_amount_and_currency(self):
         assert parse_currency_code("50000\xa0PLN") == "PLN"
+
+
+# ===========================================================================
+# parse_duration_start_date
+# ===========================================================================
+
+
+class TestParseDurationIso:
+    def test_months(self):
+        assert parse_duration_iso("24 miesiące") == "P24M"
+
+    def test_months_variant(self):
+        assert parse_duration_iso("6 miesiac") == "P6M"
+
+    def test_days(self):
+        assert parse_duration_iso("30 dni") == "P30D"
+
+    def test_years(self):
+        assert parse_duration_iso("2 lata") == "P2Y"
+
+    def test_weeks(self):
+        assert parse_duration_iso("3 tygodnie") == "P3W"
+
+    def test_date_range_returns_none(self):
+        # captured by start_date / end_date columns
+        assert parse_duration_iso("od 2024-01-01 do 2024-12-31") is None
+
+    def test_end_date_only_returns_none(self):
+        assert parse_duration_iso("do 2025-12-31") is None
+
+    def test_none_returns_none(self):
+        assert parse_duration_iso(None) is None
+
+    def test_empty_returns_none(self):
+        assert parse_duration_iso("") is None
+
+    def test_unrecognised_returns_none(self):
+        assert parse_duration_iso("nieokreślony") is None
+
+
+class TestParseDurationStartDate:
+    def test_date_range_returns_start(self):
+        assert parse_duration_start_date("od 2025-04-01 do 2029-03-31") == "2025-04-01"
+
+    def test_another_date_range(self):
+        assert parse_duration_start_date("od 2024-01-01 do 2024-12-31") == "2024-01-01"
+
+    def test_end_date_only_returns_none(self):
+        # "do YYYY-MM-DD" has no start date
+        assert parse_duration_start_date("do 2025-12-31") is None
+
+    def test_relative_months_returns_none(self):
+        assert parse_duration_start_date("60 miesiące") is None
+
+    def test_relative_days_returns_none(self):
+        assert parse_duration_start_date("90 dni") is None
+
+    def test_none_returns_none(self):
+        assert parse_duration_start_date(None) is None
+
+    def test_empty_returns_none(self):
+        assert parse_duration_start_date("") is None
+
+    def test_unrecognised_text_returns_none(self):
+        assert parse_duration_start_date("nieokreślony") is None

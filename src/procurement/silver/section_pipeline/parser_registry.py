@@ -30,6 +30,8 @@ from procurement.silver.section_value_parsers.common import (
     parse_datetime_from_text,
     parse_duration_days_from_range,
     parse_duration_end_date,
+    parse_duration_iso,
+    parse_duration_start_date,
     parse_int_from_text,
     parse_national_id_type,
     parse_national_id_value,
@@ -57,6 +59,8 @@ COMMON_PARSERS: dict[str, tuple] = {
     "parse_list_from_newlines": (parse_list_from_newlines, ArrayType(StringType())),
     "parse_duration_days_from_range": (parse_duration_days_from_range, IntegerType()),
     "parse_duration_end_date": (parse_duration_end_date, StringType()),
+    "parse_duration_iso": (parse_duration_iso, StringType()),
+    "parse_duration_start_date": (parse_duration_start_date, StringType()),
 }
 
 # ---------------------------------------------------------------------------
