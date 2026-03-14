@@ -37,7 +37,15 @@
       "REGON 250854889",
       "REGON 330920920",
       "REGON 302156406"
-    ]
+    ],
+    "derived_cols": {
+      "section_1_4": {
+        "fn": "parse_national_id_value"
+      },
+      "section_1_4_type": {
+        "fn": "parse_national_id_type"
+      }
+    }
   },
   "1.5.1": {
     "col_name": "section_1_5_1",
@@ -97,7 +105,15 @@
       "PL518 - Wrocławski",
       "PL426 - Koszaliński",
       "PL415 - Miasto Poznań"
-    ]
+    ],
+    "derived_cols": {
+      "section_1_5_6_code": {
+        "fn": "parse_nuts3_code"
+      },
+      "section_1_5_6_name": {
+        "fn": "parse_nuts3_name"
+      }
+    }
   },
   "1.5.7": {
     "col_name": "section_1_5_7",
@@ -185,7 +201,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "2.3": {
     "col_name": "section_2_3",
@@ -233,7 +252,10 @@
       "2025-01-01",
       "2025-01-02",
       "2025-01-03"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_date_from_text"
+    }
   },
   "2.8": {
     "col_name": "section_2_8",
@@ -242,7 +264,10 @@
     "example_values": [
       "Tak",
       "Nie"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "2.9": {
     "col_name": "section_2_9",
@@ -271,7 +296,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "2.12": {
     "col_name": "section_2_12",
@@ -290,7 +318,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "2.14": {
     "col_name": "section_2_14",
@@ -349,7 +380,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "4.3": {
     "col_name": "section_4_3",
@@ -359,7 +393,15 @@
       "160000,00                PLN",
       "224031,50                PLN",
       "753070,36                PLN"
-    ]
+    ],
+    "derived_cols": {
+      "section_4_3": {
+        "fn": "parse_pln_value"
+      },
+      "section_4_3_currency": {
+        "fn": "parse_currency_code"
+      }
+    }
   },
   "4.3.1": {
     "col_name": "section_4_3_1",
@@ -369,7 +411,15 @@
       "305452,54                PLN",
       "205260,16                PLN",
       "160874,40                PLN"
-    ]
+    ],
+    "derived_cols": {
+      "section_4_3_1": {
+        "fn": "parse_pln_value"
+      },
+      "section_4_3_1_currency": {
+        "fn": "parse_currency_code"
+      }
+    }
   },
   "4.3.2": {
     "col_name": "section_4_3_2",
@@ -379,7 +429,10 @@
       "62562,33",
       "159169,82",
       "513009,63"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_pln_value"
+    }
   },
   "4.4": {
     "col_name": "section_4_4",
@@ -409,7 +462,10 @@
       "90500000-2 - Usługi związane z odpadami",
       "71410000-5 - Usługi planowania przestrzennego",
       "64110000-0 - Usługi pocztowe"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_cpv_codes"
+    }
   },
   "4.5.4": {
     "col_name": "section_4_5_4",
@@ -419,7 +475,10 @@
       "03222000-3 - Owoce i orzechy",
       "15600000-4 - Produkty przemiału ziarna, skrobi i produktów skrobiowych 15400000-2 - Oleje i tłuszcze zwierzęce lub roślinne",
       "15540000-5 - Produkty serowarskie"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_cpv_codes"
+    }
   },
   "4.5.5": {
     "col_name": "section_4_5_5",
@@ -429,7 +488,15 @@
       "60987,74                        PLN",
       "111984,60                        PLN",
       "53171,00                        PLN"
-    ]
+    ],
+    "derived_cols": {
+      "section_4_5_5": {
+        "fn": "parse_pln_value"
+      },
+      "section_4_5_5_currency": {
+        "fn": "parse_currency_code"
+      }
+    }
   },
   "5.1": {
     "col_name": "section_5_1",
@@ -449,7 +516,10 @@
       "art. 255 pkt 2 ustawy",
       "art. 255 pkt 1 ustawy",
       "art. 255 pkt 3 ustawy"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_list_from_newlines"
+    }
   },
   "5.2.1": {
     "col_name": "section_5_2_1",
@@ -469,7 +539,10 @@
       "1",
       "4",
       "2"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_int_from_text"
+    }
   },
   "6.1.1": {
     "col_name": "section_6_1_1",
@@ -479,7 +552,10 @@
       "0",
       "1",
       "7"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_int_from_text"
+    }
   },
   "6.1.2": {
     "col_name": "section_6_1_2",
@@ -489,7 +565,10 @@
       "1",
       "0",
       "3"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_int_from_text"
+    }
   },
   "6.1.3": {
     "col_name": "section_6_1_3",
@@ -499,7 +578,10 @@
       "1",
       "0",
       "4"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_int_from_text"
+    }
   },
   "6.1.4": {
     "col_name": "section_6_1_4",
@@ -509,7 +591,10 @@
       "0",
       "1",
       "2"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_int_from_text"
+    }
   },
   "6.1.5": {
     "col_name": "section_6_1_5",
@@ -519,7 +604,10 @@
       "0",
       "2",
       "1"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_int_from_text"
+    }
   },
   "6.1.6": {
     "col_name": "section_6_1_6",
@@ -529,7 +617,10 @@
       "0",
       "1",
       "2"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_int_from_text"
+    }
   },
   "6.1.7": {
     "col_name": "section_6_1_7",
@@ -539,7 +630,10 @@
       "0",
       "1",
       "2"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_int_from_text"
+    }
   },
   "6.2": {
     "col_name": "section_6_2",
@@ -549,7 +643,15 @@
       "643946,72 PLN",
       "364000,00 PLN",
       "192976,04 PLN"
-    ]
+    ],
+    "derived_cols": {
+      "section_6_2": {
+        "fn": "parse_pln_value"
+      },
+      "section_6_2_currency": {
+        "fn": "parse_currency_code"
+      }
+    }
   },
   "6.3": {
     "col_name": "section_6_3",
@@ -559,7 +661,15 @@
       "643946,72 PLN",
       "364000,00 PLN",
       "192976,04 PLN"
-    ]
+    ],
+    "derived_cols": {
+      "section_6_3": {
+        "fn": "parse_pln_value"
+      },
+      "section_6_3_currency": {
+        "fn": "parse_currency_code"
+      }
+    }
   },
   "6.4": {
     "col_name": "section_6_4",
@@ -569,7 +679,15 @@
       "643946,72 PLN",
       "364000,00 PLN",
       "192976,04 PLN"
-    ]
+    ],
+    "derived_cols": {
+      "section_6_4": {
+        "fn": "parse_pln_value"
+      },
+      "section_6_4_currency": {
+        "fn": "parse_currency_code"
+      }
+    }
   },
   "6.5": {
     "col_name": "section_6_5",
@@ -578,7 +696,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "6.6": {
     "col_name": "section_6_6",
@@ -587,7 +708,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "6.7": {
     "col_name": "section_6_7",
@@ -606,7 +730,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "7.2": {
     "col_name": "section_7_2",
@@ -636,7 +763,15 @@
       "9112008135",
       "5751762894",
       "5250007313"
-    ]
+    ],
+    "derived_cols": {
+      "section_7_3_2": {
+        "fn": "parse_national_id_value"
+      },
+      "section_7_3_2_type": {
+        "fn": "parse_national_id_type"
+      }
+    }
   },
   "7.3.3": {
     "col_name": "section_7_3_3",
@@ -695,7 +830,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "7.3.9": {
     "col_name": "section_7_3_9",
@@ -714,7 +852,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "7.4.1": {
     "col_name": "section_7_4_1",
@@ -734,7 +875,10 @@
       "2024-12-27",
       "2024-12-09",
       "2024-12-19"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_date_from_text"
+    }
   },
   "8.2": {
     "col_name": "section_8_2",
@@ -744,7 +888,15 @@
       "643946,72 PLN",
       "364000,00 PLN",
       "192976,04 PLN"
-    ]
+    ],
+    "derived_cols": {
+      "section_8_2": {
+        "fn": "parse_pln_value"
+      },
+      "section_8_2_currency": {
+        "fn": "parse_currency_code"
+      }
+    }
   },
   "8.3": {
     "col_name": "section_8_3",
@@ -754,7 +906,15 @@
       "12 miesiące",
       "14 miesiące",
       "10 miesiące"
-    ]
+    ],
+    "derived_cols": {
+      "section_8_3_end_date": {
+        "fn": "parse_duration_end_date"
+      },
+      "section_8_3_days": {
+        "fn": "parse_duration_days_from_range"
+      }
+    }
   },
   "8.4": {
     "col_name": "section_8_4",

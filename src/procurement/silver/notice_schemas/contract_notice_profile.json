@@ -37,7 +37,15 @@
       "REGON 292442065",
       "REGON 000311450",
       "REGON 000325073"
-    ]
+    ],
+    "derived_cols": {
+      "section_1_4": {
+        "fn": "parse_national_id_value"
+      },
+      "section_1_4_type": {
+        "fn": "parse_national_id_type"
+      }
+    }
   },
   "1.5.1": {
     "col_name": "section_1_5_1",
@@ -95,7 +103,15 @@
       "PL722 - Sandomiersko-jędrzejowski",
       "PL22A - Katowicki",
       "PL514 - Miasto Wrocław"
-    ]
+    ],
+    "derived_cols": {
+      "section_1_5_6_code": {
+        "fn": "parse_nuts3_code"
+      },
+      "section_1_5_6_name": {
+        "fn": "parse_nuts3_name"
+      }
+    }
   },
   "1.5.7": {
     "col_name": "section_1_5_7",
@@ -185,7 +201,15 @@
       "870315750",
       "021916234",
       "REGON 000650614"
-    ]
+    ],
+    "derived_cols": {
+      "section_1_11_2": {
+        "fn": "parse_national_id_value"
+      },
+      "section_1_11_2_type": {
+        "fn": "parse_national_id_type"
+      }
+    }
   },
   "1.11.3": {
     "col_name": "section_1_11_3",
@@ -243,7 +267,15 @@
       "PL613 - Bydgosko-toruński",
       "PL514 - Miasto Wrocław",
       "PL823 - Rzeszowski"
-    ]
+    ],
+    "derived_cols": {
+      "section_1_11_8_code": {
+        "fn": "parse_nuts3_code"
+      },
+      "section_1_11_8_name": {
+        "fn": "parse_nuts3_name"
+      }
+    }
   },
   "1.11.9": {
     "col_name": "section_1_11_9",
@@ -301,7 +333,10 @@
     "example_values": [
       "Tak",
       "Nie"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "2.3": {
     "col_name": "section_2_3",
@@ -349,7 +384,10 @@
       "2025-01-02",
       "2025-01-03",
       "2025-01-04"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_date_from_text"
+    }
   },
   "2.8": {
     "col_name": "section_2_8",
@@ -358,7 +396,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "2.9": {
     "col_name": "section_2_9",
@@ -387,7 +428,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "2.12": {
     "col_name": "section_2_12",
@@ -397,7 +441,10 @@
       "art. 94 ust. 1 pkt 1) ustawy art. 94 ust. 1 pkt 2) ustawy art. 94 ust. 1 pkt 3) ustawy art. 94 ust. 1 pkt 4) ustawy art. 94 ust. 1 pkt 5) ustawy art. 94 ust. 1 pkt 6) ustawy art. 94 ust. 1 pkt 7) ustawy art. 94 ust. 1 pkt 8) ustawy art. 94 ust. 1 pkt 9) ustawy art. 94 ust. 1 pkt 10) ustawy",
       "art. 94 ust. 1 pkt 1) ustawy",
       "art. 94 ust. 1 pkt 1) ustawy art. 94 ust. 1 pkt 2) ustawy art. 94 ust. 1 pkt 3) ustawy art. 94 ust. 1 pkt 4) ustawy art. 94 ust. 1 pkt 7) ustawy art. 94 ust. 1 pkt 8) ustawy art. 94 ust. 1 pkt 9) ustawy art. 94 ust. 1 pkt 10) ustawy"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_list_from_newlines"
+    }
   },
   "2.13": {
     "col_name": "section_2_13",
@@ -406,7 +453,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "2.14": {
     "col_name": "section_2_14",
@@ -415,7 +465,10 @@
     "example_values": [
       "Tak",
       "Nie"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "2.15": {
     "col_name": "section_2_15",
@@ -463,7 +516,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "3.3": {
     "col_name": "section_3_3",
@@ -482,7 +538,10 @@
     "example_values": [
       "Tak",
       "Nie"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "3.5": {
     "col_name": "section_3_5",
@@ -521,7 +580,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "3.9": {
     "col_name": "section_3_9",
@@ -597,7 +659,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "4.1.2": {
     "col_name": "section_4_1_2",
@@ -626,7 +691,10 @@
     "example_values": [
       "Tak",
       "Nie"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "4.1.5": {
     "col_name": "section_4_1_5",
@@ -636,7 +704,15 @@
       "538943,00                    PLN",
       "179695,01                    PLN",
       "141872,82                    PLN"
-    ]
+    ],
+    "derived_cols": {
+      "section_4_1_5": {
+        "fn": "parse_pln_value"
+      },
+      "section_4_1_5_currency": {
+        "fn": "parse_currency_code"
+      }
+    }
   },
   "4.1.6": {
     "col_name": "section_4_1_6",
@@ -646,7 +722,15 @@
       "438165,04                PLN",
       "16397                PLN",
       "22665,51                PLN"
-    ]
+    ],
+    "derived_cols": {
+      "section_4_1_6": {
+        "fn": "parse_pln_value"
+      },
+      "section_4_1_6_currency": {
+        "fn": "parse_currency_code"
+      }
+    }
   },
   "4.1.7": {
     "col_name": "section_4_1_7",
@@ -654,7 +738,15 @@
     "data_model": "core",
     "example_values": [
       "208705,53                PLN"
-    ]
+    ],
+    "derived_cols": {
+      "section_4_1_7": {
+        "fn": "parse_pln_value"
+      },
+      "section_4_1_7_currency": {
+        "fn": "parse_currency_code"
+      }
+    }
   },
   "4.1.8": {
     "col_name": "section_4_1_8",
@@ -663,7 +755,10 @@
     "example_values": [
       "Tak",
       "Nie"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "4.1.9": {
     "col_name": "section_4_1_9",
@@ -673,7 +768,10 @@
       "59",
       "2",
       "4"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_int_from_text"
+    }
   },
   "4.1.11": {
     "col_name": "section_4_1_11",
@@ -682,7 +780,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "4.1.12": {
     "col_name": "section_4_1_12",
@@ -692,7 +793,10 @@
       "3",
       "2",
       "1"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_int_from_text"
+    }
   },
   "4.1.13": {
     "col_name": "section_4_1_13",
@@ -701,7 +805,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "4.1.14": {
     "col_name": "section_4_1_14",
@@ -730,7 +837,10 @@
     "example_values": [
       "nie",
       "Nie"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "4.2.5": {
     "col_name": "section_4_2_5",
@@ -740,7 +850,15 @@
       "25854,00                        PLN",
       "149268,00                        PLN",
       "52747,47                        PLN"
-    ]
+    ],
+    "derived_cols": {
+      "section_4_2_5": {
+        "fn": "parse_pln_value"
+      },
+      "section_4_2_5_currency": {
+        "fn": "parse_currency_code"
+      }
+    }
   },
   "4.2.6": {
     "col_name": "section_4_2_6",
@@ -750,7 +868,10 @@
       "80000000-4 - Usługi edukacyjne i szkoleniowe",
       "90524000-6 - Usługi w zakresie odpadów medycznych",
       "55322000-3 - Usługi gotowania posiłków"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_cpv_codes"
+    }
   },
   "4.2.7": {
     "col_name": "section_4_2_7",
@@ -760,7 +881,10 @@
       "80500000-9 - Usługi szkoleniowe",
       "80530000-8 - Usługi szkolenia zawodowego",
       "80510000-2 - Usługi szkolenia specjalistycznego"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_cpv_codes"
+    }
   },
   "4.2.8": {
     "col_name": "section_4_2_8",
@@ -769,7 +893,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "4.2.9": {
     "col_name": "section_4_2_9",
@@ -789,7 +916,15 @@
       "do 2025-12-31",
       "do 2026-04-30",
       "od 2026-01-01 do 2026-04-30"
-    ]
+    ],
+    "derived_cols": {
+      "section_4_2_10_end_date": {
+        "fn": "parse_duration_end_date"
+      },
+      "section_4_2_10_days": {
+        "fn": "parse_duration_days_from_range"
+      }
+    }
   },
   "4.2.11": {
     "col_name": "section_4_2_11",
@@ -798,7 +933,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "4.2.12": {
     "col_name": "section_4_2_12",
@@ -817,7 +955,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "4.2.14": {
     "col_name": "section_4_2_14",
@@ -887,7 +1028,10 @@
       "60",
       "40",
       "100"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_criterion_weight"
+    }
   },
   "4.3.7": {
     "col_name": "section_4_3_7",
@@ -897,7 +1041,10 @@
       "1",
       "100",
       "60"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_int_from_text"
+    }
   },
   "4.3.10": {
     "col_name": "section_4_3_10",
@@ -906,7 +1053,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "4.3.11": {
     "col_name": "section_4_3_11",
@@ -925,7 +1075,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "5.2": {
     "col_name": "section_5_2",
@@ -935,7 +1088,10 @@
       "Art. 109 ust. 1 pkt 8 Art. 109 ust. 1 pkt 10",
       "Art. 109 ust. 1 pkt 4",
       "Art. 109 ust. 1 pkt 1 Art. 109 ust. 1 pkt 4"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_list_from_newlines"
+    }
   },
   "5.3": {
     "col_name": "section_5_3",
@@ -944,7 +1100,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "5.4": {
     "col_name": "section_5_4",
@@ -963,7 +1122,10 @@
     "example_values": [
       "Tak",
       "Nie"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "5.6": {
     "col_name": "section_5_6",
@@ -1002,7 +1164,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "5.10": {
     "col_name": "section_5_10",
@@ -1031,7 +1196,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "6.2": {
     "col_name": "section_6_2",
@@ -1048,7 +1216,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "6.3.1": {
     "col_name": "section_6_3_1",
@@ -1075,7 +1246,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "6.4.1": {
     "col_name": "section_6_4_1",
@@ -1094,7 +1268,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "6.6": {
     "col_name": "section_6_6",
@@ -1113,7 +1290,10 @@
     "example_values": [
       "Tak",
       "Nie"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "7.1": {
     "col_name": "section_7_1",
@@ -1122,7 +1302,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "7.2": {
     "col_name": "section_7_2",
@@ -1141,7 +1324,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "7.4": {
     "col_name": "section_7_4",
@@ -1160,7 +1346,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "7.6": {
     "col_name": "section_7_6",
@@ -1180,7 +1369,10 @@
       "2025-01-10 23:59",
       "2025-01-10 09:00",
       "2025-01-13 09:30"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_datetime_from_text"
+    }
   },
   "8.2": {
     "col_name": "section_8_2",
@@ -1200,7 +1392,10 @@
       "2025-01-11 10:00",
       "2025-01-10 09:30",
       "2025-01-13 09:35"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_datetime_from_text"
+    }
   },
   "8.4": {
     "col_name": "section_8_4",
@@ -1210,7 +1405,10 @@
       "30 dni",
       "do 2025-02-08",
       "do 2025-02-03"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_duration_end_date"
+    }
   },
   "8.5": {
     "col_name": "section_8_5",
@@ -1230,7 +1428,10 @@
       "3",
       "1",
       "5"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_int_from_text"
+    }
   },
   "8.7": {
     "col_name": "section_8_7",
@@ -1249,7 +1450,10 @@
     "example_values": [
       "2025-01-28 09:00",
       "2025-01-16 12:00"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_datetime_from_text"
+    }
   },
   "8.10": {
     "col_name": "section_8_10",
@@ -1267,7 +1471,10 @@
     "example_values": [
       "2025-01-28 10:00",
       "2025-01-17 12:00"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_datetime_from_text"
+    }
   },
   "8.18": {
     "col_name": "section_8_18",
@@ -1275,7 +1482,10 @@
     "data_model": "core",
     "example_values": [
       "Nie"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "8.19": {
     "col_name": "section_8_19",
@@ -1293,7 +1503,10 @@
     "example_values": [
       "Tak",
       "Nie"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "8.21": {
     "col_name": "section_8_21",
@@ -1303,7 +1516,10 @@
       "5",
       "3",
       "1"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_int_from_text"
+    }
   },
   "8.22": {
     "col_name": "section_8_22",

@@ -23,10 +23,13 @@ from procurement.silver.section_value_parsers.common import (
     _parse_tak_nie,
     compute_contract_end_date,
     compute_duration_days,
+    parse_list_from_newlines,
     parse_cpv_codes,
     parse_currency_code,
     parse_date_from_text,
     parse_datetime_from_text,
+    parse_duration_days_from_range,
+    parse_duration_end_date,
     parse_int_from_text,
     parse_national_id_type,
     parse_national_id_value,
@@ -51,6 +54,9 @@ COMMON_PARSERS: dict[str, tuple] = {
     "parse_nuts3_name": (parse_nuts3_name, StringType()),
     "parse_national_id_value": (parse_national_id_value, StringType()),
     "parse_national_id_type": (parse_national_id_type, StringType()),
+    "parse_list_from_newlines": (parse_list_from_newlines, ArrayType(StringType())),
+    "parse_duration_days_from_range": (parse_duration_days_from_range, IntegerType()),
+    "parse_duration_end_date": (parse_duration_end_date, StringType()),
 }
 
 # ---------------------------------------------------------------------------

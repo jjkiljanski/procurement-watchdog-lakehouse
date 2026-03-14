@@ -27,7 +27,15 @@
       "REGON 110197411",
       "REGON 491893180",
       "REGON 611015997"
-    ]
+    ],
+    "derived_cols": {
+      "section_1_3": {
+        "fn": "parse_national_id_value"
+      },
+      "section_1_3_type": {
+        "fn": "parse_national_id_type"
+      }
+    }
   },
   "1.4.1": {
     "col_name": "section_1_4_1",
@@ -87,7 +95,15 @@
       "PL811 - Bialski",
       "PL218 - Nowosądecki",
       "PL923 - Płocki"
-    ]
+    ],
+    "derived_cols": {
+      "section_1_4_6_code": {
+        "fn": "parse_nuts3_code"
+      },
+      "section_1_4_6_name": {
+        "fn": "parse_nuts3_name"
+      }
+    }
   },
   "1.4.7": {
     "col_name": "section_1_4_7",
@@ -175,7 +191,10 @@
       "2025-01-01",
       "2025-01-02",
       "2025-01-03"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_date_from_text"
+    }
   },
   "3.1": {
     "col_name": "section_3_1",
@@ -194,7 +213,10 @@
     "example_values": [
       "Tak",
       "Nie"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "3.2.1": {
     "col_name": "section_3_2_1",
@@ -213,7 +235,10 @@
     "example_values": [
       "Nie",
       "Tak"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "3.4": {
     "col_name": "section_3_4",
@@ -273,7 +298,10 @@
       "33112200-0 - Aparaty ultrasonograficzne",
       "09132100-4 - Benzyna bezołowiowa",
       "09120000-6 - Paliwa gazowe"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_cpv_codes"
+    }
   },
   "3.10": {
     "col_name": "section_3_10",
@@ -283,7 +311,10 @@
       "34928510-6 - Uliczne słupy oświetleniowe",
       "45316110-9 - Instalowanie urządzeń oświetlenia drogowego",
       "45400000-1 - Roboty wykończeniowe w zakresie obiektów budowlanych 45111300-1 - Roboty rozbiórkowe 45300000-0 - Roboty instalacyjne w budynkach"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_cpv_codes"
+    }
   },
   "4.1": {
     "col_name": "section_4_1",
@@ -293,7 +324,10 @@
       "2024-11-19",
       "2024-01-02",
       "2024-12-11"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_date_from_text"
+    }
   },
   "4.2": {
     "col_name": "section_4_2",
@@ -303,7 +337,10 @@
       "do 2024-12-19",
       "do 2024-12-31",
       "do 2024-12-20"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_duration_end_date"
+    }
   },
   "4.3": {
     "col_name": "section_4_3",
@@ -331,7 +368,15 @@
       "5211004948",
       "REGON 147026712",
       "REGON 492004399"
-    ]
+    ],
+    "derived_cols": {
+      "section_4_3_2": {
+        "fn": "parse_national_id_value"
+      },
+      "section_4_3_2_type": {
+        "fn": "parse_national_id_type"
+      }
+    }
   },
   "4.3.3": {
     "col_name": "section_4_3_3",
@@ -391,7 +436,15 @@
       "278100                PLN",
       "24720,00                        PLN",
       "956,34                        PLN"
-    ]
+    ],
+    "derived_cols": {
+      "section_4_4": {
+        "fn": "parse_pln_value"
+      },
+      "section_4_4_currency": {
+        "fn": "parse_currency_code"
+      }
+    }
   },
   "4.5": {
     "col_name": "section_4_5",
@@ -410,7 +463,10 @@
     "example_values": [
       "Tak",
       "Nie"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "5.2": {
     "col_name": "section_5_2",
@@ -420,7 +476,10 @@
       "2024-12-09",
       "2024-11-29",
       "2024-12-20"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_date_from_text"
+    }
   },
   "5.3": {
     "col_name": "section_5_3",
@@ -429,7 +488,10 @@
     "example_values": [
       "Tak",
       "Nie"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "5.4.1": {
     "col_name": "section_5_4_1",
@@ -439,7 +501,10 @@
       "0",
       "2",
       "1"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_int_from_text"
+    }
   },
   "5.4.2": {
     "col_name": "section_5_4_2",
@@ -459,7 +524,10 @@
       "art. 455 ust. 1 pkt 3 ustawy",
       "art. 455 ust. 1 pkt 1 ustawy",
       "art. 455 ust. 1 pkt 4 ustawy"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_list_from_newlines"
+    }
   },
   "5.4.4": {
     "col_name": "section_5_4_4",
@@ -489,7 +557,10 @@
       "97628,86",
       "8194,46",
       "269295,61"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_pln_value"
+    }
   },
   "5.4.7": {
     "col_name": "section_5_4_7",
@@ -497,7 +568,10 @@
     "data_model": "change_matter",
     "example_values": [
       "PLN"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_currency_code"
+    }
   },
   "5.4.8": {
     "col_name": "section_5_4_8",
@@ -506,7 +580,10 @@
     "example_values": [
       "Tak",
       "Nie"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "5.5": {
     "col_name": "section_5_5",
@@ -516,7 +593,15 @@
       "278100                PLN",
       "43239,39                PLN",
       "1707,75                PLN"
-    ]
+    ],
+    "derived_cols": {
+      "section_5_5": {
+        "fn": "parse_pln_value"
+      },
+      "section_5_5_currency": {
+        "fn": "parse_currency_code"
+      }
+    }
   },
   "5.6": {
     "col_name": "section_5_6",
@@ -525,7 +610,10 @@
     "example_values": [
       "Tak",
       "Nie"
-    ]
+    ],
+    "parser": {
+      "fn": "parse_tak_nie"
+    }
   },
   "5.7": {
     "col_name": "section_5_7",

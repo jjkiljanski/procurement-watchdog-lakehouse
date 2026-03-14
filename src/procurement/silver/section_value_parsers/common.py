@@ -47,13 +47,13 @@ def _extract_currency(soup: BeautifulSoup, field_num: str) -> str:
 
 
 def _parse_tak_nie(raw: str | None) -> bool | None:
-    """Parse a Polish 'Tak'/'Nie' value into a boolean."""
+    """Parse a Polish 'Tak'/'Nie' value into a boolean (case-insensitive)."""
     if raw is None:
         return None
-    cleaned = raw.strip()
-    if cleaned == "Tak":
+    cleaned = raw.strip().lower()
+    if cleaned == "tak":
         return True
-    if cleaned == "Nie":
+    if cleaned == "nie":
         return False
     return None
 
@@ -501,3 +501,55 @@ def parse_int_from_text(raw: str | None) -> int | None:
         return int(m.group(0))
     except ValueError:
         return None
+
+
+def parse_duration_days_from_range(raw: str | None) -> int | None:
+    """Return duration in days from an explicit date-range string.
+
+    Only handles "od YYYY-MM-DD do YYYY-MM-DD" patterns; returns None for
+    relative durations (months/years/days/weeks) that require a start date.
+    """
+    if not raw:
+        return None
+    kind, value = _parse_raw_duration(raw)
+    if kind != "date_range":
+        return None
+    try:
+        range_start, range_end = value
+        return (date.fromisoformat(range_end) - date.fromisoformat(range_start)).days
+    except (ValueError, TypeError):
+        return None
+
+
+def parse_list_from_newlines(raw: str | None) -> list[str] | None:
+    """Split a multi-line string into a list, dropping blank lines.
+
+    Intended for fields where each entry occupies its own line in the source
+    HTML (e.g. exclusion-ground article references, document lists).
+
+    Input:  "Art. 32 ust. 1 pkt 1 lit. a)\nArt. 32 ust. 1 pkt 2"
+    Output: ["Art. 32 ust. 1 pkt 1 lit. a)", "Art. 32 ust. 1 pkt 2"]
+    """
+    if not raw:
+        return None
+    parts = [p.strip() for p in raw.splitlines() if p.strip()]
+    return parts if parts else None
+
+
+def parse_duration_end_date(raw: str | None) -> str | None:
+    """Extract concession end date from a duration string.
+
+    Handles:
+    - "od YYYY-MM-DD do YYYY-MM-DD" → returns the end date
+    - "do YYYY-MM-DD" → returns the end date
+    Returns None for relative durations (months/years/days/weeks) that would
+    need a start date to resolve.
+    """
+    if not raw:
+        return None
+    kind, value = _parse_raw_duration(raw)
+    if kind == "date_range":
+        return str(value[1])
+    if kind == "end_date":
+        return str(value)
+    return None
