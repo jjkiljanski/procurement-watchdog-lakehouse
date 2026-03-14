@@ -33,6 +33,7 @@ from procurement.silver.section_value_parsers.common import (
     parse_date_from_text,
     parse_datetime_from_text,
     parse_int_from_text,
+    parse_list_from_newlines,
     parse_national_id_type,
     parse_national_id_value,
     parse_nuts3_code,
@@ -121,14 +122,53 @@ class TestParseTakNie:
     def test_empty_string_returns_none(self):
         assert _parse_tak_nie("") is None
 
-    def test_case_sensitive_lowercase_returns_none(self):
-        # Values in BZP HTML are title-cased; lowercase should not match
-        assert _parse_tak_nie("tak") is None
-        assert _parse_tak_nie("nie") is None
+    def test_case_insensitive_lowercase(self):
+        assert _parse_tak_nie("tak") is True
+        assert _parse_tak_nie("nie") is False
+
+    def test_case_insensitive_uppercase(self):
+        assert _parse_tak_nie("TAK") is True
+        assert _parse_tak_nie("NIE") is False
 
     def test_whitespace_stripped(self):
         assert _parse_tak_nie("  Tak  ") is True
         assert _parse_tak_nie("  Nie  ") is False
+
+
+# ===========================================================================
+# parse_list_from_newlines
+# ===========================================================================
+
+
+class TestParseListFromNewlines:
+    def test_two_lines(self):
+        assert parse_list_from_newlines("Art. 32 ust. 1 pkt 1\nArt. 32 ust. 1 pkt 2") == [
+            "Art. 32 ust. 1 pkt 1",
+            "Art. 32 ust. 1 pkt 2",
+        ]
+
+    def test_blank_lines_dropped(self):
+        assert parse_list_from_newlines("a\n\nb\n\nc") == ["a", "b", "c"]
+
+    def test_entries_stripped(self):
+        assert parse_list_from_newlines("  foo  \n  bar  ") == ["foo", "bar"]
+
+    def test_crlf_line_endings(self):
+        assert parse_list_from_newlines("a\r\nb\r\nc") == ["a", "b", "c"]
+
+    def test_single_line_returns_single_element_list(self):
+        assert parse_list_from_newlines("art. 455 ust. 1 pkt 3 ustawy") == [
+            "art. 455 ust. 1 pkt 3 ustawy"
+        ]
+
+    def test_whitespace_only_returns_none(self):
+        assert parse_list_from_newlines("   \n   \n   ") is None
+
+    def test_empty_string_returns_none(self):
+        assert parse_list_from_newlines("") is None
+
+    def test_none_returns_none(self):
+        assert parse_list_from_newlines(None) is None
 
 
 # ===========================================================================
