@@ -229,6 +229,55 @@ def build_section_tables(
     return result, df_with_sections
 
 
+def detect_unknown_section_quarantine(
+    sections_df: "DataFrame | None",
+    notice_type: str | None,
+) -> "DataFrame | None":
+    """Return a quarantine DataFrame for rows that contain section numbers absent from the profile.
+
+    Uses the ``_unknown_sections`` list embedded in the sections JSON by
+    :func:`~procurement.silver.section_pipeline.raw_section_extractor.build_notice_sections_model`.
+
+    Returns ``None`` when ``sections_df`` is ``None`` (no sections were parsed).
+    Returns a (possibly empty) DataFrame otherwise — write it only when non-empty
+    to avoid creating empty Parquet files.
+    """
+    if sections_df is None or notice_type is None:
+        return None
+
+    from pyspark.sql.functions import array_size, from_json, transform
+    from pyspark.sql.functions import concat as spark_concat
+    from pyspark.sql.types import ArrayType, StringType
+
+    _unknown_schema = ArrayType(StringType())
+    df_with_unknown = sections_df.withColumn(
+        "_unknown_sections",
+        from_json(get_json_object(col("_sections_json"), "$._unknown_sections"), _unknown_schema),
+    )
+    quarantine = (
+        df_with_unknown
+        .filter(
+            col("_unknown_sections").isNotNull()
+            & (array_size(col("_unknown_sections")) > 0)
+        )
+        .select(
+            col("objectId"),
+            col("publicationDateDay"),
+            lit(notice_type).alias("notice_type"),
+            lit("unknown").alias("data_model"),
+            transform(
+                col("_unknown_sections"),
+                lambda s: spark_concat(lit("unknown section: "), s),
+            ).alias("_parse_errors"),
+        )
+    )
+    log.debug(
+        "detect_unknown_section_quarantine built quarantine plan notice_type=%s",
+        notice_type,
+    )
+    return quarantine
+
+
 def _collect_model_strict_parsers(
     profile: dict,
     model: str,

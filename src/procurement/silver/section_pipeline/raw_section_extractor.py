@@ -142,6 +142,7 @@ def build_notice_sections_model(soup, notice_type: str | None, notice_dicts: dic
     model_values: dict[str, object] = {"core": {}}
     current_index: dict[str, int] = {}
     last_section_by_model: dict[str, tuple[int, ...]] = {}
+    unknown_sections: list[str] = []
 
     for h3 in soup.find_all("h3"):
         section_number = extract_contract_notice_section_number(h3.get_text(separator=" ", strip=True))
@@ -153,6 +154,7 @@ def build_notice_sections_model(soup, notice_type: str | None, notice_dicts: dic
         section_cfg = notice_sections.get(section_number)
         section_model = section_cfg.get("data_model") if section_cfg else None
         if section_model is None:
+            unknown_sections.append(section_number)
             continue
         section_key = section_number_key(section_number)
         field_name = section_to_field_name(section_number)
@@ -207,5 +209,8 @@ def build_notice_sections_model(soup, notice_type: str | None, notice_dicts: dic
             if field_name not in child_slot:
                 child_slot[field_name] = value
         last_section_by_model[model_path] = section_key
+
+    if unknown_sections:
+        model_values["_unknown_sections"] = sorted(set(unknown_sections))
 
     return model_values

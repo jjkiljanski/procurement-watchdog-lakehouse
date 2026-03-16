@@ -156,7 +156,7 @@ class TestMakeHtmlSectionsUdf:
         assert result is None
 
     def test_unregistered_notice_type_returns_empty_core(self, spark):
-        """Unknown notice type → profile is {} → no sections matched → {"core": {}}."""
+        """Unknown notice type → profile is {} → no sections matched → empty core dict."""
         udf = make_html_sections_udf(_ALL_PROFILES)
         df = _make_df(spark, [("obj1", "2025-01-01", _html(("1.1", "val")))])
         from pyspark.sql.functions import col, lit
@@ -164,7 +164,9 @@ class TestMakeHtmlSectionsUdf:
             "sections", udf(col("htmlBody"), lit("UnknownNotice"))
         ).collect()[0]["sections"]
         parsed = json.loads(result)
-        assert parsed == {"core": {}}
+        assert parsed["core"] == {}
+        # Sections present in HTML but absent from profile appear in _unknown_sections
+        assert "1.1" in parsed.get("_unknown_sections", [])
 
     def test_multiple_rows_processed_independently(self, spark):
         udf = make_html_sections_udf(_ALL_PROFILES)
@@ -388,6 +390,89 @@ class TestBuildSectionTablesMultipleModels:
 
     def test_two_models_returned(self):
         assert len(self._tables) == 2
+
+
+# ===========================================================================
+# detect_unknown_section_quarantine
+# ===========================================================================
+
+
+class TestDetectUnknownSectionQuarantine:
+    """detect_unknown_section_quarantine — quarantines rows with unknown sections."""
+
+    def test_none_sections_df_returns_none(self):
+        from procurement.silver.section_pipeline.spark_table_builder import detect_unknown_section_quarantine
+        assert detect_unknown_section_quarantine(None, "ContractNotice") is None
+
+    def test_none_notice_type_returns_none(self, spark):
+        from procurement.silver.section_pipeline.spark_table_builder import detect_unknown_section_quarantine
+        from pyspark.sql.types import StringType, StructField, StructType
+        df = spark.createDataFrame(
+            [("obj1", "2025-01-01", '{"core": {}, "_unknown_sections": ["9.9"]}')],
+            schema=StructType([
+                StructField("objectId", StringType()),
+                StructField("publicationDateDay", StringType()),
+                StructField("_sections_json", StringType()),
+            ]),
+        )
+        assert detect_unknown_section_quarantine(df, None) is None
+
+    def test_no_unknown_sections_returns_empty_df(self, spark):
+        from procurement.silver.section_pipeline.spark_table_builder import detect_unknown_section_quarantine
+        from pyspark.sql.types import StringType, StructField, StructType
+        df = spark.createDataFrame(
+            [("obj1", "2025-01-01", '{"core": {"section_1_1": "alpha"}}')],
+            schema=StructType([
+                StructField("objectId", StringType()),
+                StructField("publicationDateDay", StringType()),
+                StructField("_sections_json", StringType()),
+            ]),
+        )
+        result = detect_unknown_section_quarantine(df, "ContractNotice")
+        assert result is not None
+        assert result.count() == 0
+
+    def test_unknown_section_row_quarantined(self, spark):
+        from procurement.silver.section_pipeline.spark_table_builder import detect_unknown_section_quarantine
+        from pyspark.sql.types import StringType, StructField, StructType
+        df = spark.createDataFrame(
+            [("obj1", "2025-01-01", '{"core": {}, "_unknown_sections": ["9.9", "8.8"]}')],
+            schema=StructType([
+                StructField("objectId", StringType()),
+                StructField("publicationDateDay", StringType()),
+                StructField("_sections_json", StringType()),
+            ]),
+        )
+        result = detect_unknown_section_quarantine(df, "ContractNotice")
+        assert result is not None
+        rows = result.collect()
+        assert len(rows) == 1
+        assert rows[0]["objectId"] == "obj1"
+        assert rows[0]["notice_type"] == "ContractNotice"
+        assert rows[0]["data_model"] == "unknown"
+        errors = rows[0]["_parse_errors"]
+        assert any("unknown section: 9.9" in e for e in errors)
+        assert any("unknown section: 8.8" in e for e in errors)
+
+    def test_only_rows_with_unknown_sections_quarantined(self, spark):
+        from procurement.silver.section_pipeline.spark_table_builder import detect_unknown_section_quarantine
+        from pyspark.sql.types import StringType, StructField, StructType
+        df = spark.createDataFrame(
+            [
+                ("obj1", "2025-01-01", '{"core": {}, "_unknown_sections": ["9.9"]}'),
+                ("obj2", "2025-01-02", '{"core": {"section_1_1": "ok"}}'),
+            ],
+            schema=StructType([
+                StructField("objectId", StringType()),
+                StructField("publicationDateDay", StringType()),
+                StructField("_sections_json", StringType()),
+            ]),
+        )
+        result = detect_unknown_section_quarantine(df, "ContractNotice")
+        assert result is not None
+        rows = result.collect()
+        assert len(rows) == 1
+        assert rows[0]["objectId"] == "obj1"
 
 
 # ===========================================================================

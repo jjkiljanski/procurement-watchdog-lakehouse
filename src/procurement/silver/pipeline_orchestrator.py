@@ -25,8 +25,8 @@ from procurement.silver.common_envelope import (
     validate_envelope_schema,
 )
 from procurement.silver.section_pipeline.notice_schema_reader import load_all_profiles
-from procurement.silver.section_pipeline.final_schema_validator import validate_section_models
-from procurement.silver.section_pipeline.spark_table_builder import apply_column_parsers, build_section_tables, make_html_sections_udf
+from procurement.silver.section_pipeline.final_schema_validator import apply_pydantic_validation, validate_section_models
+from procurement.silver.section_pipeline.spark_table_builder import apply_column_parsers, build_section_tables, detect_unknown_section_quarantine, make_html_sections_udf
 
 log = logging.getLogger(__name__)
 
@@ -304,14 +304,51 @@ def run_silver_day_core(
 
                 # --- Section tables (profile-driven) ---
                 notice_profile = all_profiles.get(notice_type or "", {})
-                section_tables, _sections_cache = build_section_tables(
-                    batch_raw,
-                    notice_type=notice_type,
-                    profile=notice_profile,
-                    sections_udf=sections_udf,
-                )
-                section_tables, quarantine_df = apply_column_parsers(section_tables, notice_profile, notice_type)
-                section_tables = validate_section_models(section_tables, notice_type)
+                all_quarantine_dfs: list = []
+
+                if notice_type is not None and not notice_profile:
+                    # Case 4: notice type has no registered profile → quarantine entire batch
+                    from pyspark.sql.functions import array
+                    log.warning(
+                        "notice_type=%s has no registered profile; quarantining %d rows",
+                        notice_type,
+                        batch_count,
+                    )
+                    all_quarantine_dfs.append(
+                        _raw_cache.select(
+                            col("objectId"),
+                            col("publicationDateDay"),
+                            lit(notice_type).alias("notice_type"),
+                            lit("unknown").alias("data_model"),
+                            array(lit(f"no registered profile for notice type: {notice_type}")).alias("_parse_errors"),
+                        )
+                    )
+                    section_tables = {}
+                else:
+                    section_tables, _sections_cache = build_section_tables(
+                        batch_raw,
+                        notice_type=notice_type,
+                        profile=notice_profile,
+                        sections_udf=sections_udf,
+                    )
+
+                    # Case 1: rows with section numbers absent from the profile
+                    c1_qdf = detect_unknown_section_quarantine(_sections_cache, notice_type)
+                    if c1_qdf is not None:
+                        all_quarantine_dfs.append(c1_qdf)
+
+                    # Case 2: strict parser failure
+                    section_tables, c2_qdf = apply_column_parsers(section_tables, notice_profile, notice_type)
+                    if c2_qdf is not None:
+                        all_quarantine_dfs.append(c2_qdf)
+
+                    # Case 3: Pydantic row-level validation
+                    section_tables, c3_qdf = apply_pydantic_validation(section_tables, notice_type)
+                    if c3_qdf is not None:
+                        all_quarantine_dfs.append(c3_qdf)
+
+                    # Driver-side schema presence check (logs warnings, no data routing)
+                    section_tables = validate_section_models(section_tables, notice_type)
 
                 def _write_section(model: str, model_df) -> None:
                     model_day_dir = (
@@ -342,8 +379,11 @@ def run_silver_day_core(
 
                 batch_profile["section_models"] = sorted(section_tables.keys())
 
-                # --- Quarantine (rows that failed strict-parser validation) ---
-                if quarantine_df is not None:
+                # --- Quarantine (cases 1–4) ---
+                if all_quarantine_dfs:
+                    quarantine_df: DataFrame | None = all_quarantine_dfs[0]
+                    for _qdf in all_quarantine_dfs[1:]:
+                        quarantine_df = quarantine_df.union(_qdf)
                     quarantine_day_dir = (
                         silver_dir
                         / "quarantine"

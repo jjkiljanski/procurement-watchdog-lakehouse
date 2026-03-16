@@ -364,14 +364,18 @@ class TestBuildNoticeSectionsModel:
             '<h3>1.1.) Label <span class="normal">Value</span></h3>'
         )
         result = build_notice_sections_model(soup, "UnknownType", {"ContractNotice": _CORE_PROFILE})
-        assert result == {"core": {}}
+        assert result["core"] == {}
+        # All sections are unknown when notice type has no registered profile
+        assert "1.1" in result.get("_unknown_sections", [])
 
     def test_none_notice_dicts_skips_all_sections(self):
         soup = _make_soup(
             '<h3>1.1.) Label <span class="normal">Value</span></h3>'
         )
         result = build_notice_sections_model(soup, "ContractNotice", None)
-        assert result == {"core": {}}
+        assert result["core"] == {}
+        # All sections are unknown when no notice dicts are provided
+        assert "1.1" in result.get("_unknown_sections", [])
 
     # --- Single-level non-core model (client) --------------------------------
 
@@ -460,3 +464,60 @@ class TestBuildNoticeSectionsModel:
         # text_after returns "Inline text value"
         result = build_notice_sections_model(soup, "CN", {"CN": profile})
         assert result["core"]["section_4_2_2"] == "Inline text value"
+
+
+class TestBuildNoticeUnknownSections:
+    """build_notice_sections_model tracks section numbers absent from the profile."""
+
+    _PROFILE = {
+        "1.1": {"col_name": "section_1_1", "data_model": "core", "section_header": "Field A"},
+    }
+
+    def _html(self, *sections: tuple[str, str]) -> str:
+        parts = [f'<h3>{num}) <span class="normal">{val}</span></h3>' for num, val in sections]
+        return "\n".join(parts)
+
+    def test_no_unknown_sections_no_key(self):
+        soup = BeautifulSoup(self._html(("1.1", "alpha")), "html.parser")
+        result = build_notice_sections_model(soup, "TestNotice", {"TestNotice": self._PROFILE})
+        assert "_unknown_sections" not in result
+
+    def test_single_unknown_section_added(self):
+        soup = BeautifulSoup(self._html(("1.1", "alpha"), ("9.9", "mystery")), "html.parser")
+        result = build_notice_sections_model(soup, "TestNotice", {"TestNotice": self._PROFILE})
+        assert "_unknown_sections" in result
+        assert "9.9" in result["_unknown_sections"]
+
+    def test_known_section_not_in_unknown_list(self):
+        soup = BeautifulSoup(self._html(("1.1", "alpha"), ("9.9", "mystery")), "html.parser")
+        result = build_notice_sections_model(soup, "TestNotice", {"TestNotice": self._PROFILE})
+        assert "1.1" not in result["_unknown_sections"]
+
+    def test_multiple_unknown_sections_sorted(self):
+        soup = BeautifulSoup(
+            self._html(("9.2", "b"), ("1.1", "alpha"), ("9.1", "a")), "html.parser"
+        )
+        result = build_notice_sections_model(soup, "TestNotice", {"TestNotice": self._PROFILE})
+        assert result["_unknown_sections"] == ["9.1", "9.2"]
+
+    def test_duplicate_unknown_section_appears_once(self):
+        soup = BeautifulSoup(self._html(("9.9", "a"), ("9.9", "b")), "html.parser")
+        result = build_notice_sections_model(soup, "TestNotice", {"TestNotice": self._PROFILE})
+        assert result["_unknown_sections"].count("9.9") == 1
+
+    def test_empty_profile_all_sections_unknown(self):
+        soup = BeautifulSoup(self._html(("1.1", "alpha"), ("2.2", "beta")), "html.parser")
+        result = build_notice_sections_model(soup, "TestNotice", {"TestNotice": {}})
+        assert set(result["_unknown_sections"]) == {"1.1", "2.2"}
+
+    def test_unknown_notice_type_all_sections_unknown(self):
+        soup = BeautifulSoup(self._html(("1.1", "alpha")), "html.parser")
+        result = build_notice_sections_model(soup, "UnknownType", {"TestNotice": self._PROFILE})
+        assert "1.1" in result["_unknown_sections"]
+
+    def test_section_without_value_not_counted(self):
+        """A section present in HTML but with no parseable value is silently ignored."""
+        html = '<h3>9.9) </h3>'  # no span.normal, no text
+        soup = BeautifulSoup(html, "html.parser")
+        result = build_notice_sections_model(soup, "TestNotice", {"TestNotice": self._PROFILE})
+        assert "_unknown_sections" not in result
