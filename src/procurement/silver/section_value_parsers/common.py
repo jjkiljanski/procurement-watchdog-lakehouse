@@ -87,8 +87,10 @@ def _parse_criterion_weight(raw: str | None) -> int | None:
         raise ParseError(f"parse_criterion_weight: invalid number string {num!r} from {raw!r}")
 
 
-def parse_cpv_codes(cpv_raw: str) -> list[str]:
+def parse_cpv_codes(cpv_raw: str | None) -> list[str]:
     """Parse cpvCode string into canonical CPV codes only."""
+    if cpv_raw is None:
+        return []
     matches = re.findall(r"\b(\d{8}-\d)\b", cpv_raw)
     if not matches:
         return []
