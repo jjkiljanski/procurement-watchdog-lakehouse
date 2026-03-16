@@ -1,16 +1,17 @@
 """Pydantic-model-based schema validation for section DataFrames.
 
-Current behaviour (silver layer, all section fields ``str | None``):
-- Driver-side schema check: imports the Pydantic model class for each
-  ``(notice_type, model)`` pair and verifies that all expected section
-  columns exist in the DataFrame.
-- DataFrames are returned unchanged; only warnings/debug logs are emitted.
+Two validation stages:
 
-Upgrade path:
-  When Gold types are introduced and column parsers are configured, this
-  step will be upgraded to row-level validation via ``mapInPandas``, where
-  each row is run through the Pydantic model and invalid rows are routed to
-  a quarantine output.
+1. Driver-side schema check (``validate_section_models``): verifies that all
+   expected section columns exist in each DataFrame; logs warnings on missing
+   columns, returns DataFrames unchanged.
+
+2. Row-level Pydantic validation (``apply_pydantic_validation``): registers a
+   UDF per ``(notice_type, model)`` pair that constructs the Pydantic model for
+   each row and collects ``ValidationError`` messages.  Rows with errors are
+   routed to the quarantine output (Case 3); valid rows continue through the
+   pipeline.  Same two-pass pattern as the Case-2 strict-parser UDF in
+   ``spark_table_builder``.
 """
 
 from __future__ import annotations
@@ -135,54 +136,47 @@ def validate_section_models(
     return section_tables
 
 
-def _make_partition_validator(model_class, payload_cols: list[str]):
-    """Return a mapInPandas-compatible validator for one (notice_type, model) pair.
+def _make_pydantic_validator_fn(model_class, payload_cols: list[str]):
+    """Return a UDF-compatible validator for one (notice_type, model) pair.
 
-    The returned function takes a pandas DataFrame partition, runs each row
-    through the Pydantic model, and appends a ``_validation_errors`` column
-    (list of error strings, empty when the row is valid).
+    The returned function takes one positional argument per payload column and
+    returns a list of error strings (empty list means the row is valid).
+    This mirrors the pattern used by :func:`_make_validator_fn` in
+    ``spark_table_builder`` for Case-2 strict-parser validation.
     """
     _cls = model_class
-    _pcols = list(payload_cols)
+    _cols = list(payload_cols)
 
-    def _validate_partition(pdf):
-        import pandas as _pd
+    def _validate(*values) -> list[str]:
         from pydantic import ValidationError as _VE
 
-        errors_list: list[list[str]] = []
-        for _, row in pdf.iterrows():
-            row_dict = {
-                c: row[c]
-                for c in _pcols
-                if c in row.index and not _pd.isna(row[c])
-            }
-            try:
-                _cls(**row_dict)
-                errors_list.append([])
-            except _VE as exc:
-                msgs = [
-                    f"{'.'.join(str(loc) for loc in e['loc'])}: {e['msg']}"
-                    for e in exc.errors()
-                ]
-                errors_list.append(msgs)
-        pdf = pdf.copy()
-        pdf["_validation_errors"] = errors_list
-        return pdf
+        row_dict = {c: v for c, v in zip(_cols, values) if v is not None}
+        try:
+            _cls(**row_dict)
+            return []
+        except _VE as exc:
+            return [
+                f"{'.'.join(str(loc) for loc in e['loc'])}: {e['msg']}"
+                for e in exc.errors()
+            ]
 
-    return _validate_partition
+    return _validate
 
 
 def apply_pydantic_validation(
     section_tables: dict[str, "DataFrame"],
     notice_type: str | None,
 ) -> "tuple[dict[str, DataFrame], DataFrame | None]":
-    """Validate section rows against their Pydantic models via mapInPandas.
+    """Validate section rows against their Pydantic models via a row-level UDF.
 
-    For each ``(notice_type, model)`` pair, runs every row through the
-    corresponding Pydantic model.  Rows that raise ``ValidationError`` are
-    routed to a quarantine DataFrame; the rest continue through the pipeline.
+    For each ``(notice_type, model)`` pair, registers a UDF that constructs the
+    Pydantic model from the row's payload columns and returns validation error
+    strings.  Rows with at least one error are routed to the quarantine
+    DataFrame; the rest continue through the pipeline.
 
-    Requires pandas and a real Spark executor (skipped in the local test env).
+    Follows the same two-pass pattern as Case-2 (``apply_column_parsers``):
+    one ``.withColumn`` call adds ``_pydantic_errors``; the quarantine and
+    valid DataFrames are then split by filtering on that column.
 
     Parameters
     ----------
@@ -197,7 +191,8 @@ def apply_pydantic_validation(
     """
     from pyspark.sql import DataFrame
     from pyspark.sql.functions import col, lit, size
-    from pyspark.sql.types import ArrayType, StringType, StructField
+    from pyspark.sql.types import ArrayType, StringType
+    from pyspark.sql.functions import udf
 
     if not notice_type or not section_tables:
         return section_tables, None
@@ -219,31 +214,32 @@ def apply_pydantic_validation(
         pipeline_cols = _PIPELINE_COLS | {f"{model}_ordinal", f"{model}_items"}
         payload_cols = [c for c in df.columns if c not in pipeline_cols]
 
-        validate_partition = _make_partition_validator(model_class, payload_cols)
-        new_schema = df.schema.add(StructField("_validation_errors", ArrayType(StringType())))
+        validator_fn = _make_pydantic_validator_fn(model_class, payload_cols)
+        validator_udf = udf(validator_fn, ArrayType(StringType()))
 
-        df_validated = df.mapInPandas(validate_partition, schema=new_schema)
+        df_out = df.withColumn("_pydantic_errors", validator_udf(*[col(c) for c in payload_cols]))
 
         quarantine_dfs.append(
-            df_validated
-            .filter(size(col("_validation_errors")) > 0)
+            df_out
+            .filter(size(col("_pydantic_errors")) > 0)
             .select(
                 col("objectId"),
                 col("publicationDateDay"),
                 lit(notice_type).alias("notice_type"),
                 lit(model).alias("data_model"),
-                col("_validation_errors").alias("_parse_errors"),
+                col("_pydantic_errors").alias("_parse_errors"),
             )
         )
         result[model] = (
-            df_validated
-            .filter(size(col("_validation_errors")) == 0)
-            .drop("_validation_errors")
+            df_out
+            .filter(size(col("_pydantic_errors")) == 0)
+            .drop("_pydantic_errors")
         )
         log.debug(
-            "apply_pydantic_validation built mapInPandas plan notice_type=%s model=%s",
+            "apply_pydantic_validation registered UDF notice_type=%s model=%s cols=%d",
             notice_type,
             model,
+            len(payload_cols),
         )
 
     quarantine_df: DataFrame | None = None
