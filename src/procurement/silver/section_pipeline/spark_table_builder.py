@@ -21,12 +21,12 @@ import json
 import logging
 
 from pyspark.sql import DataFrame
-from pyspark.sql.functions import col, from_json, get_json_object, lit, posexplode
+from pyspark.sql.functions import col, from_json, get_json_object, lit, posexplode, size
 from pyspark.sql.types import ArrayType, StringType, StructField, StructType
 from pyspark.sql.functions import udf
 from pyspark.storagelevel import StorageLevel
 
-from procurement.silver.section_pipeline.parser_registry import get_computed_entry, get_parser_entry
+from procurement.silver.section_pipeline.parser_registry import get_computed_entry, get_parser_entry, STRICT_PARSER_NAMES
 from procurement.silver.section_pipeline.notice_schema_reader import (
     model_core_col_names,
     model_sub_info,
@@ -229,47 +229,162 @@ def build_section_tables(
     return result, df_with_sections
 
 
+def _collect_model_strict_parsers(
+    profile: dict,
+    model: str,
+    strict_names: frozenset[str],
+    notice_type: str | None,
+    existing_cols: set[str],
+) -> list[tuple[str, list[tuple[str, object]]]]:
+    """Return [(source_col, [(fn_name, callable), ...]), ...] for strict parsers in a model.
+
+    Covers both top-level ``"parser"`` entries and ``"derived_cols"`` entries.
+    Only includes source columns that are present in the DataFrame (``existing_cols``).
+    De-duplicates (source_col, fn_name) pairs to avoid redundant checks.
+    """
+    col_checks: dict[str, list[tuple[str, object]]] = {}
+    seen_pairs: set[tuple[str, str]] = set()
+
+    for cfg in profile.values():
+        if not isinstance(cfg, dict):
+            continue
+        dm = cfg.get("data_model", "")
+        tokens = dm.split(".")
+        top = tokens[0]
+        leaf = tokens[-1] if len(tokens) > 1 else "core"
+        if top != model or leaf != "core":
+            continue
+        col_name = cfg.get("col_name")
+        if not col_name or col_name not in existing_cols:
+            continue
+
+        # Top-level "parser" entry
+        parser = cfg.get("parser")
+        if isinstance(parser, dict):
+            fn_name = parser.get("fn")
+            if fn_name and fn_name in strict_names and (col_name, fn_name) not in seen_pairs:
+                entry = get_parser_entry(fn_name, notice_type)
+                if entry:
+                    col_checks.setdefault(col_name, []).append((fn_name, entry[0]))
+                    seen_pairs.add((col_name, fn_name))
+
+        # "derived_cols" entries — source column checked against derived strict parsers
+        derived = cfg.get("derived_cols", {})
+        if isinstance(derived, dict):
+            for _, dcfg in derived.items():
+                fn_name = dcfg.get("fn") if isinstance(dcfg, dict) else None
+                if fn_name and fn_name in strict_names and (col_name, fn_name) not in seen_pairs:
+                    entry = get_parser_entry(fn_name, notice_type)
+                    if entry:
+                        col_checks.setdefault(col_name, []).append((fn_name, entry[0]))
+                        seen_pairs.add((col_name, fn_name))
+
+    return list(col_checks.items())
+
+
+def _make_validator_fn(checks_per_col: list[list[tuple[str, object]]]):
+    """Return a callable that validates row values and collects ParseError messages.
+
+    The returned function is suitable for wrapping with ``udf(..., ArrayType(StringType()))``.
+    It takes one positional arg per source column and returns a list of error strings
+    (empty list means no errors).
+
+    cloudpickle serialises the captured ``checks_per_col`` (list of lists of callables)
+    into the UDF closure; all callables are module-level functions in common.py.
+    """
+    _checks = checks_per_col  # stable reference captured by factory
+
+    def _validate(*values) -> list[str]:
+        from procurement.silver.section_value_parsers.common import ParseError
+        errors: list[str] = []
+        for val, col_chks in zip(values, _checks):
+            if val is None:
+                continue
+            for _fn_name, fn in col_chks:
+                try:
+                    fn(val)
+                except ParseError as exc:
+                    errors.append(str(exc))
+                    break  # one error per source column is sufficient
+        return errors
+
+    return _validate
+
+
 def apply_column_parsers(
     section_tables: dict[str, DataFrame],
     profile: dict,
     notice_type: str | None,
-) -> dict[str, DataFrame]:
+) -> tuple[dict[str, DataFrame], "DataFrame | None"]:
     """Apply registered column-level parsers to section DataFrames.
 
-    For each section column that has a ``"parser"`` entry in the profile, the raw
-    StringType column is replaced with a typed column produced by the registered UDF.
-    Columns without a parser configuration remain as StringType (unchanged).
-
-    The parser function must be registered in
-    :mod:`procurement.silver.section_pipeline.parser_registry` under the given ``fn`` name.
-    Notice-type-specific parsers take precedence over common ones when names clash.
+    Strict parsers are validated before typing: a row-level UDF runs all strict
+    parser functions, catches ``ParseError``, and returns an error list.  Rows
+    with at least one error are collected into a quarantine DataFrame; the
+    remaining valid rows receive the typed column transformations.
 
     Parameters
     ----------
     section_tables:
         Output of :func:`build_section_tables`.
     profile:
-        The notice type's sections profile dict (from :func:`sections_profile.load_profile`).
+        The notice type's sections profile dict.
     notice_type:
         CamelCase notice type name (e.g. ``"ContractNotice"``).
 
     Returns
     -------
-    dict[model, DataFrame] — same keys as input; columns with configured parsers
-    now carry the parser's return type instead of StringType.
+    (valid_tables, quarantine_df) where:
+    - valid_tables: same keys as input; typed columns for sections with parsers.
+    - quarantine_df: union of quarantine rows from all models, or ``None`` when
+      no strict parsers are configured or no rows failed validation.
+      Schema: objectId, publicationDateDay, notice_type, data_model, _parse_errors.
     """
     col_parsers = section_parsers(profile)
     derived = section_derived_cols(profile)
     computed_specs = section_computed_cols(profile)
 
     if not section_tables or (not col_parsers and not derived and not computed_specs):
-        return section_tables
+        return section_tables, None
 
     result: dict[str, DataFrame] = {}
+    quarantine_dfs: list[DataFrame] = []
+
     for model, df in section_tables.items():
         df_out = df
+        df_cols = set(df.columns)
 
-        # In-place column type replacement (parser key in profile)
+        # --- Strict-parser row validation ---
+        strict_pairs = _collect_model_strict_parsers(
+            profile, model, STRICT_PARSER_NAMES, notice_type, df_cols
+        )
+        if strict_pairs:
+            col_order = [c for c, _ in strict_pairs]
+            checks_per_col = [chks for _, chks in strict_pairs]
+            validator_fn = _make_validator_fn(checks_per_col)
+            validator_udf = udf(validator_fn, ArrayType(StringType()))
+            df_out = df_out.withColumn(
+                "_parse_errors", validator_udf(*[col(c) for c in col_order])
+            )
+            quarantine_rows = df_out.filter(size(col("_parse_errors")) > 0)
+            quarantine_dfs.append(
+                quarantine_rows.select(
+                    col("objectId"),
+                    col("publicationDateDay"),
+                    lit(notice_type).alias("notice_type"),
+                    lit(model).alias("data_model"),
+                    col("_parse_errors"),
+                )
+            )
+            df_out = df_out.filter(size(col("_parse_errors")) == 0).drop("_parse_errors")
+            log.debug(
+                "Built strict-parser validator model=%s cols=%s notice_type=%s",
+                model,
+                col_order,
+                notice_type,
+            )
+
+        # --- In-place column type replacement (parser key in profile) ---
         for col_name, parser_cfg in col_parsers.items():
             if col_name not in df_out.columns:
                 continue
@@ -389,4 +504,10 @@ def apply_column_parsers(
 
         result[model] = df_out
 
-    return result
+    quarantine_df: DataFrame | None = None
+    if quarantine_dfs:
+        quarantine_df = quarantine_dfs[0]
+        for qdf in quarantine_dfs[1:]:
+            quarantine_df = quarantine_df.union(qdf)
+
+    return result, quarantine_df

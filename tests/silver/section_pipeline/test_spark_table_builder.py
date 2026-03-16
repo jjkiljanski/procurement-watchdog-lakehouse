@@ -406,13 +406,15 @@ class TestApplyColumnParsers:
             ]),
         )
         tables = {"core": df}
-        result = apply_column_parsers(tables, _CORE_PROFILE, "ContractNotice")
-        # _CORE_PROFILE has no parsers → same object returned
-        assert result is tables
+        result_tables, quarantine_df = apply_column_parsers(tables, _CORE_PROFILE, "ContractNotice")
+        # _CORE_PROFILE has no parsers → same object returned, no quarantine
+        assert result_tables is tables
+        assert quarantine_df is None
 
     def test_empty_section_tables_returns_unchanged(self, spark):
-        result = apply_column_parsers({}, _CORE_PROFILE, "ContractNotice")
-        assert result == {}
+        result_tables, quarantine_df = apply_column_parsers({}, _CORE_PROFILE, "ContractNotice")
+        assert result_tables == {}
+        assert quarantine_df is None
 
     def test_parser_converts_string_column_to_typed(self, spark):
         """parse_tak_nie parser applied → column becomes BooleanType."""
@@ -433,8 +435,8 @@ class TestApplyColumnParsers:
             },
         }
         tables = {"core": df}
-        result = apply_column_parsers(tables, profile_with_parser, "ContractNotice")
-        col_type = dict(result["core"].dtypes)["section_1_1"]
+        result_tables, quarantine_df = apply_column_parsers(tables, profile_with_parser, "ContractNotice")
+        col_type = dict(result_tables["core"].dtypes)["section_1_1"]
         assert col_type == "boolean"
 
     def test_parser_produces_correct_boolean_values(self, spark):
@@ -454,8 +456,8 @@ class TestApplyColumnParsers:
                 "parser": {"fn": "parse_tak_nie"},
             },
         }
-        result = apply_column_parsers({"core": df}, profile_with_parser, "ContractNotice")
-        rows = {r["objectId"]: r["section_1_1"] for r in result["core"].collect()}
+        result_tables, _ = apply_column_parsers({"core": df}, profile_with_parser, "ContractNotice")
+        rows = {r["objectId"]: r["section_1_1"] for r in result_tables["core"].collect()}
         assert rows["obj1"] is True
         assert rows["obj2"] is False
 
@@ -476,8 +478,8 @@ class TestApplyColumnParsers:
                 "parser": {"fn": "parse_tak_nie"},
             },
         }
-        result = apply_column_parsers({"core": df}, profile_with_parser, "ContractNotice")
-        row = result["core"].collect()[0]
+        result_tables, _ = apply_column_parsers({"core": df}, profile_with_parser, "ContractNotice")
+        row = result_tables["core"].collect()[0]
         assert row["section_1_1"] is None
 
     def test_unparsed_columns_remain_string(self, spark):
@@ -505,8 +507,8 @@ class TestApplyColumnParsers:
                 # no parser
             },
         }
-        result = apply_column_parsers({"core": df}, profile, "ContractNotice")
-        dtypes = dict(result["core"].dtypes)
+        result_tables, _ = apply_column_parsers({"core": df}, profile, "ContractNotice")
+        dtypes = dict(result_tables["core"].dtypes)
         assert dtypes["section_1_1"] == "boolean"
         assert dtypes["section_1_2"] == "string"
 
@@ -534,6 +536,6 @@ class TestApplyColumnParsers:
                 "parser": {"fn": "parse_tak_nie"},
             },
         }
-        result = apply_column_parsers({"core": df}, profile, "ContractNotice")
+        result_tables, _ = apply_column_parsers({"core": df}, profile, "ContractNotice")
         # should not raise; section_1_1 is still parsed
-        assert dict(result["core"].dtypes)["section_1_1"] == "boolean"
+        assert dict(result_tables["core"].dtypes)["section_1_1"] == "boolean"

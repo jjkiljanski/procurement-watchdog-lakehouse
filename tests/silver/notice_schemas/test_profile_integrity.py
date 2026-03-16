@@ -40,6 +40,7 @@ from procurement.silver.section_pipeline.parser_registry import (
 
 _KNOWN_DATA_MODELS: frozenset[str] = frozenset({
     "core",
+    "author",
     "client",
     "part",
     "part.core",

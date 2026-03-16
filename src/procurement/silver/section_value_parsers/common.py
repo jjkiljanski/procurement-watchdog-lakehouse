@@ -13,6 +13,10 @@ _PLN_NUM_RE = re.compile(r"([\d\s\xa0,.]+?)\s*(?:\xa0)?\s*(?:PLN|EUR|USD|GBP|CHF
 _CURRENCY_RE = re.compile(r"\b(PLN|EUR|USD|GBP|CHF)\b")
 
 
+class ParseError(ValueError):
+    """Raised when a strict parser receives a non-None, non-empty value it cannot interpret."""
+
+
 def _parse_pln_value(raw: str | None) -> float | None:
     """Parse a monetary value string into a float."""
     if raw is None:
@@ -25,7 +29,7 @@ def _parse_pln_value(raw: str | None) -> float | None:
     if match is None:
         match = re.match(r"([\d\s\xa0,.]+)", raw)
         if match is None:
-            return None
+            raise ParseError(f"parse_pln_value: could not extract numeric value from {raw!r}")
 
     num_str = match.group(1).strip()
     num_str = num_str.replace("\xa0", "").replace(" ", "")
@@ -35,7 +39,7 @@ def _parse_pln_value(raw: str | None) -> float | None:
     try:
         return float(num_str)
     except ValueError:
-        return None
+        raise ParseError(f"parse_pln_value: invalid number string {num_str!r} from {raw!r}")
 
 
 def _extract_currency(soup: BeautifulSoup, field_num: str) -> str:
@@ -51,11 +55,13 @@ def _parse_tak_nie(raw: str | None) -> bool | None:
     if raw is None:
         return None
     cleaned = raw.strip().lower()
+    if not cleaned:
+        return None
     if cleaned == "tak":
         return True
     if cleaned == "nie":
         return False
-    return None
+    raise ParseError(f"parse_tak_nie: expected 'Tak' or 'Nie', got {raw!r}")
 
 
 def _parse_criterion_weight(raw: str | None) -> int | None:
@@ -68,7 +74,7 @@ def _parse_criterion_weight(raw: str | None) -> int | None:
 
     match = re.search(r"([0-9][0-9\s.,]*)", cleaned)
     if match is None:
-        return None
+        raise ParseError(f"parse_criterion_weight: could not extract weight from {raw!r}")
 
     num = match.group(1).replace(" ", "")
     if "." in num and "," in num:
@@ -78,7 +84,7 @@ def _parse_criterion_weight(raw: str | None) -> int | None:
     try:
         return int(round(float(num)))
     except ValueError:
-        return None
+        raise ParseError(f"parse_criterion_weight: invalid number string {num!r} from {raw!r}")
 
 
 def parse_cpv_codes(cpv_raw: str) -> list[str]:
@@ -425,15 +431,23 @@ def compute_contract_end_date(
 
 def parse_nuts3_code(raw: str | None) -> str | None:
     """Extract the NUTS-3 code from 'PL21A - Oświęcimski' → 'PL21A'."""
-    if not raw or " - " not in raw:
+    if raw is None:
         return None
+    if not raw.strip():
+        return None
+    if " - " not in raw:
+        raise ParseError(f"parse_nuts3_code: expected 'CODE - Name' format, got {raw!r}")
     return raw.split(" - ", 1)[0].strip() or None
 
 
 def parse_nuts3_name(raw: str | None) -> str | None:
     """Extract the NUTS-3 region name from 'PL21A - Oświęcimski' → 'Oświęcimski'."""
-    if not raw or " - " not in raw:
+    if raw is None:
         return None
+    if not raw.strip():
+        return None
+    if " - " not in raw:
+        raise ParseError(f"parse_nuts3_name: expected 'CODE - Name' format, got {raw!r}")
     return raw.split(" - ", 1)[1].strip() or None
 
 
@@ -462,10 +476,14 @@ def parse_national_id_type(raw: str | None) -> str | None:
 
 def parse_date_from_text(raw: str | None) -> str | None:
     """Extract ISO date string (YYYY-MM-DD) from raw text."""
-    if not raw:
+    if raw is None:
+        return None
+    if not raw.strip():
         return None
     m = re.search(r"(\d{4}-\d{2}-\d{2})", raw)
-    return m.group(1) if m else None
+    if m:
+        return m.group(1)
+    raise ParseError(f"parse_date_from_text: no date (YYYY-MM-DD) found in {raw!r}")
 
 
 def parse_datetime_from_text(raw: str | None) -> str | None:
@@ -473,13 +491,17 @@ def parse_datetime_from_text(raw: str | None) -> str | None:
 
     Falls back to date-only (YYYY-MM-DD) when no time component is found.
     """
-    if not raw:
+    if raw is None:
+        return None
+    if not raw.strip():
         return None
     m = re.search(r"(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})", raw)
     if m:
         return f"{m.group(1)}T{m.group(2)}"
     m = re.search(r"(\d{4}-\d{2}-\d{2})", raw)
-    return m.group(1) if m else None
+    if m:
+        return m.group(1)
+    raise ParseError(f"parse_datetime_from_text: no date/datetime found in {raw!r}")
 
 
 def parse_currency_code(raw: str | None) -> str | None:
@@ -492,15 +514,17 @@ def parse_currency_code(raw: str | None) -> str | None:
 
 def parse_int_from_text(raw: str | None) -> int | None:
     """Extract first integer from raw text."""
-    if not raw:
+    if raw is None:
+        return None
+    if not raw.strip():
         return None
     m = re.search(r"\d+", raw)
     if not m:
-        return None
+        raise ParseError(f"parse_int_from_text: no integer found in {raw!r}")
     try:
         return int(m.group(0))
     except ValueError:
-        return None
+        raise ParseError(f"parse_int_from_text: invalid integer {m.group(0)!r} in {raw!r}")
 
 
 def parse_duration_days_from_range(raw: str | None) -> int | None:

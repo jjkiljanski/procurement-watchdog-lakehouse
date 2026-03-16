@@ -15,6 +15,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent / "src"))
 
 from procurement.silver.section_value_parsers.common import (
+    ParseError,
     _parse_criterion_weight,
     _parse_pln_value,
     _parse_raw_duration,
@@ -96,8 +97,9 @@ class TestParsePlnValue:
     def test_whitespace_only_returns_none(self):
         assert _parse_pln_value("   ") is None
 
-    def test_non_numeric_returns_none(self):
-        assert _parse_pln_value("nie dotyczy") is None
+    def test_non_numeric_raises_parse_error(self):
+        with pytest.raises(ParseError):
+            _parse_pln_value("nie dotyczy")
 
     def test_zero_value(self):
         assert _parse_pln_value("0,00 PLN") == pytest.approx(0.0)
@@ -118,8 +120,9 @@ class TestParseTakNie:
     def test_none_returns_none(self):
         assert _parse_tak_nie(None) is None
 
-    def test_unexpected_string_returns_none(self):
-        assert _parse_tak_nie("Nie dotyczy") is None
+    def test_unexpected_string_raises_parse_error(self):
+        with pytest.raises(ParseError):
+            _parse_tak_nie("Nie dotyczy")
 
     def test_empty_string_returns_none(self):
         assert _parse_tak_nie("") is None
@@ -200,8 +203,9 @@ class TestParseCriterionWeight:
     def test_whitespace_only_returns_none(self):
         assert _parse_criterion_weight("   ") is None
 
-    def test_non_numeric_returns_none(self):
-        assert _parse_criterion_weight("nie dotyczy") is None
+    def test_non_numeric_raises_parse_error(self):
+        with pytest.raises(ParseError):
+            _parse_criterion_weight("nie dotyczy")
 
     def test_rounding(self):
         # 33.33... rounds to 33; 33.5 rounds to 34
@@ -261,8 +265,9 @@ class TestParseDateFromText:
     def test_empty_returns_none(self):
         assert parse_date_from_text("") is None
 
-    def test_no_date_in_text_returns_none(self):
-        assert parse_date_from_text("brak daty") is None
+    def test_no_date_in_text_raises_parse_error(self):
+        with pytest.raises(ParseError):
+            parse_date_from_text("brak daty")
 
     def test_returns_first_date_when_multiple(self):
         assert parse_date_from_text("od 2025-01-01 do 2025-12-31") == "2025-01-01"
@@ -286,8 +291,9 @@ class TestParseIntFromText:
     def test_empty_returns_none(self):
         assert parse_int_from_text("") is None
 
-    def test_no_digit_returns_none(self):
-        assert parse_int_from_text("brak") is None
+    def test_no_digit_raises_parse_error(self):
+        with pytest.raises(ParseError):
+            parse_int_from_text("brak")
 
     def test_zero(self):
         assert parse_int_from_text("0") == 0
@@ -595,11 +601,13 @@ class TestParseNuts3:
         assert parse_nuts3_code("PL619 - Włocławski") == "PL619"
         assert parse_nuts3_name("PL619 - Włocławski") == "Włocławski"
 
-    def test_no_separator_code_returns_none(self):
-        assert parse_nuts3_code("PL619") is None
+    def test_no_separator_code_raises_parse_error(self):
+        with pytest.raises(ParseError):
+            parse_nuts3_code("PL619")
 
-    def test_no_separator_name_returns_none(self):
-        assert parse_nuts3_name("PL619") is None
+    def test_no_separator_name_raises_parse_error(self):
+        with pytest.raises(ParseError):
+            parse_nuts3_name("PL619")
 
     def test_none_code_returns_none(self):
         assert parse_nuts3_code(None) is None
@@ -814,8 +822,9 @@ class TestParseDatetimeFromText:
     def test_empty_returns_none(self):
         assert parse_datetime_from_text("") is None
 
-    def test_no_date_in_text_returns_none(self):
-        assert parse_datetime_from_text("brak daty") is None
+    def test_no_date_in_text_raises_parse_error(self):
+        with pytest.raises(ParseError):
+            parse_datetime_from_text("brak daty")
 
     def test_midnight_preserved(self):
         assert parse_datetime_from_text("2025-05-20 00:00") == "2025-05-20T00:00"

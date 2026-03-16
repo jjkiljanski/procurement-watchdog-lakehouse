@@ -310,7 +310,7 @@ def run_silver_day_core(
                     profile=notice_profile,
                     sections_udf=sections_udf,
                 )
-                section_tables = apply_column_parsers(section_tables, notice_profile, notice_type)
+                section_tables, quarantine_df = apply_column_parsers(section_tables, notice_profile, notice_type)
                 section_tables = validate_section_models(section_tables, notice_type)
 
                 def _write_section(model: str, model_df) -> None:
@@ -341,6 +341,22 @@ def run_silver_day_core(
                         _write_section(m, df)
 
                 batch_profile["section_models"] = sorted(section_tables.keys())
+
+                # --- Quarantine (rows that failed strict-parser validation) ---
+                if quarantine_df is not None:
+                    quarantine_day_dir = (
+                        silver_dir
+                        / "quarantine"
+                        / f"noticeType={notice_token}"
+                        / f"publicationDateDay={target_date}"
+                    )
+                    _safe_rmtree(quarantine_day_dir, f"quarantine noticeType={notice_token}")
+                    quarantine_df.write.mode("append").parquet(str(quarantine_day_dir))
+                    log.info(
+                        "Wrote quarantine data noticeType=%s -> %s",
+                        notice_token,
+                        quarantine_day_dir,
+                    )
 
                 # --- Common envelope (Bronze structured columns + noticeStage, no HTML) ---
                 # Write to a per-batch subdir.  Concurrent Spark jobs sharing the same

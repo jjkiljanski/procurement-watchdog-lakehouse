@@ -19,9 +19,13 @@ NOTICE_TYPE_TO_PROFILE_KEY: dict[str, str] = {
     "AgreementUpdateNotice": "agreement_update_notice",
     "CircumstancesFulfillmentNotice": "circumstances_fulfillment_notice",
     "CompetitionNotice": "competition_notice",
+    "CompetitionResultNotice": "competition_result_notice",
+    "ConcessionAgreementNotice": "concession_agreement_notice",
     "ConcessionNotice": "concession_notice",
+    "ConcessionUpdateAgreementNotice": "concession_update_agreement_notice",
     "ContractNotice": "contract_notice",
     "ContractPerformingNotice": "contract_performing_notice",
+    "NoticeUpdateConcession": "notice_update_concession",
     "NoticeUpdateNotice": "notice_update_notice",
     "SmallContractNotice": "small_contract_notice",
     "TenderResultNotice": "tender_result_notice",
@@ -31,6 +35,8 @@ NOTICE_TYPE_TO_PROFILE_KEY: dict[str, str] = {
 def load_profile(notice_type: str) -> dict:
     """Load the sections profile JSON for one notice type.
 
+    Tries ``{key}_profile.json`` first; falls back to ``{key}_profile_automatic.json``
+    for notice types whose profiles were auto-generated.
     Returns empty dict if the type is unknown or its profile file is missing.
     """
     key = NOTICE_TYPE_TO_PROFILE_KEY.get(notice_type)
@@ -38,7 +44,9 @@ def load_profile(notice_type: str) -> dict:
         return {}
     path = _PROFILES_DIR / f"{key}_profile.json"
     if not path.exists():
-        return {}
+        path = _PROFILES_DIR / f"{key}_profile_automatic.json"
+        if not path.exists():
+            return {}
     return json.loads(path.read_text(encoding="utf-8"))
 
 

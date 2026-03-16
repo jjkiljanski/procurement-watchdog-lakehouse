@@ -32,6 +32,9 @@ class NoticeUpdateConcessionCoreModel(BaseModel):
     section_3_2: str | None = None
     section_3_3: str | None = None
 
+class NoticeUpdateConcessionPartModel(BaseModel):
+    section_4_1: str | None = None
+
 class NoticeUpdateConcessionPartPartModel(BaseModel):
     section_3_4_1: str | None = None
 
