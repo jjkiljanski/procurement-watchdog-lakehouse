@@ -10,19 +10,22 @@ from __future__ import annotations
 import pytest
 
 
-def _spark_available() -> bool:
+@pytest.fixture(scope="session")
+def spark():
+    """Session-scoped SparkSession for Tier 5 integration tests.
+
+    Automatically skipped when Spark cannot execute tasks (e.g. PySpark version
+    mismatch, missing Java, or Windows environment restrictions).
+    """
     try:
         import pyspark  # noqa: F401
         import subprocess
         result = subprocess.run(["java", "-version"], capture_output=True, timeout=5)
-        return result.returncode == 0
+        if result.returncode != 0:
+            pytest.skip("Java not available")
     except Exception:
-        return False
+        pytest.skip("PySpark or Java not available")
 
-
-@pytest.fixture(scope="session")
-def spark():
-    """Session-scoped SparkSession for Tier 5 integration tests."""
     from pyspark.sql import SparkSession
 
     session = (
@@ -34,5 +37,14 @@ def spark():
         .config("spark.driver.extraJavaOptions", "-Dlog4j.logLevel=WARN")
         .getOrCreate()
     )
+    try:
+        from pyspark.sql.types import StringType, StructField, StructType
+        session.createDataFrame(
+            [("x",)],
+            schema=StructType([StructField("v", StringType())]),
+        ).collect()
+    except Exception:
+        session.stop()
+        pytest.skip("Spark cannot execute tasks in this environment")
     yield session
     session.stop()

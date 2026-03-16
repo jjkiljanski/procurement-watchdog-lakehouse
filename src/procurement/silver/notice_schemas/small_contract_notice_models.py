@@ -13,12 +13,14 @@ class SmallContractNoticeCoreModel(BaseModel):
     section_1_1: str | None = None
     section_1_2: str | None = None
     section_1_3: str | None = None
+    section_1_3_type: str | None = None
     section_1_4_1: str | None = None
     section_1_4_2: str | None = None
     section_1_4_3: str | None = None
     section_1_4_4: str | None = None
     section_1_4_5: str | None = None
-    section_1_4_6: str | None = None
+    section_1_4_6_code: str | None = None
+    section_1_4_6_name: str | None = None
     section_1_4_7: str | None = None
     section_1_4_8: str | None = None
     section_1_4_9: str | None = None

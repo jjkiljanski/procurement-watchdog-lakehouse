@@ -12,12 +12,14 @@ from pydantic import BaseModel
 class ConcessionNoticeCoreModel(BaseModel):
     section_1_1: str | None = None
     section_1_3: str | None = None
+    section_1_3_type: str | None = None
     section_1_4_1: str | None = None
     section_1_4_2: str | None = None
     section_1_4_3: str | None = None
     section_1_4_4: str | None = None
     section_1_4_5: str | None = None
-    section_1_4_6: str | None = None
+    section_1_4_6_code: str | None = None
+    section_1_4_6_name: str | None = None
     section_1_4_7: str | None = None
     section_1_4_8: str | None = None
     section_1_4_9: str | None = None
@@ -46,6 +48,7 @@ class ConcessionNoticeCoreModel(BaseModel):
     section_4_1: str | None = None
     section_4_2: str | None = None
     section_4_3: str | None = None
+    section_4_4: str | None = None
     section_4_5: str | None = None
     section_4_6: str | None = None
     section_4_7: str | None = None
@@ -54,7 +57,8 @@ class ConcessionNoticeCoreModel(BaseModel):
     section_4_10: str | None = None
     section_4_11: str | None = None
     section_4_11_1: str | None = None
-    section_4_12: str | None = None
+    section_4_12_days: str | None = None
+    section_4_12_end_date: str | None = None
     section_4_13: str | None = None
     section_5_1: str | None = None
     section_5_2: str | None = None

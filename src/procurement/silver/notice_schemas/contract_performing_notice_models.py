@@ -22,12 +22,14 @@ class ContractPerformingNoticeCoreModel(BaseModel):
     section_1_1: str | None = None
     section_1_2: str | None = None
     section_1_3: str | None = None
+    section_1_3_type: str | None = None
     section_1_4_1: str | None = None
     section_1_4_2: str | None = None
     section_1_4_3: str | None = None
     section_1_4_4: str | None = None
     section_1_4_5: str | None = None
-    section_1_4_6: str | None = None
+    section_1_4_6_code: str | None = None
+    section_1_4_6_name: str | None = None
     section_1_4_7: str | None = None
     section_1_4_8: str | None = None
     section_1_4_9: str | None = None
@@ -50,18 +52,21 @@ class ContractPerformingNoticeCoreModel(BaseModel):
     section_4_3: str | None = None
     section_4_3_1: str | None = None
     section_4_3_2: str | None = None
+    section_4_3_2_type: str | None = None
     section_4_3_3: str | None = None
     section_4_3_4: str | None = None
     section_4_3_5: str | None = None
     section_4_3_6: str | None = None
     section_4_3_7: str | None = None
     section_4_4: str | None = None
+    section_4_4_currency: str | None = None
     section_4_5: str | None = None
     section_5_1: str | None = None
     section_5_2: str | None = None
     section_5_3: str | None = None
     section_5_4_1: str | None = None
     section_5_5: str | None = None
+    section_5_5_currency: str | None = None
     section_5_6: str | None = None
     section_5_7: str | None = None
 

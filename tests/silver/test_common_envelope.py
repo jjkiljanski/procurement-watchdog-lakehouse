@@ -31,6 +31,15 @@ def spark():
         .config("spark.sql.execution.pyspark.udf.faulthandler.enabled", "true")
         .getOrCreate()
     )
+    try:
+        from pyspark.sql.types import StringType, StructField, StructType
+        session.createDataFrame(
+            [("x",)],
+            schema=StructType([StructField("v", StringType())]),
+        ).collect()
+    except Exception:
+        session.stop()
+        pytest.skip("Spark cannot execute tasks in this environment")
     yield session
     session.stop()
 

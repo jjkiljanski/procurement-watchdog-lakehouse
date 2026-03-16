@@ -13,12 +13,14 @@ class TenderResultNoticeClientModel(BaseModel):
     section_1_2: str | None = None
     section_1_3: str | None = None
     section_1_4: str | None = None
+    section_1_4_type: str | None = None
     section_1_5_1: str | None = None
     section_1_5_2: str | None = None
     section_1_5_3: str | None = None
     section_1_5_4: str | None = None
     section_1_5_5: str | None = None
-    section_1_5_6: str | None = None
+    section_1_5_6_code: str | None = None
+    section_1_5_6_name: str | None = None
     section_1_5_7: str | None = None
     section_1_5_8: str | None = None
     section_1_5_9: str | None = None
@@ -49,7 +51,9 @@ class TenderResultNoticeCoreModel(BaseModel):
     section_4_1: str | None = None
     section_4_2: str | None = None
     section_4_3: str | None = None
+    section_4_3_currency: str | None = None
     section_4_3_1: str | None = None
+    section_4_3_1_currency: str | None = None
     section_4_3_2: str | None = None
     section_4_4: str | None = None
 
@@ -58,6 +62,7 @@ class TenderResultNoticePartModel(BaseModel):
     section_4_5_3: str | None = None
     section_4_5_4: str | None = None
     section_4_5_5: str | None = None
+    section_4_5_5_currency: str | None = None
     section_5_1: str | None = None
     section_5_2: str | None = None
     section_5_2_1: str | None = None
@@ -70,8 +75,11 @@ class TenderResultNoticePartModel(BaseModel):
     section_6_1_6: str | None = None
     section_6_1_7: str | None = None
     section_6_2: str | None = None
+    section_6_2_currency: str | None = None
     section_6_3: str | None = None
+    section_6_3_currency: str | None = None
     section_6_4: str | None = None
+    section_6_4_currency: str | None = None
     section_6_5: str | None = None
     section_6_6: str | None = None
     section_6_7: str | None = None
@@ -79,6 +87,7 @@ class TenderResultNoticePartModel(BaseModel):
     section_7_2: str | None = None
     section_7_3_1: str | None = None
     section_7_3_2: str | None = None
+    section_7_3_2_type: str | None = None
     section_7_3_3: str | None = None
     section_7_3_4: str | None = None
     section_7_3_5: str | None = None
@@ -90,5 +99,7 @@ class TenderResultNoticePartModel(BaseModel):
     section_7_4_1: str | None = None
     section_8_1: str | None = None
     section_8_2: str | None = None
-    section_8_3: str | None = None
+    section_8_2_currency: str | None = None
+    section_8_3_days: str | None = None
+    section_8_3_end_date: str | None = None
     section_8_4: str | None = None
