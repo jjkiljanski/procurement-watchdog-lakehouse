@@ -26,7 +26,7 @@ sys.path.insert(0, _src)
 os.environ["PYTHONPATH"] = _src + os.pathsep + os.environ.get("PYTHONPATH", "")
 
 from procurement.bronze.models import BzpNoticeBronze, notice_record_hash
-from procurement.obs import git_commit_sha, now_utc_iso, write_dq_metrics, write_pipeline_run
+from procurement.obs import git_commit_sha, now_utc_iso, sha256_file, write_dq_metrics, write_pipeline_run
 from procurement.logging import setup_logging
 from pydantic import ValidationError
 from pyspark.sql.types import (
@@ -404,6 +404,7 @@ def main() -> None:
         status="ok" if wrote_notices else "empty",
         counts=counts,
         git_commit=git_commit_sha(),
+        script_hash=sha256_file(Path(__file__)),
     )
     if len(deduped_records) > 0:
         write_dq_metrics(

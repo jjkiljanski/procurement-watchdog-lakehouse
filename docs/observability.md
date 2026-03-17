@@ -32,7 +32,9 @@ One row per layer run. Written by each pipeline step on completion.
 | `started_at` | string | ISO 8601 UTC |
 | `completed_at` | string | ISO 8601 UTC |
 | `status` | string | `ok` / `empty` / `failed` |
-| `git_commit` | string | short SHA |
+| `git_commit` | string | short SHA from `$GIT_COMMIT` env var or `git rev-parse --short HEAD` |
+| `script_hash` | string | SHA-256 of the entry-point script file |
+| `written_at` | string | ISO 8601 UTC — when this row was written (see [Re-run semantics](#re-run-semantics)) |
 | `count_*` | int | layer-specific counts (e.g. `count_raw_total`, `count_valid_total`) |
 | `extra_json` | string | overflow JSON |
 
@@ -47,6 +49,7 @@ Tall-format (one row per metric). Written by each pipeline step + `build_obs.py`
 | `notice_type` | string | notice type or `__all__` / `__obs_snapshot__` |
 | `metric_name` | string | e.g. `valid_rate`, `nonnull_caseId` |
 | `metric_value` | float | |
+| `written_at` | string | ISO 8601 UTC |
 
 ### `quarantine_summary/`
 
@@ -57,6 +60,7 @@ One row per notice_type per day where quarantine rows were written. Written by s
 | `target_date` | string | YYYY-MM-DD |
 | `notice_type` | string | |
 | `row_count` | int | number of quarantined rows |
+| `written_at` | string | ISO 8601 UTC |
 
 ---
 
@@ -125,6 +129,62 @@ Silver runs two DQ layers:
    Quarantine rows written to `data/silver/quarantine/noticeType=<TYPE>/`.
 
 See `docs/runbooks/SILVER_QUARANTINE.md` for case details.
+
+---
+
+## Re-run semantics
+
+Obs tables are **append-only**. Re-running a pipeline day appends new rows rather than
+replacing old ones. This is intentional:
+
+- No delete-before-write means there is no gap window where a crashed re-run could leave
+  the table empty.
+- Every run is permanently recorded, giving a full audit history.
+
+The `written_at` column is the dedup key. To get the latest run per `(layer, target_date)`:
+
+```sql
+-- DuckDB / any SQL with window functions
+SELECT * FROM pipeline_runs
+QUALIFY ROW_NUMBER() OVER (
+    PARTITION BY layer, target_date
+    ORDER BY written_at DESC
+) = 1
+```
+
+For `dq_metrics`: partition by `(layer, target_date, notice_type, metric_name)`.
+For `quarantine_summary`: partition by `(target_date, notice_type)`.
+
+---
+
+## Architectural decisions
+
+**Obs tables are append-only Parquet, not a transactional store.**
+The alternative (delete-then-write per re-run) creates a gap window: if the pipeline
+crashes after deleting the old record but before writing the new one, the day goes
+unrecorded. Parquet has no transactions, so there is no safe way to close this window
+without Delta Lake or Iceberg. The append-only + `written_at` pattern avoids the problem
+entirely at zero cost — the worst case is a brief period of duplicates, which query-time
+deduplication handles.
+
+**Silver data uses Spark partition overwrite, not append.**
+Appending versioned notice records would cause significant storage bloat during
+experimentation (each re-run doubles the data for that day). Spark's partition overwrite
+is safe enough here: Spark writes output to a `_temporary/` staging directory and commits
+atomically on job success, so a crashed run leaves the old partition intact rather than
+producing a partial write. This is a different risk profile from the raw pyarrow writes
+used for obs tables, which have no staging step.
+
+**`git_commit` is injected via `$GIT_COMMIT` env var when running in Docker.**
+The container has no access to the `.git` directory and no `git` binary. The env var
+is set at `docker run` time: `-e GIT_COMMIT=$(git rev-parse --short HEAD)`.
+`git_commit_sha()` in `obs.py` falls back to running `git` directly when the env var
+is absent (useful for local non-Docker runs).
+
+**`script_hash` captures the SHA-256 of the entry-point script.**
+This is a data provenance signal: the hash changes when the script logic changes, even
+if the git commit is the same (e.g. dirty working tree). It complements `git_commit`
+for debugging "why did this day produce different output than yesterday".
 
 ---
 

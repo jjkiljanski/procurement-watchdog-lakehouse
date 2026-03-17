@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from procurement.common.locks import acquire_directory_lock, release_directory_lock_if_owner
-from procurement.obs import git_commit_sha, now_utc_iso, write_dq_metrics, write_pipeline_run, write_quarantine_summary
+from procurement.obs import git_commit_sha, now_utc_iso, sha256_file, write_dq_metrics, write_pipeline_run, write_quarantine_summary
 from procurement.silver.notice_schemas import (
     normalized_notice_type_token,
 )
@@ -459,7 +459,8 @@ def run_silver_day_core(
         profile["batches"] = _accum["profiles"]
 
         # Merge per-batch envelope subdirs into the final day partition.
-        envelope_day_df = spark.read.parquet(str(envelope_tmp_dir))
+        # Drop the auto-discovered "batch" partition column from the temp dir structure.
+        envelope_day_df = spark.read.parquet(str(envelope_tmp_dir)).drop("batch")
         envelope_day_df.write.mode("overwrite").parquet(str(envelope_day_dir))
         _safe_rmtree(envelope_tmp_dir, "envelope tmp dir")
         envelope_validation_df = spark.read.parquet(str(envelope_day_dir))
@@ -476,6 +477,7 @@ def run_silver_day_core(
             log.info("Wrote profile JSON to %s", profile_path)
 
         completed_at = now_utc_iso()
+        entry_script = (script_paths or [None])[0]
         write_pipeline_run(
             layer="silver",
             target_date=target_date,
@@ -485,12 +487,17 @@ def run_silver_day_core(
             status="ok",
             counts={"input_rows": total_rows},
             git_commit=git_commit_sha(),
+            script_hash=sha256_file(entry_script) if entry_script else None,
         )
         write_dq_metrics(
             layer="silver",
             target_date=target_date,
             notice_type=None,
-            metrics=validation_metrics if isinstance(validation_metrics, dict) else {},
+            metrics={
+                k: v
+                for k, v in (validation_metrics or {}).items()
+                if isinstance(v, (int, float))
+            },
         )
         for batch in profile.get("batches", []):
             nt = batch.get("noticeType")

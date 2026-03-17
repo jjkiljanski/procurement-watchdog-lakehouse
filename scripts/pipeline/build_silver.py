@@ -28,7 +28,7 @@ os.environ["PYSPARK_PYTHON"] = sys.executable
 os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
 
 from procurement.logging import setup_logging
-from procurement.obs import git_commit_sha, now_utc_iso, write_dq_metrics, write_pipeline_run, write_quarantine_summary
+from procurement.obs import git_commit_sha, now_utc_iso, sha256_file, write_dq_metrics, write_pipeline_run, write_quarantine_summary
 from procurement.common.locks import acquire_directory_lock, release_directory_lock_if_owner
 
 setup_logging()
@@ -556,6 +556,7 @@ def main() -> None:
                 "quarantined_rows": total_invalid_rows,
             },
             git_commit=git_commit_sha(),
+            script_hash=sha256_file(Path(__file__)),
         )
         write_dq_metrics(
             layer="silver",

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
@@ -44,6 +45,8 @@ def sha256_file(path: Path) -> str:
 
 
 def git_commit_sha(cwd: Path | None = None) -> str | None:
+    if sha := os.environ.get("GIT_COMMIT"):
+        return sha
     try:
         out = subprocess.check_output(
             ["git", "rev-parse", "--short", "HEAD"],
@@ -64,15 +67,17 @@ _OBS_DIR = Path("data/obs")
 
 
 def _append_parquet(table_dir: Path, rows: list[dict], partition_key: str) -> None:
-    """Append rows to a date-partitioned Parquet table using pandas."""
-    import pandas as pd
+    """Append rows to a date-partitioned Parquet table using pyarrow."""
+    import pyarrow as pa
+    import pyarrow.parquet as pq
 
     if not rows:
         return
     part_dir = table_dir / partition_key
     part_dir.mkdir(parents=True, exist_ok=True)
     ts = datetime.now(UTC).strftime("%H%M%S_%f")
-    pd.DataFrame(rows).to_parquet(part_dir / f"part-{ts}.parquet", index=False)
+    pq.write_table(pa.Table.from_pylist(rows), part_dir / f"part-{ts}.parquet")
+
 
 
 def write_pipeline_run(
@@ -85,6 +90,7 @@ def write_pipeline_run(
     status: str,
     counts: dict[str, int],
     git_commit: str | None = None,
+    script_hash: str | None = None,
     extra: dict[str, Any] | None = None,
     obs_dir: Path | None = None,
 ) -> None:
@@ -95,8 +101,10 @@ def write_pipeline_run(
         "run_id": run_id,
         "started_at": started_at,
         "completed_at": completed_at,
+        "written_at": now_utc_iso(),
         "status": status,
         "git_commit": git_commit,
+        "script_hash": script_hash,
         **{f"count_{k}": v for k, v in counts.items()},
         "extra_json": json.dumps(extra or {}, ensure_ascii=False),
     }
@@ -112,6 +120,7 @@ def write_dq_metrics(
     obs_dir: Path | None = None,
 ) -> None:
     """Append per-layer/notice_type data quality metrics as tall rows."""
+    written_at = now_utc_iso()
     rows = [
         {
             "layer": layer,
@@ -119,6 +128,7 @@ def write_dq_metrics(
             "notice_type": notice_type or "__all__",
             "metric_name": k,
             "metric_value": float(v),
+            "written_at": written_at,
         }
         for k, v in metrics.items()
     ]
@@ -135,6 +145,7 @@ def write_quarantine_summary(
     """Append one quarantine summary record per notice_type per day."""
     _append_parquet(
         (obs_dir or _OBS_DIR) / "quarantine_summary",
-        [{"target_date": target_date, "notice_type": notice_type, "row_count": row_count}],
+        [{"target_date": target_date, "notice_type": notice_type, "row_count": row_count,
+          "written_at": now_utc_iso()}],
         f"dt={target_date}",
     )

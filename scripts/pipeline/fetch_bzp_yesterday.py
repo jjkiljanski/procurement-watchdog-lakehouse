@@ -14,7 +14,7 @@ import requests
 # Allow imports from project root / src
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
 
-from procurement.obs import git_commit_sha, now_utc_iso, write_pipeline_run
+from procurement.obs import git_commit_sha, now_utc_iso, sha256_file, write_pipeline_run
 from procurement.logging import setup_logging
 
 setup_logging()
@@ -191,6 +191,7 @@ def main() -> None:
             "kept_for_day": len(filtered_notices),
         },
         git_commit=git_commit_sha(),
+        script_hash=sha256_file(Path(__file__)),
     )
     log.info("Wrote fetch obs pipeline_run for %s", target_date.isoformat())
 
