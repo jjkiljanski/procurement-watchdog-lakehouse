@@ -17,7 +17,6 @@ import logging
 import os
 import sqlite3
 import sys
-from collections import Counter
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -27,7 +26,7 @@ sys.path.insert(0, _src)
 os.environ["PYTHONPATH"] = _src + os.pathsep + os.environ.get("PYTHONPATH", "")
 
 from procurement.bronze.models import BzpNoticeBronze, notice_record_hash
-from procurement.lineage import atomic_write_json, git_commit_sha, now_utc_iso, script_hashes, sha256_file
+from procurement.obs import git_commit_sha, now_utc_iso, write_dq_metrics, write_pipeline_run
 from procurement.logging import setup_logging
 from pydantic import ValidationError
 from pyspark.sql.types import (
@@ -377,20 +376,6 @@ def main() -> None:
         )
         log.info("Wrote %d validation errors to %s", len(errors), errors_path)
 
-    partition_counter = Counter(
-        (
-            str(row.get("noticeType")),
-            str(row.get("publicationDate", ""))[:10],
-        )
-        for row in valid_rows
-    )
-    partition_rows = [
-        {"noticeType": nt, "publicationDateDay": day, "rows": cnt}
-        for (nt, day), cnt in sorted(partition_counter.items(), key=lambda x: (x[0][1], x[0][0]))
-    ]
-
-    repo_root = Path(__file__).resolve().parent.parent.parent
-    meta_path = bronze_dir / "_meta" / f"day={target_date}.json"
     inserted_seen = _update_seen_index(
         index_db_path=index_db_path,
         object_ids=[str(row.get("objectId", "")).strip() for row in valid_rows],
@@ -399,45 +384,39 @@ def main() -> None:
     )
     log.info("Seen index updated: inserted_new_ids=%d path=%s", inserted_seen, index_db_path)
 
-    manifest = {
-        "layer": "bronze",
-        "target_date": target_date,
-        "started_at": started_at,
-        "completed_at": now_utc_iso(),
-        "inputs": [
-            {"path": str(p), "sha256": sha256_file(p)}
-            for p in input_files
-            if p.exists()
-        ],
-        "outputs": {
-            "notices_root": str(bronze_dir / "notices"),
-            "wrote_notices": wrote_notices,
-            "partition_rows": partition_rows,
-            "errors_path": str(bronze_dir / "errors" / f"bzp_{target_date}_errors.json") if errors else None,
-            "seen_index_db_path": str(index_db_path),
-        },
-        "counts": {
-            "raw_total": len(raw_records),
-            "after_dedup_total": len(deduped_records),
-            "valid_total": len(valid),
-            "invalid_total": len(errors),
-            "dropped_duplicates_in_input": dedup_stats["dropped_duplicates_in_input"],
-            "dropped_duplicates_seen_index_other_day": dedup_stats["dropped_duplicates_seen_index_other_day"],
-            "seen_index_inserted_new_ids": inserted_seen,
-        },
-        "code": {
-            "git_commit": git_commit_sha(repo_root),
-            "script_hashes": script_hashes(
-                [
-                    Path(__file__).resolve(),
-                    repo_root / "src" / "procurement" / "bronze" / "models.py",
-                ]
-            ),
-            "command": sys.argv,
-        },
+    completed_at = now_utc_iso()
+    run_id = f"bronze_{target_date}_{os.getpid()}"
+    counts = {
+        "raw_total": len(raw_records),
+        "after_dedup_total": len(deduped_records),
+        "valid_total": len(valid),
+        "invalid_total": len(errors),
+        "dropped_duplicates_in_input": dedup_stats["dropped_duplicates_in_input"],
+        "dropped_duplicates_seen_other_day": dedup_stats["dropped_duplicates_seen_index_other_day"],
+        "seen_index_inserted": inserted_seen,
     }
-    atomic_write_json(meta_path, manifest)
-    log.info("Wrote bronze lineage manifest to %s", meta_path)
+    write_pipeline_run(
+        layer="bronze",
+        target_date=target_date,
+        run_id=run_id,
+        started_at=started_at,
+        completed_at=completed_at,
+        status="ok" if wrote_notices else "empty",
+        counts=counts,
+        git_commit=git_commit_sha(),
+    )
+    if len(deduped_records) > 0:
+        write_dq_metrics(
+            layer="bronze",
+            target_date=target_date,
+            notice_type=None,
+            metrics={
+                "valid_rate": len(valid) / len(deduped_records),
+                "invalid_count": len(errors),
+                "dedup_cross_day_rate": dedup_stats["dropped_duplicates_seen_index_other_day"] / len(raw_records)
+                if raw_records else 0.0,
+            },
+        )
 
     log.info(
         "Summary: total=%d  after_dedup=%d  valid=%d  invalid=%d  dropped_seen=%d",

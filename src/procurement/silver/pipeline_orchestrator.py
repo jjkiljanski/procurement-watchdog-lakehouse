@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from procurement.common.locks import acquire_directory_lock, release_directory_lock_if_owner
-from procurement.lineage import atomic_write_json, git_commit_sha, now_utc_iso, script_hashes, sha256_file
+from procurement.obs import git_commit_sha, now_utc_iso, write_dq_metrics, write_pipeline_run, write_quarantine_summary
 from procurement.silver.notice_schemas import (
     normalized_notice_type_token,
 )
@@ -115,26 +115,6 @@ def _maybe_repartition_batch(
         )
         return df.repartition(target)
     return df
-
-
-def _load_bronze_lineage_ref(bronze_dir: Path, day: str) -> dict | None:
-    meta_path = bronze_dir / "_meta" / f"day={day}.json"
-    if not meta_path.exists():
-        return None
-    try:
-        payload = json.loads(meta_path.read_text(encoding="utf-8"))
-    except Exception:
-        return {
-            "manifest_path": str(meta_path),
-            "manifest_sha256": sha256_file(meta_path),
-            "error": "failed_to_parse_bronze_manifest",
-        }
-    return {
-        "manifest_path": str(meta_path),
-        "manifest_sha256": sha256_file(meta_path),
-        "code": payload.get("code"),
-        "counts": payload.get("counts"),
-    }
 
 
 def _safe_rmtree(path: Path, label: str) -> None:
@@ -408,7 +388,8 @@ def run_silver_day_core(
                     quarantine_df: DataFrame | None = all_quarantine_dfs[0]
                     for _qdf in all_quarantine_dfs[1:]:
                         quarantine_df = quarantine_df.union(_qdf)
-                    if quarantine_df.take(1):
+                    q_count = quarantine_df.count()
+                    if q_count > 0:
                         quarantine_day_dir = (
                             silver_dir
                             / "quarantine"
@@ -418,9 +399,15 @@ def run_silver_day_core(
                         _safe_rmtree(quarantine_day_dir, f"quarantine noticeType={notice_token}")
                         quarantine_df.write.mode("append").parquet(str(quarantine_day_dir))
                         log.info(
-                            "Wrote quarantine data noticeType=%s -> %s",
+                            "Wrote quarantine data noticeType=%s rows=%d -> %s",
                             notice_token,
+                            q_count,
                             quarantine_day_dir,
+                        )
+                        write_quarantine_summary(
+                            target_date=target_date,
+                            notice_type=notice_token,
+                            row_count=q_count,
                         )
                     else:
                         log.debug("Skipped empty quarantine write noticeType=%s", notice_token)
@@ -488,64 +475,39 @@ def run_silver_day_core(
             profile_path.write_text(json.dumps(profile, ensure_ascii=False, indent=2), encoding="utf-8")
             log.info("Wrote profile JSON to %s", profile_path)
 
-        repo_root = Path(__file__).resolve().parent.parent.parent
-        code_paths = list(script_paths or [])
-        core_paths = [
-            Path(__file__).resolve(),
-            repo_root / "src" / "procurement" / "silver" / "common_envelope.py",
-            repo_root / "src" / "procurement" / "silver" / "section_pipeline" / "spark.py",
-            repo_root / "src" / "procurement" / "silver" / "section_pipeline" / "profile.py",
-            repo_root / "src" / "procurement" / "silver" / "section_pipeline" / "html_extractor.py",
-        ]
-        for p in core_paths:
-            if p not in code_paths:
-                code_paths.append(p)
-
-        if use_bronze:
-            input_manifest = {
-                "mode": "bronze",
-                "bronze_root": str(bronze_root),
-                "paths": [p for _, p in notice_batches if p is not None],
-                "bronze_lineage": _load_bronze_lineage_ref(bronze_dir, target_date),
-            }
-        else:
-            raw_path = Path(cfg.raw_dir) / f"bzp_{target_date}.json"
-            input_manifest = {
-                "mode": "raw",
-                "raw_path": str(raw_path),
-                "raw_sha256": sha256_file(raw_path) if raw_path.exists() else None,
-            }
-
-        lineage = {
-            "layer": "silver",
-            "mode": cfg.mode,
-            "target_date": target_date,
-            "started_at": started_at,
-            "completed_at": now_utc_iso(),
-            "run_context": run_context or {},
-            "inputs": input_manifest,
-            "outputs": {
-                "common_envelope_partition": str(envelope_day_dir),
-                "notice_type_tables_root": str(specific_root),
-            },
-            "performance": profile,
-            "code": {
-                "git_commit": git_commit_sha(repo_root),
-                "script_hashes": script_hashes(code_paths),
-                "command": command or sys.argv,
-                "args": args_dict or {},
-            },
-        }
-        lineage_path = silver_dir / "_meta" / f"day={target_date}.json"
-        atomic_write_json(lineage_path, lineage)
-        log.info("Wrote silver lineage manifest to %s", lineage_path)
+        completed_at = now_utc_iso()
+        write_pipeline_run(
+            layer="silver",
+            target_date=target_date,
+            run_id=run_id,
+            started_at=started_at,
+            completed_at=completed_at,
+            status="ok",
+            counts={"input_rows": total_rows},
+            git_commit=git_commit_sha(),
+        )
+        write_dq_metrics(
+            layer="silver",
+            target_date=target_date,
+            notice_type=None,
+            metrics=validation_metrics if isinstance(validation_metrics, dict) else {},
+        )
+        for batch in profile.get("batches", []):
+            nt = batch.get("noticeType")
+            batch_rows = batch.get("rows", 0)
+            if batch_rows > 0:
+                write_dq_metrics(
+                    layer="silver",
+                    target_date=target_date,
+                    notice_type=nt,
+                    metrics={"input_rows": batch_rows},
+                )
 
         return {
             "rows": total_rows,
             "input_paths": [p for _, p in notice_batches if p is not None],
             "validation_metrics": validation_metrics,
             "profile": profile,
-            "lineage_path": str(lineage_path),
         }
     finally:
         if day_lock_dir.exists():

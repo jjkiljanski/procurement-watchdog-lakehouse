@@ -5,7 +5,7 @@ Steps:
 2. build_silver
 3. build_case_derived_facts (incremental)
 4. build_gold (--scope asof)
-5. optional build_run_stats
+5. optional build_obs
 """
 
 from __future__ import annotations
@@ -27,9 +27,9 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run daily transforms without fetch step.")
     parser.add_argument("target_date", help="Date in YYYY-MM-DD format")
     parser.add_argument(
-        "--with-run-stats",
+        "--with-obs",
         action="store_true",
-        help="Also run build_run_stats.py for target date",
+        help="Also run build_obs.py for target date",
     )
     return parser.parse_args()
 
@@ -75,9 +75,9 @@ def main() -> int:
             ],
         ),
     ]
-    if args.with_run_stats:
+    if args.with_obs:
         steps.append(
-            ("run-stats", [sys.executable, str(PIPELINE_DIR / "build_run_stats.py"), target_date])
+            ("obs", [sys.executable, str(PIPELINE_DIR / "build_obs.py"), target_date])
         )
 
     failures: list[str] = []

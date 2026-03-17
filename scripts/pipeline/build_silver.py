@@ -28,7 +28,7 @@ os.environ["PYSPARK_PYTHON"] = sys.executable
 os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
 
 from procurement.logging import setup_logging
-from procurement.lineage import atomic_write_json, git_commit_sha, now_utc_iso, script_hashes, sha256_file
+from procurement.obs import git_commit_sha, now_utc_iso, write_dq_metrics, write_pipeline_run, write_quarantine_summary
 from procurement.common.locks import acquire_directory_lock, release_directory_lock_if_owner
 
 setup_logging()
@@ -174,26 +174,6 @@ def _maybe_repartition_batch(
         row_count,
     )
     return df
-
-
-def _load_bronze_lineage_ref(bronze_dir: Path, target_date: str) -> dict | None:
-    meta_path = bronze_dir / "_meta" / f"day={target_date}.json"
-    if not meta_path.exists():
-        return None
-    try:
-        payload = json.loads(meta_path.read_text(encoding="utf-8"))
-    except Exception:
-        return {
-            "manifest_path": str(meta_path),
-            "manifest_sha256": sha256_file(meta_path),
-            "error": "failed_to_parse_bronze_manifest",
-        }
-    return {
-        "manifest_path": str(meta_path),
-        "manifest_sha256": sha256_file(meta_path),
-        "code": payload.get("code"),
-        "counts": payload.get("counts"),
-    }
 
 
 def _parse_args() -> argparse.Namespace:
@@ -563,54 +543,47 @@ def main() -> None:
         else:
             log.info("Profile summary: %s", profile)
 
-        repo_root = Path(__file__).resolve().parent.parent.parent
-        input_manifest: dict
-        if use_bronze:
-            input_manifest = {
-                "mode": "bronze",
-                "bronze_root": str(bronze_root),
-                "paths": [str(p) for p in bronze_paths],
-                "bronze_lineage": _load_bronze_lineage_ref(Path(args.bronze_dir), target_date),
-            }
-        else:
-            raw_path = Path(args.raw_dir) / f"bzp_{target_date}.json"
-            input_manifest = {
-                "mode": "raw",
-                "raw_path": str(raw_path),
-                "raw_sha256": sha256_file(raw_path) if raw_path.exists() else None,
-            }
-
-        lineage = {
-            "layer": "silver",
-            "target_date": target_date,
-            "started_at": started_at,
-            "completed_at": now_utc_iso(),
-            "inputs": input_manifest,
-            "outputs": {
-                "common_envelope": str(silver_dir / "common_envelope" / f"publicationDateDay={target_date}"),
-                "notice_type_tables_root": str(silver_dir / "notice_type_tables"),
-                "quarantine_partition": str(quarantine_day_dir),
-                "envelope_tmp_run": str(envelope_tmp_dir),
-                "profile_json": str(Path(args.profile_json)) if args.profile_json else None,
+        completed_at = now_utc_iso()
+        write_pipeline_run(
+            layer="silver",
+            target_date=target_date,
+            run_id=run_id,
+            started_at=started_at,
+            completed_at=completed_at,
+            status="ok",
+            counts={
+                "input_rows": total_input_rows,
+                "quarantined_rows": total_invalid_rows,
             },
-            "performance": profile,
-            "code": {
-                "git_commit": git_commit_sha(repo_root),
-                "script_hashes": script_hashes(
-                    [
-                        Path(__file__).resolve(),
-                        repo_root / "src" / "procurement" / "silver" / "spark_transforms.py",
-                        repo_root / "src" / "procurement" / "silver" / "html_parser.py",
-                        repo_root / "src" / "procurement" / "silver" / "notice_types" / "definitions.py",
-                    ]
-                ),
-                "command": sys.argv,
-                "args": vars(args),
-            },
-        }
-        lineage_path = silver_dir / "_meta" / f"day={target_date}.json"
-        atomic_write_json(lineage_path, lineage)
-        log.info("Wrote silver lineage manifest to %s", lineage_path)
+            git_commit=git_commit_sha(),
+        )
+        write_dq_metrics(
+            layer="silver",
+            target_date=target_date,
+            notice_type=None,
+            metrics=envelope_validation_metrics,
+        )
+        for batch in profile.get("batches", []):
+            nt = batch.get("noticeType")
+            batch_rows = batch.get("rows", 0)
+            invalid = batch.get("invalid_rows", 0)
+            if batch_rows > 0:
+                write_dq_metrics(
+                    layer="silver",
+                    target_date=target_date,
+                    notice_type=nt,
+                    metrics={
+                        "input_rows": batch_rows,
+                        "quarantined_rows": invalid,
+                        "valid_rate": (batch_rows - invalid) / batch_rows,
+                    },
+                )
+            if invalid > 0:
+                write_quarantine_summary(
+                    target_date=target_date,
+                    notice_type=nt or "__unknown__",
+                    row_count=invalid,
+                )
     finally:
         if day_lock_dir is not None and day_lock_dir.exists():
             if release_directory_lock_if_owner(day_lock_dir, run_id):

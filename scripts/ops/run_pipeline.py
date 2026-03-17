@@ -26,7 +26,7 @@ STEPS = [
     ("bronze", PIPELINE_DIR / "build_bronze.py"),
     ("silver", PIPELINE_DIR / "build_silver.py"),
     ("gold", PIPELINE_DIR / "build_gold.py"),
-    ("run-stats", PIPELINE_DIR / "build_run_stats.py"),
+    ("obs", PIPELINE_DIR / "build_obs.py"),
 ]
 
 

@@ -14,7 +14,7 @@ import requests
 # Allow imports from project root / src
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
 
-from procurement.lineage import atomic_write_json, git_commit_sha, now_utc_iso, script_hashes, sha256_file
+from procurement.obs import git_commit_sha, now_utc_iso, write_pipeline_run
 from procurement.logging import setup_logging
 
 setup_logging()
@@ -176,35 +176,23 @@ def main() -> None:
     output_path.write_text(json.dumps(filtered_notices, ensure_ascii=False, indent=2), encoding="utf-8")
     log.info("Saved to %s", output_path)
 
-    repo_root = Path(__file__).resolve().parent.parent.parent
-    meta_path = output_dir / "_meta" / f"fetch_day={target_date.isoformat()}.json"
-    manifest = {
-        "layer": "bronze_raw",
-        "target_date": target_date.isoformat(),
-        "started_at": started_at,
-        "completed_at": now_utc_iso(),
-        "endpoint": BASE_URL,
-        "query_window": {"from": date_from, "to": date_to, "page_size": PAGE_SIZE},
-        "notice_types": NOTICE_TYPES,
-        "queries": fetch_queries,
-        "counts": {
+    import os
+    write_pipeline_run(
+        layer="fetch",
+        target_date=target_date.isoformat(),
+        run_id=f"fetch_{target_date.isoformat()}_{os.getpid()}",
+        started_at=started_at,
+        completed_at=now_utc_iso(),
+        status="ok",
+        counts={
             "fetched_raw": len(all_notices),
             "dropped_by_day": dropped_by_day,
             "dropped_duplicates": dropped_duplicates,
             "kept_for_day": len(filtered_notices),
         },
-        "output": {
-            "path": str(output_path),
-            "sha256": sha256_file(output_path),
-        },
-        "code": {
-            "git_commit": git_commit_sha(repo_root),
-            "script_hashes": script_hashes([Path(__file__).resolve()]),
-            "command": sys.argv,
-        },
-    }
-    atomic_write_json(meta_path, manifest)
-    log.info("Saved fetch lineage manifest to %s", meta_path)
+        git_commit=git_commit_sha(),
+    )
+    log.info("Wrote fetch obs pipeline_run for %s", target_date.isoformat())
 
 
 if __name__ == "__main__":
