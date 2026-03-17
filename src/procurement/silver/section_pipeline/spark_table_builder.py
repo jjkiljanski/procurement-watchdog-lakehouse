@@ -164,6 +164,13 @@ def build_section_tables(
         sections_udf(col("htmlBody"), lit(notice_type)),
     ).persist(StorageLevel.MEMORY_AND_DISK)
 
+    # Exclude rows that produced HTML parse errors (e.g. duplicate core sections)
+    # from the model tables.  They are routed to quarantine via
+    # detect_section_parse_error_quarantine called by the orchestrator.
+    df_valid = df_with_sections.filter(
+        get_json_object(col("_sections_json"), "$._parse_errors").isNull()
+    )
+
     result: dict[str, DataFrame] = {}
 
     for model in models:
@@ -179,7 +186,7 @@ def build_section_tables(
                 continue
             core_schema = StructType([StructField(c, StringType()) for c in core_cols])
             df_model = (
-                df_with_sections
+                df_valid
                 .withColumn(
                     "_core_struct",
                     from_json(get_json_object(col("_sections_json"), "$.core"), core_schema),
@@ -197,7 +204,7 @@ def build_section_tables(
             rows_udf = _make_model_rows_udf(model, core_cols, sub_key, sub_cols)
 
             df_exploded = (
-                df_with_sections
+                df_valid
                 .withColumn("_model_rows", rows_udf(col("_sections_json")))
                 .select(
                     col("objectId"),
@@ -273,6 +280,54 @@ def detect_unknown_section_quarantine(
     )
     log.debug(
         "detect_unknown_section_quarantine built quarantine plan notice_type=%s",
+        notice_type,
+    )
+    return quarantine
+
+
+def detect_section_parse_error_quarantine(
+    sections_df: "DataFrame | None",
+    notice_type: str | None,
+) -> "DataFrame | None":
+    """Return a quarantine DataFrame for rows that had HTML parse errors during section extraction.
+
+    Uses the ``_parse_errors`` list embedded in the sections JSON by
+    :func:`~procurement.silver.section_pipeline.raw_section_extractor.build_notice_sections_model`
+    when a structural problem is detected in the notice HTML (e.g. a core section
+    appearing more than once).  These rows are excluded from all section model
+    tables by :func:`build_section_tables`.
+
+    Returns ``None`` when ``sections_df`` is ``None`` (no sections were parsed).
+    Returns a (possibly empty) DataFrame otherwise — write it only when non-empty
+    to avoid creating empty Parquet files.
+    """
+    if sections_df is None or notice_type is None:
+        return None
+
+    from pyspark.sql.types import ArrayType, StringType
+    from pyspark.sql.functions import from_json
+
+    _errors_schema = ArrayType(StringType())
+    df_with_errors = sections_df.withColumn(
+        "_html_parse_errors",
+        from_json(get_json_object(col("_sections_json"), "$._parse_errors"), _errors_schema),
+    )
+    quarantine = (
+        df_with_errors
+        .filter(
+            col("_html_parse_errors").isNotNull()
+            & (size(col("_html_parse_errors")) > 0)
+        )
+        .select(
+            col("objectId"),
+            col("publicationDateDay"),
+            lit(notice_type).alias("notice_type"),
+            lit("core").alias("data_model"),
+            col("_html_parse_errors").alias("_parse_errors"),
+        )
+    )
+    log.debug(
+        "detect_section_parse_error_quarantine built quarantine plan notice_type=%s",
         notice_type,
     )
     return quarantine
@@ -364,7 +419,7 @@ def apply_column_parsers(
     section_tables: dict[str, DataFrame],
     profile: dict,
     notice_type: str | None,
-) -> tuple[dict[str, DataFrame], "DataFrame | None"]:
+) -> tuple[dict[str, DataFrame], "DataFrame | None", list[DataFrame]]:
     """Apply registered column-level parsers to section DataFrames.
 
     Strict parsers are validated before typing: a row-level UDF runs all strict
@@ -394,10 +449,11 @@ def apply_column_parsers(
     computed_specs = section_computed_cols(profile)
 
     if not section_tables or (not col_parsers and not derived and not computed_specs):
-        return section_tables, None
+        return section_tables, None, []
 
     result: dict[str, DataFrame] = {}
     quarantine_dfs: list[DataFrame] = []
+    persisted_dfs: list[DataFrame] = []
 
     for model, df in section_tables.items():
         df_out = df
@@ -412,12 +468,12 @@ def apply_column_parsers(
             checks_per_col = [chks for _, chks in strict_pairs]
             validator_fn = _make_validator_fn(checks_per_col)
             validator_udf = udf(validator_fn, ArrayType(StringType()))
-            df_out = df_out.withColumn(
+            df_with_errors = df_out.withColumn(
                 "_parse_errors", validator_udf(*[col(c) for c in col_order])
-            )
-            quarantine_rows = df_out.filter(size(col("_parse_errors")) > 0)
+            ).persist(StorageLevel.MEMORY_AND_DISK)
+            persisted_dfs.append(df_with_errors)
             quarantine_dfs.append(
-                quarantine_rows.select(
+                df_with_errors.filter(size(col("_parse_errors")) > 0).select(
                     col("objectId"),
                     col("publicationDateDay"),
                     lit(notice_type).alias("notice_type"),
@@ -425,7 +481,7 @@ def apply_column_parsers(
                     col("_parse_errors"),
                 )
             )
-            df_out = df_out.filter(size(col("_parse_errors")) == 0).drop("_parse_errors")
+            df_out = df_with_errors.filter(size(col("_parse_errors")) == 0).drop("_parse_errors")
             log.debug(
                 "Built strict-parser validator model=%s cols=%s notice_type=%s",
                 model,
@@ -434,6 +490,9 @@ def apply_column_parsers(
             )
 
         # --- In-place column type replacement (parser key in profile) ---
+        # Build all parser expressions first, then apply in one select() to avoid
+        # N nested Project nodes in the Catalyst plan (causes "plan too large" warning).
+        parser_exprs: dict[str, object] = {}
         for col_name, parser_cfg in col_parsers.items():
             if col_name not in df_out.columns:
                 continue
@@ -450,25 +509,32 @@ def apply_column_parsers(
                 )
                 continue
             parser_fn, return_type = entry
-            parser_udf = udf(parser_fn, return_type)
-            df_out = df_out.withColumn(col_name, parser_udf(col(col_name)))
+            parser_exprs[col_name] = udf(parser_fn, return_type)(col(col_name))
             log.debug(
-                "Applied parser fn=%s col=%s model=%s notice_type=%s",
+                "Registered parser fn=%s col=%s model=%s notice_type=%s",
                 fn_name,
                 col_name,
                 model,
                 notice_type,
             )
+        if parser_exprs:
+            df_out = df_out.select(*[
+                parser_exprs[c].alias(c) if c in parser_exprs else col(c)
+                for c in df_out.columns
+            ])
 
         # Derived columns: one source col → multiple typed output cols.
         # The source col is renamed to a temp name first so that all derived
         # UDFs read from the original raw value, even when one derived col
         # reuses the same name as the source.
+        # All derived expressions for a source are collected, then applied in
+        # one select() to avoid N nested Project nodes per source group.
         for source_col, derived_map in derived.items():
             if source_col not in df_out.columns:
                 continue
             temp_col = f"_derived_src_{source_col}"
             df_out = df_out.withColumnRenamed(source_col, temp_col)
+            derived_exprs: dict[str, object] = {}
             for derived_col, parser_cfg in derived_map.items():
                 fn_name = parser_cfg.get("fn")
                 if not fn_name:
@@ -484,17 +550,26 @@ def apply_column_parsers(
                     )
                     continue
                 parser_fn, return_type = entry
-                parser_udf = udf(parser_fn, return_type)
-                df_out = df_out.withColumn(derived_col, parser_udf(col(temp_col)))
+                derived_exprs[derived_col] = udf(parser_fn, return_type)(col(temp_col))
                 log.debug(
-                    "Applied derived parser fn=%s source=%s derived=%s model=%s notice_type=%s",
+                    "Registered derived parser fn=%s source=%s derived=%s model=%s notice_type=%s",
                     fn_name,
                     source_col,
                     derived_col,
                     model,
                     notice_type,
                 )
-            df_out = df_out.drop(temp_col)
+            if derived_exprs:
+                # Keep all columns except temp_col, then append derived outputs.
+                # Excludes source_col (renamed to temp_col) — any derived col
+                # sharing its name replaces it naturally.
+                pass_through = [col(c) for c in df_out.columns if c != temp_col]
+                df_out = df_out.select(
+                    *pass_through,
+                    *[expr.alias(dc) for dc, expr in derived_exprs.items()],
+                )
+            else:
+                df_out = df_out.drop(temp_col)
 
         # Computed columns: multi-source → single typed output.
         # Sources that collide with any output col_name are temp-renamed
@@ -519,6 +594,9 @@ def apply_column_parsers(
                 df_out = df_out.withColumnRenamed(conflict_col, temp_name)
                 temp_mapping[conflict_col] = temp_name
 
+            # Collect all computed expressions first, then apply in one
+            # select() to avoid N nested Project nodes in the Catalyst plan.
+            computed_exprs: dict[str, object] = {}
             for spec in computed_for_model:
                 fn_name = spec.get("fn")
                 out_col = spec.get("col_name")
@@ -538,9 +616,9 @@ def apply_column_parsers(
                 computed_fn, return_type = entry
                 computed_udf = udf(computed_fn, return_type)
                 resolved = [col(temp_mapping.get(s, s)) for s in sources]
-                df_out = df_out.withColumn(out_col, computed_udf(*resolved))
+                computed_exprs[out_col] = computed_udf(*resolved)
                 log.debug(
-                    "Applied computed fn=%s sources=%s out=%s model=%s notice_type=%s",
+                    "Registered computed fn=%s sources=%s out=%s model=%s notice_type=%s",
                     fn_name,
                     sources,
                     out_col,
@@ -548,8 +626,16 @@ def apply_column_parsers(
                     notice_type,
                 )
 
-            for temp_name in temp_mapping.values():
-                df_out = df_out.drop(temp_name)
+            if computed_exprs:
+                temp_names = set(temp_mapping.values())
+                pass_through = [col(c) for c in df_out.columns if c not in temp_names]
+                df_out = df_out.select(
+                    *pass_through,
+                    *[expr.alias(oc) for oc, expr in computed_exprs.items()],
+                )
+            else:
+                for temp_name in temp_mapping.values():
+                    df_out = df_out.drop(temp_name)
 
         result[model] = df_out
 
@@ -559,4 +645,4 @@ def apply_column_parsers(
         for qdf in quarantine_dfs[1:]:
             quarantine_df = quarantine_df.union(qdf)
 
-    return result, quarantine_df
+    return result, quarantine_df, persisted_dfs

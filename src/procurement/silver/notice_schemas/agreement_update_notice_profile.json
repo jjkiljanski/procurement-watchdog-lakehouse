@@ -279,7 +279,7 @@
   "3.7": {
     "col_name": "section_3_7",
     "section_header": "Krótki opis przedmiotu zamówienia",
-    "data_model": "core",
+    "data_model": "part",
     "example_values": [
       "1.\tPrzedmiotem zamówienia jest „Opracowanie dokumentacji projektowej dla odbudowy dworu potomków Marcello Bacciarellego - malarza ostatniego Króla Polski Stanisława Augusta Poniatowskiego”. 2.\tZakres rzeczowy zamówienia obejmuje wszystkie prace i czynności konieczne dla wykonania zamówienia publicznego. 3.\tSzczegółowy zakres zamówienia oraz warunki realizacji zostały określone w Opisie przedmiotu zamówienia, stanowiącym załącznik nr 7 do SWZ. Pozostałe warunki realizacji zamówienia zostały określone w Projektowanych postanowieniach umowy w sprawie zamówienia publicznego, stanowiących załącznik nr 8 do SWZ. 4.\tPonadto, o ile dla wykonania zamówienia publicznego będzie konieczne wykonanie niewymienionych opracowań projektowych a związanych z wymaganiami jednostek opiniujących, niewykraczających jednak poza przedmiot umowy, to wykonawca wykona te opracowania własnym kosztem i staraniem. 5.\tWspólny Słownik Zamówień (CPV). Główny kod CPV: 71000000-8. 6.\tZamówienie współfinansowane jest ze środków pochodzących z budżetu Państwa w ramach Rządowego Programu Odbudowy Zabytków.",
       "1. \tNazwa zamówienia: Modernizacja i dostosowanie pomieszczeń Pedagogicznej Biblioteki Wojewódzkiej w Nowym Sączu Filia w Nowym Targu. 2. \tPrzedmiot zamówienia obejmuje wykonanie następujących robót budowlanych: 2.1.\twykonanie posadzek, 2.2.\twykonanie wykończenia ścian, 2.3.\twykonanie wykończenia sufitów, 2.4.\tmontaż lamp oświetleniowych, 2.5.\tmontaż drzwi i wydzieleni szklanych, 2.6.\twywóz gruzu i roboty zabezpieczające. 3. \tSzczegółowy zakres zamówienia został określony w załączniku nr 4 do SWZ - dokumentacja techniczna składająca się z następujących opracowań: 3.1.\tDokumentacja projektowa, 3.2.\tSpecyfikacje techniczne wykonania i odbioru robót, 3.3.\tPrzedmiar robót.",
@@ -289,7 +289,7 @@
   "3.8": {
     "col_name": "section_3_8",
     "section_header": "Główny kod CPV",
-    "data_model": "core",
+    "data_model": "part",
     "example_values": [
       "71000000-8 - Usługi architektoniczne, budowlane, inżynieryjne i kontrolne",
       "45212330-8 - Roboty budowlane w zakresie bibliotek",
@@ -302,7 +302,7 @@
   "3.9": {
     "col_name": "section_3_9",
     "section_header": "Dodatkowy kod CPV",
-    "data_model": "core",
+    "data_model": "part",
     "example_values": [
       "45400000-1 - Roboty wykończeniowe w zakresie obiektów budowlanych 45111300-1 - Roboty rozbiórkowe 45300000-0 - Roboty instalacyjne w budynkach",
       "55322000-3 - Usługi gotowania posiłków 55320000-9 - Usługi podawania posiłków",

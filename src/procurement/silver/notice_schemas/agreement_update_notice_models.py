@@ -40,9 +40,6 @@ class AgreementUpdateNoticeCoreModel(BaseModel):
     section_3_4: str | None = None
     section_3_5: str | None = None
     section_3_6: str | None = None
-    section_3_7: str | None = None
-    section_3_8: list[str] | None = None    # CPV codes
-    section_3_9: list[str] | None = None    # CPV codes
     section_4_1: str | None = None          # date string YYYY-MM-DD
     # 4.2: duration → calendar days (computed from 4.1 + raw 4.2)
     section_4_2: int | None = None
@@ -69,3 +66,9 @@ class AgreementUpdateNoticeCoreModel(BaseModel):
     section_5_5_3: bool | None = None       # Tak/Nie
     section_5_6: bool | None = None         # Tak/Nie
     section_5_7: str | None = None
+
+
+class AgreementUpdateNoticePartModel(BaseModel):
+    section_3_7: str | None = None
+    section_3_8: list[str] | None = None    # CPV codes
+    section_3_9: list[str] | None = None    # CPV codes

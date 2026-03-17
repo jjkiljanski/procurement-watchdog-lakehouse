@@ -136,23 +136,24 @@ def validate_section_models(
     return section_tables
 
 
-def _make_pydantic_validator_fn(model_class, payload_cols: list[str]):
-    """Return a UDF-compatible validator for one (notice_type, model) pair.
+def _make_pydantic_validator_fn(model_class):
+    """Return a UDF-compatible validator that accepts a single JSON string.
 
-    The returned function takes one positional argument per payload column and
-    returns a list of error strings (empty list means the row is valid).
-    This mirrors the pattern used by :func:`_make_validator_fn` in
-    ``spark_table_builder`` for Case-2 strict-parser validation.
+    Receives the payload serialised by Spark's ``to_json(struct(...))`` — one
+    string per row instead of N individual column arguments — to minimise py4j
+    serialisation overhead.
     """
     _cls = model_class
-    _cols = list(payload_cols)
 
-    def _validate(*values) -> list[str]:
+    def _validate(json_str: str) -> list:
+        if json_str is None:
+            return []
+        import json as _json
         from pydantic import ValidationError as _VE
 
-        row_dict = {c: v for c, v in zip(_cols, values) if v is not None}
         try:
-            _cls(**row_dict)
+            data = _json.loads(json_str)
+            _cls(**{k: v for k, v in data.items() if v is not None})
             return []
         except _VE as exc:
             return [
@@ -166,7 +167,7 @@ def _make_pydantic_validator_fn(model_class, payload_cols: list[str]):
 def apply_pydantic_validation(
     section_tables: dict[str, "DataFrame"],
     notice_type: str | None,
-) -> "tuple[dict[str, DataFrame], DataFrame | None]":
+) -> "tuple[dict[str, DataFrame], DataFrame | None, list]":
     """Validate section rows against their Pydantic models via a row-level UDF.
 
     For each ``(notice_type, model)`` pair, registers a UDF that constructs the
@@ -190,15 +191,16 @@ def apply_pydantic_validation(
     ``(valid_tables, quarantine_df)`` — same shape as the Case-2 quarantine.
     """
     from pyspark.sql import DataFrame
-    from pyspark.sql.functions import col, lit, size
+    from pyspark.sql.functions import col, lit, size, struct, to_json, udf
     from pyspark.sql.types import ArrayType, StringType
-    from pyspark.sql.functions import udf
+    from pyspark.storagelevel import StorageLevel
 
     if not notice_type or not section_tables:
-        return section_tables, None
+        return section_tables, None, []
 
     result: dict[str, DataFrame] = {}
     quarantine_dfs: list[DataFrame] = []
+    persisted_dfs: list = []
 
     for model, df in section_tables.items():
         model_class = get_pydantic_model_class(notice_type, model)
@@ -214,13 +216,18 @@ def apply_pydantic_validation(
         pipeline_cols = _PIPELINE_COLS | {f"{model}_ordinal", f"{model}_items"}
         payload_cols = [c for c in df.columns if c not in pipeline_cols]
 
-        validator_fn = _make_pydantic_validator_fn(model_class, payload_cols)
-        validator_udf = udf(validator_fn, ArrayType(StringType()))
+        validator_udf = udf(_make_pydantic_validator_fn(model_class), ArrayType(StringType()))
+        # Serialise the entire payload to a single JSON string (JVM-side, zero py4j
+        # per-column overhead) then pass that one string to the Python UDF.
+        payload_json = to_json(struct(*[col(c) for c in payload_cols]))
 
-        df_out = df.withColumn("_pydantic_errors", validator_udf(*[col(c) for c in payload_cols]))
+        df_with_errors = df.withColumn(
+            "_pydantic_errors", validator_udf(payload_json)
+        ).persist(StorageLevel.MEMORY_AND_DISK)
+        persisted_dfs.append(df_with_errors)
 
         quarantine_dfs.append(
-            df_out
+            df_with_errors
             .filter(size(col("_pydantic_errors")) > 0)
             .select(
                 col("objectId"),
@@ -231,12 +238,12 @@ def apply_pydantic_validation(
             )
         )
         result[model] = (
-            df_out
+            df_with_errors
             .filter(size(col("_pydantic_errors")) == 0)
             .drop("_pydantic_errors")
         )
         log.debug(
-            "apply_pydantic_validation registered UDF notice_type=%s model=%s cols=%d",
+            "apply_pydantic_validation registered JSON-UDF notice_type=%s model=%s cols=%d",
             notice_type,
             model,
             len(payload_cols),
@@ -248,4 +255,4 @@ def apply_pydantic_validation(
         for qdf in quarantine_dfs[1:]:
             quarantine_df = quarantine_df.union(qdf)
 
-    return result, quarantine_df
+    return result, quarantine_df, persisted_dfs

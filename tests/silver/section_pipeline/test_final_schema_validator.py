@@ -239,18 +239,18 @@ from procurement.silver.section_pipeline.final_schema_validator import apply_pyd
 class TestApplyPydanticValidation:
     def test_none_notice_type_returns_tables_unchanged(self):
         tables = {"core": object()}
-        result_tables, quarantine_df = apply_pydantic_validation(tables, None)
+        result_tables, quarantine_df, _ = apply_pydantic_validation(tables, None)
         assert result_tables is tables
         assert quarantine_df is None
 
     def test_empty_tables_returns_empty(self):
-        result_tables, quarantine_df = apply_pydantic_validation({}, "ContractNotice")
+        result_tables, quarantine_df, _ = apply_pydantic_validation({}, "ContractNotice")
         assert result_tables == {}
         assert quarantine_df is None
 
     def test_unknown_notice_type_passes_through(self):
         tables = {"core": object()}
-        result_tables, quarantine_df = apply_pydantic_validation(tables, "NonExistentNotice")
+        result_tables, quarantine_df, _ = apply_pydantic_validation(tables, "NonExistentNotice")
         # no Pydantic model → tables passed through unchanged
         assert result_tables["core"] is tables["core"]
         assert quarantine_df is None
@@ -269,7 +269,7 @@ class TestApplyPydanticValidation:
 
         # Use a notice type whose core model has section_1_1 or use a minimal profile
         # We just verify no crash and sensible outputs
-        result_tables, quarantine_df = apply_pydantic_validation(tables, "ContractNotice")
+        result_tables, quarantine_df, _ = apply_pydantic_validation(tables, "ContractNotice")
         # ContractNotice core model has many fields; section_1_1 is not in it so
         # model_class won't raise on unknown kwargs because BaseModel ignores extras
         # This just verifies the plumbing works
@@ -277,4 +277,4 @@ class TestApplyPydanticValidation:
 
     def test_returns_tuple(self):
         result = apply_pydantic_validation({}, "ContractNotice")
-        assert isinstance(result, tuple) and len(result) == 2
+        assert isinstance(result, tuple) and len(result) == 3

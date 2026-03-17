@@ -26,6 +26,8 @@ from pyspark.sql.types import BooleanType, StringType, StructField, StructType
 from procurement.silver.section_pipeline.spark_table_builder import (
     apply_column_parsers,
     build_section_tables,
+    detect_section_parse_error_quarantine,
+    detect_unknown_section_quarantine,
     make_html_sections_udf,
 )
 
@@ -476,6 +478,118 @@ class TestDetectUnknownSectionQuarantine:
 
 
 # ===========================================================================
+# detect_section_parse_error_quarantine
+# ===========================================================================
+
+
+_SECTIONS_SCHEMA = StructType([
+    StructField("objectId",           StringType()),
+    StructField("publicationDateDay", StringType()),
+    StructField("_sections_json",     StringType()),
+])
+
+
+class TestDetectSectionParseErrorQuarantine:
+    """detect_section_parse_error_quarantine — quarantines rows with HTML parse errors."""
+
+    def test_none_sections_df_returns_none(self):
+        assert detect_section_parse_error_quarantine(None, "ContractNotice") is None
+
+    def test_none_notice_type_returns_none(self, spark):
+        df = spark.createDataFrame(
+            [("obj1", "2025-01-01", '{"core": {}, "_parse_errors": ["duplicate_core_section: ..."]}')],
+            schema=_SECTIONS_SCHEMA,
+        )
+        assert detect_section_parse_error_quarantine(df, None) is None
+
+    def test_no_parse_errors_returns_empty_df(self, spark):
+        df = spark.createDataFrame(
+            [("obj1", "2025-01-01", '{"core": {"section_1_1": "alpha"}}')],
+            schema=_SECTIONS_SCHEMA,
+        )
+        result = detect_section_parse_error_quarantine(df, "ContractNotice")
+        assert result is not None
+        assert result.count() == 0
+
+    def test_parse_error_row_quarantined(self, spark):
+        error_msg = "duplicate_core_section: notice_type='AgreementUpdateNotice' section='3.7' field='section_3_7'"
+        df = spark.createDataFrame(
+            [("obj1", "2025-01-01", f'{{"core": {{}}, "_parse_errors": ["{error_msg}"]}}')],
+            schema=_SECTIONS_SCHEMA,
+        )
+        result = detect_section_parse_error_quarantine(df, "AgreementUpdateNotice")
+        assert result is not None
+        rows = result.collect()
+        assert len(rows) == 1
+        assert rows[0]["objectId"] == "obj1"
+        assert rows[0]["notice_type"] == "AgreementUpdateNotice"
+        assert rows[0]["data_model"] == "core"
+        errors = rows[0]["_parse_errors"]
+        assert any("duplicate_core_section" in e for e in errors)
+
+    def test_only_error_rows_quarantined(self, spark):
+        error_msg = "duplicate_core_section: ..."
+        df = spark.createDataFrame(
+            [
+                ("obj1", "2025-01-01", f'{{"core": {{}}, "_parse_errors": ["{error_msg}"]}}'),
+                ("obj2", "2025-01-02", '{"core": {"section_1_1": "ok"}}'),
+            ],
+            schema=_SECTIONS_SCHEMA,
+        )
+        result = detect_section_parse_error_quarantine(df, "ContractNotice")
+        assert result is not None
+        rows = result.collect()
+        assert len(rows) == 1
+        assert rows[0]["objectId"] == "obj1"
+
+    def test_no_internal_columns_in_output(self, spark):
+        df = spark.createDataFrame(
+            [("obj1", "2025-01-01", '{"core": {}, "_parse_errors": ["err"]}')],
+            schema=_SECTIONS_SCHEMA,
+        )
+        result = detect_section_parse_error_quarantine(df, "ContractNotice")
+        assert result is not None
+        for c in result.columns:
+            assert not c.startswith("_html_"), f"Internal column leaked: {c!r}"
+
+
+class TestBuildSectionTablesParseErrorExclusion:
+    """Rows with HTML _parse_errors must be excluded from section model tables."""
+
+    def test_duplicate_core_section_row_excluded_from_core_table(self, spark):
+        # obj1: valid notice
+        # obj2: duplicate core section 1.1 → _parse_errors in sections JSON
+        udf = make_html_sections_udf(_ALL_PROFILES)
+        df = _make_df(spark, [
+            ("obj1", "2025-01-01", _html(("1.1", "good"), ("1.2", "also_good"))),
+            ("obj2", "2025-01-02", _html(("1.1", "first"), ("1.1", "duplicate"))),
+        ])
+        tables, sections_df = build_section_tables(df, _TEST_NOTICE_TYPE, _CORE_PROFILE, udf)
+        try:
+            core = tables["core"]
+            rows = {r["objectId"] for r in core.collect()}
+            assert "obj1" in rows
+            assert "obj2" not in rows, "Row with duplicate section must be excluded from core table"
+        finally:
+            if sections_df:
+                sections_df.unpersist()
+
+    def test_valid_rows_unaffected_by_errored_peers(self, spark):
+        udf = make_html_sections_udf(_ALL_PROFILES)
+        df = _make_df(spark, [
+            ("obj1", "2025-01-01", _html(("1.1", "good"))),
+            ("obj2", "2025-01-02", _html(("1.1", "first"), ("1.1", "dup"))),
+        ])
+        tables, sections_df = build_section_tables(df, _TEST_NOTICE_TYPE, _CORE_PROFILE, udf)
+        try:
+            row = tables["core"].filter("objectId = 'obj1'").collect()[0]
+            assert row["section_1_1"] == "good"
+        finally:
+            if sections_df:
+                sections_df.unpersist()
+
+
+# ===========================================================================
 # apply_column_parsers
 # ===========================================================================
 
@@ -491,13 +605,13 @@ class TestApplyColumnParsers:
             ]),
         )
         tables = {"core": df}
-        result_tables, quarantine_df = apply_column_parsers(tables, _CORE_PROFILE, "ContractNotice")
+        result_tables, quarantine_df, _ = apply_column_parsers(tables, _CORE_PROFILE, "ContractNotice")
         # _CORE_PROFILE has no parsers → same object returned, no quarantine
         assert result_tables is tables
         assert quarantine_df is None
 
     def test_empty_section_tables_returns_unchanged(self, spark):
-        result_tables, quarantine_df = apply_column_parsers({}, _CORE_PROFILE, "ContractNotice")
+        result_tables, quarantine_df, _ = apply_column_parsers({}, _CORE_PROFILE, "ContractNotice")
         assert result_tables == {}
         assert quarantine_df is None
 
@@ -520,7 +634,7 @@ class TestApplyColumnParsers:
             },
         }
         tables = {"core": df}
-        result_tables, quarantine_df = apply_column_parsers(tables, profile_with_parser, "ContractNotice")
+        result_tables, quarantine_df, _ = apply_column_parsers(tables, profile_with_parser, "ContractNotice")
         col_type = dict(result_tables["core"].dtypes)["section_1_1"]
         assert col_type == "boolean"
 
@@ -541,7 +655,7 @@ class TestApplyColumnParsers:
                 "parser": {"fn": "parse_tak_nie"},
             },
         }
-        result_tables, _ = apply_column_parsers({"core": df}, profile_with_parser, "ContractNotice")
+        result_tables, _, _ = apply_column_parsers({"core": df}, profile_with_parser, "ContractNotice")
         rows = {r["objectId"]: r["section_1_1"] for r in result_tables["core"].collect()}
         assert rows["obj1"] is True
         assert rows["obj2"] is False
@@ -563,7 +677,7 @@ class TestApplyColumnParsers:
                 "parser": {"fn": "parse_tak_nie"},
             },
         }
-        result_tables, _ = apply_column_parsers({"core": df}, profile_with_parser, "ContractNotice")
+        result_tables, _, _ = apply_column_parsers({"core": df}, profile_with_parser, "ContractNotice")
         row = result_tables["core"].collect()[0]
         assert row["section_1_1"] is None
 
@@ -592,7 +706,7 @@ class TestApplyColumnParsers:
                 # no parser
             },
         }
-        result_tables, _ = apply_column_parsers({"core": df}, profile, "ContractNotice")
+        result_tables, _, _ = apply_column_parsers({"core": df}, profile, "ContractNotice")
         dtypes = dict(result_tables["core"].dtypes)
         assert dtypes["section_1_1"] == "boolean"
         assert dtypes["section_1_2"] == "string"
@@ -621,6 +735,6 @@ class TestApplyColumnParsers:
                 "parser": {"fn": "parse_tak_nie"},
             },
         }
-        result_tables, _ = apply_column_parsers({"core": df}, profile, "ContractNotice")
+        result_tables, _, _ = apply_column_parsers({"core": df}, profile, "ContractNotice")
         # should not raise; section_1_1 is still parsed
         assert dict(result_tables["core"].dtypes)["section_1_1"] == "boolean"

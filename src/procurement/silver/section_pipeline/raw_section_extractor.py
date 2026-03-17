@@ -143,6 +143,7 @@ def build_notice_sections_model(soup, notice_type: str | None, notice_dicts: dic
     current_index: dict[str, int] = {}
     last_section_by_model: dict[str, tuple[int, ...]] = {}
     unknown_sections: list[str] = []
+    parse_errors: list[str] = []
 
     for h3 in soup.find_all("h3"):
         section_number = extract_contract_notice_section_number(h3.get_text(separator=" ", strip=True))
@@ -161,10 +162,11 @@ def build_notice_sections_model(soup, notice_type: str | None, notice_dicts: dic
 
         if section_model == "core":
             if field_name in model_values["core"]:
-                raise ValueError(
-                    f"Duplicate core section while parsing notice_type={notice_type!r}: "
-                    f"section={section_number!r}, field={field_name!r}"
+                parse_errors.append(
+                    f"duplicate_core_section: notice_type={notice_type!r} "
+                    f"section={section_number!r} field={field_name!r}"
                 )
+                continue
             model_values["core"][field_name] = value
             last_section_by_model["core"] = section_key
             continue
@@ -212,5 +214,7 @@ def build_notice_sections_model(soup, notice_type: str | None, notice_dicts: dic
 
     if unknown_sections:
         model_values["_unknown_sections"] = sorted(set(unknown_sections))
+    if parse_errors:
+        model_values["_parse_errors"] = parse_errors
 
     return model_values

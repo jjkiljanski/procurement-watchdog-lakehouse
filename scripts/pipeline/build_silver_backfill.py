@@ -193,7 +193,7 @@ def main() -> None:
                 day_state["status"] = "completed"
                 day_state["completed_at"] = datetime.now(UTC).isoformat().replace("+00:00", "Z")
                 day_state["rows"] = result["rows"]
-                day_state["quarantined_rows"] = result["quarantined_rows"]
+                day_state["quarantined_rows"] = result.get("quarantined_rows", 0)
                 _save_state(state_path, state)
                 log.info("Backfill day done: %s rows=%s", day, result["rows"])
             except Exception as exc:

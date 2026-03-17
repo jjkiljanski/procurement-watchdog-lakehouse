@@ -26,7 +26,7 @@ from procurement.silver.common_envelope import (
 )
 from procurement.silver.section_pipeline.notice_schema_reader import load_all_profiles
 from procurement.silver.section_pipeline.final_schema_validator import apply_pydantic_validation, validate_section_models
-from procurement.silver.section_pipeline.spark_table_builder import apply_column_parsers, build_section_tables, detect_unknown_section_quarantine, make_html_sections_udf
+from procurement.silver.section_pipeline.spark_table_builder import apply_column_parsers, build_section_tables, detect_section_parse_error_quarantine, detect_unknown_section_quarantine, make_html_sections_udf
 
 log = logging.getLogger(__name__)
 
@@ -285,6 +285,8 @@ def run_silver_day_core(
             _raw_cache = batch_raw.persist(StorageLevel.MEMORY_AND_DISK)
             _sections_cache = None
             _envelope_cache = None
+            _c2_persisted: list = []
+            _c3_persisted: list = []
             batch_count = 0
 
             try:
@@ -325,12 +327,22 @@ def run_silver_day_core(
                     )
                     section_tables = {}
                 else:
+                    _t = time.perf_counter()
                     section_tables, _sections_cache = build_section_tables(
                         batch_raw,
                         notice_type=notice_type,
                         profile=notice_profile,
                         sections_udf=sections_udf,
                     )
+                    batch_profile["build_sections_sec"] = round(time.perf_counter() - _t, 3)
+
+                    # Case 0: rows where HTML section extraction failed structurally
+                    # (e.g. a core section appearing more than once in a notice).
+                    # These rows are already excluded from all model tables by
+                    # build_section_tables; here we route them to quarantine.
+                    c0_qdf = detect_section_parse_error_quarantine(_sections_cache, notice_type)
+                    if c0_qdf is not None:
+                        all_quarantine_dfs.append(c0_qdf)
 
                     # Case 1: rows with section numbers absent from the profile
                     c1_qdf = detect_unknown_section_quarantine(_sections_cache, notice_type)
@@ -338,12 +350,16 @@ def run_silver_day_core(
                         all_quarantine_dfs.append(c1_qdf)
 
                     # Case 2: strict parser failure
-                    section_tables, c2_qdf = apply_column_parsers(section_tables, notice_profile, notice_type)
+                    _t = time.perf_counter()
+                    section_tables, c2_qdf, _c2_persisted = apply_column_parsers(section_tables, notice_profile, notice_type)
+                    batch_profile["apply_parsers_sec"] = round(time.perf_counter() - _t, 3)
                     if c2_qdf is not None:
                         all_quarantine_dfs.append(c2_qdf)
 
                     # Case 3: Pydantic row-level validation
-                    section_tables, c3_qdf = apply_pydantic_validation(section_tables, notice_type)
+                    _t = time.perf_counter()
+                    section_tables, c3_qdf, _c3_persisted = apply_pydantic_validation(section_tables, notice_type)
+                    batch_profile["apply_pydantic_sec"] = round(time.perf_counter() - _t, 3)
                     if c3_qdf is not None:
                         all_quarantine_dfs.append(c3_qdf)
 
@@ -361,55 +377,70 @@ def run_silver_day_core(
                     # Use append (not overwrite) — rmtree above already cleared the dir,
                     # so append = fresh write without Spark's partition-clearing logic,
                     # which is not safe across concurrent jobs sharing a parent dir.
+                    _wt = time.perf_counter()
                     model_df.write.mode("append").parquet(str(model_day_dir))
                     log.info(
-                        "Wrote section table noticeType=%s model=%s -> %s",
+                        "Wrote section table noticeType=%s model=%s -> %s (%.1fs)",
                         notice_token, model, model_day_dir,
+                        time.perf_counter() - _wt,
                     )
 
-                # Write all section models in parallel when there are multiple.
-                if len(section_tables) > 1:
-                    with ThreadPoolExecutor(max_workers=len(section_tables)) as _pool:
-                        _futs = [_pool.submit(_write_section, m, df) for m, df in section_tables.items()]
-                        for _f in as_completed(_futs):
+                # Write all section models (parallel when multiple models).
+                _t = time.perf_counter()
+                _all_writers: list = list(section_tables.items())
+                if len(_all_writers) > 1:
+                    with ThreadPoolExecutor(max_workers=len(_all_writers)) as _pool:
+                        _section_futs = [_pool.submit(_write_section, m, df) for m, df in _all_writers]
+                        for _f in as_completed(_section_futs):
                             _f.result()
                 else:
-                    for m, df in section_tables.items():
+                    for m, df in _all_writers:
                         _write_section(m, df)
+                batch_profile["write_sections_sec"] = round(time.perf_counter() - _t, 3)
 
                 batch_profile["section_models"] = sorted(section_tables.keys())
 
                 # --- Quarantine (cases 1–4) ---
+                # Must run after section writes — case 2/3 quarantine reads from
+                # persisted model DFs that are materialised during section writes.
+                _t = time.perf_counter()
                 if all_quarantine_dfs:
                     quarantine_df: DataFrame | None = all_quarantine_dfs[0]
                     for _qdf in all_quarantine_dfs[1:]:
                         quarantine_df = quarantine_df.union(_qdf)
-                    quarantine_day_dir = (
-                        silver_dir
-                        / "quarantine"
-                        / f"noticeType={notice_token}"
-                        / f"publicationDateDay={target_date}"
-                    )
-                    _safe_rmtree(quarantine_day_dir, f"quarantine noticeType={notice_token}")
-                    quarantine_df.write.mode("append").parquet(str(quarantine_day_dir))
-                    log.info(
-                        "Wrote quarantine data noticeType=%s -> %s",
-                        notice_token,
-                        quarantine_day_dir,
-                    )
+                    if quarantine_df.take(1):
+                        quarantine_day_dir = (
+                            silver_dir
+                            / "quarantine"
+                            / f"noticeType={notice_token}"
+                            / f"publicationDateDay={target_date}"
+                        )
+                        _safe_rmtree(quarantine_day_dir, f"quarantine noticeType={notice_token}")
+                        quarantine_df.write.mode("append").parquet(str(quarantine_day_dir))
+                        log.info(
+                            "Wrote quarantine data noticeType=%s -> %s",
+                            notice_token,
+                            quarantine_day_dir,
+                        )
+                    else:
+                        log.debug("Skipped empty quarantine write noticeType=%s", notice_token)
+                batch_profile["write_quarantine_sec"] = round(time.perf_counter() - _t, 3)
 
-                # --- Common envelope (Bronze structured columns + noticeStage, no HTML) ---
-                # Write to a per-batch subdir.  Concurrent Spark jobs sharing the same
-                # _temporary/0/ staging path corrupt each other; isolated subdirs avoid that.
-                # All batches are merged into envelope_day_dir after the parallel loop.
+                # --- Envelope ---
+                _t = time.perf_counter()
                 envelope_df = build_envelope_df(batch_raw)
                 validate_envelope_schema(envelope_df)
                 _envelope_cache = envelope_df.persist(StorageLevel.MEMORY_AND_DISK)
                 batch_envelope_tmp = envelope_tmp_dir / f"batch={notice_token}"
                 _envelope_cache.write.mode("overwrite").parquet(str(batch_envelope_tmp))
+                batch_profile["envelope_sec"] = round(time.perf_counter() - _t, 3)
 
                 batch_profile["valid_rows"] = batch_count
             finally:
+                for _df in _c2_persisted:
+                    _df.unpersist()
+                for _df in _c3_persisted:
+                    _df.unpersist()
                 if _sections_cache is not None:
                     _sections_cache.unpersist()
                 if _envelope_cache is not None:
@@ -428,8 +459,8 @@ def run_silver_day_core(
                 _accum["rows"] += batch_count
                 _accum["profiles"].append(batch_profile)
 
-        # Run all notice-type batches in parallel.
-        with ThreadPoolExecutor(max_workers=len(notice_batches)) as _executor:
+        # Run notice-type batches in parallel, capped to avoid Spark resource contention.
+        with ThreadPoolExecutor(max_workers=min(len(notice_batches), 4)) as _executor:
             _futures = {
                 _executor.submit(_process_batch, nt, bp): (nt, bp)
                 for nt, bp in notice_batches

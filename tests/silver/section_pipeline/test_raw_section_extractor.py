@@ -9,7 +9,6 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import pytest
 from bs4 import BeautifulSoup
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent / "src"))
@@ -346,13 +345,20 @@ class TestBuildNoticeSectionsModel:
         result = build_notice_sections_model(soup, "ContractNotice", {"ContractNotice": _CORE_PROFILE})
         assert "section_1_2" not in result["core"]
 
-    def test_duplicate_core_section_raises(self):
+    def test_duplicate_core_section_quarantined(self):
+        # Duplicate core section must NOT raise; first value is kept and
+        # _parse_errors is populated so the orchestrator can route the row to quarantine.
         soup = _make_soup(
             '<h3>1.1.) First <span class="normal">Val 1</span></h3>'
             '<h3>1.1.) Duplicate <span class="normal">Val 2</span></h3>'
         )
-        with pytest.raises(ValueError, match="Duplicate core section"):
-            build_notice_sections_model(soup, "ContractNotice", {"ContractNotice": _CORE_PROFILE})
+        result = build_notice_sections_model(soup, "ContractNotice", {"ContractNotice": _CORE_PROFILE})
+        # First occurrence wins
+        assert result["core"]["section_1_1"] == "Val 1"
+        # Error recorded for quarantine routing
+        assert "_parse_errors" in result
+        assert any("duplicate_core_section" in e for e in result["_parse_errors"])
+        assert any("1.1" in e for e in result["_parse_errors"])
 
     def test_empty_html_returns_empty_core(self):
         soup = _make_soup("")

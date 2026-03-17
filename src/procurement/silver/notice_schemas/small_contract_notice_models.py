@@ -33,7 +33,7 @@ class SmallContractNoticeCoreModel(BaseModel):
     section_3_1: str | None = None
     section_3_2: str | None = None
     section_3_3: str | None = None
-    section_3_4: str | None = None
+    section_3_4: float | None = None    # parse_pln_value
     section_3_5: str | None = None
     section_3_6: str | None = None
     section_3_7: str | None = None
