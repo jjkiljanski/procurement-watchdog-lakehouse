@@ -40,24 +40,6 @@ from procurement.silver.section_value_parsers.common import (
 )
 
 # ---------------------------------------------------------------------------
-# Strict parsers — raise ParseError on non-empty, non-None unparseable input.
-# Used by the row-level validator UDF to identify quarantine candidates.
-# parse_currency_code is intentionally excluded: absence of an explicit
-# currency code is normal in Polish monetary fields (PLN is the default).
-# ---------------------------------------------------------------------------
-
-STRICT_PARSER_NAMES: frozenset[str] = frozenset({
-    "parse_tak_nie",
-    "parse_date_from_text",
-    "parse_datetime_from_text",
-    "parse_int_from_text",
-    "parse_pln_value",
-    "parse_criterion_weight",
-    "parse_nuts3_code",
-    "parse_nuts3_name",
-})
-
-# ---------------------------------------------------------------------------
 # Common parsers — available to all notice types
 # ---------------------------------------------------------------------------
 

@@ -21,12 +21,12 @@ import json
 import logging
 
 from pyspark.sql import DataFrame
-from pyspark.sql.functions import col, from_json, get_json_object, lit, posexplode, size
+from pyspark.sql.functions import col, expr, from_json, get_json_object, lit, posexplode, size, when
 from pyspark.sql.types import ArrayType, StringType, StructField, StructType
 from pyspark.sql.functions import udf
 from pyspark.storagelevel import StorageLevel
 
-from procurement.silver.section_pipeline.parser_registry import get_computed_entry, get_parser_entry, STRICT_PARSER_NAMES
+from procurement.silver.section_pipeline.parser_registry import get_computed_entry, get_parser_entry
 from procurement.silver.section_pipeline.notice_schema_reader import (
     model_core_col_names,
     model_sub_info,
@@ -333,86 +333,29 @@ def detect_section_parse_error_quarantine(
     return quarantine
 
 
-def _collect_model_strict_parsers(
-    profile: dict,
-    model: str,
-    strict_names: frozenset[str],
-    notice_type: str | None,
-    existing_cols: set[str],
-) -> list[tuple[str, list[tuple[str, object]]]]:
-    """Return [(source_col, [(fn_name, callable), ...]), ...] for strict parsers in a model.
+def _make_fault_tolerant_udf(fn, return_type):
+    """Wrap a parser or computed function in a struct(value, error) UDF.
 
-    Covers both top-level ``"parser"`` entries and ``"derived_cols"`` entries.
-    Only includes source columns that are present in the DataFrame (``existing_cols``).
-    De-duplicates (source_col, fn_name) pairs to avoid redundant checks.
+    Accepts one or more column arguments (matching the wrapped function's arity).
+    On success returns struct(typed_value, null).
+    On any exception returns struct(null, error_string).
+
+    This makes every section parser non-fatal: a failed column receives None
+    and the error message is collected into the row-level ``parse_errors``
+    column instead of routing the row to quarantine.
     """
-    col_checks: dict[str, list[tuple[str, object]]] = {}
-    seen_pairs: set[tuple[str, str]] = set()
+    _schema = StructType([StructField("value", return_type), StructField("error", StringType())])
+    _fn = fn
 
-    for cfg in profile.values():
-        if not isinstance(cfg, dict):
-            continue
-        dm = cfg.get("data_model", "")
-        tokens = dm.split(".")
-        top = tokens[0]
-        leaf = tokens[-1] if len(tokens) > 1 else "core"
-        if top != model or leaf != "core":
-            continue
-        col_name = cfg.get("col_name")
-        if not col_name or col_name not in existing_cols:
-            continue
+    def _call(*args):
+        if all(a is None for a in args):
+            return (None, None)
+        try:
+            return (_fn(*args), None)
+        except Exception as exc:
+            return (None, str(exc))
 
-        # Top-level "parser" entry
-        parser = cfg.get("parser")
-        if isinstance(parser, dict):
-            fn_name = parser.get("fn")
-            if fn_name and fn_name in strict_names and (col_name, fn_name) not in seen_pairs:
-                entry = get_parser_entry(fn_name, notice_type)
-                if entry:
-                    col_checks.setdefault(col_name, []).append((fn_name, entry[0]))
-                    seen_pairs.add((col_name, fn_name))
-
-        # "derived_cols" entries — source column checked against derived strict parsers
-        derived = cfg.get("derived_cols", {})
-        if isinstance(derived, dict):
-            for _, dcfg in derived.items():
-                fn_name = dcfg.get("fn") if isinstance(dcfg, dict) else None
-                if fn_name and fn_name in strict_names and (col_name, fn_name) not in seen_pairs:
-                    entry = get_parser_entry(fn_name, notice_type)
-                    if entry:
-                        col_checks.setdefault(col_name, []).append((fn_name, entry[0]))
-                        seen_pairs.add((col_name, fn_name))
-
-    return list(col_checks.items())
-
-
-def _make_validator_fn(checks_per_col: list[list[tuple[str, object]]]):
-    """Return a callable that validates row values and collects ParseError messages.
-
-    The returned function is suitable for wrapping with ``udf(..., ArrayType(StringType()))``.
-    It takes one positional arg per source column and returns a list of error strings
-    (empty list means no errors).
-
-    cloudpickle serialises the captured ``checks_per_col`` (list of lists of callables)
-    into the UDF closure; all callables are module-level functions in common.py.
-    """
-    _checks = checks_per_col  # stable reference captured by factory
-
-    def _validate(*values) -> list[str]:
-        from procurement.silver.section_value_parsers.common import ParseError
-        errors: list[str] = []
-        for val, col_chks in zip(values, _checks):
-            if val is None:
-                continue
-            for _fn_name, fn in col_chks:
-                try:
-                    fn(val)
-                except ParseError as exc:
-                    errors.append(str(exc))
-                    break  # one error per source column is sufficient
-        return errors
-
-    return _validate
+    return udf(_call, _schema)
 
 
 def apply_column_parsers(
@@ -422,10 +365,11 @@ def apply_column_parsers(
 ) -> tuple[dict[str, DataFrame], "DataFrame | None", list[DataFrame]]:
     """Apply registered column-level parsers to section DataFrames.
 
-    Strict parsers are validated before typing: a row-level UDF runs all strict
-    parser functions, catches ``ParseError``, and returns an error list.  Rows
-    with at least one error are collected into a quarantine DataFrame; the
-    remaining valid rows receive the typed column transformations.
+    All parsers are fault-tolerant: a parse failure on any field sets that
+    field to None and records the error in the row-level ``parse_errors``
+    column (``ArrayType(StringType())``, null when no errors).  No rows are
+    excluded from the output — downstream consumers filter on
+    ``parse_errors IS NULL`` if they require fully clean rows.
 
     Parameters
     ----------
@@ -438,61 +382,34 @@ def apply_column_parsers(
 
     Returns
     -------
-    (valid_tables, quarantine_df) where:
-    - valid_tables: same keys as input; typed columns for sections with parsers.
-    - quarantine_df: union of quarantine rows from all models, or ``None`` when
-      no strict parsers are configured or no rows failed validation.
-      Schema: objectId, publicationDateDay, notice_type, data_model, _parse_errors.
+    ``(result_tables, None, [])`` — second and third values are always empty
+    (kept for call-site compatibility).  Every DataFrame in ``result_tables``
+    gains a ``parse_errors`` column.
     """
     col_parsers = section_parsers(profile)
     derived = section_derived_cols(profile)
     computed_specs = section_computed_cols(profile)
 
-    if not section_tables or (not col_parsers and not derived and not computed_specs):
-        return section_tables, None, []
+    if not section_tables:
+        return {}, None, []
+
+    # No parsers of any kind — still add parse_errors: null for schema consistency.
+    if not col_parsers and not derived and not computed_specs:
+        return {
+            model: df.withColumn("parse_errors", lit(None).cast(ArrayType(StringType())))
+            for model, df in section_tables.items()
+        }, None, []
 
     result: dict[str, DataFrame] = {}
-    quarantine_dfs: list[DataFrame] = []
-    persisted_dfs: list[DataFrame] = []
 
     for model, df in section_tables.items():
         df_out = df
-        df_cols = set(df.columns)
 
-        # --- Strict-parser row validation ---
-        strict_pairs = _collect_model_strict_parsers(
-            profile, model, STRICT_PARSER_NAMES, notice_type, df_cols
-        )
-        if strict_pairs:
-            col_order = [c for c, _ in strict_pairs]
-            checks_per_col = [chks for _, chks in strict_pairs]
-            validator_fn = _make_validator_fn(checks_per_col)
-            validator_udf = udf(validator_fn, ArrayType(StringType()))
-            df_with_errors = df_out.withColumn(
-                "_parse_errors", validator_udf(*[col(c) for c in col_order])
-            ).persist(StorageLevel.MEMORY_AND_DISK)
-            persisted_dfs.append(df_with_errors)
-            quarantine_dfs.append(
-                df_with_errors.filter(size(col("_parse_errors")) > 0).select(
-                    col("objectId"),
-                    col("publicationDateDay"),
-                    lit(notice_type).alias("notice_type"),
-                    lit(model).alias("data_model"),
-                    col("_parse_errors"),
-                )
-            )
-            df_out = df_with_errors.filter(size(col("_parse_errors")) == 0).drop("_parse_errors")
-            log.debug(
-                "Built strict-parser validator model=%s cols=%s notice_type=%s",
-                model,
-                col_order,
-                notice_type,
-            )
-
-        # --- In-place column type replacement (parser key in profile) ---
-        # Build all parser expressions first, then apply in one select() to avoid
-        # N nested Project nodes in the Catalyst plan (causes "plan too large" warning).
-        parser_exprs: dict[str, object] = {}
+        # --- In-place column type replacement (fault-tolerant) ---
+        # Build all struct UDF expressions first, then apply in two select()
+        # calls (add structs, then extract value+error) to keep the Catalyst
+        # plan flat and avoid N nested Project nodes.
+        struct_exprs: dict[str, object] = {}  # col_name -> struct UDF expression
         for col_name, parser_cfg in col_parsers.items():
             if col_name not in df_out.columns:
                 continue
@@ -503,38 +420,40 @@ def apply_column_parsers(
             if entry is None:
                 log.warning(
                     "apply_column_parsers: unknown fn=%s notice_type=%s col=%s; skipping",
-                    fn_name,
-                    notice_type,
-                    col_name,
+                    fn_name, notice_type, col_name,
                 )
                 continue
             parser_fn, return_type = entry
-            parser_exprs[col_name] = udf(parser_fn, return_type)(col(col_name))
+            struct_exprs[col_name] = _make_fault_tolerant_udf(parser_fn, return_type)(col(col_name))
             log.debug(
-                "Registered parser fn=%s col=%s model=%s notice_type=%s",
-                fn_name,
-                col_name,
-                model,
-                notice_type,
+                "Registered fault-tolerant parser fn=%s col=%s model=%s notice_type=%s",
+                fn_name, col_name, model, notice_type,
             )
-        if parser_exprs:
-            df_out = df_out.select(*[
-                parser_exprs[c].alias(c) if c in parser_exprs else col(c)
-                for c in df_out.columns
-            ])
 
-        # Derived columns: one source col → multiple typed output cols.
-        # The source col is renamed to a temp name first so that all derived
-        # UDFs read from the original raw value, even when one derived col
-        # reuses the same name as the source.
-        # All derived expressions for a source are collected, then applied in
-        # one select() to avoid N nested Project nodes per source group.
+        if struct_exprs:
+            df_out = df_out.select(
+                *[col(c) for c in df_out.columns],
+                *[expr_val.alias(f"_ft_{c}") for c, expr_val in struct_exprs.items()],
+            )
+            df_out = df_out.select(
+                *[
+                    col(f"_ft_{c}").getField("value").alias(c)
+                    if c in struct_exprs else col(c)
+                    for c in df_out.columns if not c.startswith("_ft_")
+                ],
+                *[col(f"_ft_{c}").getField("error").alias(f"_perr_{c}") for c in struct_exprs],
+            )
+
+        # --- Derived columns (fault-tolerant) ---
+        # Source col renamed to temp; all derived UDFs read from temp so that
+        # a derived col reusing the source name replaces it cleanly.
         for source_col, derived_map in derived.items():
             if source_col not in df_out.columns:
                 continue
             temp_col = f"_derived_src_{source_col}"
             df_out = df_out.withColumnRenamed(source_col, temp_col)
-            derived_exprs: dict[str, object] = {}
+
+            ft_derived: dict[str, object] = {}  # derived_col -> struct UDF expr
             for derived_col, parser_cfg in derived_map.items():
                 fn_name = parser_cfg.get("fn")
                 if not fn_name:
@@ -544,48 +463,41 @@ def apply_column_parsers(
                     log.warning(
                         "apply_column_parsers: unknown fn=%s notice_type=%s "
                         "derived_col=%s; skipping",
-                        fn_name,
-                        notice_type,
-                        derived_col,
+                        fn_name, notice_type, derived_col,
                     )
                     continue
                 parser_fn, return_type = entry
-                derived_exprs[derived_col] = udf(parser_fn, return_type)(col(temp_col))
+                ft_derived[derived_col] = _make_fault_tolerant_udf(parser_fn, return_type)(col(temp_col))
                 log.debug(
-                    "Registered derived parser fn=%s source=%s derived=%s model=%s notice_type=%s",
-                    fn_name,
-                    source_col,
-                    derived_col,
-                    model,
-                    notice_type,
+                    "Registered fault-tolerant derived parser fn=%s source=%s "
+                    "derived=%s model=%s notice_type=%s",
+                    fn_name, source_col, derived_col, model, notice_type,
                 )
-            if derived_exprs:
-                # Keep all columns except temp_col, then append derived outputs.
-                # Excludes source_col (renamed to temp_col) — any derived col
-                # sharing its name replaces it naturally.
-                pass_through = [col(c) for c in df_out.columns if c != temp_col]
+
+            if ft_derived:
+                df_out = df_out.select(
+                    *[col(c) for c in df_out.columns],
+                    *[expr_val.alias(f"_ft_{dc}") for dc, expr_val in ft_derived.items()],
+                )
+                pass_through = [
+                    col(c) for c in df_out.columns
+                    if c != temp_col and not c.startswith("_ft_")
+                ]
                 df_out = df_out.select(
                     *pass_through,
-                    *[expr.alias(dc) for dc, expr in derived_exprs.items()],
+                    *[col(f"_ft_{dc}").getField("value").alias(dc) for dc in ft_derived],
+                    *[col(f"_ft_{dc}").getField("error").alias(f"_perr_{dc}") for dc in ft_derived],
                 )
             else:
                 df_out = df_out.drop(temp_col)
 
-        # Computed columns: multi-source → single typed output.
-        # Sources that collide with any output col_name are temp-renamed
-        # before any UDF runs so all UDFs read the original raw value.
+        # --- Computed columns (fault-tolerant, multi-source) ---
         computed_for_model = [
             s for s in computed_specs if s.get("data_model") == model
         ]
         if computed_for_model:
-            all_output_names = {
-                s["col_name"] for s in computed_for_model if "col_name" in s
-            }
-            all_sources = {
-                src
-                for s in computed_for_model
-                for src in s.get("sources", [])
-            }
+            all_output_names = {s["col_name"] for s in computed_for_model if "col_name" in s}
+            all_sources = {src for s in computed_for_model for src in s.get("sources", [])}
             conflict_cols = (all_output_names & all_sources) & set(df_out.columns)
 
             temp_mapping: dict[str, str] = {}
@@ -594,9 +506,7 @@ def apply_column_parsers(
                 df_out = df_out.withColumnRenamed(conflict_col, temp_name)
                 temp_mapping[conflict_col] = temp_name
 
-            # Collect all computed expressions first, then apply in one
-            # select() to avoid N nested Project nodes in the Catalyst plan.
-            computed_exprs: dict[str, object] = {}
+            ft_computed: dict[str, object] = {}  # out_col -> struct UDF expr
             for spec in computed_for_model:
                 fn_name = spec.get("fn")
                 out_col = spec.get("col_name")
@@ -608,41 +518,52 @@ def apply_column_parsers(
                     log.warning(
                         "apply_column_parsers: unknown computed fn=%s "
                         "notice_type=%s col=%s; skipping",
-                        fn_name,
-                        notice_type,
-                        out_col,
+                        fn_name, notice_type, out_col,
                     )
                     continue
                 computed_fn, return_type = entry
-                computed_udf = udf(computed_fn, return_type)
                 resolved = [col(temp_mapping.get(s, s)) for s in sources]
-                computed_exprs[out_col] = computed_udf(*resolved)
+                ft_computed[out_col] = _make_fault_tolerant_udf(computed_fn, return_type)(*resolved)
                 log.debug(
-                    "Registered computed fn=%s sources=%s out=%s model=%s notice_type=%s",
-                    fn_name,
-                    sources,
-                    out_col,
-                    model,
-                    notice_type,
+                    "Registered fault-tolerant computed fn=%s sources=%s out=%s "
+                    "model=%s notice_type=%s",
+                    fn_name, sources, out_col, model, notice_type,
                 )
 
-            if computed_exprs:
+            if ft_computed:
                 temp_names = set(temp_mapping.values())
-                pass_through = [col(c) for c in df_out.columns if c not in temp_names]
+                df_out = df_out.select(
+                    *[col(c) for c in df_out.columns],
+                    *[expr_val.alias(f"_ft_{oc}") for oc, expr_val in ft_computed.items()],
+                )
+                pass_through = [
+                    col(c) for c in df_out.columns
+                    if c not in temp_names and not c.startswith("_ft_")
+                ]
                 df_out = df_out.select(
                     *pass_through,
-                    *[expr.alias(oc) for oc, expr in computed_exprs.items()],
+                    *[col(f"_ft_{oc}").getField("value").alias(oc) for oc in ft_computed],
+                    *[col(f"_ft_{oc}").getField("error").alias(f"_perr_{oc}") for oc in ft_computed],
                 )
             else:
                 for temp_name in temp_mapping.values():
                     df_out = df_out.drop(temp_name)
 
+        # --- Aggregate all _perr_* columns into parse_errors: array<string>|null ---
+        err_cols = [c for c in df_out.columns if c.startswith("_perr_")]
+        if err_cols:
+            df_out = df_out.withColumn(
+                "_parse_errors_raw",
+                expr(f"filter(array({', '.join(err_cols)}), x -> x is not null)"),
+            )
+            df_out = df_out.withColumn(
+                "parse_errors",
+                when(size(col("_parse_errors_raw")) > 0, col("_parse_errors_raw")),
+            )
+            df_out = df_out.drop("_parse_errors_raw", *err_cols)
+        else:
+            df_out = df_out.withColumn("parse_errors", lit(None).cast(ArrayType(StringType())))
+
         result[model] = df_out
 
-    quarantine_df: DataFrame | None = None
-    if quarantine_dfs:
-        quarantine_df = quarantine_dfs[0]
-        for qdf in quarantine_dfs[1:]:
-            quarantine_df = quarantine_df.union(qdf)
-
-    return result, quarantine_df, persisted_dfs
+    return result, None, []
