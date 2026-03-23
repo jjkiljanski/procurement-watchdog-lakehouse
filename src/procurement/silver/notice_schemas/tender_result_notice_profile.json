@@ -454,6 +454,14 @@
       "Przedmiotem zamówienia jest świadczenie usług pocztowych dla Związku Międzygminnego „Gospodarka Odpadami Aglomeracji Poznańskiej” w likwidacji w okresie od 1 stycznia 2025 r. do 31 grudnia 2025 r."
     ]
   },
+  "4.5.2": {
+    "col_name": "section_4_5_2",
+    "section_header": "Zapotrzebowanie na innowacyjny produkt, usługę lub roboty budowlane",
+    "data_model": "part",
+    "example_values": [
+      "nie dotyczy"
+    ]
+  },
   "4.5.3": {
     "col_name": "section_4_5_3",
     "section_header": "Główny kod CPV",

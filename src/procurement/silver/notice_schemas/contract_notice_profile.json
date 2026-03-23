@@ -183,6 +183,14 @@
       "Gmina Myślenice: prowadzi postępowania w celu wyboru najkorzystniejszej oferty, wybór oferty ZPO w Drogini -  opisu przedmiotu zamówienia, określenie wartości szacunkowej oraz udzieli zamówienia"
     ]
   },
+  "1.10": {
+    "col_name": "section_1_10",
+    "section_header": "Właściwe przepisy w przypadku wspólnego udzielania zamówień z zamawiającymi z innych państw członkowskich UE",
+    "data_model": "core",
+    "example_values": [
+      "nie dotyczy"
+    ]
+  },
   "1.11.1": {
     "col_name": "section_1_11_1",
     "section_header": "Nazwa podmiotu prowadzącego postępowanie",
@@ -830,6 +838,15 @@
       "Szkolenie z systemów glazurniczych Przygotowanie podłoża; Kleje i fugi do montażu okładzin ceramicznych; Hydroizolacja oraz tarasy; Rodzaje maszyn, nowoczesne technologie, zasady bezpieczeństwa; Wykonanie hydroizolacji mineralnej oraz jednoskładnikowej wraz z montażem taśm; Wykonanie wylewki; Klejenie płytek na klejach; Techniki cięcia i fazowania;"
     ]
   },
+  "4.2.3": {
+    "col_name": "section_4_2_3",
+    "section_header": "Opis potrzeb Zamawiającego",
+    "data_model": "part",
+    "example_values": [
+      "Część 1 – Testy molekularne do badań – bakterie pokarmowe",
+      "Część II - Testy molekularne do badań - wirusy oddechowe."
+    ]
+  },
   "4.2.4": {
     "col_name": "section_4_2_4",
     "section_header": "Zapotrzebowa",
@@ -1443,6 +1460,14 @@
       "kryteria oceny ofert określone w Rozdziale XXVIII SWZ"
     ]
   },
+  "8.8": {
+    "col_name": "section_8_8",
+    "section_header": "Krótki opis minimalnych wymagań dotyczących przedmiotu zamówienia lub realizacji zamówienia, niepodlegających negocjacjom, które muszą spełnić wszystkie oferty",
+    "data_model": "core",
+    "example_values": [
+      "Krótki opis minimalnych wymagań dotyczących przedmiotu zamówienia znajduje się w załączniku nr 1 do OPiW."
+    ]
+  },
   "8.9": {
     "col_name": "section_8_9",
     "section_header": "Termin składania wniosków o dopuszczenie do udziału w postępowaniu",
@@ -1529,6 +1554,14 @@
       "Zamawiający udziela zamówień na podstawie art. 314 ust. 1 pkt 2  ustawy",
       "Zamawiający udziela zamówień na podstawie art. 314 ust. 1 pkt 3  ustawy",
       "Zamawiający udziela zamówień na podstawie art. 314 ust. 1 pkt 1  ustawy"
+    ]
+  },
+  "8.23": {
+    "col_name": "section_8_23",
+    "section_header": "Uzasadnienie zawarcia umowy ramowej na okres wykraczający poza wskazany w art. 311 ust. 3 ustawy",
+    "data_model": "core",
+    "example_values": [
+      "nie dotyczy"
     ]
   }
 }
