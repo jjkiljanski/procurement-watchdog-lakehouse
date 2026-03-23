@@ -25,7 +25,7 @@ from procurement.silver.common_envelope import (
     validate_envelope_schema,
 )
 from procurement.silver.section_pipeline.notice_schema_reader import load_all_profiles
-from procurement.silver.section_pipeline.final_schema_validator import validate_section_models
+from procurement.silver.section_pipeline.final_schema_validator import apply_pydantic_validation, validate_section_models
 from procurement.silver.section_pipeline.spark_table_builder import apply_column_parsers, build_section_tables, detect_section_parse_error_quarantine, detect_unknown_section_quarantine, make_html_sections_udf
 
 log = logging.getLogger(__name__)
@@ -267,6 +267,7 @@ def run_silver_day_core(
             _raw_cache = batch_raw.persist(StorageLevel.MEMORY_AND_DISK)
             _sections_cache = None
             _envelope_cache = None
+            _c3_persisted: list = []
             batch_count = 0
 
             try:
@@ -334,6 +335,15 @@ def run_silver_day_core(
                     _t = time.perf_counter()
                     section_tables, _, _ = apply_column_parsers(section_tables, notice_profile, notice_type)
                     batch_profile["apply_parsers_sec"] = round(time.perf_counter() - _t, 3)
+
+                    # Case 3: Pydantic contract check — catches parser bugs
+                    # (wrong return type without ParseError). Should never fire
+                    # in practice; rows that do fail go to quarantine.
+                    _t = time.perf_counter()
+                    section_tables, c3_qdf, _c3_persisted = apply_pydantic_validation(section_tables, notice_type)
+                    batch_profile["apply_pydantic_sec"] = round(time.perf_counter() - _t, 3)
+                    if c3_qdf is not None:
+                        all_quarantine_dfs.append(c3_qdf)
 
                     # Driver-side schema presence check (logs warnings, no data routing)
                     section_tables = validate_section_models(section_tables, notice_type)
@@ -416,6 +426,8 @@ def run_silver_day_core(
 
                 batch_profile["valid_rows"] = batch_count
             finally:
+                for _df in _c3_persisted:
+                    _df.unpersist()
                 if _sections_cache is not None:
                     _sections_cache.unpersist()
                 if _envelope_cache is not None:
