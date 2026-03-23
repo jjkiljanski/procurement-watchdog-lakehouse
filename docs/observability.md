@@ -119,16 +119,18 @@ Silver runs two DQ layers:
    `src/procurement/silver/legacy/validation.py`. Invalid rows go to
    `data/silver/_quarantine/notice_rows/`.
 
-2. **New path** (`pipeline_orchestrator.py`): four quarantine cases:
-   - Case 0 — HTML structural parse error (duplicate core section)
-   - Case 1 — unknown section numbers (not in profile JSON)
-   - Case 2 — strict column parser failure (`ParseError`)
-   - Case 3 — Pydantic row-level validation failure
-   - Case 4 — no registered profile for notice type
+2. **New path** (`pipeline_orchestrator.py`): five validation cases:
+   - Case 0 — HTML structural parse error → row excluded, written to quarantine
+   - Case 1 — unknown section numbers → row kept in silver, also written to quarantine (monitoring signal)
+   - Case 2 — column parser failure → **non-fatal**; column set to `None`, error appended to `parse_errors` column on row; nothing quarantined
+   - Case 3 — Pydantic contract violation → row excluded, written to quarantine; indicates a parser implementation bug
+   - Case 4 — no registered profile for notice type → row excluded
 
    Quarantine rows written to `data/silver/quarantine/noticeType=<TYPE>/`.
 
-See `docs/runbooks/SILVER_QUARANTINE.md` for case details.
+   All silver section rows carry a `parse_errors: array<string>` column (null when clean).
+
+See `src/docs/runbooks/QUARANTINE.md` for full case descriptions and the `parse_errors` column contract.
 
 ---
 
