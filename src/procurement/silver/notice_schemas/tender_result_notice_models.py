@@ -71,6 +71,7 @@ class TenderResultNoticeCoreModel(BaseModel):
 
 class TenderResultNoticePartModel(BaseModel):
     section_4_5_1: str | None = None
+    section_4_5_2: str | None = None
     section_4_5_3: list[str] | None = None   # parse_cpv_codes
     section_4_5_4: list[str] | None = None   # parse_cpv_codes
     section_4_5_5: float | None = None       # parse_pln_value

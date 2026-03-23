@@ -38,13 +38,12 @@ from procurement.silver.section_pipeline.parser_registry import (
 # data_model types or new notice types.
 # ---------------------------------------------------------------------------
 
-_KNOWN_DATA_MODELS: frozenset[str] = frozenset({
+# Top-level (non-repeating) model names that are valid on their own.
+_KNOWN_TOP_LEVEL_MODELS: frozenset[str] = frozenset({
     "core",
     "author",
     "client",
     "part",
-    "part.core",
-    "part.part",
     "change_matter",
     "criterion_procedure",
     "criterion_qualification",
@@ -88,6 +87,26 @@ def test_every_entry_has_required_keys(notice_type):
         )
 
 
+def _is_valid_data_model(dm: str) -> bool:
+    """Return True for any structurally valid data_model value.
+
+    Valid forms:
+    - A known top-level name (e.g. "core", "part", "client")
+    - <top_level>.<leaf> where top_level is a known top-level name and leaf is
+      any non-empty identifier that is not "core" (e.g. "part.criterion",
+      "part.part").  The leaf "core" is reserved: it marks fields that appear
+      once per entity, so <entity>.core is the canonical form for entity-level
+      fields within a repeating model.
+    """
+    if dm in _KNOWN_TOP_LEVEL_MODELS:
+        return True
+    parts = dm.split(".")
+    if len(parts) == 2:
+        entity, leaf = parts
+        return entity in _KNOWN_TOP_LEVEL_MODELS and bool(leaf)
+    return False
+
+
 @pytest.mark.parametrize("notice_type", _ALL_NOTICE_TYPES)
 def test_all_data_model_values_are_known(notice_type):
     """No data_model value outside the declared set."""
@@ -96,7 +115,7 @@ def test_all_data_model_values_are_known(notice_type):
         if not isinstance(cfg, dict):
             continue
         dm = cfg.get("data_model", "")
-        assert dm in _KNOWN_DATA_MODELS, (
+        assert _is_valid_data_model(dm), (
             f"{notice_type} section {section_num}: unexpected data_model={dm!r}"
         )
 
@@ -290,9 +309,9 @@ class TestModelSubInfo:
         assert sub_key == "part"
         assert len(sub_cols) >= 1
 
-    def test_contract_notice_has_no_sub_lists(self):
-        """ContractNotice uses flat 'part' — no sub-list."""
+    def test_contract_notice_part_has_criterion_sub_list(self):
+        """ContractNotice 'part' model has a 'criterion' sub-list (sections 4.3.4-7)."""
         profiles = load_all_profiles()
         sub_key, sub_cols = model_sub_info(profiles["ContractNotice"], "part")
-        assert sub_key is None
-        assert sub_cols == []
+        assert sub_key == "criterion"
+        assert len(sub_cols) >= 1

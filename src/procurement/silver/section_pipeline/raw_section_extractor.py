@@ -183,14 +183,13 @@ def build_notice_sections_model(soup, notice_type: str | None, notice_dicts: dic
 
         prev_key = last_section_by_model.get(model_path)
         if prev_key is not None and section_key <= prev_key:
-            if leaf_kind == "core":
-                current_index[entity_path] = current_index.get(entity_path, 0) + 1
-                _reset_descendant_indices(current_index, entity_path)
-                _reset_descendant_section_state(last_section_by_model, entity_path)
-            else:
-                current_index[model_path] = current_index.get(model_path, 0) + 1
-                _reset_descendant_indices(current_index, model_path)
-                _reset_descendant_section_state(last_section_by_model, model_path)
+            # Advance the counter for the repeating unit this section belongs to:
+            # - core sections appear once per entity  → advance the entity counter
+            # - any other leaf appears multiple times → advance its own sub-list counter
+            advance_path = entity_path if leaf_kind == "core" else model_path
+            current_index[advance_path] = current_index.get(advance_path, 0) + 1
+            _reset_descendant_indices(current_index, advance_path)
+            _reset_descendant_section_state(last_section_by_model, advance_path)
 
         current_index.setdefault(entity_path, 0)
         entity_slot = _ensure_model_slot(model_values, current_index, entity_path)

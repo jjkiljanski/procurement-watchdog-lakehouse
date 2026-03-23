@@ -43,6 +43,7 @@ class ContractNoticeCoreModel(BaseModel):
     section_1_6: str | None = None
     section_1_7: str | None = None
     section_1_9: str | None = None
+    section_1_10: str | None = None
     section_1_11_1: str | None = None
     section_1_11_2: str | None = None
     section_1_11_2_type: str | None = None
@@ -147,10 +148,13 @@ class ContractNoticeCoreModel(BaseModel):
     section_8_20: bool | None = None        # parse_tak_nie
     section_8_21: int | None = None         # parse_int_from_text
     section_8_22: str | None = None
+    section_8_23: str | None = None
+    section_8_8: str | None = None
 
 
 class ContractNoticePartModel(BaseModel):
     section_4_2_2: str | None = None
+    section_4_2_3: str | None = None
     section_4_2_4: bool | None = None       # parse_tak_nie
     section_4_2_5: float | None = None      # parse_pln_value
     section_4_2_5_currency: str | None = None
