@@ -267,7 +267,8 @@ def run_silver_day_core(
             _raw_cache = batch_raw.persist(StorageLevel.MEMORY_AND_DISK)
             _sections_cache = None
             _envelope_cache = None
-            _c3_persisted: list = []
+            _c2_persisted: list = []  # parser-level model DFs (from apply_column_parsers)
+            _c3_persisted: list = []  # pydantic-level DFs (currently empty, kept for symmetry)
             batch_count = 0
 
             try:
@@ -331,9 +332,12 @@ def run_silver_day_core(
                         all_quarantine_dfs.append(c1_qdf)
 
                     # Case 2: column-level parsing (fault-tolerant; errors go
-                    # into the per-row parse_errors column, not quarantine)
+                    # into the per-row parse_errors column, not quarantine).
+                    # apply_column_parsers persists each model DF so that
+                    # downstream steps (Pydantic, quarantine scans) read from
+                    # cache once the parallel section-table writes populate it.
                     _t = time.perf_counter()
-                    section_tables, _, _ = apply_column_parsers(section_tables, notice_profile, notice_type)
+                    section_tables, _, _c2_persisted = apply_column_parsers(section_tables, notice_profile, notice_type)
                     batch_profile["apply_parsers_sec"] = round(time.perf_counter() - _t, 3)
 
                     # Case 3: Pydantic contract check — catches parser bugs
@@ -426,6 +430,8 @@ def run_silver_day_core(
 
                 batch_profile["valid_rows"] = batch_count
             finally:
+                for _df in _c2_persisted:
+                    _df.unpersist()
                 for _df in _c3_persisted:
                     _df.unpersist()
                 if _sections_cache is not None:

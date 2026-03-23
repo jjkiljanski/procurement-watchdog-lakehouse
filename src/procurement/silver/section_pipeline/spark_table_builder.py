@@ -564,6 +564,12 @@ def apply_column_parsers(
         else:
             df_out = df_out.withColumn("parse_errors", lit(None).cast(ArrayType(StringType())))
 
+        # Persist each model DF so that subsequent steps (Pydantic validation,
+        # quarantine scans) read from cache rather than recomputing the full
+        # parser chain.  The cache is populated lazily when the first action
+        # (section table write) triggers it, which happens in parallel for all
+        # models via the orchestrator's ThreadPoolExecutor.
+        df_out = df_out.persist(StorageLevel.MEMORY_AND_DISK)
         result[model] = df_out
 
-    return result, None, []
+    return result, None, list(result.values())

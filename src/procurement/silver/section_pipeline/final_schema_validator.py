@@ -193,14 +193,12 @@ def apply_pydantic_validation(
     from pyspark.sql import DataFrame
     from pyspark.sql.functions import col, lit, size, struct, to_json, udf
     from pyspark.sql.types import ArrayType, StringType
-    from pyspark.storagelevel import StorageLevel
 
     if not notice_type or not section_tables:
         return section_tables, None, []
 
     result: dict[str, DataFrame] = {}
     quarantine_dfs: list[DataFrame] = []
-    persisted_dfs: list = []
 
     for model, df in section_tables.items():
         model_class = get_pydantic_model_class(notice_type, model)
@@ -219,10 +217,11 @@ def apply_pydantic_validation(
         validator_udf = udf(_make_pydantic_validator_fn(model_class), ArrayType(StringType()))
         payload_json = to_json(struct(*[col(c) for c in payload_cols]))
 
-        df_with_errors = df.withColumn(
-            "_pydantic_errors", validator_udf(payload_json)
-        ).persist(StorageLevel.MEMORY_AND_DISK)
-        persisted_dfs.append(df_with_errors)
+        # No persist here: the input DFs are already persisted by apply_column_parsers.
+        # Adding pydantic errors on top of a cached DF is cheap; the write
+        # triggered by the orchestrator's parallel section-table writer populates
+        # the apply_column_parsers cache while computing the pydantic column.
+        df_with_errors = df.withColumn("_pydantic_errors", validator_udf(payload_json))
 
         quarantine_dfs.append(
             df_with_errors
@@ -253,4 +252,4 @@ def apply_pydantic_validation(
         for qdf in quarantine_dfs[1:]:
             quarantine_df = quarantine_df.union(qdf)
 
-    return result, quarantine_df, persisted_dfs
+    return result, quarantine_df, []
