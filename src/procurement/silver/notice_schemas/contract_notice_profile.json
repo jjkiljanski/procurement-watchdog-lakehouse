@@ -1003,7 +1003,7 @@
   "4.3.4": {
     "col_name": "section_4_3_4",
     "section_header": "Rodzaj kryterium",
-    "data_model": "part",
+    "data_model": "part.criterion",
     "example_values": [
       "inne.",
       "serwis posprzedażny, pomoc techniczna, warunki dostawy takich jak termin, sposób lub czas dostawy, oraz okresu realizacji.",
@@ -1013,7 +1013,7 @@
   "4.3.5": {
     "col_name": "section_4_3_5",
     "section_header": "Nazwa kryterium",
-    "data_model": "part",
+    "data_model": "part.criterion",
     "example_values": [
       "Cena",
       "Doświadczenie zawodowe",
@@ -1023,7 +1023,7 @@
   "4.3.6": {
     "col_name": "section_4_3_6",
     "section_header": "Waga",
-    "data_model": "part",
+    "data_model": "part.criterion",
     "example_values": [
       "60",
       "40",
@@ -1036,7 +1036,7 @@
   "4.3.7": {
     "col_name": "section_4_3_7",
     "section_header": "Kolejność kryterium",
-    "data_model": "part",
+    "data_model": "part.criterion",
     "example_values": [
       "1",
       "100",

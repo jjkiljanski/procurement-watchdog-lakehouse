@@ -112,7 +112,7 @@ def validate_section_models(
 
         expected = set(model_class.model_fields)
         actual = set(df.columns)
-        pipeline_cols = _PIPELINE_COLS | {f"{model}_ordinal"}
+        pipeline_cols = _PIPELINE_COLS | {f"{model}_ordinal"} | {c for c in actual if c.endswith("_items")}
 
         missing = expected - actual
         if missing:
@@ -213,7 +213,7 @@ def apply_pydantic_validation(
             result[model] = df
             continue
 
-        pipeline_cols = _PIPELINE_COLS | {f"{model}_ordinal", f"{model}_items"}
+        pipeline_cols = _PIPELINE_COLS | {f"{model}_ordinal"} | {c for c in df.columns if c.endswith("_items")}
         payload_cols = [c for c in df.columns if c not in pipeline_cols]
 
         validator_udf = udf(_make_pydantic_validator_fn(model_class), ArrayType(StringType()))

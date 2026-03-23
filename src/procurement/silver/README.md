@@ -128,6 +128,45 @@ Each entry in `notice_schemas/<type>_profile.json`:
 
 ---
 
+## How notice HTML is parsed based on schema definitions
+
+The profile JSON for each notice type (`notice_schemas/<type>_profile.json`) is the complete instruction set for the parser. It maps every BZP section number to a column name, an entity type, and an optional typed parser. The HTML parser itself contains no notice-type-specific knowledge — all of it lives in the profile.
+
+### What the profile defines
+
+Every entry maps one numbered section (e.g. `"4.2.2"`) to:
+
+- **`col_name`** — the Silver column name for this section's value
+- **`data_model`** — the entity type this section belongs to: `core` (once per notice), `client` (once per contracting authority), `part` / `part.core` (once per contract part), `part.part` (once per sub-item within a part, e.g. an evaluation criterion)
+- **`parser`** — optional typed parser function (`parse_tak_nie`, `parse_pln_value`, etc.) applied after extraction; `null` means the raw string is kept as-is
+
+Sections not listed in the profile are silently skipped and recorded in `_unknown_sections`.
+
+### Reading sections from HTML
+
+BZP HTML is a flat sequence of `<h3>` headings. Each heading carries a section number in its text and a value either inline (inside a `<span class="normal">`) or in the text or `<p>` elements that immediately follow it. The parser scans all headings in document order, extracts the number and value from each, looks the number up in the profile, and stores the value under the `col_name` defined there.
+
+### Splitting repeating entities
+
+Notices with multiple parts, authorities, or criteria serialise all of them as one continuous flat sequence of headings — there are no explicit delimiters. The parser identifies entity boundaries by watching for section numbers that go backwards within a given `data_model` group: when a section number is lower than or equal to the last section number seen for that entity type, a new instance of that entity has started.
+
+For example: if the last heading for a `part`-level section was `4.3.5` and the next `part`-level heading is `4.3.4`, the parser closes the current part and opens a new one. Each entity type (`part`, `client`, `part.part`, …) is tracked independently, so a reset in one does not affect the others. When a parent entity resets (e.g. a new part starts), all its child counters (e.g. criteria within that part) are reset too.
+
+### Output
+
+The parser produces a nested structure grouping values by entity type:
+
+```
+core    →  flat dict of section values (one per notice)
+client  →  list of dicts, one per contracting authority
+part    →  list of dicts, one per contract part;
+           each may contain a nested sub-list (e.g. "part" for criteria rows)
+```
+
+`spark_table_builder.py` explodes this into one Spark DataFrame per entity type, where each row is one entity instance and each column corresponds to one profile entry.
+
+---
+
 ## Data model hierarchy
 
 | `data_model` value | Table shape | Example notice types |

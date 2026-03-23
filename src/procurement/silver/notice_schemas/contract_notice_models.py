@@ -167,9 +167,12 @@ class ContractNoticePartModel(BaseModel):
     section_4_3_1: str | None = None
     section_4_3_2: str | None = None
     section_4_3_3: str | None = None
+    section_4_3_10: bool | None = None      # parse_tak_nie
+    section_4_3_11: str | None = None
+
+
+class ContractNoticePartCriterionModel(BaseModel):
     section_4_3_4: str | None = None
     section_4_3_5: str | None = None
     section_4_3_6: int | None = None        # parse_criterion_weight
     section_4_3_7: int | None = None        # parse_int_from_text
-    section_4_3_10: bool | None = None      # parse_tak_nie
-    section_4_3_11: str | None = None
