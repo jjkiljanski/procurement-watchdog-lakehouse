@@ -2,14 +2,25 @@
 
 Purpose:
 
-- Build stable, daily analytical marts from Silver.
-- Provide benchmark-friendly outputs for lifecycle, buyer, market, and daily signal views.
+- Keep Spark-side enrichment logic that may add additional derived columns before
+  downstream analytics consume the data.
+- Preserve legacy / transitional Spark Gold outputs where still useful operationally.
+- Provide a future home for business-oriented enrichments that are too Python/Spark-heavy
+  to implement directly in dbt.
+
+Current status:
+
+- This repo is no longer the primary home of business-facing Gold logic.
+- The current dbt analytical layer lives in `procurement-watchdog-analytics`:
+  `https://github.com/jjkiljanski/procurement-watchdog-analytics`
+- Outputs from this package should generally be treated as upstream inputs to that repo,
+  not as the final analytical contract.
 
 Input:
 
 - `data/silver/noticeType=<TYPE>/publicationDateDay=YYYY-MM-DD/`
 
-Primary build entrypoint:
+Legacy / transitional build entrypoint:
 
 - `scripts/pipeline/build_gold.py`
 
@@ -17,7 +28,7 @@ Core transformation module:
 
 - `src/procurement/gold/spark_transforms.py`
 
-Outputs (partitioned by date):
+Legacy outputs (partitioned by date):
 
 - `data/gold/case_mart/date=YYYY-MM-DD/`
 - `data/gold/buyer_mart/date=YYYY-MM-DD/`
@@ -37,8 +48,11 @@ Reporting:
 
 Operational usage:
 
-- Daily mode: run `build_gold.py --scope daily` for one target day.
-- Backfill mode: run `build_gold.py --scope asof` for selected as-of dates after Silver history is available.
+- Treat `build_gold.py` as legacy / transitional unless a specific Spark-side enrichment
+  need requires it.
+- Prefer implementing current business marts in the dbt analytics repo.
+- Use this package for Spark-side derived columns only when the logic is not a good fit
+  for SQL/dbt alone.
 
 See also:
 

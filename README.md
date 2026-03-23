@@ -1,6 +1,10 @@
 # Procurement Watchdog Lakehouse
 
-A Spark-based lakehouse pipeline for public procurement data (BZP first), with deterministic Bronze -> Silver -> Gold processing and daily/as-of analytical marts.
+A Spark-based lakehouse pipeline for public procurement data (BZP first), focused on deterministic Bronze -> Silver processing plus Spark-side derived layers that feed downstream analytics.
+
+Business-facing Gold logic is no longer maintained in this repo. The current dbt analytical layer lives in `procurement-watchdog-analytics`:
+
+- `https://github.com/jjkiljanski/procurement-watchdog-analytics`
 
 ## Overview
 
@@ -9,7 +13,8 @@ The repository is organized around medallion-style layers:
 - `bronze_raw`: raw API payloads (`data/bronze_raw/bzp_YYYY-MM-DD.json`)
 - `bronze`: validated canonical notices in Parquet, partitioned by `noticeType/publicationDateDay`
 - `silver`: conformed notice-level datasets split into common envelope + notice-type tables
-- `gold`: analytical marts and buyer daily signals
+- `silver/case_derived_facts`: Spark-built case-grain derived layer used as an input for downstream analytics
+- `gold` (legacy / transitional): Spark outputs kept here only for future enrichment work, not as the primary business logic layer
 
 Core goals:
 
@@ -17,6 +22,7 @@ Core goals:
 - safe daily reruns (date-partition overwrite)
 - stable schemas for downstream analytics/reporting
 - reproducible lineage metadata (inputs, code hashes, run metadata)
+- keep the business-logic-agnostic lakehouse preparation in Spark, while downstream business interpretation is handled in the dbt analytics repo
 
 ## Operating Modes
 
@@ -25,10 +31,10 @@ Core goals:
   - build Bronze for that day,
   - build Silver for that day,
   - update `case_derived_facts` incrementally,
-  - build Gold daily marts/signals.
+  - publish outputs for downstream dbt consumption.
 - `Massive Backfill`:
   - first fetch large date ranges to `bronze_raw`,
-  - then run Spark transforms (`bronze -> silver -> case_derived -> gold`) in long-lived jobs.
+  - then run Spark transforms (`bronze -> silver -> case_derived`) in long-lived jobs.
 
 See `docs/runbooks/OPERATING_MODES.md` for exact sequencing and retry semantics.
 
@@ -44,7 +50,7 @@ See `docs/runbooks/OPERATING_MODES.md` for exact sequencing and retry semantics.
 
 ### Silver
 
-Built by `scripts/pipeline/build_silver_day.py` (reads Bronze Parquet by default):
+Built by `scripts/pipeline/build_silver.py` or `scripts/pipeline/build_silver_backfill.py` (reads Bronze Parquet by default):
 
 **Two parallel pipelines:**
 
@@ -52,10 +58,15 @@ Built by `scripts/pipeline/build_silver_day.py` (reads Bronze Parquet by default
 
 - `data/silver/notice_type_tables/noticeType=<TYPE>/data_model=<MODEL>/publicationDateDay=YYYY-MM-DD/`
 
-  Each notice type has a `notice_sections/<type>_sections_profile.json` mapping section numbers to
-  column names and data models. `data_model` values: `core` (one row/notice), `part`, `client`,
-  `change_matter`, `criterion_procedure`, etc. All section columns are raw strings at Silver;
-  typed parsing happens in Gold.
+  Each notice type has a `src/procurement/silver/notice_schemas/*_profile.json` mapping section
+  numbers to column names and data models. `data_model` values include `core` (one row/notice),
+  `part`, `client`, `change_matter`, `criterion_procedure`, etc. Nested child models such as
+  `part.criterion` are materialized as their own Silver child tables (for example `data_model=part_criterion`)
+  rather than as nested arrays on the parent row.
+
+  Silver is intended to stay structurally faithful and business-logic-agnostic. It may include
+  deterministic parsing/normalization needed to make the data queryable, but downstream business
+  interpretation is expected to happen in the analytics repo.
 
 **2. Common envelope pipeline** — structured Bronze columns only, no HTML parsing:
 
@@ -73,34 +84,35 @@ Lineage/performance metadata: `data/silver/_meta/day=YYYY-MM-DD.json`
 Notes:
 
 - Ingest is processed in parallel notice-type batches.
-- Section profiles live in `src/procurement/silver/notice_sections/`.
-- See `src/procurement/silver/PIPELINE.md` for full architecture details.
+- Section profiles and Pydantic models live in `src/procurement/silver/notice_schemas/`.
+- See `src/procurement/silver/README.md` for full architecture details.
 
 ### Gold
 
-Built by `scripts/pipeline/build_gold.py`:
+The `src/procurement/gold/` package is now transitional. It is retained for future Spark-side enrichment work that may add additional business-oriented columns before handoff to analytics, but it is not the primary home of the current Gold business logic.
 
-- `data/gold/case_mart/date=YYYY-MM-DD/`
-- `data/gold/buyer_mart/date=YYYY-MM-DD/`
-- `data/gold/market_mart/date=YYYY-MM-DD/`
-- `data/gold/signals_buyer_daily/date=YYYY-MM-DD/`
+Current business-facing analytical logic is maintained in:
 
-`build_gold.py` supports:
+- `https://github.com/jjkiljanski/procurement-watchdog-analytics`
 
-- `--scope daily` (single-day marts)
-- `--scope asof` (marts built from all Silver days up to target date)
+The Spark Gold code in this repo should be understood as:
+
+- optional / legacy outputs,
+- a place for future enrichment steps that are too Python/Spark-heavy for dbt,
+- not the canonical source of current business metrics or marts.
 
 ## Key Scripts
 
 - `scripts/pipeline/fetch_bzp_yesterday.py` - fetch daily API payloads to `bronze_raw`
 - `scripts/pipeline/build_bronze.py` - validate + write canonical Bronze Parquet
-- `scripts/pipeline/build_silver_day.py` - Silver build for a single day (active)
+- `scripts/pipeline/build_silver.py` - Silver build for a single day (active)
+- `scripts/pipeline/build_silver_backfill.py` - Silver backfill over a date range with state tracking
 - `scripts/pipeline/build_case_derived_facts.py` - case-grain Silver derived layer (`full` / `incremental`)
-- `scripts/pipeline/build_gold.py` - Gold marts/signals
+- `scripts/pipeline/build_gold.py` - legacy / transitional Spark Gold outputs
 - `scripts/pipeline/build_run_stats.py` - run-level reporting artifacts
 - `scripts/ops/run_pipeline.py` - local orchestrator wrapper
-- `scripts/ops/run_transforms_for_day.py` - bronze/silver/case-derived/gold stack (without fetch)
-- `scripts/ops/run_backfill_finalize.py` - full finalize for backfill (`case_derived` + `gold --scope asof`)
+- `scripts/ops/run_transforms_for_day.py` - bronze/silver/case-derived stack (optionally also legacy Gold)
+- `scripts/ops/run_backfill_finalize.py` - finalize helper for derived layers / legacy Gold flows
 - `scripts/ops/backfill_parallel.py` - bounded parallel backfill runner
 - `scripts/dev/*` - exploratory one-off tools (non-prod)
 - `docs/runbooks/OPERATING_MODES.md` - operational runbook (daily vs backfill + restart semantics)
@@ -131,10 +143,11 @@ Recommended (Docker Spark runtime):
 docker build -t procurement-pipeline .
 docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/pipeline/fetch_bzp_yesterday.py 2025-10-01
 docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/pipeline/build_bronze.py 2025-10-01
-docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/pipeline/build_silver_day.py 2025-10-01 --bronze-dir data/bronze --silver-dir data/silver
+docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/pipeline/build_silver.py 2025-10-01 --bronze-dir data/bronze --silver-dir data/silver
 docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/pipeline/build_case_derived_facts.py 2025-10-01 --mode full
-docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/pipeline/build_gold.py 2025-10-01 --scope daily
 ```
+
+The outputs from this repo are then expected to be consumed and interpreted in the dbt analytics repo rather than treated as final business marts here.
 
 Direct Python runs are also possible if local Spark/PySpark is configured.
 
@@ -155,7 +168,6 @@ src/procurement/
   bronze/
   silver/
   gold/
-  ingest/
 scripts/
   pipeline/
   ops/
