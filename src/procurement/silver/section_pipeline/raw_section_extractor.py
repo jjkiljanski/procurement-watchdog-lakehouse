@@ -71,14 +71,81 @@ def _collect_p_values(h3: Tag | None) -> list[str]:
     return parts
 
 
-def extract_contract_notice_section_value(h3: Tag) -> str | None:
+def _collect_full_block(h3: Tag) -> str | None:
+    """Collect all text content after h3, traversing through non-structural inner h3 elements.
+
+    Used when ``section_value_mode`` is ``"full_block"`` in the section profile.
+    Intended for sections (e.g. NoticeUpdateConcession 3.4.1) where the content
+    is split across a nested sub-label h3 and subsequent <p> elements::
+
+        <h3>3.4.1) Opis zmiany...</h3>
+        <h3>5.9.2.</h3>                          ← non-structural inner h3 (collected)
+        <p class="mb-0">Termin składania ofert</p>
+        <p>Przed zmianą: <br/>2025-02-21 09:00</p>
+        <p>Po zmianie:   <br/>2025-02-25 09:00</p>
+
+    Traversal rules:
+    - NavigableString: collected if non-empty after stripping
+    - <h3> matching a section-number pattern (e.g. ``3.4.1)``): structural boundary — stop
+    - <h3> NOT matching the pattern (e.g. ``5.9.2.``): treated as content — collect its text
+    - <p>: collect text
+    - <h2>: stop
+    - all other elements: skip
+    """
+    parts: list[str] = []
+    sibling = h3.next_sibling
+    while sibling is not None:
+        if isinstance(sibling, NavigableString):
+            text = str(sibling).strip()
+            if text:
+                parts.append(text)
+        elif hasattr(sibling, "name"):
+            if sibling.name == "h2":
+                break
+            if sibling.name == "h3":
+                inner_text = sibling.get_text(separator=" ", strip=True)
+                if extract_contract_notice_section_number(inner_text) is not None:
+                    break  # structural section boundary — stop
+                if inner_text:
+                    parts.append(inner_text)
+            elif sibling.name == "p":
+                text = sibling.get_text(separator=" ", strip=True)
+                if text:
+                    parts.append(text)
+        sibling = sibling.next_sibling
+    return "\n".join(parts) if parts else None
+
+
+def extract_contract_notice_section_value(h3: Tag, section_cfg: dict | None = None) -> str | None:
+    """Extract the value for a single section h3 element.
+
+    The extraction strategy is controlled by ``section_cfg["section_value_mode"]``:
+
+    ``"standard"`` (default when key is absent)
+        1. ``<span class="normal">`` inside the h3 (dropdown choices)
+        2. First non-empty NavigableString sibling (simple inline text)
+        3. If both a text sibling AND ``<p>`` siblings are present, they are
+           combined: ``text + "\\n" + "\\n".join(p_texts)``
+        4. ``<p>`` siblings joined with a space (multi-paragraph values)
+
+    ``"full_block"``
+        Traverse all siblings until the next structural h3 boundary, collecting
+        NavigableString text, non-structural inner h3 text, and ``<p>`` text,
+        joined with ``"\\n"``.  Use this for sections whose content spans a
+        nested sub-label h3 (e.g. NoticeUpdateConcession 3.4.1).
+    """
+    mode = (section_cfg or {}).get("section_value_mode", "standard")
+    if mode == "full_block":
+        return _collect_full_block(h3)
     value = _span_value(h3)
     if value:
         return value
-    value = _text_after_h3(h3)
-    if value:
-        return value
+    text = _text_after_h3(h3)
     p_values = _collect_p_values(h3)
+    if text and p_values:
+        return text + "\n" + "\n".join(p_values)
+    if text:
+        return text
     if p_values:
         return " ".join(p_values)
     return None
@@ -149,11 +216,11 @@ def build_notice_sections_model(soup, notice_type: str | None, notice_dicts: dic
         section_number = extract_contract_notice_section_number(h3.get_text(separator=" ", strip=True))
         if not section_number:
             continue
-        value = extract_contract_notice_section_value(h3)
-        if not value:
-            continue
         section_cfg = notice_sections.get(section_number)
         section_model = section_cfg.get("data_model") if section_cfg else None
+        value = extract_contract_notice_section_value(h3, section_cfg)
+        if not value:
+            continue
         if section_model is None:
             unknown_sections.append(section_number)
             continue

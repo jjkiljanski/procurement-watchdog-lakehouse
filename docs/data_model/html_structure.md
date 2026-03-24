@@ -31,6 +31,44 @@ Every notice HTML follows the same DOM pattern:
 - Some fields have sibling `<p>` elements for longer text (e.g. descriptions)
 - Multi-lot notices repeat per-lot fields (e.g. field 8.2 appears once per lot)
 
+## Section value extraction modes (`section_value_mode`)
+
+The section profile JSON supports an optional `"section_value_mode"` key that
+controls how the raw text is extracted from each h3 block.  When the key is
+absent the default `"standard"` mode applies — no need to add it to every entry.
+
+| Mode | When to use | How it works |
+|---|---|---|
+| `"standard"` (default) | Almost all sections | Prefers `<span class="normal">` → inline text node → `<p>` siblings |
+| `"full_block"` | Sections whose content spans a nested sub-label h3 | Traverses all siblings until the next structural h3; collects NavigableString text, non-structural inner h3 text, and `<p>` text, joined with `\n` |
+
+### When `"full_block"` is needed
+
+Most notices follow the standard pattern where the value is either in a
+`<span class="normal">`, a text node immediately after the h3, or in `<p>`
+siblings.  A few notice types (currently **NoticeUpdateConcession 3.4.1**)
+use a different layout where the changed-section number and title are each in
+their own sub-elements:
+
+```html
+<!-- standard layout (NoticeUpdateNotice 3.4.1) -->
+<h3>3.4.1.) Opis zmiany...</h3>
+8.3.  Termin otwarcia ofert          ← NavigableString
+<p>Przed zmianą: <br/>2025-01-07 09:30</p>
+<p>Po zmianie:   <br/>2025-01-21 09:30</p>
+
+<!-- full_block layout (NoticeUpdateConcession 3.4.1) -->
+<h3>3.4.1) Opis zmiany...</h3>
+<h3>5.9.2.</h3>                      ← sub-label h3 (no section-number pattern → treated as content)
+<p class="mb-0">Termin składania ofert</p>
+<p>Przed zmianą: <br/>2025-02-21 09:00</p>
+<p>Po zmianie:   <br/>2025-02-25 09:00</p>
+```
+
+The `"full_block"` extractor stops at the next h3 whose text **matches** the
+section-number pattern (e.g. `3.4.1)`) — so consecutive change blocks are
+never merged.
+
 ## Critical caveat: field numbers are reused across notice types
 
 The **same field number means completely different things** in different

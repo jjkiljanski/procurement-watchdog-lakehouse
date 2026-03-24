@@ -55,6 +55,12 @@ _PART_PROFILE = {
     "4.2": {"col_name": "section_4_2", "data_model": "part", "section_header": "Part B"},
 }
 
+_PART_CRITERION_PROFILE = {
+    "4.1": {"col_name": "section_4_1", "data_model": "part.core", "section_header": "Part A"},
+    "6.1": {"col_name": "section_6_1", "data_model": "part.criterion", "section_header": "Criterion A"},
+    "6.2": {"col_name": "section_6_2", "data_model": "part.criterion", "section_header": "Criterion B"},
+}
+
 _TEST_NOTICE_TYPE = "TestNotice"
 
 # all_profiles dict passed to make_html_sections_udf — keys are notice_type strings
@@ -62,6 +68,7 @@ _ALL_PROFILES = {
     _TEST_NOTICE_TYPE: _CORE_PROFILE,
     "TestMulti": _MULTI_PROFILE,
     "TestPart": _PART_PROFILE,
+    "TestPartCriterion": _PART_CRITERION_PROFILE,
 }
 
 
@@ -392,6 +399,46 @@ class TestBuildSectionTablesMultipleModels:
 
     def test_two_models_returned(self):
         assert len(self._tables) == 2
+
+
+class TestBuildSectionTablesNestedChildModel:
+    @pytest.fixture(autouse=True)
+    def _setup(self, spark):
+        udf = make_html_sections_udf({"TestPartCriterion": _PART_CRITERION_PROFILE})
+        html = _html(
+            ("4.1", "part_1"),
+            ("6.1", "criterion_1_a"), ("6.2", "criterion_1_b"),
+            ("6.1", "criterion_2_a"), ("6.2", "criterion_2_b"),
+        )
+        df = _make_df(spark, [("obj1", "2025-01-01", html)])
+        self._tables, self._sections_df = build_section_tables(
+            df, "TestPartCriterion", _PART_CRITERION_PROFILE, udf
+        )
+        yield
+        if self._sections_df:
+            self._sections_df.unpersist()
+
+    def test_parent_and_child_tables_are_both_present(self):
+        assert "part" in self._tables
+        assert "part_criterion" in self._tables
+
+    def test_parent_table_has_no_nested_items_array(self):
+        assert "criterion_items" not in self._tables["part"].columns
+
+    def test_child_table_has_parent_and_child_ordinals(self):
+        cols = self._tables["part_criterion"].columns
+        assert "part_ordinal" in cols
+        assert "part_criterion_ordinal" in cols
+
+    def test_child_table_has_one_row_per_criterion(self):
+        assert self._tables["part_criterion"].count() == 2
+
+    def test_child_rows_keep_parent_linkage(self):
+        rows = self._tables["part_criterion"].orderBy("part_criterion_ordinal").collect()
+        assert [r["part_ordinal"] for r in rows] == [1, 1]
+        assert [r["part_criterion_ordinal"] for r in rows] == [1, 2]
+        assert rows[0]["section_6_1"] == "criterion_1_a"
+        assert rows[1]["section_6_1"] == "criterion_2_a"
 
 
 # ===========================================================================

@@ -831,7 +831,7 @@
   "4.2.2": {
     "col_name": "section_4_2_2",
     "section_header": "Krótki opis przedmiotu zamówienia",
-    "data_model": "part",
+    "data_model": "part.core",
     "example_values": [
       "Szkolenie z suchej zabudowy Bezpieczeństwo i higiena pracy i p.poż.; Dokumentacja budowlana oraz rysunek budowlany; Materiałoznawstwo; Montaż ścian działowych, przedścianek i ścian szybów instalacyjnych, sufitów podwieszanych; Montaż zabudowy poddasza z obróbką okna; Akustyka w systemach suchej zabudowy: Naprawa usterek wykonawczych;",
       "Szkolenie z budownictwa pasywnego Budynki energooszczędne; System wentylacji; Mostki termiczne i sposoby ich likwidacji; Zalety budynków energooszczędnych; System ogrzewania w budownictwie energooszczędnym; Wykorzystanie energii ze źródeł odnawialnych w budownictwie energooszczędnym;",
@@ -841,7 +841,7 @@
   "4.2.3": {
     "col_name": "section_4_2_3",
     "section_header": "Opis potrzeb Zamawiającego",
-    "data_model": "part",
+    "data_model": "part.core",
     "example_values": [
       "Część 1 – Testy molekularne do badań – bakterie pokarmowe",
       "Część II - Testy molekularne do badań - wirusy oddechowe."
@@ -850,7 +850,7 @@
   "4.2.4": {
     "col_name": "section_4_2_4",
     "section_header": "Zapotrzebowa",
-    "data_model": "part",
+    "data_model": "part.core",
     "example_values": [
       "nie",
       "Nie"
@@ -862,7 +862,7 @@
   "4.2.5": {
     "col_name": "section_4_2_5",
     "section_header": "Wartość części",
-    "data_model": "part",
+    "data_model": "part.core",
     "example_values": [
       "25854,00                        PLN",
       "149268,00                        PLN",
@@ -880,7 +880,7 @@
   "4.2.6": {
     "col_name": "section_4_2_6",
     "section_header": "Główny kod CPV",
-    "data_model": "part",
+    "data_model": "part.core",
     "example_values": [
       "80000000-4 - Usługi edukacyjne i szkoleniowe",
       "90524000-6 - Usługi w zakresie odpadów medycznych",
@@ -893,7 +893,7 @@
   "4.2.7": {
     "col_name": "section_4_2_7",
     "section_header": "Dodatkowy kod CPV",
-    "data_model": "part",
+    "data_model": "part.core",
     "example_values": [
       "80500000-9 - Usługi szkoleniowe",
       "80530000-8 - Usługi szkolenia zawodowego",
@@ -906,7 +906,7 @@
   "4.2.8": {
     "col_name": "section_4_2_8",
     "section_header": "Zamówienie obejmuje opcje",
-    "data_model": "part",
+    "data_model": "part.core",
     "example_values": [
       "Nie",
       "Tak"
@@ -918,7 +918,7 @@
   "4.2.9": {
     "col_name": "section_4_2_9",
     "section_header": "Rodzaj i maksymalna wartość opcji oraz okoliczności skorzystania z opcji",
-    "data_model": "part",
+    "data_model": "part.core",
     "example_values": [
       "Zamawiający, korzystając z prawa opcji, zastrzega sobie prawo do ograniczenia o 15 % maksymalnej wielkości przedmiotu zamówienia – tj. maksymalnej ilości zamawianego paliwa gazowego wskazanej w § 4 ust. 8 Wzoru Umowy (załącznik nr 3 do SWZ), a wskutek tego wszystkich z tym związanych parametrów dostaw paliwa gazowego wskazanych w Załączniku nr 2 do Umowy – Szczegółowy opis przedmiotu zamówienia,  w taki sposób, który może powodować zmniejszenie maksymalnej wartości umowy o nie więcej niż 15 %. Niewykonanie przez Zamawiającego umowy w zakresie pozostałych 15 % maksymalnej wartości przedmiotu zamówienia nie wymaga podania przyczyn i nie stanowi podstawy jego odpowiedzialności z tytułu niewykonania lub nienależytego wykonania umowy, a Wykonawcy nie przysługują żadne roszczenia z tego tytułu.",
       "dodatkowe 1000 ton",
@@ -928,7 +928,7 @@
   "4.2.10": {
     "col_name": "section_4_2_10",
     "section_header": "Okres realizacji zamówienia albo umowy ramowej",
-    "data_model": "part",
+    "data_model": "part.core",
     "example_values": [
       "do 2025-12-31",
       "do 2026-04-30",
@@ -946,7 +946,7 @@
   "4.2.11": {
     "col_name": "section_4_2_11",
     "section_header": "Zamawiający przewiduje wznowienia",
-    "data_model": "part",
+    "data_model": "part.core",
     "example_values": [
       "Nie",
       "Tak"
@@ -958,7 +958,7 @@
   "4.2.12": {
     "col_name": "section_4_2_12",
     "section_header": "Opis wznowienia",
-    "data_model": "part",
+    "data_model": "part.core",
     "example_values": [
       "Kolejna edycja od 01.09.2025 r. do 31.05.2026 r.",
       "4)\tZamawiający zastrzega sobie możliwość skorzystania ze wznowienia zamówienia, polegającego na przedłużeniu świadczenia usług ochrony mienia maksymalnie o 1200 godziny, tj. 2 miesiące. Wymagania dotyczące realizacji zamówienia objętego wznowieniem będą takie same jak te, które zostały wskazane dla zamówienia podstawowego. Szczegóły wznowienia zamówienia zawarte są we wzorze umowy stanowiącej załącznik nr 3 do SWZ dla części I.",
@@ -968,7 +968,7 @@
   "4.2.13": {
     "col_name": "section_4_2_13",
     "section_header": "Zamawiający przewiduje udzielenie dotychczasowemu wykonawcy zamówień na podobne usługi lub roboty budowlane",
-    "data_model": "part",
+    "data_model": "part.core",
     "example_values": [
       "Nie",
       "Tak"
@@ -980,7 +980,7 @@
   "4.2.14": {
     "col_name": "section_4_2_14",
     "section_header": "Przedmiot, wielkość lub zakres oraz warunki zamówień na podobne usługi lub roboty budowlane",
-    "data_model": "part",
+    "data_model": "part.core",
     "example_values": [
       "zwiększenie dostaw do 20% wartości zamówienia podstawowego",
       "Zamawiającyprzewiduje możliwość zawarcia w okresie trwania umowy zamówieniapolegającego na powtórzeniu usług podobnych do zamówienia podstawowego stanowiących20% zamówienia podstawowego. Zamówienie udzielane będzie na usługi zgodne zprzedmiotem zamówienia podstawowego w trybie zamówień z wolnej ręki, po spełnieniuprzesłanek z art. 214 ust.1 pkt. 7 ustawy.",
@@ -990,7 +990,7 @@
   "4.3.1": {
     "col_name": "section_4_3_1",
     "section_header": "Sposób oceny ofert",
-    "data_model": "part",
+    "data_model": "part.core",
     "example_values": [
       "1)\tCena: waga 60 punktów (PK1);2)\tDoświadczenie zawodowe osób skierowanych przez wykonawcę do realizacji zamówienia: waga 40 punktów (PK2).",
       "Z uwagi na ograniczoną ilość znaków informacje zostały zawarte w Rozdziale X SWZ",
@@ -1000,7 +1000,7 @@
   "4.3.2": {
     "col_name": "section_4_3_2",
     "section_header": "Sposób określania wagi kryteriów oceny ofert",
-    "data_model": "part",
+    "data_model": "part.core",
     "example_values": [
       "Punktowo",
       "Procentowo",
@@ -1010,7 +1010,7 @@
   "4.3.3": {
     "col_name": "section_4_3_3",
     "section_header": "Stosowane kryteria oceny ofert",
-    "data_model": "part",
+    "data_model": "part.core",
     "example_values": [
       "Kryterium ceny oraz kryteria jakościowe",
       "Wyłącznie kryterium ceny",
@@ -1066,7 +1066,7 @@
   "4.3.10": {
     "col_name": "section_4_3_10",
     "section_header": "Zamawiający określa  aspekty społeczne, środowiskowe lub innowacyjne, żąda etykiet lub stosuje rachunek kosztów cyklu życia w odniesieniu do kryterium oceny ofert",
-    "data_model": "part",
+    "data_model": "part.core",
     "example_values": [
       "Nie",
       "Tak"
@@ -1078,7 +1078,7 @@
   "4.3.11": {
     "col_name": "section_4_3_11",
     "section_header": "Określenie aspektów społecznych, środowiskowych lub innowacyjnych, etykiet lub rachunku  kosztów cyklu życia w odniesieniu do kryteriów oceny ofert",
-    "data_model": "part",
+    "data_model": "part.core",
     "example_values": [
       "zgodnie z art. 242 ust. 2 ustawy - aspekty społeczne",
       "zgodnie z art. 242 ust. 2 ustawy - aspekty środowiskowe",

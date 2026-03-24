@@ -29,6 +29,9 @@ from procurement.silver.section_value_parsers.common import (
     compute_contract_end_date,
     compute_duration_days,
     normalize_tender_result_contractors,
+    parse_change_after,
+    parse_change_before,
+    parse_change_label,
     parse_cpv_codes,
     parse_currency_code,
     parse_date_from_text,
@@ -930,3 +933,101 @@ class TestParseDurationStartDate:
 
     def test_unrecognised_text_returns_none(self):
         assert parse_duration_start_date("nieokreślony") is None
+
+
+# ===========================================================================
+# parse_change_label / parse_change_before / parse_change_after
+# ===========================================================================
+
+# Typical full block as produced by the fixed section extractor:
+_FULL_CHANGE = (
+    "8.3.  Termin otwarcia ofert\n"
+    "Przed zmianą: 2025-01-07 09:30\n"
+    "Po zmianie: 2025-01-21 09:30"
+)
+# Block with no "Po zmianie:" (change adds content, no previous value)
+_BEFORE_ONLY = (
+    "5.4.  Warunki udziału\n"
+    "Przed zmianą: stara długa treść warunków"
+)
+# Block with no "Przed zmianą:" either (pure label / description only)
+_LABEL_ONLY = "8.1.  Termin składania ofert"
+
+
+class TestParseChangeLabel:
+    def test_full_block_returns_section_label(self):
+        assert parse_change_label(_FULL_CHANGE) == "8.3.  Termin otwarcia ofert"
+
+    def test_before_only_returns_label(self):
+        assert parse_change_label(_BEFORE_ONLY) == "5.4.  Warunki udziału"
+
+    def test_label_only_returns_whole_text(self):
+        assert parse_change_label(_LABEL_ONLY) == "8.1.  Termin składania ofert"
+
+    def test_none_returns_none(self):
+        assert parse_change_label(None) is None
+
+    def test_empty_returns_none(self):
+        assert parse_change_label("") is None
+
+    def test_strips_whitespace_from_label(self):
+        raw = "  8.1.  Label  \nPrzed zmianą: wartość"
+        assert parse_change_label(raw) == "8.1.  Label"
+
+    def test_encoding_variant_lowercase(self):
+        raw = "8.1.  Label\nprzed zmiana: old\npo zmianie: new"
+        assert parse_change_label(raw) == "8.1.  Label"
+
+
+class TestParseChangeBefore:
+    def test_full_block_returns_old_value(self):
+        assert parse_change_before(_FULL_CHANGE) == "2025-01-07 09:30"
+
+    def test_before_only_returns_value(self):
+        assert parse_change_before(_BEFORE_ONLY) == "stara długa treść warunków"
+
+    def test_label_only_returns_none(self):
+        assert parse_change_before(_LABEL_ONLY) is None
+
+    def test_none_returns_none(self):
+        assert parse_change_before(None) is None
+
+    def test_empty_returns_none(self):
+        assert parse_change_before("") is None
+
+    def test_multiline_before_value(self):
+        raw = "8.1.  Label\nPrzed zmianą: linia pierwsza\nlinia druga\nPo zmianie: nowa"
+        assert parse_change_before(raw) == "linia pierwsza\nlinia druga"
+
+    def test_strips_surrounding_whitespace(self):
+        raw = "Label\nPrzed zmianą:   wartość z przestrzenią   \nPo zmianie: nowa"
+        assert parse_change_before(raw) == "wartość z przestrzenią"
+
+
+class TestParseChangeAfter:
+    def test_full_block_returns_new_value(self):
+        assert parse_change_after(_FULL_CHANGE) == "2025-01-21 09:30"
+
+    def test_before_only_returns_none(self):
+        assert parse_change_after(_BEFORE_ONLY) is None
+
+    def test_label_only_returns_none(self):
+        assert parse_change_after(_LABEL_ONLY) is None
+
+    def test_none_returns_none(self):
+        assert parse_change_after(None) is None
+
+    def test_empty_returns_none(self):
+        assert parse_change_after("") is None
+
+    def test_multiline_after_value(self):
+        raw = "Label\nPrzed zmianą: stara\nPo zmianie: nowa linia pierwsza\nnowa linia druga"
+        assert parse_change_after(raw) == "nowa linia pierwsza\nnowa linia druga"
+
+    def test_strips_surrounding_whitespace(self):
+        raw = "Label\nPrzed zmianą: stara\nPo zmianie:   nowa wartość   "
+        assert parse_change_after(raw) == "nowa wartość"
+
+    def test_encoding_variant_lowercase(self):
+        raw = "Label\nprzed zmiana: stara\npo zmianie: nowa"
+        assert parse_change_after(raw) == "nowa"

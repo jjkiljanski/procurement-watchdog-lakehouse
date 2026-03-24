@@ -26,16 +26,6 @@ from procurement.silver.section_pipeline.notice_schema_reader import NOTICE_TYPE
 
 log = logging.getLogger(__name__)
 
-# Maps lowercase model name -> Pydantic class name suffix
-_MODEL_SUFFIX: dict[str, str] = {
-    "core": "Core",
-    "part": "Part",
-    "client": "Client",
-    "change_matter": "ChangeMatter",
-    "criterion_procedure": "CriterionProcedure",
-    "criterion_qualification": "CriterionQualification",
-}
-
 # Columns added by the pipeline that are not section payload columns
 _PIPELINE_COLS: frozenset[str] = frozenset({"objectId", "publicationDateDay", "parse_errors"})
 
@@ -56,7 +46,7 @@ def get_pydantic_model_class(notice_type: str, model: str):
     if profile_key is None:
         return None
     module_name = f"procurement.silver.notice_schemas.{profile_key}_models"
-    suffix = _MODEL_SUFFIX.get(model, model.title())
+    suffix = "".join(token.title() for token in model.split("_"))
     class_name = f"{notice_type}{suffix}Model"
     try:
         mod = import_module(module_name)
@@ -113,7 +103,7 @@ def validate_section_models(
 
         expected = set(model_class.model_fields)
         actual = set(df.columns)
-        pipeline_cols = _PIPELINE_COLS | {f"{model}_ordinal"} | {c for c in actual if c.endswith("_items")}
+        pipeline_cols = _PIPELINE_COLS | {c for c in actual if c.endswith("_ordinal")}
 
         missing = expected - actual
         if missing:
@@ -211,7 +201,7 @@ def apply_pydantic_validation(
             result[model] = df
             continue
 
-        pipeline_cols = _PIPELINE_COLS | {f"{model}_ordinal"} | {c for c in df.columns if c.endswith("_items")}
+        pipeline_cols = _PIPELINE_COLS | {c for c in df.columns if c.endswith("_ordinal")}
         payload_cols = [c for c in df.columns if c not in pipeline_cols]
 
         validator_udf = udf(_make_pydantic_validator_fn(model_class), ArrayType(StringType()))

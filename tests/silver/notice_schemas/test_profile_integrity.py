@@ -23,6 +23,9 @@ from procurement.silver.section_pipeline.notice_schema_reader import (
     load_profile,
     model_core_col_names,
     model_sub_info,
+    model_sub_infos,
+    output_models,
+    output_model_name,
     section_computed_cols,
     section_derived_cols,
     section_parsers,
@@ -228,6 +231,18 @@ class TestTopLevelModels:
         assert top_level_models(profile) == ["core"]
 
 
+class TestOutputModels:
+    def test_returns_nested_child_models_as_standalone_outputs(self):
+        result = output_models(_MIXED_PROFILE)
+        assert result == ["client", "core", "criterion_procedure", "part", "part_part"]
+
+    def test_output_model_name_collapses_core_leaf(self):
+        assert output_model_name("part.core") == "part"
+
+    def test_output_model_name_promotes_child_leaf(self):
+        assert output_model_name("part.criterion") == "part_criterion"
+
+
 class TestModelCoreCols:
     def test_core_model_returns_core_cols(self):
         result = model_core_col_names(_MIXED_PROFILE, "core")
@@ -315,3 +330,13 @@ class TestModelSubInfo:
         sub_key, sub_cols = model_sub_info(profiles["ContractNotice"], "part")
         assert sub_key == "criterion"
         assert len(sub_cols) >= 1
+
+    def test_model_sub_infos_returns_all_child_lists(self):
+        profile = {
+            "4.1": {"col_name": "col_4_1", "data_model": "part.core"},
+            "5.1": {"col_name": "col_5_1", "data_model": "part.part"},
+            "6.1": {"col_name": "col_6_1", "data_model": "part.criterion"},
+        }
+        result = model_sub_infos(profile, "part")
+        assert ("criterion", ["col_6_1"]) in result
+        assert ("part", ["col_5_1"]) in result

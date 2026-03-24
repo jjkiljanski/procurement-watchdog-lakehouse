@@ -34,8 +34,9 @@ class NoticeUpdateNoticeCoreModel(BaseModel):
     section_3_3: str | None = None
 
 class NoticeUpdateNoticePartPartModel(BaseModel):
-    section_3_4_1: str | None = None
+    section_3_4_1_label: str | None = None
+    section_3_4_1_before: str | None = None
+    section_3_4_1_after: str | None = None
 
 class NoticeUpdateNoticePartModel(BaseModel):
     section_3_4: str | None = None
-    part_items: list[NoticeUpdateNoticePartPartModel] | None = None

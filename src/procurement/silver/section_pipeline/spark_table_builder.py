@@ -12,7 +12,9 @@ Output DataFrame shapes
 -----------------------
 core table    : one row per notice; columns = [objectId, publicationDateDay, <section cols>]
 repeating table : one row per occurrence; columns = [objectId, publicationDateDay,
-                  <model>_ordinal, <section cols>, (<sub_key>_items if two-level)]
+                  <model>_ordinal, <section cols>]
+nested child table : one row per child occurrence; columns = [objectId, publicationDateDay,
+                    <parent_model>_ordinal, <child_model>_ordinal, <section cols>]
 """
 
 from __future__ import annotations
@@ -29,7 +31,8 @@ from pyspark.storagelevel import StorageLevel
 from procurement.silver.section_pipeline.parser_registry import get_computed_entry, get_parser_entry
 from procurement.silver.section_pipeline.notice_schema_reader import (
     model_core_col_names,
-    model_sub_info,
+    model_sub_infos,
+    output_models,
     section_computed_cols,
     section_derived_cols,
     section_parsers,
@@ -83,27 +86,21 @@ def make_html_sections_udf(all_profiles: dict):
 def _make_model_rows_udf(
     model: str,
     core_cols: list[str],
-    sub_key: str | None,
-    sub_cols: list[str],
 ):
     """Return a UDF that extracts one list-of-row-dicts for a repeating data model.
 
     Input : sections JSON string produced by make_html_sections_udf
-    Output: ArrayType of StructType rows; each row has core section columns, and
-            optionally a '<sub_key>_items' array column for two-level models.
+    Output: ArrayType of StructType rows; each row has only the model's own
+            core section columns. Nested child models are emitted as separate
+            tables by ``_make_child_model_rows_udf``.
     """
     # Build the return schema on the driver (required before UDF is created)
     row_fields: list[StructField] = [StructField(c, StringType()) for c in core_cols]
-    if sub_key and sub_cols:
-        sub_struct = StructType([StructField(c, StringType()) for c in sub_cols])
-        row_fields.append(StructField(f"{sub_key}_items", ArrayType(sub_struct)))
     return_schema = ArrayType(StructType(row_fields))
 
     # Capture everything needed inside the closure
     _model = model
     _core_cols = list(core_cols)
-    _sub_key = sub_key
-    _sub_cols = list(sub_cols)
 
     def _extract_rows(sections_json: str | None) -> list:
         if not sections_json:
@@ -114,14 +111,41 @@ def _make_model_rows_udf(
         rows = []
         for occ in occurrences:
             core_data = occ.get("core", {})
-            row: dict = {c: core_data.get(c) for c in _core_cols}
-            if _sub_key and _sub_cols:
-                sub_items = occ.get(_sub_key, [])
-                row[f"{_sub_key}_items"] = [
-                    {c: item.get(c) for c in _sub_cols}
-                    for item in sub_items
-                ]
-            rows.append(row)
+            rows.append({c: core_data.get(c) for c in _core_cols})
+        return rows
+
+    return udf(_extract_rows, return_schema)
+
+
+def _make_child_model_rows_udf(
+    parent_model: str,
+    child_key: str,
+    child_cols: list[str],
+):
+    """Return a UDF that extracts flattened child rows for a nested model."""
+    row_fields: list[StructField] = [
+        StructField(f"{parent_model}_ordinal", StringType()),
+        *[StructField(c, StringType()) for c in child_cols],
+    ]
+    return_schema = ArrayType(StructType(row_fields))
+
+    _parent_model = parent_model
+    _child_key = child_key
+    _child_cols = list(child_cols)
+
+    def _extract_rows(sections_json: str | None) -> list:
+        if not sections_json:
+            return []
+        import json as _json
+
+        sections = _json.loads(sections_json)
+        parent_occurrences = sections.get(_parent_model, [])
+        rows = []
+        for parent_idx, occ in enumerate(parent_occurrences, start=1):
+            for item in occ.get(_child_key, []):
+                row = {c: item.get(c) for c in _child_cols}
+                row[f"{_parent_model}_ordinal"] = str(parent_idx)
+                rows.append(row)
         return rows
 
     return udf(_extract_rows, return_schema)
@@ -153,7 +177,8 @@ def build_section_tables(
     if not profile or notice_type is None:
         return {}, None
 
-    models = top_level_models(profile)
+    models = output_models(profile)
+    top_models = set(top_level_models(profile))
     if not models:
         return {}, None
 
@@ -198,10 +223,9 @@ def build_section_tables(
                 )
             )
 
-        else:
+        elif model in top_models:
             # One row per occurrence; explode the model's list from the sections JSON
-            sub_key, sub_cols = model_sub_info(profile, model)
-            rows_udf = _make_model_rows_udf(model, core_cols, sub_key, sub_cols)
+            rows_udf = _make_model_rows_udf(model, core_cols)
 
             df_exploded = (
                 df_valid
@@ -218,12 +242,31 @@ def build_section_tables(
             # Flatten struct fields into top-level columns
             for c in core_cols:
                 df_exploded = df_exploded.withColumn(c, col(f"_row.{c}"))
-            if sub_key and sub_cols:
-                df_exploded = df_exploded.withColumn(
-                    f"{sub_key}_items", col(f"_row.{sub_key}_items")
-                )
 
             df_model = df_exploded.drop("_row")
+        else:
+            parent_model, child_key = model.rsplit("_", 1)
+            child_cols = []
+            for leaf, cols in model_sub_infos(profile, parent_model):
+                if leaf == child_key:
+                    child_cols = cols
+                    break
+            rows_udf = _make_child_model_rows_udf(parent_model, child_key, child_cols)
+            df_model = (
+                df_valid
+                .withColumn("_model_rows", rows_udf(col("_sections_json")))
+                .select(
+                    col("objectId"),
+                    col("publicationDateDay"),
+                    posexplode(col("_model_rows")).alias("_ordinal0", "_row"),
+                )
+                .withColumn(f"{model}_ordinal", col("_ordinal0") + lit(1))
+                .drop("_ordinal0")
+                .withColumn(f"{parent_model}_ordinal", col(f"_row.{parent_model}_ordinal").cast("int"))
+            )
+            for c in child_cols:
+                df_model = df_model.withColumn(c, col(f"_row.{c}"))
+            df_model = df_model.drop("_row")
 
         result[model] = df_model
         log.debug(

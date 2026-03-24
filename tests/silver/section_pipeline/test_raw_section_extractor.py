@@ -14,6 +14,7 @@ from bs4 import BeautifulSoup
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent / "src"))
 
 from procurement.silver.section_pipeline.raw_section_extractor import (
+    _collect_full_block,
     _collect_p_values,
     _span_value,
     _text_after_h3,
@@ -253,10 +254,37 @@ class TestExtractSectionValue:
         h3 = soup.find("h3")
         assert extract_contract_notice_section_value(h3) == "Span wins"
 
-    def test_falls_back_to_text_after_when_no_span(self):
-        soup = _soup("<div><h3>1.1.) Label</h3>Text after h3<p>Para</p></div>")
+    def test_text_only_when_no_p_siblings(self):
+        soup = _soup("<div><h3>1.1.) Label</h3>Text after h3<h3>Next</h3></div>")
         h3 = soup.find("h3")
         assert extract_contract_notice_section_value(h3) == "Text after h3"
+
+    def test_combines_text_and_p_siblings_with_newline(self):
+        # 3.4.1-style: label text node followed by before/after <p> elements
+        soup = _soup(
+            "<div><h3>3.4.1.) Opis</h3>"
+            "8.3.  Termin otwarcia ofert"
+            "<p>Przed zmianą: 2025-01-07 09:30</p>"
+            "<p>Po zmianie: 2025-01-21 09:30</p></div>"
+        )
+        h3 = soup.find("h3")
+        result = extract_contract_notice_section_value(h3)
+        assert result == (
+            "8.3.  Termin otwarcia ofert\n"
+            "Przed zmianą: 2025-01-07 09:30\n"
+            "Po zmianie: 2025-01-21 09:30"
+        )
+
+    def test_combines_text_and_single_p(self):
+        # Addition-only change: only "Przed zmianą:" paragraph, no after
+        soup = _soup(
+            "<div><h3>3.4.1.) Opis</h3>"
+            "5.4.  Warunki udziału"
+            "<p>Przed zmianą: stara treść</p></div>"
+        )
+        h3 = soup.find("h3")
+        result = extract_contract_notice_section_value(h3)
+        assert result == "5.4.  Warunki udziału\nPrzed zmianą: stara treść"
 
     def test_falls_back_to_p_when_no_span_or_text(self):
         soup = _soup("<div><h3>1.1.) Label</h3><p>Only in para</p></div>")
@@ -272,6 +300,135 @@ class TestExtractSectionValue:
         soup = _soup("<div><h3>1.1.) Label with no value</h3><h3>Next</h3></div>")
         h3 = soup.find("h3")
         assert extract_contract_notice_section_value(h3) is None
+
+
+# ===========================================================================
+# _collect_full_block
+# ===========================================================================
+
+
+class TestCollectFullBlock:
+    # Realistic NoticeUpdateConcession 3.4.1 layout
+    _NUC_HTML = (
+        "<div>"
+        "<h3>3.4.1) Opis</h3>"
+        " "
+        "<h3>5.9.2.</h3>"
+        " "
+        '<p class="mb-0">Termin składania ofert</p>'
+        " "
+        "<p>Przed zmianą: 2025-02-21 09:00</p>"
+        " "
+        "<p>Po zmianie: 2025-02-25 09:00</p>"
+        "</div>"
+    )
+
+    def test_collects_inner_h3_and_p_elements(self):
+        soup = _soup(self._NUC_HTML)
+        h3 = soup.find("h3")
+        result = _collect_full_block(h3)
+        assert result == (
+            "5.9.2.\n"
+            "Termin składania ofert\n"
+            "Przed zmianą: 2025-02-21 09:00\n"
+            "Po zmianie: 2025-02-25 09:00"
+        )
+
+    def test_stops_at_next_structural_h3(self):
+        # Second 3.4.1 block must NOT bleed into the first block's result
+        soup = _soup(
+            "<div>"
+            "<h3>3.4.1) Opis</h3>"
+            "<h3>5.9.2.</h3>"
+            "<p>Przed zmianą: old</p>"
+            "<p>Po zmianie: new</p>"
+            "<h3>3.4.1) Opis</h3>"   # next structural h3 — boundary
+            "<h3>5.15.</h3>"
+            "<p>Przed zmianą: other old</p>"
+            "</div>"
+        )
+        h3 = soup.find("h3")
+        result = _collect_full_block(h3)
+        assert "other old" not in (result or "")
+        assert result == "5.9.2.\nPrzed zmianą: old\nPo zmianie: new"
+
+    def test_stops_at_h2(self):
+        soup = _soup(
+            "<div><h3>3.4.1) Opis</h3><h3>5.1.</h3><p>Val</p><h2>SEKCJA</h2><p>excluded</p></div>"
+        )
+        h3 = soup.find("h3")
+        assert _collect_full_block(h3) == "5.1.\nVal"
+
+    def test_returns_none_when_no_content(self):
+        soup = _soup("<div><h3>3.4.1) Opis</h3><h3>3.4.1) Next structural</h3></div>")
+        h3 = soup.find("h3")
+        assert _collect_full_block(h3) is None
+
+    def test_skips_whitespace_only_text_nodes(self):
+        soup = _soup("<div><h3>3.4.1) Opis</h3>  \n  <h3>5.1.</h3>  <p>Val</p></div>")
+        h3 = soup.find("h3")
+        assert _collect_full_block(h3) == "5.1.\nVal"
+
+
+# ===========================================================================
+# extract_contract_notice_section_value — section_value_mode dispatch
+# ===========================================================================
+
+
+class TestExtractSectionValueModeDispatch:
+    def test_full_block_mode_uses_collect_full_block(self):
+        soup = _soup(
+            "<div><h3>3.4.1) Opis</h3>"
+            "<h3>5.9.2.</h3>"
+            '<p class="mb-0">Termin składania ofert</p>'
+            "<p>Przed zmianą: 2025-02-21 09:00</p>"
+            "<p>Po zmianie: 2025-02-25 09:00</p></div>"
+        )
+        h3 = soup.find("h3")
+        cfg = {"section_value_mode": "full_block", "col_name": "section_3_4_1", "data_model": "part.part"}
+        result = extract_contract_notice_section_value(h3, cfg)
+        assert result == (
+            "5.9.2.\n"
+            "Termin składania ofert\n"
+            "Przed zmianą: 2025-02-21 09:00\n"
+            "Po zmianie: 2025-02-25 09:00"
+        )
+
+    def test_standard_mode_explicit(self):
+        soup = _soup("<div><h3>1.1.) Label</h3>Value text</div>")
+        h3 = soup.find("h3")
+        cfg = {"section_value_mode": "standard", "col_name": "section_1_1", "data_model": "core"}
+        assert extract_contract_notice_section_value(h3, cfg) == "Value text"
+
+    def test_no_mode_key_defaults_to_standard(self):
+        soup = _soup("<div><h3>1.1.) Label</h3>Value text</div>")
+        h3 = soup.find("h3")
+        cfg = {"col_name": "section_1_1", "data_model": "core"}
+        assert extract_contract_notice_section_value(h3, cfg) == "Value text"
+
+    def test_none_cfg_defaults_to_standard(self):
+        soup = _soup("<div><h3>1.1.) Label</h3>Value text</div>")
+        h3 = soup.find("h3")
+        assert extract_contract_notice_section_value(h3, None) == "Value text"
+
+    def test_full_block_mode_passed_through_build_notice_sections_model(self):
+        profile = {
+            "3.4.1": {
+                "col_name": "section_3_4_1",
+                "data_model": "part.part",
+                "section_value_mode": "full_block",
+            }
+        }
+        soup = _make_soup(
+            "<h3>3.4.1) Opis</h3>"
+            "<h3>5.9.2.</h3>"
+            "<p>Przed zmianą: old val</p>"
+            "<p>Po zmianie: new val</p>"
+        )
+        result = build_notice_sections_model(soup, "NUC", {"NUC": profile})
+        part_items = result.get("part", [{}])[0].get("part", [])
+        assert len(part_items) == 1
+        assert part_items[0]["section_3_4_1"] == "5.9.2.\nPrzed zmianą: old val\nPo zmianie: new val"
 
 
 # ===========================================================================
@@ -465,11 +622,10 @@ class TestBuildNoticeSectionsModel:
 
     def test_text_after_h3_extracted_for_core_section(self):
         profile = {"4.2.2": {"col_name": "section_4_2_2", "data_model": "core"}}
-        soup = _make_soup("<h3>4.2.2.) Opis</h3>Inline text value<p>unrelated</p>")
-        # Note: <p> breaks _text_after_h3 scan so "unrelated" won't be picked up
-        # text_after returns "Inline text value"
+        soup = _make_soup("<h3>4.2.2.) Opis</h3>Inline text value<p>para content</p>")
+        # text node + <p> sibling → combined with newline
         result = build_notice_sections_model(soup, "CN", {"CN": profile})
-        assert result["core"]["section_4_2_2"] == "Inline text value"
+        assert result["core"]["section_4_2_2"] == "Inline text value\npara content"
 
 
 class TestBuildNoticeUnknownSections:

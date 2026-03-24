@@ -190,9 +190,15 @@
     "col_name": "section_3_4_1",
     "section_header": "Opis zmiany, w tym tekst, który należy dodać lub zmienić",
     "data_model": "part.part",
+    "section_value_mode": "full_block",
     "example_values": [
-      "Termin składania ofert Przed zmianą: 2025-05-07 13:00 Po zmianie: 2025-05-13 13:00"
-    ]
+      "5.9.2.\nTermin składania ofert\nPrzed zmianą: 2025-02-21 09:00\nPo zmianie: 2025-02-25 09:00"
+    ],
+    "derived_cols": {
+      "section_3_4_1_label": { "fn": "parse_change_label" },
+      "section_3_4_1_before": { "fn": "parse_change_before" },
+      "section_3_4_1_after": { "fn": "parse_change_after" }
+    }
   },
   "4.1": {
     "col_name": "section_4_1",

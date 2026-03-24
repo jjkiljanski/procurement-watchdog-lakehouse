@@ -27,8 +27,7 @@ from procurement.silver.section_pipeline.notice_schema_reader import (
     NOTICE_TYPE_TO_PROFILE_KEY,
     load_all_profiles,
     model_output_col_names,
-    model_sub_info,
-    top_level_models,
+    output_models,
 )
 from procurement.silver.section_pipeline.parser_registry import get_parser_entry
 
@@ -41,7 +40,7 @@ _profiles = load_all_profiles()
 _ALL_NT_MODEL_PAIRS = [
     (nt, model)
     for nt in NOTICE_TYPE_TO_PROFILE_KEY
-    for model in top_level_models(_profiles[nt])
+    for model in output_models(_profiles[nt])
 ]
 
 
@@ -114,11 +113,7 @@ def test_profile_col_names_present_in_pydantic_model(notice_type, model):
     )
 
 
-@pytest.mark.parametrize("notice_type,model", [
-    (nt, m)
-    for nt, m in _ALL_NT_MODEL_PAIRS
-    if model_sub_info(_profiles[nt], m)[0] is None  # no sub-list
-])
+@pytest.mark.parametrize("notice_type,model", _ALL_NT_MODEL_PAIRS)
 def test_pydantic_model_fields_match_profile_exactly(notice_type, model):
     """For models without sub-lists, profile cols and model fields must be identical.
 

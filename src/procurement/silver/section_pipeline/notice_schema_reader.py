@@ -71,6 +71,35 @@ def top_level_models(profile: dict) -> list[str]:
     return sorted(seen)
 
 
+def output_model_name(data_model: str) -> str:
+    """Return the physical output-table name for a profile ``data_model``.
+
+    Rules:
+    - ``core`` -> ``core``
+    - ``part`` / ``part.core`` -> ``part``
+    - ``part.criterion`` -> ``part_criterion``
+    """
+    tokens = (data_model or "").split(".")
+    top = tokens[0] if tokens and tokens[0] else ""
+    leaf = tokens[-1] if len(tokens) > 1 else "core"
+    if not top:
+        return ""
+    return top if leaf == "core" else f"{top}_{leaf}"
+
+
+def output_models(profile: dict) -> list[str]:
+    """Return sorted distinct physical output-table names for a profile."""
+    seen: set[str] = set()
+    for cfg in profile.values():
+        if not isinstance(cfg, dict):
+            continue
+        dm = cfg.get("data_model", "")
+        out = output_model_name(dm)
+        if out:
+            seen.add(out)
+    return sorted(seen)
+
+
 def model_core_col_names(profile: dict, model: str) -> list[str]:
     """Return col_names for sections that belong to a model's 'core' level.
 
@@ -159,10 +188,7 @@ def model_output_col_names(profile: dict, model: str) -> list[str]:
         if not isinstance(cfg, dict):
             continue
         dm = cfg.get("data_model", "")
-        tokens = dm.split(".")
-        top = tokens[0]
-        leaf = tokens[-1] if len(tokens) > 1 else "core"
-        if top != model or leaf != "core":
+        if output_model_name(dm) != model:
             continue
         col = cfg.get("col_name")
         if not col:
@@ -172,17 +198,13 @@ def model_output_col_names(profile: dict, model: str) -> list[str]:
                 if derived_col not in seen:
                     result.append(derived_col)
                     seen.add(derived_col)
-        else:
-            if col not in seen:
-                result.append(col)
-                seen.add(col)
+        elif col not in seen:
+            result.append(col)
+            seen.add(col)
     # Append computed col names that are new (not already in result)
     for spec in section_computed_cols(profile):
         dm = spec.get("data_model", "")
-        tokens = dm.split(".")
-        top = tokens[0]
-        leaf = tokens[-1] if len(tokens) > 1 else "core"
-        if top != model or leaf != "core":
+        if output_model_name(dm) != model:
             continue
         out_col = spec.get("col_name")
         if out_col and out_col not in seen:
@@ -250,3 +272,35 @@ def model_sub_info(profile: dict, model: str) -> tuple[str | None, list[str]]:
     # There should be at most one sub_key per parent model in practice
     sub_key = next(iter(sub_entries))
     return sub_key, sub_entries[sub_key]
+
+
+def model_sub_infos(profile: dict, model: str) -> list[tuple[str, list[str]]]:
+    """Return all two-level child lists for a parent model.
+
+    Example:
+    - ``part.criterion`` -> ``[("criterion", [...])]``
+    - ``part.part``      -> ``[("part", [...])]``
+    """
+    sub_entries: dict[str, list[str]] = {}
+    seen: dict[str, set[str]] = {}
+    for cfg in profile.values():
+        if not isinstance(cfg, dict):
+            continue
+        dm = cfg.get("data_model", "")
+        tokens = dm.split(".")
+        if len(tokens) < 2:
+            continue
+        top = tokens[0]
+        leaf = tokens[-1]
+        if top != model or leaf == "core":
+            continue
+        col = cfg.get("col_name")
+        if not col:
+            continue
+        if leaf not in seen:
+            seen[leaf] = set()
+            sub_entries[leaf] = []
+        if col not in seen[leaf]:
+            sub_entries[leaf].append(col)
+            seen[leaf].add(col)
+    return [(leaf, sub_entries[leaf]) for leaf in sorted(sub_entries)]

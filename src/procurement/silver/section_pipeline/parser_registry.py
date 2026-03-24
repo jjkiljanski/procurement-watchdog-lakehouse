@@ -23,6 +23,9 @@ from procurement.silver.section_value_parsers.common import (
     _parse_tak_nie,
     compute_contract_end_date,
     compute_duration_days,
+    parse_change_after,
+    parse_change_before,
+    parse_change_label,
     parse_list_from_newlines,
     parse_cpv_codes,
     parse_currency_code,
@@ -44,6 +47,9 @@ from procurement.silver.section_value_parsers.common import (
 # ---------------------------------------------------------------------------
 
 COMMON_PARSERS: dict[str, tuple] = {
+    "parse_change_label": (parse_change_label, StringType()),
+    "parse_change_before": (parse_change_before, StringType()),
+    "parse_change_after": (parse_change_after, StringType()),
     "parse_tak_nie": (_parse_tak_nie, BooleanType()),
     "parse_pln_value": (_parse_pln_value, DoubleType()),
     "parse_criterion_weight": (_parse_criterion_weight, IntegerType()),

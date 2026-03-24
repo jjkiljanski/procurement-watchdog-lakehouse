@@ -607,6 +607,60 @@ def parse_duration_iso(raw: str | None) -> str | None:
     return None
 
 
+_CHANGE_BEFORE_RE = re.compile(r"Przed\s+zmian[aą]:", re.IGNORECASE | re.UNICODE)
+_CHANGE_AFTER_RE = re.compile(r"Po\s+zmianie:", re.IGNORECASE | re.UNICODE)
+
+
+def parse_change_label(raw: str | None) -> str | None:
+    """Extract the section label from a 3.4.1 change description block.
+
+    The block has the form::
+
+        <section label>
+        Przed zmianą: <old value>
+        Po zmianie: <new value>
+
+    Returns the text before ``Przed zmianą:``, or the whole value when that
+    marker is absent (addition-only changes that have no before state).
+    """
+    if not raw:
+        return None
+    m = _CHANGE_BEFORE_RE.search(raw)
+    return raw[:m.start()].strip() or None if m else raw.strip() or None
+
+
+def parse_change_before(raw: str | None) -> str | None:
+    """Extract the old value from a 3.4.1 change description block.
+
+    Returns the text between ``Przed zmianą:`` and ``Po zmianie:``, or
+    everything after ``Przed zmianą:`` when the after-marker is absent.
+    Returns ``None`` when ``Przed zmianą:`` is not present.
+    """
+    if not raw:
+        return None
+    m_before = _CHANGE_BEFORE_RE.search(raw)
+    if not m_before:
+        return None
+    rest = raw[m_before.end():]
+    m_after = _CHANGE_AFTER_RE.search(rest)
+    value = rest[:m_after.start()] if m_after else rest
+    return value.strip() or None
+
+
+def parse_change_after(raw: str | None) -> str | None:
+    """Extract the new value from a 3.4.1 change description block.
+
+    Returns the text after ``Po zmianie:``, or ``None`` when that marker is
+    absent (addition-only changes that have no after state, or plain labels).
+    """
+    if not raw:
+        return None
+    m = _CHANGE_AFTER_RE.search(raw)
+    if not m:
+        return None
+    return raw[m.end():].strip() or None
+
+
 def parse_duration_start_date(raw: str | None) -> str | None:
     """Extract start date from an explicit date-range duration string.
 

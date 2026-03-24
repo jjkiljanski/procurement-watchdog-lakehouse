@@ -234,6 +234,11 @@
       "5.4.  Nazwa i opis warunków udziału w postępowaniu",
       "8.1.  Termin składania ofert",
       "8.3.  Termin otwarcia ofert"
-    ]
+    ],
+    "derived_cols": {
+      "section_3_4_1_label": { "fn": "parse_change_label" },
+      "section_3_4_1_before": { "fn": "parse_change_before" },
+      "section_3_4_1_after": { "fn": "parse_change_after" }
+    }
   }
 }

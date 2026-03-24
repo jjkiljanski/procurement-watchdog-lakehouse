@@ -171,7 +171,7 @@ def test_unknown_notice_type_no_warning(caplog):
 
 
 def test_unknown_model_name_no_warning(caplog):
-    # Valid notice type but model not in _MODEL_SUFFIX → get_pydantic_model_class returns None
+    # Valid notice type but unresolvable model → get_pydantic_model_class returns None
     tables = {"totally_unknown_model": _mock_df(["col"])}
     with caplog.at_level(logging.WARNING, logger=_VALIDATOR_LOGGER):
         validate_section_models(tables, "ContractNotice")
@@ -189,6 +189,10 @@ def test_multiple_models_all_complete_no_warnings(caplog):
         "core":   _mock_df(_all_fields("ContractNotice", "core")),
         "client": _mock_df(_all_fields("ContractNotice", "client")),
         "part":   _mock_df(_all_fields("ContractNotice", "part")),
+        "part_criterion": _mock_df(
+            _all_fields("ContractNotice", "part_criterion")
+            + ["part_ordinal", "part_criterion_ordinal"]
+        ),
     }
     with caplog.at_level(logging.WARNING, logger=_VALIDATOR_LOGGER):
         validate_section_models(tables, "ContractNotice")
