@@ -279,12 +279,17 @@ def _load_bzp_index(
 def build_update_deltas(
     target_date: str,
     silver_dir: Path,
+    bzp_index: dict[str, tuple[str, str, str]] | None = None,
 ) -> dict[str, list[dict]]:
     """Build delta records from NUN silver data for *target_date*.
 
     Returns ``{target_noticeType: [row_dict, ...]}``.  Row dicts use plain
     Python values (including ``None``); the caller is responsible for writing
     them to parquet with the correct schema.
+
+    *bzp_index* may be pre-built by the caller (via ``_load_bzp_index``) and
+    shared across multiple days to avoid reloading the full envelope each time.
+    When omitted it is built automatically from the years referenced in NUN data.
     """
     all_profiles = load_all_profiles()
     section_index = _build_section_index(all_profiles)
@@ -316,18 +321,18 @@ def build_update_deltas(
     for rows in part_part_by_oid.values():
         rows.sort(key=lambda r: (int(r.get("part_ordinal") or 0), int(r.get("part_part_ordinal") or 0)))
 
-    # --- Determine years needed for envelope scan ---
-    target_bzps = {r.get("section_3_2") for r in core_rows if r.get("section_3_2")}
-    years: set[str] = set()
-    for bzp in target_bzps:
-        m = re.match(r"^(\d{4})/", bzp or "")
-        if m:
-            years.add(m.group(1))
-    if not years:
-        log.warning("Could not extract any year from section_3_2 values — aborting")
-        return {}
-
-    bzp_index = _load_bzp_index(silver_dir, years)
+    # --- Build or reuse BZP index ---
+    if bzp_index is None:
+        target_bzps = {r.get("section_3_2") for r in core_rows if r.get("section_3_2")}
+        years: set[str] = set()
+        for bzp in target_bzps:
+            m = re.match(r"^(\d{4})/", bzp or "")
+            if m:
+                years.add(m.group(1))
+        if not years:
+            log.warning("Could not extract any year from section_3_2 values — aborting")
+            return {}
+        bzp_index = _load_bzp_index(silver_dir, years)
 
     # --- Build delta rows ---
     deltas_by_type: dict[str, list[dict]] = {}
