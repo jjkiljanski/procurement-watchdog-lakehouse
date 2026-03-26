@@ -12,16 +12,14 @@ Suggested sequence for day `D`:
 2. Convert `bronze_raw(D)` to canonical Bronze Parquet.
 3. Build Silver for `D` from Bronze.
 4. Update `silver/case_derived_facts` in `incremental` mode for `D`.
-5. Build Gold marts/signals for `D` (`--scope daily`).
 
 Example commands:
 
 ```bash
 python scripts/pipeline/fetch_bzp_yesterday.py D --output-dir data/bronze_raw
 python scripts/pipeline/build_bronze.py D --bronze-raw-dir data/bronze_raw --bronze-dir data/bronze
-python scripts/pipeline/build_silver.py D --input-layer bronze --bronze-dir data/bronze --silver-dir data/silver
+python scripts/pipeline/build_silver_day.py D --bronze-dir data/bronze --silver-dir data/silver
 python scripts/pipeline/build_case_derived_facts.py D --mode incremental --silver-dir data/silver
-python scripts/pipeline/build_gold.py D --scope daily --silver-dir data/silver --gold-dir data/gold
 ```
 
 ## Mode 2: Massive Backfill / Historical Load
@@ -40,7 +38,6 @@ Recommended split:
 1. Convert `bronze_raw` range -> Bronze Parquet.
 2. Build Silver range from Bronze in one long-lived Spark run with checkpoint state.
 3. Build `case_derived_facts` (`full` once for initial snapshot, then `incremental` for new arrivals).
-4. Build Gold (daily or as-of snapshots, depending on use case).
 
 Rationale:
 
@@ -75,11 +72,10 @@ Lineage metadata:
 
 - `build_bronze.py`: deterministic for the same `bronze_raw` input; writes partitioned Bronze by `noticeType/publicationDateDay`.
 - `build_bronze.py`: suppresses cross-day duplicate notices by `objectId` using persistent seen-index; same-day reruns are still allowed.
-- `build_silver.py`: deterministic and idempotent for a target day; overwrites touched day partitions.
+- `build_silver_day.py`: deterministic and idempotent for a target day; overwrites touched day partitions.
 - `build_case_derived_facts.py`:
   - `full`: rebuilds snapshot as-of target day.
   - `incremental`: recomputes only touched cases and merges with nearest snapshot.
-- `build_gold.py`: overwrites target-date partitions for each output mart/signal dataset.
 
 ## Current Performance Guidance
 

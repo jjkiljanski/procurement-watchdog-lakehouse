@@ -13,4 +13,4 @@ RUN pip install --no-cache-dir ".[dev]"
 
 COPY scripts/ scripts/
 
-CMD ["python", "scripts/run_pipeline.py"]
+CMD ["python", "scripts/ops/run_pipeline.py"]

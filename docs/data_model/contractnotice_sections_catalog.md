@@ -1,7 +1,7 @@
 # ContractNotice Sections Catalog
 
 Auto-generated from:
-- `src/procurement/silver/notice_types/contract_notice_split_models.py`
+- `src/procurement/silver/notice_schemas/contract_notice_models.py`
 - `examples/contractnotice_sections/contractnotice_2025-10-01_to_2025-10-30_single_part_sections_unique.json`
 - `examples/contractnotice_sections/contractnotice_2025-10-01_to_2025-10-30_multi_part_sections_unique.json`
 

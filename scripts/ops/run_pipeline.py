@@ -1,4 +1,4 @@
-"""Run the full BZP pipeline: fetch → bronze → silver → gold.
+"""Run the full BZP pipeline: fetch → bronze → silver.
 
 Usage:
     python scripts/ops/run_pipeline.py [YYYY-MM-DD]
@@ -25,8 +25,6 @@ STEPS = [
     ("fetch", PIPELINE_DIR / "fetch_bzp_yesterday.py"),
     ("bronze", PIPELINE_DIR / "build_bronze.py"),
     ("silver", PIPELINE_DIR / "build_silver_day.py"),
-    ("gold", PIPELINE_DIR / "build_gold.py"),
-    ("obs", PIPELINE_DIR / "build_obs.py"),
 ]
 
 

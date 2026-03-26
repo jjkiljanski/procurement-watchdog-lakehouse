@@ -4,8 +4,7 @@ Steps:
 1. build_bronze
 2. build_silver_day
 3. build_case_derived_facts (incremental)
-4. build_gold (--scope asof)
-5. optional build_obs
+4. optional build_obs
 """
 
 from __future__ import annotations
@@ -62,16 +61,6 @@ def main() -> int:
                 target_date,
                 "--mode",
                 "incremental",
-            ],
-        ),
-        (
-            "gold",
-            [
-                sys.executable,
-                str(PIPELINE_DIR / "build_gold.py"),
-                target_date,
-                "--scope",
-                "asof",
             ],
         ),
     ]

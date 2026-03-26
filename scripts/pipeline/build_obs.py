@@ -1,14 +1,13 @@
-"""Build observability snapshot: compute silver/gold stats, write to obs tables, print dashboard.
+"""Build observability snapshot: compute silver stats, write to obs tables, print dashboard.
 
 Reads:
   data/silver/common_envelope/publicationDateDay=YYYY-MM-DD/
   data/silver/notice_type_tables/noticeType=*/publicationDateDay=YYYY-MM-DD/
-  data/gold/*/date=YYYY-MM-DD/
   data/obs/**  (previous runs — for trending)
 
 Writes:
-  data/obs/dq_metrics/dt=YYYY-MM-DD/       (silver + gold field-level quality)
-  data/obs/pipeline_runs/dt=YYYY-MM-DD/    (if gold run_id not already written)
+  data/obs/dq_metrics/dt=YYYY-MM-DD/       (silver field-level quality)
+  data/obs/pipeline_runs/dt=YYYY-MM-DD/    (run metadata)
 
 Prints:
   Markdown dashboard to stdout (captured in pipeline logs)
@@ -26,7 +25,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
 
 from procurement.logging import setup_logging
-from procurement.obs import write_dq_metrics, write_pipeline_run, now_utc_iso
+from procurement.obs import write_dq_metrics
 
 setup_logging()
 log = logging.getLogger(__name__)
@@ -160,41 +159,6 @@ def _compute_and_write_silver_stats(target_date: str, silver_dir: Path) -> dict:
     }
 
 
-def _compute_and_write_gold_stats(target_date: str, gold_dir: Path) -> dict:
-    """Read gold output for target_date, compute stats, write to obs, return summary."""
-    GOLD_DATASETS = {
-        "case_mart": ["caseId", "buyer_id", "time_to_award_days"],
-        "buyer_mart": ["organizationId", "single_bid_rate", "hhi"],
-        "market_mart": ["cpv_2digit", "hhi", "value_total"],
-        "signals_buyer_daily": ["buyer_id", "single_bid_rate_today", "hhi_today"],
-    }
-    result: dict = {}
-    for dataset, key_fields in GOLD_DATASETS.items():
-        dataset_path = gold_dir / dataset / f"date={target_date}"
-        if not dataset_path.exists():
-            result[dataset] = {"exists": False}
-            continue
-        try:
-            rows = _load_parquet_rows(dataset_path)
-        except Exception as exc:
-            log.warning("Failed to read gold dataset %s: %s", dataset, exc)
-            result[dataset] = {"exists": False, "error": str(exc)}
-            continue
-        metrics = {"total_rows": len(rows)}
-        for f in key_fields:
-            rate = _nonnull_rate(rows, f)
-            if rate is not None:
-                metrics[f"nonnull_{f}"] = rate
-        write_dq_metrics(
-            layer="gold",
-            target_date=target_date,
-            notice_type=dataset,
-            metrics=metrics,
-        )
-        result[dataset] = {"exists": True, "rows": len(rows)}
-    return result
-
-
 # ---------------------------------------------------------------------------
 # Dashboard rendering
 # ---------------------------------------------------------------------------
@@ -202,7 +166,6 @@ def _compute_and_write_gold_stats(target_date: str, gold_dir: Path) -> dict:
 def _render_dashboard(
     target_date: str,
     silver_stats: dict,
-    gold_stats: dict,
     pipeline_runs: list[dict],
     dq_metrics: list[dict],
     quarantine_summary: list[dict],
@@ -224,15 +187,6 @@ def _render_dashboard(
             lines.append(f"  - {item['value']}: {item['count']}")
     lines.append("")
 
-    # --- Today's gold snapshot ---
-    lines.append("## Gold (today)")
-    for dataset, info in gold_stats.items():
-        if info.get("exists"):
-            lines.append(f"- `{dataset}`: {info['rows']} rows")
-        else:
-            lines.append(f"- `{dataset}`: missing")
-    lines.append("")
-
     # --- Pipeline runs (last 14 days) ---
     lines.append("## Pipeline runs (last 14 days)")
     if not pipeline_runs:
@@ -245,16 +199,15 @@ def _render_dashboard(
             layer = r.get("layer", "?")
             status = r.get("status", "?")
             by_day.setdefault(day, {})[layer] = status
-        lines.append("| date | fetch | bronze | silver | gold |")
-        lines.append("|------|-------|--------|--------|------|")
+        lines.append("| date | fetch | bronze | silver |")
+        lines.append("|------|-------|--------|--------|")
         for day in sorted(by_day.keys(), reverse=True)[:14]:
             row = by_day[day]
             lines.append(
                 f"| {day} "
                 f"| {row.get('fetch', '-')} "
                 f"| {row.get('bronze', '-')} "
-                f"| {row.get('silver', '-')} "
-                f"| {row.get('gold', '-')} |"
+                f"| {row.get('silver', '-')} |"
             )
     lines.append("")
 
@@ -330,14 +283,10 @@ def main() -> None:
         target_date = (date.today() - timedelta(days=1)).isoformat()
 
     silver_dir = Path("data/silver")
-    gold_dir = Path("data/gold")
     obs_dir = Path("data/obs")
 
     log.info("Computing silver stats for %s", target_date)
     silver_stats = _compute_and_write_silver_stats(target_date, silver_dir)
-
-    log.info("Computing gold stats for %s", target_date)
-    gold_stats = _compute_and_write_gold_stats(target_date, gold_dir)
 
     # Load obs history for trending (last 14 days)
     pipeline_runs = _load_obs_table(obs_dir / "pipeline_runs", last_n_days=14)
@@ -347,7 +296,6 @@ def main() -> None:
     dashboard = _render_dashboard(
         target_date=target_date,
         silver_stats=silver_stats,
-        gold_stats=gold_stats,
         pipeline_runs=pipeline_runs,
         dq_metrics=dq_metrics,
         quarantine_summary=quarantine_summary,

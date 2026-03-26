@@ -5,7 +5,7 @@ This repository is organized to separate production pipeline code from operation
 ## Repository layout
 
 - `src/procurement/`:
-  Production library code (Bronze/Silver/Gold transforms, parsers, shared utilities).
+  Production library code (Bronze/Silver transforms, parsers, shared utilities).
 - `scripts/pipeline/`:
   Production entrypoints for data jobs (`build_*`, `fetch_*`).
 - `scripts/ops/`:
@@ -49,7 +49,7 @@ Keep generated data outside the repository tree (or under ignored paths).
 Run targeted tests for changed components first, then broader test suites when possible:
 
 ```bash
-pytest tests/test_silver_parser.py -q
+pytest tests/silver/ -q
 pytest -q
 ```
 
