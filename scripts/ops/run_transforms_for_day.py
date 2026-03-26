@@ -2,7 +2,7 @@
 
 Steps:
 1. build_bronze
-2. build_silver
+2. build_silver_day
 3. build_case_derived_facts (incremental)
 4. build_gold (--scope asof)
 5. optional build_obs
@@ -53,7 +53,7 @@ def main() -> int:
     target_date = args.target_date
     steps: list[tuple[str, list[str]]] = [
         ("bronze", [sys.executable, str(PIPELINE_DIR / "build_bronze.py"), target_date]),
-        ("silver", [sys.executable, str(PIPELINE_DIR / "build_silver.py"), target_date]),
+        ("silver", [sys.executable, str(PIPELINE_DIR / "build_silver_day.py"), target_date]),
         (
             "case-derived",
             [
@@ -94,4 +94,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

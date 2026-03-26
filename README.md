@@ -50,7 +50,7 @@ See `docs/runbooks/OPERATING_MODES.md` for exact sequencing and retry semantics.
 
 ### Silver
 
-Built by `scripts/pipeline/build_silver.py` or `scripts/pipeline/build_silver_backfill.py` (reads Bronze Parquet by default):
+Built by `scripts/pipeline/build_silver_day.py` or `scripts/pipeline/build_silver_backfill.py` (reads Bronze Parquet by default):
 
 **Two parallel pipelines:**
 
@@ -105,7 +105,7 @@ The Spark Gold code in this repo should be understood as:
 
 - `scripts/pipeline/fetch_bzp_yesterday.py` - fetch daily API payloads to `bronze_raw`
 - `scripts/pipeline/build_bronze.py` - validate + write canonical Bronze Parquet
-- `scripts/pipeline/build_silver.py` - Silver build for a single day (active)
+- `scripts/pipeline/build_silver_day.py` - Silver build for a single day (active)
 - `scripts/pipeline/build_silver_backfill.py` - Silver backfill over a date range with state tracking
 - `scripts/pipeline/build_case_derived_facts.py` - case-grain Silver derived layer (`full` / `incremental`)
 - `scripts/pipeline/build_gold.py` - legacy / transitional Spark Gold outputs
@@ -143,8 +143,23 @@ Recommended (Docker Spark runtime):
 docker build -t procurement-pipeline .
 docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/pipeline/fetch_bzp_yesterday.py 2025-10-01
 docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/pipeline/build_bronze.py 2025-10-01
-docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/pipeline/build_silver.py 2025-10-01 --bronze-dir data/bronze --silver-dir data/silver
+docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/pipeline/build_silver_day.py 2025-10-01 --bronze-dir data/bronze --silver-dir data/silver
 docker run --rm -v <repo_path>:/app -w /app procurement-pipeline python scripts/pipeline/build_case_derived_facts.py 2025-10-01 --mode full
+```
+
+For local Docker benchmarking of a single Silver day, the current best-performing
+flags in this repo were:
+
+```bash
+docker run --rm -v <repo_path>:/app -w /app procurement-pipeline \
+  python scripts/pipeline/build_silver_day.py 2025-10-01 \
+    --bronze-dir data/bronze \
+    --silver-dir data/silver \
+    --spark-master local[4] \
+    --shuffle-partitions 8 \
+    --repartition 4 \
+    --max-batch-workers 4 \
+    --max-section-write-workers 1
 ```
 
 The outputs from this repo are then expected to be consumed and interpreted in the dbt analytics repo rather than treated as final business marts here.

@@ -24,7 +24,7 @@ PIPELINE_DIR = SCRIPTS_DIR.parent / "pipeline"
 STEPS = [
     ("fetch", PIPELINE_DIR / "fetch_bzp_yesterday.py"),
     ("bronze", PIPELINE_DIR / "build_bronze.py"),
-    ("silver", PIPELINE_DIR / "build_silver.py"),
+    ("silver", PIPELINE_DIR / "build_silver_day.py"),
     ("gold", PIPELINE_DIR / "build_gold.py"),
     ("obs", PIPELINE_DIR / "build_obs.py"),
 ]

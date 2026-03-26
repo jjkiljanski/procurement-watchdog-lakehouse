@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import json
 import logging
+import threading
 
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, expr, from_json, get_json_object, lit, posexplode, size, when
@@ -40,6 +41,14 @@ from procurement.silver.section_pipeline.notice_schema_reader import (
 )
 
 log = logging.getLogger(__name__)
+
+# Cache UDF objects across batches: same (fn, return_type) pair only registers once with
+# the JVM, eliminating repeated Py4J round-trips for shared parsers (e.g. parse_nuts3_code
+# appears in every notice type).  The lock prevents concurrent threads from racing to
+# register the same UDF simultaneously, which serialises Py4J calls and avoids JVM
+# contention during the parallel-batch phase.
+_UDF_CACHE: dict = {}
+_UDF_LOCK = threading.Lock()
 
 
 def make_html_sections_udf(all_profiles: dict):
@@ -386,19 +395,32 @@ def _make_fault_tolerant_udf(fn, return_type):
     This makes every section parser non-fatal: a failed column receives None
     and the error message is collected into the row-level ``parse_errors``
     column instead of routing the row to quarantine.
+
+    Results are cached by (fn identity, return_type string) so that the same
+    parser used across multiple notice types is only registered with the JVM once.
     """
-    _schema = StructType([StructField("value", return_type), StructField("error", StringType())])
-    _fn = fn
+    key = (id(fn), str(return_type))
+    cached = _UDF_CACHE.get(key)
+    if cached is not None:
+        return cached
+    with _UDF_LOCK:
+        cached = _UDF_CACHE.get(key)
+        if cached is not None:
+            return cached
+        _schema = StructType([StructField("value", return_type), StructField("error", StringType())])
+        _fn = fn
 
-    def _call(*args):
-        if all(a is None for a in args):
-            return (None, None)
-        try:
-            return (_fn(*args), None)
-        except Exception as exc:
-            return (None, str(exc))
+        def _call(*args):
+            if all(a is None for a in args):
+                return (None, None)
+            try:
+                return (_fn(*args), None)
+            except Exception as exc:
+                return (None, str(exc))
 
-    return udf(_call, _schema)
+        result = udf(_call, _schema)
+        _UDF_CACHE[key] = result
+        return result
 
 
 def apply_column_parsers(
@@ -616,3 +638,50 @@ def apply_column_parsers(
         result[model] = df_out
 
     return result, None, list(result.values())
+
+
+def prebuild_all_parser_udfs(all_profiles: dict) -> None:
+    """Pre-register all fault-tolerant parser UDFs before batch processing starts.
+
+    Iterates every parser/derived/computed entry across all notice-type profiles and
+    calls :func:`_make_fault_tolerant_udf` for each (fn, return_type) pair.  The first
+    call registers the UDF with the JVM via Py4J; subsequent calls for the same pair
+    return the cached object instantly.
+
+    Running this once on the driver thread (before the ThreadPoolExecutor starts) means
+    that batch threads never race to register the same UDF simultaneously.  It also
+    eliminates the Py4J round-trip overhead from the hot per-batch ``apply_column_parsers``
+    path, since every UDF is already in ``_UDF_CACHE`` when the batches begin.
+    """
+    count_before = len(_UDF_CACHE)
+    for notice_type, profile in all_profiles.items():
+        for _col_name, parser_cfg in section_parsers(profile).items():
+            fn_name = parser_cfg.get("fn")
+            if not fn_name:
+                continue
+            entry = get_parser_entry(fn_name, notice_type)
+            if entry is not None:
+                _make_fault_tolerant_udf(entry[0], entry[1])
+
+        for _src_col, derived_map in section_derived_cols(profile).items():
+            for _derived_col, parser_cfg in derived_map.items():
+                fn_name = parser_cfg.get("fn")
+                if not fn_name:
+                    continue
+                entry = get_parser_entry(fn_name, notice_type)
+                if entry is not None:
+                    _make_fault_tolerant_udf(entry[0], entry[1])
+
+        for spec in section_computed_cols(profile):
+            fn_name = spec.get("fn")
+            if not fn_name:
+                continue
+            entry = get_computed_entry(fn_name)
+            if entry is not None:
+                _make_fault_tolerant_udf(entry[0], entry[1])
+
+    log.info(
+        "prebuild_all_parser_udfs: registered %d new UDFs (%d total in cache)",
+        len(_UDF_CACHE) - count_before,
+        len(_UDF_CACHE),
+    )

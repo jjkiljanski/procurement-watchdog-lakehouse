@@ -54,7 +54,7 @@ def _parse_args() -> argparse.Namespace:
         "--silver-repartition",
         type=int,
         default=0,
-        help="Pass-through to build_silver.py --repartition (0=auto)",
+        help="Pass-through to build_silver_day.py --repartition (0=auto)",
     )
     parser.add_argument("--skip-gold", action="store_true")
     parser.add_argument("--only-gold", action="store_true")
@@ -83,7 +83,7 @@ def _stage_command(stage: str, day: str, args: argparse.Namespace) -> list[str]:
     if stage == "silver":
         return [
             sys.executable,
-            "scripts/pipeline/build_silver.py",
+            "scripts/pipeline/build_silver_day.py",
             day,
             "--bronze-dir",
             args.bronze_dir,

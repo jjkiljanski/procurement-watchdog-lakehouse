@@ -189,6 +189,7 @@ def apply_pydantic_validation(
 
     result: dict[str, DataFrame] = {}
     quarantine_dfs: list[DataFrame] = []
+    c3_persisted: list[DataFrame] = []
 
     for model, df in section_tables.items():
         model_class = get_pydantic_model_class(notice_type, model)
@@ -207,11 +208,10 @@ def apply_pydantic_validation(
         validator_udf = udf(_make_pydantic_validator_fn(model_class), ArrayType(StringType()))
         payload_json = to_json(struct(*[col(c) for c in payload_cols]))
 
-        # No persist here: the input DFs are already persisted by apply_column_parsers.
-        # Adding pydantic errors on top of a cached DF is cheap; the write
-        # triggered by the orchestrator's parallel section-table writer populates
-        # the apply_column_parsers cache while computing the pydantic column.
-        df_with_errors = df.withColumn("_pydantic_errors", validator_udf(payload_json))
+        # Persist df_with_errors so the pydantic UDF runs only once even though
+        # we filter it twice (once for valid rows, once for quarantine rows).
+        df_with_errors = df.withColumn("_pydantic_errors", validator_udf(payload_json)).persist()
+        c3_persisted.append(df_with_errors)
 
         quarantine_dfs.append(
             df_with_errors
@@ -242,4 +242,4 @@ def apply_pydantic_validation(
         for qdf in quarantine_dfs[1:]:
             quarantine_df = quarantine_df.union(qdf)
 
-    return result, quarantine_df, []
+    return result, quarantine_df, c3_persisted

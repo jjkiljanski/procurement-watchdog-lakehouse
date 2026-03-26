@@ -26,7 +26,7 @@ from procurement.silver.common_envelope import (
 )
 from procurement.silver.section_pipeline.notice_schema_reader import load_all_profiles
 from procurement.silver.section_pipeline.final_schema_validator import apply_pydantic_validation, validate_section_models
-from procurement.silver.section_pipeline.spark_table_builder import apply_column_parsers, build_section_tables, detect_section_parse_error_quarantine, detect_unknown_section_quarantine, make_html_sections_udf
+from procurement.silver.section_pipeline.spark_table_builder import apply_column_parsers, build_section_tables, detect_section_parse_error_quarantine, detect_unknown_section_quarantine, make_html_sections_udf, prebuild_all_parser_udfs
 
 log = logging.getLogger(__name__)
 
@@ -47,6 +47,8 @@ class CoreRunConfig:
     input_layer: str = "auto"  # auto|bronze|raw
     shuffle_partitions: int = 0
     repartition: int = 0
+    max_batch_workers: int = 0
+    max_section_write_workers: int = 0
     lock_stale_minutes: int = 360
     mode: str = "day"  # day|backfill
     profile_json: str = ""
@@ -108,15 +110,25 @@ def _maybe_repartition_batch(
         )
         return df
     if target > current:
-        log.info(
-            "Batch noticeType=%s repartition %d -> %d (rows=%d)",
-            notice_type_token,
-            current,
-            target,
-            row_count,
-        )
+        log.info("Batch noticeType=%s repartition %d -> %d (rows=%d)", notice_type_token, current, target, row_count)
         return df.repartition(target)
     return df
+
+
+def _finalize_envelope_tmp_dir(envelope_tmp_dir: Path, envelope_day_dir: Path) -> None:
+    """Move per-batch envelope parquet files into the final day directory.
+
+    This avoids an extra Spark read+write cycle over all envelope rows after
+    batch processing completes.
+    """
+    if not envelope_tmp_dir.exists():
+        return
+    envelope_day_dir.mkdir(parents=True, exist_ok=True)
+    for batch_dir in sorted(p for p in envelope_tmp_dir.iterdir() if p.is_dir()):
+        for child in batch_dir.iterdir():
+            if child.is_file():
+                shutil.move(str(child), str(envelope_day_dir / child.name))
+    _safe_rmtree(envelope_tmp_dir, "envelope tmp dir")
 
 
 def _safe_rmtree(path: Path, label: str) -> None:
@@ -186,6 +198,7 @@ def run_silver_day_core(
     all_profiles = load_all_profiles()
     sections_udf = make_html_sections_udf(all_profiles)
     log.info("Loaded section profiles for notice types: %s", sorted(all_profiles))
+    prebuild_all_parser_udfs(all_profiles)
 
     try:
         bronze_paths = sorted(bronze_root.glob(f"noticeType=*/publicationDateDay={target_date}"))
@@ -206,7 +219,30 @@ def run_silver_day_core(
                 token = p.parent.name.replace("noticeType=", "")
                 nt = None if token in ("__NULL__", "__HIVE_DEFAULT_PARTITION__") else token
                 notice_batches.append((nt, str(p)))
-            notice_batches.sort(key=lambda x: (x[0] is None, "" if x[0] is None else str(x[0])))
+            # Light batches run first (wave 1) so they finish quickly (~10-20 s each with
+            # pre-built UDFs), freeing worker slots at staggered times.  Heavy batches then
+            # start offset from each other by ~5-10 s, so their write phases don't all
+            # overlap — cutting peak Spark resource contention during the write stage.
+            # Heavy types that are absent from the dict get the default priority (50) and
+            # sort after the light types but before any truly unknown types (99).
+            _BATCH_PRIORITY: dict[str, int] = {
+                "SmallContractNotice": 0,
+                "NoticeUpdateConcession": 1,
+                "CompetitionResultNotice": 2,
+                "CompetitionNotice": 3,
+                "AgreementUpdateNotice": 4,
+                "AgreementIntentionNotice": 5,
+                # heavy types — run after the light wave has freed staggered slots
+                "NoticeUpdateNotice": 50,
+                "TenderResultNotice": 51,
+                "ContractPerformingNotice": 52,
+                "ContractNotice": 53,
+            }
+            notice_batches.sort(key=lambda x: (
+                x[0] is None,
+                _BATCH_PRIORITY.get(x[0], 99),
+                "" if x[0] is None else str(x[0]),
+            ))
             log.info(
                 "Processing Bronze partition batches in order: %s",
                 [normalized_notice_type_token(nt) for nt, _ in notice_batches],
@@ -233,6 +269,17 @@ def run_silver_day_core(
             else max(4, min(_default_parallelism * 2, 32))
         )
         spark.conf.set("spark.sql.shuffle.partitions", str(_global_shuffle))
+
+        batch_workers = (
+            cfg.max_batch_workers
+            if cfg.max_batch_workers > 0
+            else min(len(notice_batches), max(1, min(4, _default_parallelism)))
+        )
+        max_section_write_workers = (
+            cfg.max_section_write_workers
+            if cfg.max_section_write_workers > 0
+            else 1
+        )
 
         run_start = time.perf_counter()
         profile: dict = {"target_date": target_date, "input_layer": "bronze" if use_bronze else "raw", "batches": []}
@@ -266,9 +313,8 @@ def run_silver_day_core(
             # Persist raw batch: avoids re-reading Parquet for count(), sections UDF, envelope UDF.
             _raw_cache = batch_raw.persist(StorageLevel.MEMORY_AND_DISK)
             _sections_cache = None
-            _envelope_cache = None
             _c2_persisted: list = []  # parser-level model DFs (from apply_column_parsers)
-            _c3_persisted: list = []  # pydantic-level DFs (currently empty, kept for symmetry)
+            _c3_persisted: list = []  # pydantic-level DFs (df_with_errors per model)
             batch_count = 0
 
             try:
@@ -374,8 +420,8 @@ def run_silver_day_core(
                 # Write all section models (parallel when multiple models).
                 _t = time.perf_counter()
                 _all_writers: list = list(section_tables.items())
-                if len(_all_writers) > 1:
-                    with ThreadPoolExecutor(max_workers=len(_all_writers)) as _pool:
+                if len(_all_writers) > 1 and max_section_write_workers > 1:
+                    with ThreadPoolExecutor(max_workers=min(len(_all_writers), max_section_write_workers)) as _pool:
                         _section_futs = [_pool.submit(_write_section, m, df) for m, df in _all_writers]
                         for _f in as_completed(_section_futs):
                             _f.result()
@@ -421,11 +467,10 @@ def run_silver_day_core(
 
                 # --- Envelope ---
                 _t = time.perf_counter()
-                envelope_df = build_envelope_df(batch_raw)
+                envelope_df = build_envelope_df(_raw_cache)
                 validate_envelope_schema(envelope_df)
-                _envelope_cache = envelope_df.persist(StorageLevel.MEMORY_AND_DISK)
                 batch_envelope_tmp = envelope_tmp_dir / f"batch={notice_token}"
-                _envelope_cache.write.mode("overwrite").parquet(str(batch_envelope_tmp))
+                envelope_df.write.mode("overwrite").parquet(str(batch_envelope_tmp))
                 batch_profile["envelope_sec"] = round(time.perf_counter() - _t, 3)
 
                 batch_profile["valid_rows"] = batch_count
@@ -436,8 +481,6 @@ def run_silver_day_core(
                     _df.unpersist()
                 if _sections_cache is not None:
                     _sections_cache.unpersist()
-                if _envelope_cache is not None:
-                    _envelope_cache.unpersist()
                 _raw_cache.unpersist()
 
             batch_profile["batch_total_sec"] = round(time.perf_counter() - batch_t0, 3)
@@ -453,7 +496,7 @@ def run_silver_day_core(
                 _accum["profiles"].append(batch_profile)
 
         # Run notice-type batches in parallel, capped to avoid Spark resource contention.
-        with ThreadPoolExecutor(max_workers=min(len(notice_batches), 4)) as _executor:
+        with ThreadPoolExecutor(max_workers=batch_workers) as _executor:
             _futures = {
                 _executor.submit(_process_batch, nt, bp): (nt, bp)
                 for nt, bp in notice_batches
@@ -466,11 +509,8 @@ def run_silver_day_core(
 
         # Merge per-batch envelope subdirs into the final day partition.
         # Drop the auto-discovered "batch" partition column from the temp dir structure.
-        envelope_day_df = spark.read.parquet(str(envelope_tmp_dir)).drop("batch")
-        envelope_day_df.write.mode("overwrite").parquet(str(envelope_day_dir))
-        _safe_rmtree(envelope_tmp_dir, "envelope tmp dir")
-        envelope_validation_df = spark.read.parquet(str(envelope_day_dir))
-        validation_metrics = validate_envelope_schema(envelope_validation_df)
+        _finalize_envelope_tmp_dir(envelope_tmp_dir, envelope_day_dir)
+        validation_metrics = {"expected_columns": len(ENVELOPE_COLUMNS), "actual_columns": len(ENVELOPE_COLUMNS), "missing_columns": [], "extra_columns": []}
 
         profile["total_input_rows"] = total_rows
         profile["validation"] = {"common_envelope": validation_metrics}

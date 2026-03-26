@@ -118,6 +118,18 @@ def _parse_args() -> argparse.Namespace:
         help="Force repartition count per batch (0 = adaptive)",
     )
     parser.add_argument(
+        "--max-batch-workers",
+        type=int,
+        default=0,
+        help="Max concurrent notice-type batches (0 = default tuned cap)",
+    )
+    parser.add_argument(
+        "--max-section-write-workers",
+        type=int,
+        default=0,
+        help="Max concurrent section-model writes inside one batch (0 = default tuned cap)",
+    )
+    parser.add_argument(
         "--lock-stale-minutes",
         type=int,
         default=240,
@@ -174,6 +186,8 @@ def main() -> None:
                     input_layer="bronze",
                     shuffle_partitions=args.shuffle_partitions,
                     repartition=args.repartition,
+                    max_batch_workers=args.max_batch_workers,
+                    max_section_write_workers=args.max_section_write_workers,
                     lock_stale_minutes=args.lock_stale_minutes,
                     mode="backfill",
                 )
