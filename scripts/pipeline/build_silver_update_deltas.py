@@ -46,6 +46,8 @@ _src = str(Path(__file__).resolve().parent.parent.parent / "src")
 sys.path.insert(0, _src)
 
 from procurement.logging import setup_logging
+from procurement.manifests import write_processed_manifest
+from procurement.obs import sha256_file
 from procurement.runtime import get_runtime
 from procurement.silver.section_pipeline.notice_schema_reader import load_all_profiles
 from procurement.silver.update_deltas.delta_builder import (
@@ -170,15 +172,28 @@ def main() -> None:
         silver_path = Path(silver_dir) if not silver_dir.startswith("gs://") else silver_dir
         bzp_index = _load_bzp_index(silver_path, years)
 
+        _script_hash = sha256_file(Path(__file__))
         for i, day in enumerate(days, 1):
             t_day = time.perf_counter()
             _run_day(day, silver_dir, section_index, bzp_index)
+            write_processed_manifest(
+                layer="deltas",
+                target_date=day,
+                script_hash=_script_hash,
+                storage=rt.storage,
+            )
             log.info("Day %d/%d (%s) done in %.1fs", i, len(days), day, time.perf_counter() - t_day)
 
     else:
         target_date = args.target_date
         log.info("Processing single day: %s", target_date)
         _run_day(target_date, silver_dir, section_index, bzp_index=None)
+        write_processed_manifest(
+            layer="deltas",
+            target_date=target_date,
+            script_hash=sha256_file(Path(__file__)),
+            storage=rt.storage,
+        )
 
     elapsed = time.perf_counter() - t0
     log.info("build_silver_update_deltas finished: elapsed=%.1fs", elapsed)

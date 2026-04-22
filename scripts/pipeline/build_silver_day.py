@@ -27,6 +27,8 @@ os.environ["PYSPARK_PYTHON"] = sys.executable
 os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
 
 from procurement.logging import setup_logging
+from procurement.manifests import write_processed_manifest
+from procurement.obs import sha256_file
 from procurement.runtime import get_runtime
 from procurement.silver.pipeline_orchestrator import CoreRunConfig, run_silver_day_core
 
@@ -137,6 +139,13 @@ def main() -> None:
         )
     finally:
         spark.stop()
+
+    write_processed_manifest(
+        layer="silver",
+        target_date=target_date,
+        script_hash=sha256_file(Path(__file__)),
+        storage=rt.storage,
+    )
 
 
 if __name__ == "__main__":

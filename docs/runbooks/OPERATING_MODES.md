@@ -17,7 +17,7 @@ Suggested sequence for day `D`:
 1. Fetch API notices for `D` into `bronze_raw`.
 2. Convert `bronze_raw(D)` to canonical Bronze Parquet.
 3. Build Silver for `D` from Bronze.
-4. Update `silver/case_derived_facts` in `incremental` mode for `D`.
+4. Build notice-change deltas for `D` from Silver.
 
 Example commands (local):
 
@@ -27,7 +27,12 @@ python scripts/pipeline/fetch_bzp_yesterday.py D
 python scripts/pipeline/build_bronze.py D
 python scripts/pipeline/build_silver_day.py D
 python scripts/pipeline/build_silver_update_deltas.py D
-python scripts/pipeline/build_case_derived_facts.py D --mode incremental
+```
+
+Or use the convenience wrapper:
+
+```bash
+python scripts/ops/run_transforms_for_day.py D  # runs bronze → silver → deltas
 ```
 
 On GCP this is handled automatically by the `bzp_daily` Airflow DAG
@@ -42,35 +47,32 @@ Recommended split:
 ### Phase A: API-bound ingest (retry-friendly)
 
 - Fetch many days to `bronze_raw` first.
-- This phase is network/API bound and should be decoupled from Spark transforms.
+- This phase is network/API bound and must be decoupled from Spark transforms.
+- The BZP API has no published rate limit; use exponential backoff between requests.
 
 ### Phase B: Spark-bound transforms (long-lived jobs)
 
-1. Convert `bronze_raw` range -> Bronze Parquet.
-2. Build Silver range from Bronze in one long-lived Spark run with checkpoint state.
-3. Build `case_derived_facts` (`full` once for initial snapshot, then `incremental` for new arrivals).
+1. Convert `bronze_raw` range → Bronze Parquet.
+2. Build Silver range from Bronze.
+3. Build notice-change deltas from Silver.
 
 Rationale:
 
 - Spark startup cost is significant when run per day.
-- Backfill should prefer long-lived Spark runs or parallel day workers to amortize startup overhead.
 - Separating API ingest from Spark compute improves failure isolation and retry behavior.
+- On GCP, completing all downloads first avoids paying for Dataproc batches idling on HTTP calls.
 
-Recommended backfill command:
+Local backfill command (single long-lived Spark session):
 
 ```bash
 python scripts/pipeline/build_silver_backfill.py \
   --start-date 2025-10-01 \
-  --end-date 2025-10-31 \
-  --bronze-dir data/bronze \
-  --silver-dir data/silver
+  --end-date 2025-10-31
 ```
 
-Restart safety:
-
-- `build_silver_backfill.py` writes an explicit state index (`data/silver/_state/silver_backfill_<start>_<end>.json` by default).
-- Only days marked `completed` in state are skipped on resume.
-- Any interrupted/non-completed day is fully cleaned and rebuilt, so partial writes are never treated as done.
+`build_silver_backfill.py` is a local-only runner that keeps one SparkSession alive across all
+days, amortising JVM startup overhead.  On GCP, use the `bzp_backfill` Airflow DAG
+(`dags/backfill_dag.py`) which submits one independent Dataproc batch per date.
 
 Restart safety:
 
@@ -78,36 +80,47 @@ Restart safety:
   (`{silver_dir}/_state/silver_backfill_<start>_<end>.json` by default).
 - Only days marked `completed` in state are skipped on resume.
 
-On GCP this is handled by the `bzp_backfill` Airflow DAG (`dags/backfill_dag.py`),
-triggered manually via the Airflow UI.  See `docs/cloud_architecture.md`.
+GCP backfill restart safety (Airflow `bzp_backfill` DAG):
 
-Lineage metadata:
+- Each pipeline script writes a processed-date manifest to
+  `gs://{LAKEHOUSE_BUCKET}/_processed/{layer}/{date}.json` on success.
+- The manifest contains the `script_hash` (SHA-256 of the entry-point script).
+- Before submitting each Dataproc batch, the DAG compares the manifest hash
+  against the current deployed script.  Matching hash → batch is skipped.
+- Use `force=true` when triggering the DAG to reprocess all dates regardless
+  of manifest state (e.g. after deploying updated scripts).
 
-- fetch → `data/obs/pipeline_runs/` (local) or skipped (GCP — TODO extend obs.py for GCS)
-- bronze → `data/bronze/errors/bzp_YYYY-MM-DD_errors.json` (validation failures)
-- bronze dedup → Spark query against existing Bronze Parquet (was SQLite — removed for GCS compatibility)
-- silver → `data/obs/pipeline_runs/` (local)
+On GCP, triggered manually via the Airflow UI.  See `docs/cloud_architecture.md`.
+
+## Observability
+
+- **Local**: pipeline run metadata + data quality metrics written to `data/obs/` as Parquet.
+- **GCP**: streamed to BigQuery dataset `BQ_OBS_DATASET` (default: `procurement_obs`).
+  Tables `pipeline_runs`, `dq_metrics`, `quarantine_summary` are created automatically.
+  Cloud Logging captures structured operational logs from Dataproc and Cloud Run
+  automatically.
 
 ## Reliability and Idempotency Notes
 
-- `build_bronze.py`: deterministic for the same `bronze_raw` input; writes partitioned Bronze by `noticeType/publicationDateDay`.
-- `build_bronze.py`: suppresses cross-day duplicate notices by `objectId` using persistent seen-index; same-day reruns are still allowed.
-- `build_silver_day.py`: deterministic and idempotent for a target day; overwrites touched day partitions.
-- `build_case_derived_facts.py`:
-  - `full`: rebuilds snapshot as-of target day.
-  - `incremental`: recomputes only touched cases and merges with nearest snapshot.
+- `build_bronze.py`: deterministic for the same `bronze_raw` input; writes partitioned Bronze
+  by `noticeType/publicationDateDay`.  Cross-day duplicate `objectId`s are suppressed via
+  a Spark query against existing Bronze Parquet.  Same-day reruns are idempotent.
+- `build_silver_day.py`: deterministic and idempotent for a target day; overwrites touched
+  day partitions.
+- `build_silver_update_deltas.py`: overwrites the target date partition; idempotent.
 
 ## Current Performance Guidance
 
-- Bronze is not currently bottlenecked by Pydantic validation; most cost is Spark startup + write path.
-- Silver bottleneck is primarily HTML parsing and transform materialization, especially for:
+- Bronze: most cost is Spark startup + write path, not Pydantic validation.
+- Silver bottleneck is HTML parsing and transform materialisation, especially for:
   - `ContractNotice`
   - `TenderResultNotice`
   - `ContractPerformingNotice`
-- Silver uses notice-type batches and adaptive repartitioning for heavy parser types to improve intra-day parallelism.
+- Silver uses notice-type batches and adaptive repartitioning for heavy parser types.
 
 ## Notes
 
 Key rule:
-- API fetch and Spark processing are decoupled.
-- Backfill should amortize Spark startup overhead.
+- API fetch and Spark processing are always decoupled.
+- Backfill should amortise Spark startup overhead (local: one long-lived session;
+  GCP: Dataproc Serverless handles parallelism natively).

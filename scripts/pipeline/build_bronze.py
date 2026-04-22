@@ -46,6 +46,7 @@ os.environ["PYTHONPATH"] = _src + os.pathsep + os.environ.get("PYTHONPATH", "")
 from procurement.bronze.models import BzpNoticeBronze, notice_record_hash
 from procurement.obs import git_commit_sha, now_utc_iso, sha256_file, write_dq_metrics, write_pipeline_run
 from procurement.logging import setup_logging
+from procurement.manifests import write_processed_manifest
 from procurement.runtime import get_runtime
 from pydantic import ValidationError
 from pyspark.sql.types import (
@@ -439,6 +440,14 @@ def main() -> None:
         len(errors),
         dedup_stats["dropped_duplicates_seen_index_other_day"],
     )
+
+    write_processed_manifest(
+        layer="bronze",
+        target_date=target_date,
+        script_hash=sha256_file(Path(__file__)),
+        storage=rt.storage,
+    )
+    log.info("Written processed manifest: layer=bronze date=%s", target_date)
 
 
 if __name__ == "__main__":

@@ -36,6 +36,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
 
 from procurement.obs import git_commit_sha, now_utc_iso, sha256_file, write_pipeline_run
 from procurement.logging import setup_logging
+from procurement.manifests import write_processed_manifest
 from procurement.runtime import get_runtime
 
 setup_logging()
@@ -247,6 +248,14 @@ def main() -> None:
         log.info("Wrote fetch obs pipeline_run for %s", target_date.isoformat())
     else:
         log.info("Obs write skipped (obs_path=None for runtime env=%s)", rt.env)
+
+    write_processed_manifest(
+        layer="fetch",
+        target_date=target_date.isoformat(),
+        script_hash=sha256_file(Path(__file__)),
+        storage=rt.storage,
+    )
+    log.info("Written processed manifest: layer=fetch date=%s", target_date.isoformat())
 
 
 if __name__ == "__main__":

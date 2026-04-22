@@ -236,6 +236,13 @@ Trigger the `bzp_backfill` DAG from the Airflow UI:
 The DAG submits one Dataproc batch per date per step (bronze → silver →
 deltas) and waits for each to complete before proceeding to the next date.
 
+**Hash-based skipping**: before submitting each batch, the DAG reads the
+processed-date manifest at `gs://{LAKEHOUSE_BUCKET}/_processed/{layer}/{date}.json`
+and compares the stored `script_hash` against the SHA-256 of the currently
+deployed script on GCS.  If they match and `force=False`, the batch is skipped.
+Set `force=true` to reprocess all dates regardless of manifest state (e.g.
+after deploying a new script version).
+
 ---
 
 ## CI/CD TODO
@@ -264,11 +271,19 @@ See `.github/workflows/deploy.yml` for the stub file.
 
 ## Observability
 
-Pipeline runs and data quality metrics are written to `data/obs/` in local
-mode.  In GCP mode, observability writes are currently **skipped** (`obs_path()`
-returns `None` for the GCP provider) because `obs.py` uses `pyarrow` with
-local filesystem paths.
+| Mode | Where obs data is written |
+|---|---|
+| Local | `data/obs/` — Parquet files, date-partitioned |
+| GCP | BigQuery dataset `BQ_OBS_DATASET` (default: `procurement_obs`) |
 
-**TODO**: extend `src/procurement/obs.py` to support GCS-backed writes (use
-`google-cloud-storage` to write Parquet via an in-memory buffer or write to a
-GCS-mounted FUSE path in the Dataproc executor).
+In GCP mode, `obs_path()` returns `None`, and `obs.py` detects `RUNTIME_ENV=gcp`
+to stream rows to BigQuery instead.  Tables (`pipeline_runs`, `dq_metrics`,
+`quarantine_summary`) are created automatically on first write.
+
+The dataset name is controlled by `BQ_OBS_DATASET` (see
+`config/runtime_gcp.env.example`).  Cloud Logging captures structured
+operational logs from Dataproc and Cloud Run automatically — no extra
+configuration needed.
+
+For Terraform: create the `procurement_obs` dataset in BigQuery.  The tables
+themselves are managed by `obs.py`.
