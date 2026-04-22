@@ -115,7 +115,9 @@ def _discover_nun_days(silver_dir: str, year: str | None) -> list[str]:
     return sorted(
         p.name.replace("publicationDateDay=", "")
         for p in core_dir.iterdir()
-        if p.is_dir() and (year is None or p.name.startswith(f"publicationDateDay={year}"))
+        if p.is_dir()
+        and p.name.startswith("publicationDateDay=")
+        and (year is None or p.name.startswith(f"publicationDateDay={year}"))
     )
 
 
