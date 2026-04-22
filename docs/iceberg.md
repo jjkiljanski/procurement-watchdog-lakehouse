@@ -16,6 +16,7 @@ already wired up, and what needs to change to complete the migration.
 | No built-in time travel | Every Iceberg write creates a snapshot; point-in-time queries are native |
 | BQ external tables need manual DDL updates when schemas change | BigLake-managed Iceberg catalogs expose tables to BigQuery automatically |
 | Cross-day dedup logic requires a Spark query over all existing partitions | Iceberg `MERGE INTO` can upsert by `objectId` in a single atomic operation |
+| Manual `_processed/{layer}/{date}.json` manifest files required for idempotent backfill skip-checks | Iceberg snapshot `summary` properties can store `script_hash` at write time; the backfill DAG can query `{table}.snapshots` to check whether a partition was written with the current script version |
 
 ---
 
@@ -143,6 +144,70 @@ spark.sql(f"""
     WHEN NOT MATCHED THEN INSERT *
 """)
 ```
+
+### Step 6: Replace manifest files with Iceberg snapshot properties
+
+The current `src/procurement/manifests.py` module writes
+`_processed/{layer}/{date}.json` marker files so that the backfill DAG can
+skip batches that were already processed with the same script version.  Once
+silver (and optionally bronze) writes go through Iceberg, this out-of-band
+mechanism can be replaced with native Iceberg features.
+
+**Write side** — attach `script_hash` to the Iceberg snapshot at commit time:
+
+```python
+df.writeTo(f"silver.notice_type_tables.{table_name}") \
+  .option("write-audit-publish.enabled", "false") \
+  .tableProperty("write.summary.partition-limit", "100") \
+  .overwritePartitions()
+
+# After the write, stamp the snapshot with script metadata:
+spark.sql(f"""
+    ALTER TABLE silver.notice_type_tables.{table_name}
+    SET TBLPROPERTIES (
+        'last_script_hash'  = '{script_hash}',
+        'last_target_date'  = '{target_date}',
+        'last_completed_at' = '{completed_at}'
+    )
+""")
+```
+
+> **Note**: `SET TBLPROPERTIES` updates table-level properties, not per-snapshot
+> properties.  For per-partition-per-snapshot tracking, query the
+> `{table}.partitions` and `{table}.snapshots` metadata tables instead — see
+> the read side below.
+
+**Read side** — check the latest snapshot that touched a given partition:
+
+```sql
+-- Was publicationDateDay=2025-10-01 written in the most recent snapshot?
+SELECT
+    s.committed_at,
+    s.summary['spark.app.id']   AS app_id,
+    -- custom properties written via TBLPROPERTIES are visible here:
+    t.last_script_hash,
+    t.last_target_date
+FROM silver.notice_type_tables.contract_notice.history  AS h
+JOIN silver.notice_type_tables.contract_notice.snapshots AS s
+  ON h.snapshot_id = s.snapshot_id
+CROSS JOIN (
+    SELECT * FROM silver.notice_type_tables.contract_notice.properties
+) AS t
+ORDER BY s.committed_at DESC
+LIMIT 1;
+```
+
+Once this is in place:
+
+1. Remove `write_processed_manifest` calls from all pipeline scripts.
+2. Remove `_check_manifest` / `_gcs_blob_sha256` helpers from `backfill_dag.py`.
+3. Replace the skip logic in each `submit_*_batch` task with a BQ or Spark SQL
+   query against the Iceberg metadata tables.
+4. Delete `src/procurement/manifests.py` and the `_processed/` GCS prefix.
+
+Until the Iceberg migration is complete, the manifest files in
+`_processed/{layer}/{date}.json` remain the authoritative skip-check mechanism
+for the backfill DAG.
 
 ---
 
