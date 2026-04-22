@@ -170,6 +170,7 @@ def run_silver_day_core(
     args_dict: dict | None = None,
     script_paths: list[Path] | None = None,
     run_context: dict | None = None,
+    obs_dir: Path | None = None,
 ) -> dict:
     """Build Silver for one day. Shared by day and backfill wrappers."""
     from pyspark.sql.functions import col, lit, to_date
@@ -460,6 +461,7 @@ def run_silver_day_core(
                             target_date=target_date,
                             notice_type=notice_token,
                             row_count=q_count,
+                            obs_dir=obs_dir,
                         )
                     else:
                         log.debug("Skipped empty quarantine write noticeType=%s", notice_token)
@@ -534,6 +536,7 @@ def run_silver_day_core(
             counts={"input_rows": total_rows},
             git_commit=git_commit_sha(),
             script_hash=sha256_file(entry_script) if entry_script else None,
+            obs_dir=obs_dir,
         )
         write_dq_metrics(
             layer="silver",
@@ -544,6 +547,7 @@ def run_silver_day_core(
                 for k, v in (validation_metrics or {}).items()
                 if isinstance(v, (int, float))
             },
+            obs_dir=obs_dir,
         )
         for batch in profile.get("batches", []):
             nt = batch.get("noticeType")
@@ -554,6 +558,7 @@ def run_silver_day_core(
                     target_date=target_date,
                     notice_type=nt,
                     metrics={"input_rows": batch_rows},
+                    obs_dir=obs_dir,
                 )
 
         return {

@@ -1,6 +1,8 @@
 # Procurement Watchdog Lakehouse
 
-A Spark-based lakehouse pipeline for public procurement data (BZP), focused on deterministic Bronze → Silver processing. Business-facing analytical logic lives in a separate dbt repo:
+A Spark-based lakehouse pipeline for Polish public procurement data (BZP/eZamówienia),
+focused on deterministic Bronze → Silver processing. Business-facing analytical logic
+lives in a separate dbt repo:
 
 - `https://github.com/jjkiljanski/procurement-watchdog-analytics`
 
@@ -8,10 +10,10 @@ A Spark-based lakehouse pipeline for public procurement data (BZP), focused on d
 
 The repository is organized around medallion-style layers:
 
-- `bronze_raw`: raw API payloads (`data/bronze_raw/bzp_YYYY-MM-DD.json`)
+- `bronze_raw`: raw API payloads (`data/bronze_raw/bzp_YYYY-MM-DD.json` or `gs://bucket/bronze_raw/`)
 - `bronze`: validated canonical notices in Parquet, partitioned by `noticeType/publicationDateDay`
 - `silver`: conformed notice-level datasets split into common envelope + notice-type tables
-- `silver/case_derived_facts`: Spark-built case-grain derived layer used as input for downstream analytics
+- `silver/notice_update_deltas`: change delta records built from `NoticeUpdateNotice` silver
 
 Core goals:
 
@@ -21,125 +23,153 @@ Core goals:
 - reproducible lineage metadata (inputs, code hashes, run metadata)
 - business-logic-agnostic lakehouse preparation in Spark; downstream business interpretation in dbt
 
-## Operating Modes
+## Running Modes
 
-- `Daily Incremental (CRON)`:
-  - fetch yesterday to `bronze_raw`,
-  - build Bronze for that day,
-  - build Silver for that day,
-  - update `case_derived_facts` incrementally.
-- `Massive Backfill`:
-  - first fetch large date ranges to `bronze_raw`,
-  - then run Spark transforms (`bronze → silver → case_derived`) in long-lived jobs.
+The pipeline supports two **deployment environments**, controlled by `RUNTIME_ENV`:
 
-See `docs/runbooks/OPERATING_MODES.md` for exact sequencing and retry semantics.
+| Mode | `RUNTIME_ENV` | Compute | Storage |
+|---|---|---|---|
+| **Local** | `local` (default) | Local PySpark | `data/` directory |
+| **GCP** | `gcp` | Dataproc Serverless | GCS + BigQuery |
 
-## Current Data Layout
+And two **pipeline modes**:
 
-### Bronze
+| Pipeline mode | Trigger | What it does |
+|---|---|---|
+| **Daily** | 03:00 UTC cron (Airflow `bzp_daily` DAG) | Download yesterday → bronze → silver → deltas |
+| **Backfill** | Manual (Airflow `bzp_backfill` DAG) | Process a date range with per-day hash checks |
 
-- `bronze_raw` input files: `data/bronze_raw/bzp_YYYY-MM-DD.json`
-- `bronze` canonical Parquet: `data/bronze/notices/noticeType=<TYPE>/publicationDateDay=YYYY-MM-DD/`
-- Bronze validation errors: `data/bronze/errors/bzp_YYYY-MM-DD_errors.json`
-- Bronze lineage manifests: `data/bronze/_meta/day=YYYY-MM-DD.json`
-- API fetch and Bronze Spark conversion are intentionally separated (`bronze_raw` -> `bronze`) to improve backfill throughput and failure isolation.
+See `docs/cloud_architecture.md` for GCP setup and `docs/runbooks/OPERATING_MODES.md` for
+local operation.
 
-### Silver
-
-Built by `scripts/pipeline/build_silver_day.py` or `scripts/pipeline/build_silver_backfill.py` (reads Bronze Parquet by default):
-
-**Two parallel pipelines:**
-
-**1. Section table pipeline** — profile-driven HTML → structured section columns per `data_model`:
-
-- `data/silver/notice_type_tables/noticeType=<TYPE>/data_model=<MODEL>/publicationDateDay=YYYY-MM-DD/`
-
-  Each notice type has a `src/procurement/silver/notice_schemas/*_profile.json` mapping section
-  numbers to column names and data models. `data_model` values include `core` (one row/notice),
-  `part`, `client`, `change_matter`, `criterion_procedure`, etc. Nested child models such as
-  `part.criterion` are materialized as their own Silver child tables (for example `data_model=part_criterion`)
-  rather than as nested arrays on the parent row.
-
-  Silver is intended to stay structurally faithful and business-logic-agnostic. It may include
-  deterministic parsing/normalization needed to make the data queryable, but downstream business
-  interpretation is expected to happen in the analytics repo.
-
-**2. Common envelope pipeline** — structured Bronze columns only, no HTML parsing:
-
-- `data/silver/common_envelope/publicationDateDay=YYYY-MM-DD/`
-
-  Contains all Bronze structured fields plus small derived columns: `clientTypeName`,
-  `provinceName`, `caseId` (coalesce of `tenderId`/`objectId`), `noticeStage`.
-
-Built by `scripts/pipeline/build_case_derived_facts.py`:
-
-- `data/silver/case_derived_facts/asOfDate=YYYY-MM-DD/`
-
-Lineage/performance metadata: `data/silver/_meta/day=YYYY-MM-DD.json`
-
-Notes:
-
-- Ingest is processed in parallel notice-type batches.
-- Section profiles and Pydantic models live in `src/procurement/silver/notice_schemas/`.
-- See `src/procurement/silver/README.md` for full architecture details.
-
-## Key Scripts
-
-- `scripts/pipeline/fetch_bzp_yesterday.py` - fetch daily API payloads to `bronze_raw`
-- `scripts/pipeline/build_bronze.py` - validate + write canonical Bronze Parquet
-- `scripts/pipeline/build_silver_day.py` - Silver build for a single day
-- `scripts/pipeline/build_silver_backfill.py` - Silver backfill over a date range with state tracking
-- `scripts/pipeline/build_case_derived_facts.py` - case-grain Silver derived layer (`full` / `incremental`)
-- `scripts/pipeline/build_obs.py` - Silver observability snapshot + dashboard
-- `scripts/ops/run_pipeline.py` - daily orchestrator: fetch → bronze → silver
-- `scripts/ops/run_transforms_for_day.py` - transform stack without fetch: bronze → silver → case-derived
-- `scripts/ops/backfill_parallel.py` - bounded parallel backfill runner
-- `scripts/dev/*` - exploratory one-off tools (non-prod)
-- `docs/runbooks/OPERATING_MODES.md` - operational runbook (daily vs backfill + restart semantics)
-
-## GCP Runtime Images
-
-This repo provides three deployable runtime adapters that reuse the same core scripts as local runs:
-
-- `downloader`: job adapter for API fetch (`apps/downloader/main.py`)
-- `dispatcher`: HTTP service that picks next backfill date and triggers downloader (`apps/dispatcher/main.py`)
-- `launcher`: HTTP service that triggers pipeline launch command (`apps/launcher/main.py`)
-
-Build commands:
+## Quick Start — Local
 
 ```bash
-docker build -t procurement-downloader -f Dockerfile.downloader .
-docker build -t procurement-dispatcher -f Dockerfile.dispatcher .
-docker build -t procurement-launcher -f Dockerfile.launcher .
+# Install dependencies
+pip install -e ".[dev]"
+
+# (Optional) set data root explicitly — defaults to data/ in CWD
+export LOCAL_DATA_ROOT=data
+export RUNTIME_ENV=local   # this is the default
+
+# Fetch yesterday's data
+python scripts/pipeline/fetch_bzp_yesterday.py
+
+# Build bronze
+python scripts/pipeline/build_bronze.py
+
+# Build silver for yesterday
+python scripts/pipeline/build_silver_day.py
+
+# Build notice-change deltas for yesterday
+python scripts/pipeline/build_silver_update_deltas.py $(date -d yesterday +%Y-%m-%d)
 ```
 
-Runtime env contracts are documented in `docs/deployment/RUNTIME_CONTRACTS.md`.
-
-## Local Execution
-
-Recommended (Docker Spark runtime):
+Or with Docker (recommended, matches the GCP container):
 
 ```bash
 docker build -t procurement-lakehouse .
-docker run --rm -v <repo_path>:/app -w /app procurement-lakehouse python scripts/pipeline/fetch_bzp_yesterday.py 2025-10-01
-docker run --rm -v <repo_path>:/app -w /app procurement-lakehouse python scripts/pipeline/build_bronze.py 2025-10-01
-docker run --rm -v <repo_path>:/app -w /app procurement-lakehouse python scripts/pipeline/build_silver_day.py 2025-10-01 --bronze-dir data/bronze --silver-dir data/silver
+docker run --rm -v $(pwd)/data:/app/data -e RUNTIME_ENV=local \
+  procurement-lakehouse python scripts/pipeline/fetch_bzp_yesterday.py 2025-10-01
+docker run --rm -v $(pwd)/data:/app/data -e RUNTIME_ENV=local \
+  procurement-lakehouse python scripts/pipeline/build_bronze.py 2025-10-01
+docker run --rm -v $(pwd)/data:/app/data -e RUNTIME_ENV=local \
+  procurement-lakehouse python scripts/pipeline/build_silver_day.py 2025-10-01
 ```
 
-For Windows users, see `docs/runbooks/LOCAL_WINDOWS_DOCKER.md` for the optimal Docker invocation using WSL2 native mounts (~100 s/day with tuned flags):
+For Windows/WSL2 performance tips see `docs/runbooks/LOCAL_WINDOWS_DOCKER.md`.
+
+## Quick Start — GCP
 
 ```bash
-# Best-performing flags on Windows/WSL2 (~100 s for a typical production day):
-python scripts/pipeline/build_silver_day.py 2025-10-01 \
-  --bronze-dir data/bronze \
-  --silver-dir data/silver \
-  --shuffle-partitions 8 \
-  --max-batch-workers 6
+# 1. Configure environment
+cp config/runtime_gcp.env.example ~/.procurement-gcp.env
+# Edit ~/.procurement-gcp.env with your project values
+export $(grep -v '^#' ~/.procurement-gcp.env | xargs)
+
+# 2. Build and push containers
+GIT_SHA=$(git rev-parse --short HEAD)
+docker build -f Dockerfile.spark --build-arg GIT_SHA=$GIT_SHA \
+  -t ${DATAPROC_CONTAINER_IMAGE} .
+docker push ${DATAPROC_CONTAINER_IMAGE}
+
+# 3. Upload pipeline scripts to GCS
+gsutil -m cp scripts/pipeline/*.py gs://${LAKEHOUSE_BUCKET}/jobs/
+
+# 4. Create BigQuery external tables
+python scripts/ops/setup_bq_external_tables.py
+
+# 5. Sync DAGs to Cloud Composer (see docs/cloud_architecture.md for full setup)
 ```
 
-Silver outputs are consumed by the dbt analytics repo; this repo does not produce business marts.
+See `docs/cloud_architecture.md` for complete GCP setup instructions.
 
-Direct Python runs are also possible if local Spark/PySpark is configured.
+## Data Layout
+
+### Bronze
+
+- Raw input: `{data_root}/bronze_raw/bzp_YYYY-MM-DD.json`
+- Canonical Parquet: `{data_root}/bronze/notices/noticeType=<TYPE>/publicationDateDay=YYYY-MM-DD/`
+- Validation errors: `{data_root}/bronze/errors/bzp_YYYY-MM-DD_errors.json`
+
+### Silver
+
+Built by `scripts/pipeline/build_silver_day.py`:
+
+- Notice-type tables: `{data_root}/silver/notice_type_tables/noticeType=<TYPE>/data_model=<MODEL>/publicationDateDay=YYYY-MM-DD/`
+- Common envelope: `{data_root}/silver/common_envelope/publicationDateDay=YYYY-MM-DD/`
+- Change deltas: `{data_root}/silver/notice_update_deltas/noticeType=<TYPE>/publicationDateDay=YYYY-MM-DD/`
+
+On GCP, `{data_root}` = `gs://{LAKEHOUSE_BUCKET}`.  Silver is also available via
+BigQuery external tables (created by `scripts/ops/setup_bq_external_tables.py`).
+
+## Key Scripts
+
+| Script | Purpose |
+|---|---|
+| `scripts/pipeline/fetch_bzp_yesterday.py` | Fetch daily API payloads to bronze_raw |
+| `scripts/pipeline/build_bronze.py` | Validate + write canonical Bronze Parquet |
+| `scripts/pipeline/build_silver_day.py` | Silver build for a single day |
+| `scripts/pipeline/build_silver_backfill.py` | Silver backfill with resumable state |
+| `scripts/pipeline/build_silver_update_deltas.py` | NoticeUpdateNotice change deltas |
+| `scripts/pipeline/build_case_derived_facts.py` | Case-grain derived layer |
+| `scripts/pipeline/build_obs.py` | Observability snapshot + dashboard |
+| `scripts/ops/setup_bq_external_tables.py` | Create/replace BigQuery external tables |
+| `scripts/ops/run_pipeline.py` | Local daily orchestrator: fetch → bronze → silver |
+
+## Container Images
+
+| Dockerfile | Purpose |
+|---|---|
+| `Dockerfile` | Local dev runner |
+| `Dockerfile.spark` | Dataproc Serverless container (bronze, silver, deltas batches) |
+| `Dockerfile.downloader` | Cloud Run Job container (BZP API fetch) |
+
+Build all:
+```bash
+docker build -t procurement-lakehouse .
+docker build -t procurement-spark -f Dockerfile.spark .
+docker build -t procurement-downloader -f Dockerfile.downloader .
+```
+
+## Airflow DAGs
+
+| DAG | Trigger | Purpose |
+|---|---|---|
+| `dags/daily_dag.py` | 03:00 UTC cron | Full daily pipeline for yesterday |
+| `dags/backfill_dag.py` | Manual | Date-range backfill |
+
+DAGs are synced to Cloud Composer from this repo.  See
+`docs/cloud_architecture.md` for setup and `.github/workflows/deploy.yml` for
+the planned CI/CD automation (not yet active).
+
+## Architecture Docs
+
+- `docs/cloud_architecture.md` — GCP deployment, runtime abstraction, setup
+- `docs/iceberg.md` — Planned migration from Parquet to Iceberg for silver
+- `docs/observability.md` — Pipeline run metadata + data quality metrics
+- `docs/runbooks/OPERATING_MODES.md` — Local + GCP operating runbook
+- `docs/runbooks/LOCAL_WINDOWS_DOCKER.md` — Windows/WSL2 Docker tips
 
 ## Testing
 
@@ -147,31 +177,28 @@ Direct Python runs are also possible if local Spark/PySpark is configured.
 pytest -q
 ```
 
-## Contributing
-
-See `CONTRIBUTING.md` for repository structure, naming conventions, artifact policy, and documentation update rules.
-
 ## Repository Structure
 
 ```text
 src/procurement/
-  bronze/
-  silver/
-scripts/
-  pipeline/
-  ops/
-  dev/
+  bronze/           — validation models
+  silver/           — HTML parsing + section pipeline
+  runtime/          — provider abstraction (local / gcp / ...)
+  obs.py            — observability writers
 apps/
-  downloader/
-  dispatcher/
-  launcher/
-  common/
-tests/
-docs/
-examples/
-data/
+  downloader/       — Cloud Run Job: BZP API fetch adapter
+  common/           — shared runtime utilities for apps
+scripts/
+  pipeline/         — core pipeline scripts (entry points for Dataproc batches)
+  ops/              — orchestration helpers + setup scripts
+  dev/              — exploratory one-off tools (non-prod)
+dags/               — Airflow DAGs (synced to Cloud Composer)
+config/             — environment variable templates
+docs/               — architecture + runbook documentation
+tests/              — pytest suite
 ```
 
 ## Disclaimer
 
-This project provides data engineering and analytical signals for transparency/research. Outputs are not legal conclusions.
+This project provides data engineering and analytical signals for transparency/research.
+Outputs are not legal conclusions.

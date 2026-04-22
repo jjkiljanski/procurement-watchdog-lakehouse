@@ -1,4 +1,21 @@
-"""Backfill Silver over date range (wrapper over core Silver build)."""
+"""Backfill Silver over date range (wrapper over core Silver build).
+
+Path resolution
+---------------
+``bronze-dir`` and ``silver-dir`` default to the runtime-resolved paths:
+
+- **local** (``RUNTIME_ENV=local``): ``{LOCAL_DATA_ROOT}/bronze/`` and
+  ``{LOCAL_DATA_ROOT}/silver/``
+- **GCP**   (``RUNTIME_ENV=gcp``):  ``gs://{LAKEHOUSE_BUCKET}/bronze/`` and
+  ``gs://{LAKEHOUSE_BUCKET}/silver/``
+
+Pass ``--bronze-dir`` / ``--silver-dir`` explicitly to override.
+
+State file
+----------
+Backfill progress is saved to a JSON state file so interrupted runs can
+resume.  Default location: ``{silver-dir}/_state/silver_backfill_{start}_{end}.json``.
+"""
 
 from __future__ import annotations
 
@@ -18,7 +35,8 @@ os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
 
 from procurement.lineage import atomic_write_json, now_utc_iso
 from procurement.logging import setup_logging
-from procurement.silver.pipeline_orchestrator import CoreRunConfig, build_spark_session, run_silver_day_core
+from procurement.runtime import get_runtime
+from procurement.silver.pipeline_orchestrator import CoreRunConfig, run_silver_day_core
 
 setup_logging()
 import logging
@@ -39,8 +57,8 @@ def _date_list(start_date: str, end_date: str) -> list[str]:
     return out
 
 
-def _default_state_path(silver_dir: Path, start_date: str, end_date: str) -> Path:
-    return silver_dir / "_state" / f"silver_backfill_{start_date}_{end_date}.json"
+def _default_state_path(silver_dir: str, start_date: str, end_date: str) -> Path:
+    return Path(silver_dir) / "_state" / f"silver_backfill_{start_date}_{end_date}.json"
 
 
 def _load_or_init_state(
@@ -85,8 +103,16 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Backfill Silver over date range in one Spark job.")
     parser.add_argument("--start-date", required=True, help="Start day YYYY-MM-DD")
     parser.add_argument("--end-date", required=True, help="End day YYYY-MM-DD")
-    parser.add_argument("--bronze-dir", default="data/bronze", help="Bronze root directory")
-    parser.add_argument("--silver-dir", default="data/silver", help="Silver root directory")
+    parser.add_argument(
+        "--bronze-dir",
+        default=None,
+        help="Bronze root directory.  Defaults to the runtime-resolved 'bronze' path.",
+    )
+    parser.add_argument(
+        "--silver-dir",
+        default=None,
+        help="Silver root directory.  Defaults to the runtime-resolved 'silver' path.",
+    )
     parser.add_argument("--state-path", default="", help="Checkpoint state JSON path")
     parser.add_argument("--reset-state", action="store_true", help="Delete existing state and restart range")
     parser.add_argument(
@@ -102,8 +128,8 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--spark-master",
-        default=os.environ.get("SPARK_MASTER", "local[*]"),
-        help="Spark master string (e.g. local[*], local[6])",
+        default=os.environ.get("SPARK_MASTER"),
+        help="Spark master string (e.g. local[*], local[6]).  Defaults to SPARK_MASTER env var.",
     )
     parser.add_argument(
         "--shuffle-partitions",
@@ -141,7 +167,11 @@ def _parse_args() -> argparse.Namespace:
 def main() -> None:
     args = _parse_args()
     days = _date_list(args.start_date, args.end_date)
-    silver_dir = Path(args.silver_dir)
+
+    rt = get_runtime()
+    bronze_dir = args.bronze_dir or rt.storage.resolve("bronze")
+    silver_dir = args.silver_dir or rt.storage.resolve("silver")
+
     state_path = Path(args.state_path) if args.state_path else _default_state_path(
         silver_dir, args.start_date, args.end_date
     )
@@ -160,7 +190,13 @@ def main() -> None:
         log.info("No pending days to process. Range already completed: %s..%s", args.start_date, args.end_date)
         return
 
-    spark = build_spark_session(master=args.spark_master, app_name="bzp-silver-backfill")
+    extra: dict[str, str] = {}
+    if args.spark_master:
+        extra["spark.master"] = args.spark_master
+
+    spark = rt.spark.get_session("bzp-silver-backfill", **extra)
+    obs_dir = rt.storage.obs_path()
+
     try:
         failed: list[str] = []
         run_started = now_utc_iso()
@@ -181,8 +217,8 @@ def main() -> None:
             try:
                 cfg = CoreRunConfig(
                     target_date=day,
-                    bronze_dir=args.bronze_dir,
-                    silver_dir=args.silver_dir,
+                    bronze_dir=bronze_dir,
+                    silver_dir=silver_dir,
                     input_layer="bronze",
                     shuffle_partitions=args.shuffle_partitions,
                     repartition=args.repartition,
@@ -203,6 +239,7 @@ def main() -> None:
                         "state_path": str(state_path),
                         "run_started_at": run_started,
                     },
+                    obs_dir=obs_dir,
                 )
                 day_state["status"] = "completed"
                 day_state["completed_at"] = datetime.now(UTC).isoformat().replace("+00:00", "Z")

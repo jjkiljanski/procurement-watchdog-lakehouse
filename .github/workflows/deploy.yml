@@ -1,0 +1,86 @@
+# GCP deployment workflow — STUB, NOT YET ACTIVE
+# ================================================
+# TODO: activate this workflow once the first version of the pipeline is
+# running and validated on GCP.
+#
+# Trigger: push to main branch.
+#
+# Steps (all TODO — not yet implemented):
+#   1. Authenticate to GCP via Workload Identity Federation (keyless — no SA key stored in GitHub)
+#   2. Build and push Dockerfile.spark to Artifact Registry
+#   3. Build and push Dockerfile.downloader to Artifact Registry
+#   4. Upload scripts/pipeline/*.py to gs://{LAKEHOUSE_BUCKET}/jobs/
+#   5. Sync dags/ to the Cloud Composer DAG bucket
+#   6. Run scripts/ops/setup_bq_external_tables.py to refresh BQ external table schemas
+#
+# Required GitHub secrets (configure in repo Settings → Secrets):
+#   GCP_PROJECT                  — GCP project ID
+#   LAKEHOUSE_BUCKET             — GCS bucket name (no gs:// prefix)
+#   DATAPROC_REGION              — e.g. europe-west1
+#   ARTIFACT_REGISTRY_REPO       — e.g. europe-west1-docker.pkg.dev/project/spark
+#   WORKLOAD_IDENTITY_PROVIDER   — Workload Identity pool provider resource name
+#   SERVICE_ACCOUNT              — SA email used for CI/CD
+#   COMPOSER_ENV_NAME            — Cloud Composer environment name
+#
+# Reference: https://cloud.google.com/blog/products/identity-security/enabling-keyless-authentication-from-github-actions
+
+# name: Deploy to GCP
+#
+# on:
+#   push:
+#     branches: [main]
+#
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+#     permissions:
+#       contents: read
+#       id-token: write    # required for Workload Identity Federation
+#
+#     steps:
+#       - uses: actions/checkout@v4
+#
+#       - id: auth
+#         uses: google-github-actions/auth@v2
+#         with:
+#           workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+#           service_account: ${{ secrets.SERVICE_ACCOUNT }}
+#
+#       - uses: google-github-actions/setup-gcloud@v2
+#
+#       - name: Build and push Spark image
+#         run: |
+#           GIT_SHA=$(git rev-parse --short HEAD)
+#           IMAGE=${{ secrets.ARTIFACT_REGISTRY_REPO }}/procurement-spark:${GIT_SHA}
+#           docker build -f Dockerfile.spark --build-arg GIT_SHA=${GIT_SHA} -t ${IMAGE} .
+#           docker push ${IMAGE}
+#           echo "SPARK_IMAGE=${IMAGE}" >> $GITHUB_ENV
+#
+#       - name: Build and push Downloader image
+#         run: |
+#           GIT_SHA=$(git rev-parse --short HEAD)
+#           IMAGE_DL=${{ secrets.ARTIFACT_REGISTRY_REPO }}/procurement-downloader:${GIT_SHA}
+#           docker build -f Dockerfile.downloader --build-arg GIT_SHA=${GIT_SHA} -t ${IMAGE_DL} .
+#           docker push ${IMAGE_DL}
+#
+#       - name: Upload pipeline scripts to GCS
+#         run: |
+#           gsutil -m cp scripts/pipeline/*.py gs://${{ secrets.LAKEHOUSE_BUCKET }}/jobs/
+#
+#       - name: Sync DAGs to Cloud Composer
+#         run: |
+#           gcloud composer environments storage dags import \
+#             --environment ${{ secrets.COMPOSER_ENV_NAME }} \
+#             --location ${{ secrets.DATAPROC_REGION }} \
+#             --source dags/
+#
+#       - name: Refresh BQ external tables
+#         env:
+#           RUNTIME_ENV: gcp
+#           LAKEHOUSE_BUCKET: ${{ secrets.LAKEHOUSE_BUCKET }}
+#           GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
+#           DATAPROC_REGION: ${{ secrets.DATAPROC_REGION }}
+#           DATAPROC_CONTAINER_IMAGE: ${{ env.SPARK_IMAGE }}
+#         run: |
+#           pip install ".[gcp]"
+#           python scripts/ops/setup_bq_external_tables.py

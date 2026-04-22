@@ -1,2 +1,0 @@
-"""Launcher runtime adapter package."""
-

@@ -17,14 +17,21 @@ Reads:
 Writes:
   <silver-dir>/notice_update_deltas/noticeType=<OriginalType>/publicationDateDay=<D>/
 
+Path resolution
+---------------
+``silver-dir`` defaults to the runtime-resolved path:
+
+- **local** (``RUNTIME_ENV=local``): ``{LOCAL_DATA_ROOT}/silver/``
+- **GCP**   (``RUNTIME_ENV=gcp``):  ``gs://{LAKEHOUSE_BUCKET}/silver/``
+
 Usage:
   # Single day
   python scripts/pipeline/build_silver_update_deltas.py 2025-04-25
-  python scripts/pipeline/build_silver_update_deltas.py 2025-04-25 --silver-dir data/silver
+  python scripts/pipeline/build_silver_update_deltas.py 2025-04-25 --silver-dir gs://my-bucket/silver
 
   # Full year backfill (builds BZP index once, reuses across all days)
-  python scripts/pipeline/build_silver_update_deltas.py --all --silver-dir data/silver
-  python scripts/pipeline/build_silver_update_deltas.py --all --year 2025 --silver-dir data/silver
+  python scripts/pipeline/build_silver_update_deltas.py --all --silver-dir gs://my-bucket/silver
+  python scripts/pipeline/build_silver_update_deltas.py --all --year 2025
 """
 
 from __future__ import annotations
@@ -39,6 +46,7 @@ _src = str(Path(__file__).resolve().parent.parent.parent / "src")
 sys.path.insert(0, _src)
 
 from procurement.logging import setup_logging
+from procurement.runtime import get_runtime
 from procurement.silver.section_pipeline.notice_schema_reader import load_all_profiles
 from procurement.silver.update_deltas.delta_builder import (
     _build_section_index,
@@ -64,41 +72,72 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--silver-dir",
-        default="data/silver",
-        help="Silver layer root directory (default: data/silver)",
+        default=None,
+        help=(
+            "Silver layer root directory.  Defaults to the runtime-resolved 'silver' path."
+        ),
     )
     return parser.parse_args()
 
 
-def _discover_nun_days(silver_dir: Path, year: str | None) -> list[str]:
-    """Return sorted list of dates that have NUN core data."""
-    core_dir = silver_dir / "notice_type_tables" / "noticeType=NoticeUpdateNotice" / "data_model=core"
+def _discover_nun_days(silver_dir: str, year: str | None) -> list[str]:
+    """Return sorted list of dates that have NUN core data.
+
+    Works for both local paths and GCS URIs.
+    """
+    core_subpath = "notice_type_tables/noticeType=NoticeUpdateNotice/data_model=core"
+
+    if silver_dir.startswith("gs://"):
+        from google.cloud import storage as gcs
+
+        without_scheme = silver_dir[5:]
+        bucket_name, _, prefix = without_scheme.partition("/")
+        core_prefix = f"{prefix.rstrip('/')}/{core_subpath}/" if prefix else f"{core_subpath}/"
+
+        client = gcs.Client()
+        blobs = client.list_blobs(bucket_name, prefix=core_prefix, delimiter="/")
+        _ = list(blobs)
+        days = []
+        for p in blobs.prefixes:
+            dir_name = p.rstrip("/").split("/")[-1]
+            if dir_name.startswith("publicationDateDay="):
+                day = dir_name.replace("publicationDateDay=", "")
+                if year is None or day.startswith(year):
+                    days.append(day)
+        return sorted(days)
+
+    # Local filesystem
+    core_dir = Path(silver_dir) / core_subpath
     if not core_dir.exists():
         return []
-    days = sorted(
+    return sorted(
         p.name.replace("publicationDateDay=", "")
         for p in core_dir.iterdir()
-        if p.is_dir() and (year is None or p.name.endswith(year) or p.name.startswith(f"publicationDateDay={year}"))
+        if p.is_dir() and (year is None or p.name.startswith(f"publicationDateDay={year}"))
     )
-    return days
 
 
 def _run_day(
     target_date: str,
-    silver_dir: Path,
+    silver_dir: str,
     section_index: dict,
     bzp_index: dict,
 ) -> None:
+    # delta_builder still uses Path internally for local runs; pass as Path
+    # for local, str for GCS (delta_builder will need updating for GCS — see
+    # TODO in src/procurement/silver/update_deltas/delta_builder.py).
+    silver_path = Path(silver_dir) if not silver_dir.startswith("gs://") else silver_dir
+
     deltas_by_type = build_update_deltas(
         target_date=target_date,
-        silver_dir=silver_dir,
+        silver_dir=silver_path,
         bzp_index=bzp_index,
     )
     if deltas_by_type:
         write_deltas(
             target_date=target_date,
             deltas_by_type=deltas_by_type,
-            silver_dir=silver_dir,
+            silver_dir=silver_path,
             section_index=section_index,
         )
     else:
@@ -107,7 +146,9 @@ def _run_day(
 
 def main() -> None:
     args = _parse_args()
-    silver_dir = Path(args.silver_dir)
+
+    rt = get_runtime()
+    silver_dir = args.silver_dir or rt.storage.resolve("silver")
 
     log.info("build_silver_update_deltas started: silver_dir=%s", silver_dir)
     t0 = time.perf_counter()
@@ -123,10 +164,11 @@ def main() -> None:
             return
         log.info("Processing %d NUN days (year filter: %s)", len(days), year or "none")
 
-        # Build BZP index once for all years present in the data
+        # Build BZP index once for all years present in the data.
         years = {d[:4] for d in days}
         log.info("Building BZP index for years: %s", sorted(years))
-        bzp_index = _load_bzp_index(silver_dir, years)
+        silver_path = Path(silver_dir) if not silver_dir.startswith("gs://") else silver_dir
+        bzp_index = _load_bzp_index(silver_path, years)
 
         for i, day in enumerate(days, 1):
             t_day = time.perf_counter()
@@ -136,8 +178,7 @@ def main() -> None:
     else:
         target_date = args.target_date
         log.info("Processing single day: %s", target_date)
-        bzp_index = None  # will be built inside build_update_deltas
-        _run_day(target_date, silver_dir, section_index, bzp_index)
+        _run_day(target_date, silver_dir, section_index, bzp_index=None)
 
     elapsed = time.perf_counter() - t0
     log.info("build_silver_update_deltas finished: elapsed=%.1fs", elapsed)

@@ -2,6 +2,12 @@
 
 This project has two operational modes with different optimization goals.
 
+The pipeline can run **locally** (`RUNTIME_ENV=local`) or on **Google Cloud
+Platform** (`RUNTIME_ENV=gcp`).  The mode is switched via environment
+variables — no code changes required.  See `docs/cloud_architecture.md` for
+GCP setup and `config/runtime_local.env` / `config/runtime_gcp.env.example`
+for the full variable reference.
+
 ## Mode 1: Daily Incremental (CRON)
 
 Goal: ingest yesterday's data and refresh downstream layers quickly and deterministically.
@@ -13,14 +19,19 @@ Suggested sequence for day `D`:
 3. Build Silver for `D` from Bronze.
 4. Update `silver/case_derived_facts` in `incremental` mode for `D`.
 
-Example commands:
+Example commands (local):
 
 ```bash
-python scripts/pipeline/fetch_bzp_yesterday.py D --output-dir data/bronze_raw
-python scripts/pipeline/build_bronze.py D --bronze-raw-dir data/bronze_raw --bronze-dir data/bronze
-python scripts/pipeline/build_silver_day.py D --bronze-dir data/bronze --silver-dir data/silver
-python scripts/pipeline/build_case_derived_facts.py D --mode incremental --silver-dir data/silver
+# Paths default to runtime-resolved values; RUNTIME_ENV=local is the default.
+python scripts/pipeline/fetch_bzp_yesterday.py D
+python scripts/pipeline/build_bronze.py D
+python scripts/pipeline/build_silver_day.py D
+python scripts/pipeline/build_silver_update_deltas.py D
+python scripts/pipeline/build_case_derived_facts.py D --mode incremental
 ```
+
+On GCP this is handled automatically by the `bzp_daily` Airflow DAG
+(`dags/daily_dag.py`).  See `docs/cloud_architecture.md`.
 
 ## Mode 2: Massive Backfill / Historical Load
 
@@ -61,12 +72,21 @@ Restart safety:
 - Only days marked `completed` in state are skipped on resume.
 - Any interrupted/non-completed day is fully cleaned and rebuilt, so partial writes are never treated as done.
 
+Restart safety:
+
+- `build_silver_backfill.py` writes an explicit state index
+  (`{silver_dir}/_state/silver_backfill_<start>_<end>.json` by default).
+- Only days marked `completed` in state are skipped on resume.
+
+On GCP this is handled by the `bzp_backfill` Airflow DAG (`dags/backfill_dag.py`),
+triggered manually via the Airflow UI.  See `docs/cloud_architecture.md`.
+
 Lineage metadata:
 
-- fetch -> `data/bronze_raw/_meta/fetch_day=YYYY-MM-DD.json`
-- bronze -> `data/bronze/_meta/day=YYYY-MM-DD.json`
-- bronze dedup index -> `data/bronze/_index/seen_notice_ids/seen_notice_ids.sqlite`
-- silver -> `data/silver/_meta/day=YYYY-MM-DD.json`
+- fetch → `data/obs/pipeline_runs/` (local) or skipped (GCP — TODO extend obs.py for GCS)
+- bronze → `data/bronze/errors/bzp_YYYY-MM-DD_errors.json` (validation failures)
+- bronze dedup → Spark query against existing Bronze Parquet (was SQLite — removed for GCS compatibility)
+- silver → `data/obs/pipeline_runs/` (local)
 
 ## Reliability and Idempotency Notes
 

@@ -16,6 +16,18 @@ dependencies = [
 dev = [
     "pytest>=8",
 ]
+# Google Cloud Platform provider: install with `pip install ".[gcp]"`
+gcp = [
+    "google-cloud-storage>=2.16,<3",
+    "google-cloud-dataproc>=5.10,<6",
+    "google-cloud-bigquery>=3.20,<4",
+]
+# Airflow with GCP operators: install in the Cloud Composer environment.
+# Listed here for documentation purposes; do not install locally unless needed.
+airflow = [
+    "apache-airflow>=2.9,<3",
+    "apache-airflow-providers-google>=10.19,<11",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

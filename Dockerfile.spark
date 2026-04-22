@@ -1,0 +1,62 @@
+# Dataproc Serverless runtime container
+# ======================================
+# Used as the custom container image for Dataproc Serverless Spark batches.
+#
+# The Dataproc Serverless base requirement is:
+#   - Debian/Ubuntu base
+#   - Java 11 or 17 on PATH
+#   - Python 3.11+ on PATH as `python3`
+#   - No ENTRYPOINT / CMD — Dataproc injects the PySpark driver command.
+#
+# Build and push:
+#   docker build -f Dockerfile.spark \
+#     --build-arg GIT_SHA=$(git rev-parse --short HEAD) \
+#     -t <REGION>-docker.pkg.dev/<PROJECT>/spark/procurement-spark:<TAG> .
+#   docker push <REGION>-docker.pkg.dev/<PROJECT>/spark/procurement-spark:<TAG>
+#
+# Set DATAPROC_CONTAINER_IMAGE in config/runtime_gcp.env.example to the pushed URI.
+#
+# TODO (CI/CD): automate build + push on merge to main.
+#   See .github/workflows/deploy.yml for the planned workflow stub.
+
+FROM python:3.12-slim
+
+# ---- System deps ----
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        openjdk-17-jre-headless \
+        curl \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
+
+# ---- Python deps ----
+WORKDIR /app
+
+COPY pyproject.toml .
+COPY src/ src/
+
+# Install core deps + GCP extras.
+# The [gcp] extra brings in google-cloud-storage, google-cloud-dataproc,
+# google-cloud-bigquery for the GCP provider and BQ setup script.
+RUN pip install --no-cache-dir ".[gcp]"
+
+# ---- Application code ----
+COPY scripts/ scripts/
+COPY apps/ apps/
+COPY refs/ refs/
+
+# Ensures /app/src is importable whether the package was pip-installed or
+# mounted as a volume (dev mode).
+ENV PYTHONPATH=/app/src
+
+# ---- Git SHA for lineage tracking ----
+# Injected at build time by CI; falls back gracefully in obs.py.
+ARG GIT_SHA=unknown
+ENV GIT_COMMIT=${GIT_SHA}
+
+# No ENTRYPOINT — Dataproc Serverless injects the PySpark driver command.
+# For local testing of the container:
+#   docker run --rm -e RUNTIME_ENV=local -v $(pwd)/data:/app/data \
+#     procurement-spark python scripts/pipeline/build_bronze.py 2025-10-01

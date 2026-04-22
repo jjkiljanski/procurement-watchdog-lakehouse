@@ -1,2 +1,0 @@
-"""Dispatcher runtime adapter package."""
-
