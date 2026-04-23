@@ -3,7 +3,7 @@
 Steps:
 1. build_bronze
 2. build_silver_day
-3. build_case_derived_facts (incremental)
+3. build_silver_update_deltas
 4. optional build_obs
 """
 
@@ -53,16 +53,7 @@ def main() -> int:
     steps: list[tuple[str, list[str]]] = [
         ("bronze", [sys.executable, str(PIPELINE_DIR / "build_bronze.py"), target_date]),
         ("silver", [sys.executable, str(PIPELINE_DIR / "build_silver_day.py"), target_date]),
-        (
-            "case-derived",
-            [
-                sys.executable,
-                str(PIPELINE_DIR / "build_case_derived_facts.py"),
-                target_date,
-                "--mode",
-                "incremental",
-            ],
-        ),
+        ("deltas", [sys.executable, str(PIPELINE_DIR / "build_silver_update_deltas.py"), target_date]),
     ]
     if args.with_obs:
         steps.append(

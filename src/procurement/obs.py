@@ -1,12 +1,23 @@
 """Central observability module for the procurement pipeline.
 
-Tables written (Parquet, date-partitioned under data/obs/ by default):
-  pipeline_runs/      — one row per layer run (fetch / bronze / silver / gold)
-  dq_metrics/         — tall-format data quality metrics per layer/notice_type
-  quarantine_summary/ — quarantine row counts per notice_type/day
+Write backends
+--------------
+Local (``RUNTIME_ENV=local`` or any mode where ``obs_dir`` is provided):
+    Parquet files appended under ``obs_dir/`` (date-partitioned).
+    Tables: pipeline_runs/, dq_metrics/, quarantine_summary/
 
-Utilities (previously in lineage.py, now canonical here):
-  now_utc_iso, atomic_write_json, sha256_file, git_commit_sha
+GCP (``RUNTIME_ENV=gcp``, ``obs_dir=None``):
+    Rows streamed to BigQuery using the ``google-cloud-bigquery`` client.
+    Dataset: ``BQ_OBS_DATASET`` env var (default: ``procurement_obs``).
+    Tables: pipeline_runs, dq_metrics, quarantine_summary.
+    Tables and the dataset are created automatically on first write if absent.
+
+The caller switches backends by passing ``obs_dir``:
+- Pass a ``Path`` → local Parquet.
+- Pass ``None``  → BigQuery when ``RUNTIME_ENV=gcp``, otherwise a no-op.
+
+Utilities:
+    now_utc_iso, atomic_write_json, sha256_file, git_commit_sha
 """
 
 from __future__ import annotations
@@ -60,7 +71,7 @@ def git_commit_sha(cwd: Path | None = None) -> str | None:
 
 
 # ---------------------------------------------------------------------------
-# Obs table writers
+# Local Parquet backend
 # ---------------------------------------------------------------------------
 
 _OBS_DIR = Path("data/obs")
@@ -79,6 +90,129 @@ def _append_parquet(table_dir: Path, rows: list[dict], partition_key: str) -> No
     pq.write_table(pa.Table.from_pylist(rows), part_dir / f"part-{ts}.parquet")
 
 
+# ---------------------------------------------------------------------------
+# BigQuery backend
+# ---------------------------------------------------------------------------
+
+# BQ table schemas (DDL).  The ``pipeline_runs`` table uses ``counts_json``
+# instead of dynamic ``count_*`` columns so the schema stays stable even when
+# new pipeline scripts add different count keys.
+_BQ_SCHEMAS: dict[str, str] = {
+    "pipeline_runs": """
+        layer          STRING    NOT NULL,
+        target_date    DATE      NOT NULL,
+        run_id         STRING    NOT NULL,
+        started_at     TIMESTAMP,
+        completed_at   TIMESTAMP,
+        written_at     TIMESTAMP,
+        status         STRING,
+        git_commit     STRING,
+        script_hash    STRING,
+        counts_json    STRING,
+        extra_json     STRING
+    """,
+    "dq_metrics": """
+        layer          STRING    NOT NULL,
+        target_date    DATE      NOT NULL,
+        notice_type    STRING,
+        metric_name    STRING    NOT NULL,
+        metric_value   FLOAT64,
+        written_at     TIMESTAMP
+    """,
+    "quarantine_summary": """
+        target_date    DATE      NOT NULL,
+        notice_type    STRING    NOT NULL,
+        row_count      INT64,
+        written_at     TIMESTAMP
+    """,
+}
+
+# Cache of (project, dataset, table) combos known to exist, to avoid
+# repeated existence checks on every write.
+_bq_tables_confirmed: set[str] = set()
+
+
+def _bq_obs_dataset() -> str:
+    return os.environ.get("BQ_OBS_DATASET", "procurement_obs")
+
+
+def _bq_project() -> str:
+    project = os.environ.get("GCP_PROJECT", "").strip()
+    if not project:
+        raise EnvironmentError(
+            "GCP_PROJECT env var is required for BigQuery obs writes."
+        )
+    return project
+
+
+def _ensure_bq_table(client: Any, project: str, dataset: str, table: str) -> None:
+    """Create the BQ dataset + table if they do not exist (idempotent)."""
+    from google.cloud import bigquery
+    from google.cloud.exceptions import NotFound
+
+    cache_key = f"{project}.{dataset}.{table}"
+    if cache_key in _bq_tables_confirmed:
+        return
+
+    # Ensure dataset exists.
+    dataset_ref = bigquery.DatasetReference(project, dataset)
+    try:
+        client.get_dataset(dataset_ref)
+    except NotFound:
+        ds = bigquery.Dataset(dataset_ref)
+        ds.location = os.environ.get("DATAPROC_REGION", "US")
+        client.create_dataset(ds, exists_ok=True)
+
+    # Ensure table exists.
+    table_ref = f"{project}.{dataset}.{table}"
+    try:
+        client.get_table(table_ref)
+    except NotFound:
+        schema_ddl = _BQ_SCHEMAS[table]
+        client.query(
+            f"CREATE TABLE IF NOT EXISTS `{table_ref}` ({schema_ddl})"
+        ).result()
+
+    _bq_tables_confirmed.add(cache_key)
+
+
+def _bq_insert(table: str, rows: list[dict]) -> None:
+    """Stream *rows* into the BigQuery obs table *table*.
+
+    Called only when ``RUNTIME_ENV=gcp`` and ``obs_dir`` is ``None``.
+    Errors are logged as warnings rather than crashing the pipeline — obs
+    failures should never abort a pipeline run.
+    """
+    import logging
+
+    if not rows:
+        return
+
+    log = logging.getLogger(__name__)
+    try:
+        from google.cloud import bigquery
+
+        project = _bq_project()
+        dataset = _bq_obs_dataset()
+        client = bigquery.Client(project=project)
+        _ensure_bq_table(client, project, dataset, table)
+
+        table_ref = f"{project}.{dataset}.{table}"
+        errors = client.insert_rows_json(table_ref, rows)
+        if errors:
+            log.warning("BigQuery obs insert errors for %s: %s", table, errors)
+    except Exception as exc:
+        log.warning("BigQuery obs write failed for table=%s: %s", table, exc)
+
+
+def _use_bq() -> bool:
+    """Return True when the GCP provider is active and obs_dir was not given."""
+    return os.environ.get("RUNTIME_ENV", "local").strip().lower() == "gcp"
+
+
+# ---------------------------------------------------------------------------
+# Public write functions
+# ---------------------------------------------------------------------------
 
 def write_pipeline_run(
     *,
@@ -94,21 +228,42 @@ def write_pipeline_run(
     extra: dict[str, Any] | None = None,
     obs_dir: Path | None = None,
 ) -> None:
-    """Append one pipeline run record to pipeline_runs/dt=YYYY-MM-DD/."""
-    row = {
-        "layer": layer,
-        "target_date": target_date,
-        "run_id": run_id,
-        "started_at": started_at,
-        "completed_at": completed_at,
-        "written_at": now_utc_iso(),
-        "status": status,
-        "git_commit": git_commit,
-        "script_hash": script_hash,
-        **{f"count_{k}": v for k, v in counts.items()},
-        "extra_json": json.dumps(extra or {}, ensure_ascii=False),
-    }
-    _append_parquet((obs_dir or _OBS_DIR) / "pipeline_runs", [row], f"dt={target_date}")
+    """Append one pipeline run record.
+
+    Local: written to ``obs_dir/pipeline_runs/dt=YYYY-MM-DD/``.
+    GCP:   streamed to BigQuery ``pipeline_runs`` table.
+    """
+    if obs_dir is not None:
+        row = {
+            "layer": layer,
+            "target_date": target_date,
+            "run_id": run_id,
+            "started_at": started_at,
+            "completed_at": completed_at,
+            "written_at": now_utc_iso(),
+            "status": status,
+            "git_commit": git_commit,
+            "script_hash": script_hash,
+            **{f"count_{k}": v for k, v in counts.items()},
+            "extra_json": json.dumps(extra or {}, ensure_ascii=False),
+        }
+        _append_parquet(obs_dir / "pipeline_runs", [row], f"dt={target_date}")
+        return
+
+    if _use_bq():
+        _bq_insert("pipeline_runs", [{
+            "layer": layer,
+            "target_date": target_date,
+            "run_id": run_id,
+            "started_at": started_at,
+            "completed_at": completed_at,
+            "written_at": now_utc_iso(),
+            "status": status,
+            "git_commit": git_commit,
+            "script_hash": script_hash,
+            "counts_json": json.dumps(counts, ensure_ascii=False),
+            "extra_json": json.dumps(extra or {}, ensure_ascii=False),
+        }])
 
 
 def write_dq_metrics(
@@ -119,7 +274,11 @@ def write_dq_metrics(
     metrics: dict[str, float | int],
     obs_dir: Path | None = None,
 ) -> None:
-    """Append per-layer/notice_type data quality metrics as tall rows."""
+    """Append per-layer/notice_type data quality metrics as tall rows.
+
+    Local: written to ``obs_dir/dq_metrics/dt=YYYY-MM-DD/``.
+    GCP:   streamed to BigQuery ``dq_metrics`` table.
+    """
     written_at = now_utc_iso()
     rows = [
         {
@@ -132,7 +291,13 @@ def write_dq_metrics(
         }
         for k, v in metrics.items()
     ]
-    _append_parquet((obs_dir or _OBS_DIR) / "dq_metrics", rows, f"dt={target_date}")
+
+    if obs_dir is not None:
+        _append_parquet(obs_dir / "dq_metrics", rows, f"dt={target_date}")
+        return
+
+    if _use_bq():
+        _bq_insert("dq_metrics", rows)
 
 
 def write_quarantine_summary(
@@ -142,10 +307,21 @@ def write_quarantine_summary(
     row_count: int,
     obs_dir: Path | None = None,
 ) -> None:
-    """Append one quarantine summary record per notice_type per day."""
-    _append_parquet(
-        (obs_dir or _OBS_DIR) / "quarantine_summary",
-        [{"target_date": target_date, "notice_type": notice_type, "row_count": row_count,
-          "written_at": now_utc_iso()}],
-        f"dt={target_date}",
-    )
+    """Append one quarantine summary record per notice_type per day.
+
+    Local: written to ``obs_dir/quarantine_summary/dt=YYYY-MM-DD/``.
+    GCP:   streamed to BigQuery ``quarantine_summary`` table.
+    """
+    row = {
+        "target_date": target_date,
+        "notice_type": notice_type,
+        "row_count": row_count,
+        "written_at": now_utc_iso(),
+    }
+
+    if obs_dir is not None:
+        _append_parquet(obs_dir / "quarantine_summary", [row], f"dt={target_date}")
+        return
+
+    if _use_bq():
+        _bq_insert("quarantine_summary", [row])

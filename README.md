@@ -63,6 +63,9 @@ python scripts/pipeline/build_silver_day.py
 
 # Build notice-change deltas for yesterday
 python scripts/pipeline/build_silver_update_deltas.py $(date -d yesterday +%Y-%m-%d)
+
+# Or use the convenience wrapper (bronze → silver → deltas):
+python scripts/ops/run_transforms_for_day.py $(date -d yesterday +%Y-%m-%d)
 ```
 
 Or with Docker (recommended, matches the GCP container):
@@ -132,7 +135,6 @@ BigQuery external tables (created by `scripts/ops/setup_bq_external_tables.py`).
 | `scripts/pipeline/build_silver_day.py` | Silver build for a single day |
 | `scripts/pipeline/build_silver_backfill.py` | Silver backfill with resumable state |
 | `scripts/pipeline/build_silver_update_deltas.py` | NoticeUpdateNotice change deltas |
-| `scripts/pipeline/build_case_derived_facts.py` | Case-grain derived layer |
 | `scripts/pipeline/build_obs.py` | Observability snapshot + dashboard |
 | `scripts/ops/setup_bq_external_tables.py` | Create/replace BigQuery external tables |
 | `scripts/ops/run_pipeline.py` | Local daily orchestrator: fetch → bronze → silver |

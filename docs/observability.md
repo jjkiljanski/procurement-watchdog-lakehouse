@@ -1,24 +1,37 @@
 # Observability
 
 This document describes how observability is implemented across the procurement pipeline
-(fetch → bronze → silver → gold).
+(fetch → bronze → silver).
 
 ---
 
 ## Design principles
 
-- **No external dependencies.** Everything is standard Python + pandas + pyarrow.
-- **Parquet as the observability store.** Obs data is queryable via Spark or pandas alongside
-  the main pipeline data.
 - **Emit during the run.** Each pipeline step writes its own obs records. No separate scraping.
-- **One dashboard script.** `build_obs.py` reads obs tables, computes silver/gold snapshots,
+- **One dashboard script.** `build_obs.py` reads obs tables, computes silver snapshots,
   prints a Markdown dashboard, and enforces thresholds.
+- **Backend-agnostic write interface.** `obs.py` routes to local Parquet or BigQuery based
+  on `RUNTIME_ENV` — no caller changes needed.
+
+---
+
+## Write backends
+
+| Runtime | Backend | Location |
+|---|---|---|
+| `local` | pyarrow Parquet, date-partitioned | `data/obs/` (or custom `obs_dir`) |
+| `gcp` | BigQuery streaming inserts | dataset `BQ_OBS_DATASET` (default: `procurement_obs`) |
+
+In GCP mode, tables and the dataset are created automatically on first write.
+Cloud Logging captures structured operational logs from Dataproc and Cloud Run
+automatically alongside these metrics.
 
 ---
 
 ## Obs tables
 
-All tables live under `data/obs/`, date-partitioned as `dt=YYYY-MM-DD/`.
+**Local**: all tables live under `data/obs/`, date-partitioned as `dt=YYYY-MM-DD/`.
+**GCP**: BigQuery tables in the `BQ_OBS_DATASET` dataset.
 
 ### `pipeline_runs/`
 
