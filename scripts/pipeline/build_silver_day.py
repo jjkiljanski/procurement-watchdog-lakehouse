@@ -95,7 +95,7 @@ def _parse_args() -> argparse.Namespace:
         "--lock-stale-minutes",
         type=int,
         default=360,
-        help="Treat an existing day lock as stale after this many minutes",
+        help="[Deprecated — silver writes use Iceberg ACID and no longer need file locks]",
     )
     return parser.parse_args()
 

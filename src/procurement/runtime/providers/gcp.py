@@ -13,10 +13,15 @@ Storage model
 
 Iceberg note
 ------------
-The SparkSession is configured with the Iceberg ``HadoopCatalog`` pointed at
-``gs://{LAKEHOUSE_BUCKET}/iceberg/``.  Silver table writes are currently plain
-Parquet (identical semantics, just on GCS).  See ``docs/iceberg.md`` for the
-migration path to native Iceberg tables on GCS + BigLake Metastore.
+Silver writes use Apache Iceberg tables on the ``HadoopCatalog`` warehouse at
+``gs://{LAKEHOUSE_BUCKET}/iceberg/``.  The Iceberg Spark runtime JAR is
+included in the container image at ``/opt/iceberg-spark-runtime.jar``
+(see ``Dockerfile.spark``) and is referenced via ``jar_file_uris`` in every
+Dataproc Serverless batch so executors also have it on the classpath.
+
+BigQuery access to silver data is via ``FORMAT='ICEBERG'`` external tables
+created by ``scripts/ops/setup_bq_external_tables.py --format iceberg``.
+See ``docs/iceberg.md`` and ``docs/cloud_architecture.md`` for details.
 
 Spark jobs
 ----------
@@ -153,9 +158,9 @@ class GCSStorageProvider(StorageProvider):
             blob.delete(if_generation_not_match=None)
 
     def obs_path(self) -> Path | None:
-        # Observability writes use pyarrow with local paths; GCS support is a
-        # TODO.  Returning None causes pipeline scripts to skip obs writes.
-        # See TODO in src/procurement/obs.py.
+        # Returning None signals to pipeline scripts that local-Parquet obs
+        # writes are not used.  obs.py detects RUNTIME_ENV=gcp and writes to
+        # BigQuery instead (see src/procurement/obs.py: _use_bq()).
         return None
 
 
@@ -263,6 +268,12 @@ class DataprocServerlessLauncher(SparkLauncher):
         batch.pyspark_batch = dataproc.PySparkBatch(
             main_python_file_uri=script_path,
             args=args,
+            # Deliver the Iceberg Spark runtime JAR to all executors.
+            # The JAR is baked into the container image at this path; referencing
+            # it via jar_file_uris ensures the Dataproc executor classpath picks
+            # it up (PYSPARK_SUBMIT_ARGS / SPARK_EXTRA_CLASSPATH are driver-only
+            # in Dataproc Serverless and do not reach executors).
+            jar_file_uris=["file:///opt/iceberg-spark-runtime.jar"],
         )
         batch.runtime_config = dataproc.RuntimeConfig(
             container_image=self._container_image,

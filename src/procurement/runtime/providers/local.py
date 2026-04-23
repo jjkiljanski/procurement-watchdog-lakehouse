@@ -114,12 +114,15 @@ class LocalStorageProvider(StorageProvider):
 class LocalSparkLauncher(SparkLauncher):
     """Creates local SparkSessions and runs batches as subprocesses."""
 
-    def __init__(self, master: str, extra_config: dict[str, str] | None = None) -> None:
+    def __init__(self, master: str, data_root: Path, extra_config: dict[str, str] | None = None) -> None:
         self._master = master
+        self._data_root = data_root.resolve()
         self._extra_config = extra_config or {}
 
     def get_session(self, app_name: str, **extra_config: str):
         from pyspark.sql import SparkSession
+
+        warehouse = str(self._data_root / "iceberg")
 
         builder = (
             SparkSession.builder.appName(app_name)
@@ -134,16 +137,15 @@ class LocalSparkLauncher(SparkLauncher):
                 "spark.driver.extraJavaOptions",
                 "-XX:+UseG1GC -XX:G1HeapRegionSize=4m -XX:+ExplicitGCInvokesConcurrent",
             )
-            # Iceberg extensions — wired up but silver writes remain plain
-            # Parquet for now.  See docs/iceberg.md for the migration path.
+            # Iceberg extensions — silver writes use Iceberg tables on the
+            # HadoopCatalog rooted at data/iceberg/.  See docs/iceberg.md.
             .config(
                 "spark.sql.extensions",
                 "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions",
             )
             .config("spark.sql.catalog.silver", "org.apache.iceberg.spark.SparkCatalog")
             .config("spark.sql.catalog.silver.type", "hadoop")
-            # Warehouse path is set lazily from the storage root so the
-            # SparkSession does not need to know about LOCAL_DATA_ROOT.
+            .config("spark.sql.catalog.silver.warehouse", warehouse)
         )
         for k, v in {**self._extra_config, **extra_config}.items():
             builder = builder.config(k, v)
@@ -216,7 +218,7 @@ def build_local_runtime() -> RuntimeConfig:
             ) from exc
 
     storage = LocalStorageProvider(data_root)
-    spark = LocalSparkLauncher(master=master, extra_config=extra_config)
+    spark = LocalSparkLauncher(master=master, data_root=data_root, extra_config=extra_config)
     state = LocalStateBackend(data_root / "_state")
 
     from procurement.runtime.base import RuntimeConfig

@@ -47,20 +47,21 @@ Switching modes requires **only environment variables** — no code changes.
                     ▼
          ┌─────────────────────┐
          │  Dataproc Serverless│
-         │  build_silver_day   │  → /silver/notice_type_tables/ + /common_envelope/
-         └──────────┬──────────┘
+         │  build_silver_day   │  → /iceberg/notice_type_tables/ + /iceberg/common/
+         └──────────┬──────────┘     (Apache Iceberg HadoopCatalog)
                     │
                     ▼
          ┌─────────────────────┐
          │  Dataproc Serverless│
-         │  build_silver_      │  → /silver/notice_update_deltas/
+         │  build_silver_      │  → /silver/notice_update_deltas/  (Parquet)
          │  update_deltas.py   │
          └──────────┬──────────┘
                     │
                     ▼
          ┌─────────────────────┐
          │  BigQuery external  │  created by setup_bq_external_tables.py
-         │  tables over silver │  queryable via SQL from BigQuery + dbt
+         │  Iceberg tables     │  --format iceberg
+         │  over silver        │  queryable via SQL from BigQuery + dbt
          └─────────────────────┘
 
    Cloud Composer (Airflow) orchestrates all steps
@@ -119,7 +120,7 @@ No pipeline script changes are needed.
 | **Cloud Composer** | Managed Apache Airflow for DAG orchestration | Terraform |
 | **Cloud Run** | Downloader job (fetch BZP API data) | Terraform |
 | **Artifact Registry** | Docker image registry for Dataproc + Cloud Run | Terraform |
-| **BigQuery** | External tables over silver Parquet | Terraform (dataset) + `setup_bq_external_tables.py` (tables) |
+| **BigQuery** | External Iceberg tables over silver | Terraform (dataset) + `setup_bq_external_tables.py --format iceberg` (tables) |
 | **Cloud IAM** | Service accounts + roles | Terraform |
 
 The Terraform repo provisions all of the above.  This repo owns only the
@@ -181,7 +182,7 @@ docker push ${IMAGE_DL}
 gsutil -m cp scripts/pipeline/*.py gs://${LAKEHOUSE_BUCKET}/jobs/
 ```
 
-### 5. Create BigQuery external tables
+### 5. Create BigQuery external Iceberg tables
 
 ```bash
 export RUNTIME_ENV=gcp
@@ -189,10 +190,13 @@ export LAKEHOUSE_BUCKET=your-project-lakehouse
 export GCP_PROJECT=your-project-id
 export BQ_DATASET=procurement_silver
 
-python scripts/ops/setup_bq_external_tables.py
+python scripts/ops/setup_bq_external_tables.py --format iceberg
 ```
 
-Re-run this script any time the silver schema changes.
+Re-run this script any time a new notice type appears or the silver schema
+changes (new columns, new data-model splits).  BQ automatically resolves
+the latest Iceberg snapshot — no further DDL updates are needed for
+day-to-day data changes.
 
 ### 6. Sync DAGs to Cloud Composer
 
@@ -264,6 +268,79 @@ after deploying a new script version).
 |---|---|---|
 | `downloader_job_name` | Cloud Run Job name for the range downloader | `bzp-downloader` |
 | `cloud_run_region` | Region for Cloud Run Job execution | falls back to `dataproc_region` |
+
+---
+
+## Apache Iceberg — Silver Layer
+
+Silver writes use **Apache Iceberg** (HadoopCatalog) instead of plain Parquet.
+The Iceberg warehouse lives at `data/iceberg/` locally and
+`gs://{LAKEHOUSE_BUCKET}/iceberg/` on GCP.
+
+### Catalog configuration
+
+| Setting | Local | GCP |
+|---|---|---|
+| `spark.sql.catalog.silver` | `org.apache.iceberg.spark.SparkCatalog` | same |
+| `spark.sql.catalog.silver.type` | `hadoop` | `hadoop` |
+| `spark.sql.catalog.silver.warehouse` | `data/iceberg` | `gs://{bucket}/iceberg` |
+
+The catalog is registered as `silver` on every SparkSession (via both
+`local.py` and `gcp.py`).
+
+### Iceberg JAR delivery
+
+The Iceberg Spark runtime JAR
+(`iceberg-spark-runtime-3.5_2.12-1.5.2.jar`) is downloaded into the
+container at build time and placed at `/opt/iceberg-spark-runtime.jar`.
+
+- **Local**: `SPARK_EXTRA_CLASSPATH=/opt/iceberg-spark-runtime.jar` makes it
+  available on the driver classpath for in-container Spark sessions.
+- **Dataproc Serverless**: every batch config includes
+  `jar_file_uris=["file:///opt/iceberg-spark-runtime.jar"]` so executors also
+  have it on their classpaths (see `gcp.py: submit_batch()`).
+
+### Table layout
+
+```
+iceberg/
+  notice_type_tables/
+    contract_notice__core/          ← silver.notice_type_tables.contract_notice__core
+    contract_notice__part_core/
+    tender_result_notice__core/
+    …                               (one table per notice-type × data-model pair)
+  common/
+    common_envelope/                ← silver.common.common_envelope
+    quarantine/                     ← silver.common.quarantine
+```
+
+Section tables are partitioned by `publicationDateDay`.
+`quarantine` is partitioned by `(publicationDateDay, notice_type)`.
+`common_envelope` is partitioned by `publicationDateDay`.
+
+### ACID write semantics
+
+| Table type | Write mode | Idempotency |
+|---|---|---|
+| Section tables | `overwritePartitions()` | Replaces only the target day's partition; safe per notice-type batch |
+| Quarantine | `overwritePartitions()` | Partitioned by (day, type) — each concurrent batch owns a distinct partition |
+| Common envelope | `append()` + pre-delete | Day partition is deleted before the ThreadPoolExecutor starts; each batch appends safely via Iceberg ACID commits |
+
+File-based day locks (`_locks/silver_day=*/`) are no longer needed.
+
+### BigQuery access
+
+Run `scripts/ops/setup_bq_external_tables.py --format iceberg` to create BQ
+external Iceberg tables pointing at the GCS warehouse.  BigQuery resolves the
+latest Iceberg snapshot automatically — no DDL updates needed when new days are
+written.
+
+```bash
+python scripts/ops/setup_bq_external_tables.py --format iceberg
+```
+
+For BigLake Metastore integration (auto-discovery without re-running the
+setup script after schema changes), see `docs/iceberg.md` Option B.
 
 ---
 
