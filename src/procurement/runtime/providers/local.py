@@ -124,6 +124,11 @@ class LocalSparkLauncher(SparkLauncher):
 
         warehouse = str(self._data_root / "iceberg")
 
+        # If SPARK_EXTRA_CLASSPATH is set (e.g. pointing to the Iceberg JAR
+        # inside the Docker container), add it to the driver classpath so
+        # the Iceberg extensions and catalog classes are available.
+        extra_classpath = os.environ.get("SPARK_EXTRA_CLASSPATH", "")
+
         builder = (
             SparkSession.builder.appName(app_name)
             .master(self._master)
@@ -147,6 +152,8 @@ class LocalSparkLauncher(SparkLauncher):
             .config("spark.sql.catalog.silver.type", "hadoop")
             .config("spark.sql.catalog.silver.warehouse", warehouse)
         )
+        if extra_classpath:
+            builder = builder.config("spark.driver.extraClassPath", extra_classpath)
         for k, v in {**self._extra_config, **extra_config}.items():
             builder = builder.config(k, v)
         return builder.getOrCreate()
