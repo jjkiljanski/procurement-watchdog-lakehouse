@@ -233,8 +233,23 @@ Trigger the `bzp_backfill` DAG from the Airflow UI:
 2. Click **Trigger DAG w/ config**
 3. Set params: `start_date`, `end_date`, optionally `force: true`
 
-The DAG submits one Dataproc batch per date per step (bronze → silver →
-deltas) and waits for each to complete before proceeding to the next date.
+The DAG runs the full four-step pipeline for the given date range:
+
+```
+fetch_range (single task)
+  ↓
+bronze[0..N]  →  silver[0..N]  →  deltas[0..N]   (dynamic task mapping, per date)
+```
+
+**Step 1 — fetch_range** executes the `bzp-downloader` Cloud Run Job with
+`DOWNLOADER_COMMAND_TEMPLATE=python scripts/pipeline/fetch_bzp_range.py`,
+`START_DATE`, and `END_DATE` env var overrides.  `fetch_bzp_range.py` iterates
+over the date window and, for each date, checks the `fetch` processed-date
+manifest — skipping dates already downloaded with the same script version.
+All bronze_raw downloads complete before any Dataproc batch is submitted.
+
+**Steps 2–4 — bronze / silver / deltas** submit one Dataproc Serverless batch
+per date.  Each task performs the same hash-based skip check before submitting.
 
 **Hash-based skipping**: before submitting each batch, the DAG reads the
 processed-date manifest at `gs://{LAKEHOUSE_BUCKET}/_processed/{layer}/{date}.json`
@@ -242,6 +257,13 @@ and compares the stored `script_hash` against the SHA-256 of the currently
 deployed script on GCS.  If they match and `force=False`, the batch is skipped.
 Set `force=true` to reprocess all dates regardless of manifest state (e.g.
 after deploying a new script version).
+
+**Required Airflow Variables** (in addition to the daily DAG set):
+
+| Variable | Purpose | Default |
+|---|---|---|
+| `downloader_job_name` | Cloud Run Job name for the range downloader | `bzp-downloader` |
+| `cloud_run_region` | Region for Cloud Run Job execution | falls back to `dataproc_region` |
 
 ---
 

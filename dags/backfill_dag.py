@@ -6,11 +6,22 @@ Triggered manually via the Airflow UI or CLI with parameters:
   ``force``        boolean — reprocess even if the manifest hash matches
 
 For each date in the range, the DAG runs the full pipeline:
-  bronze → silver → deltas
+  fetch → bronze → silver → deltas
 
-The download step is intentionally excluded — backfills assume bronze_raw data
-already exists on GCS (loaded by a separate bulk fetch or by prior daily runs).
-If bronze_raw is missing for a date, the bronze step will fail for that date.
+Pipeline steps
+--------------
+**fetch** (single task, not per-date):
+  Executes the ``bzp-range-downloader`` Cloud Run Job with ``START_DATE`` and
+  ``END_DATE`` environment variable overrides.  The job runs
+  ``fetch_bzp_range.py``, which iterates over the date range and downloads
+  each date that does not already have a matching processed-date manifest.
+  When ``force=True``, the script's own ``--force`` flag is propagated via the
+  ``FORCE_FETCH=true`` env var override so all dates are re-fetched.
+
+**bronze / silver / deltas** (dynamic task mapping, one instance per date):
+  Each task checks the processed-date manifest before submitting a Dataproc
+  Serverless batch.  Dates already processed with the current script version
+  are skipped automatically (unless ``force=True``).
 
 Hash-based skipping
 -------------------
@@ -32,6 +43,12 @@ Re-run after a code upgrade:
 Configuration
 -------------
 Same Airflow Variables as ``bzp_daily`` — see dags/daily_dag.py.
+Additional Variables:
+
+  ``downloader_job_name``  Name of the Cloud Run Job for the range downloader
+                           (default: ``bzp-downloader``)
+  ``cloud_run_region``     Region for the Cloud Run Job (defaults to
+                           ``dataproc_region`` when not set separately)
 """
 
 from __future__ import annotations
@@ -59,6 +76,10 @@ CONTAINER_IMAGE = Variable.get("dataproc_container_image")
 SUBNET = Variable.get("dataproc_subnet", default_var="default")
 SERVICE_ACCOUNT = Variable.get("dataproc_service_account", default_var="")
 JOBS_PREFIX = Variable.get("jobs_gcs_prefix")  # e.g. gs://bucket/jobs
+
+# Cloud Run Job for the range downloader
+DOWNLOADER_JOB_NAME = Variable.get("downloader_job_name", default_var="bzp-downloader")
+CLOUD_RUN_REGION = Variable.get("cloud_run_region", default_var=DATAPROC_REGION)
 
 
 def _execution_config() -> dict:
@@ -111,6 +132,52 @@ def _check_manifest(layer: str, target_date: str, current_script_hash: str) -> b
 
 
 # ---------------------------------------------------------------------------
+# Cloud Run Job execution (range downloader)
+# ---------------------------------------------------------------------------
+
+def _execute_range_cloud_run_job(start_date: str, end_date: str, force: bool) -> None:
+    """Execute the bzp-range-downloader Cloud Run Job and block until completion.
+
+    Overrides:
+      DOWNLOADER_COMMAND_TEMPLATE → points to fetch_bzp_range.py
+      START_DATE / END_DATE       → the backfill date window
+      FORCE_FETCH                 → propagates force flag to the script
+    """
+    from google.cloud import run_v2
+
+    client = run_v2.JobsClient()
+    job_name = f"projects/{GCP_PROJECT}/locations/{CLOUD_RUN_REGION}/jobs/{DOWNLOADER_JOB_NAME}"
+
+    force_str = "true" if force else "false"
+    cmd_template = "python scripts/pipeline/fetch_bzp_range.py"
+    if force:
+        cmd_template += " --force"
+
+    env_overrides = [
+        run_v2.EnvVar(name="DOWNLOADER_COMMAND_TEMPLATE", value=cmd_template),
+        run_v2.EnvVar(name="START_DATE", value=start_date),
+        run_v2.EnvVar(name="END_DATE", value=end_date),
+        run_v2.EnvVar(name="FORCE_FETCH", value=force_str),
+    ]
+
+    request = run_v2.RunJobRequest(
+        name=job_name,
+        overrides=run_v2.RunJobRequest.Overrides(
+            container_overrides=[
+                run_v2.RunJobRequest.Overrides.ContainerOverride(env=env_overrides)
+            ]
+        ),
+    )
+    log.info(
+        "Submitting Cloud Run Job %s for range %s→%s (force=%s)",
+        DOWNLOADER_JOB_NAME, start_date, end_date, force_str,
+    )
+    op = client.run_job(request=request)
+    op.result()  # blocks until SUCCEEDED or raises on failure
+    log.info("Cloud Run Job %s completed", DOWNLOADER_JOB_NAME)
+
+
+# ---------------------------------------------------------------------------
 # Dataproc batch submission helper
 # ---------------------------------------------------------------------------
 
@@ -158,7 +225,7 @@ _DEFAULT_ARGS = {
 
 with DAG(
     dag_id="bzp_backfill",
-    description="Manual backfill: iterate over a date range and run bronze → silver → deltas",
+    description="Manual backfill: download a date range then run bronze → silver → deltas per date",
     schedule_interval=None,  # manual trigger only
     start_date=days_ago(1),
     catchup=False,
@@ -200,6 +267,23 @@ with DAG(
             days.append(d.isoformat())
             d += timedelta(days=1)
         return days
+
+    @task
+    def fetch_range(**context) -> str:
+        """Download bronze_raw for the full date range via the Cloud Run range downloader.
+
+        Executes the bzp-downloader Cloud Run Job with DOWNLOADER_COMMAND_TEMPLATE
+        pointing to fetch_bzp_range.py and START_DATE/END_DATE env var overrides.
+        The script skips dates that already have a matching processed-date manifest
+        (unless force=True).
+        """
+        params = context["params"]
+        start_date = params["start_date"]
+        end_date = params["end_date"]
+        force = params.get("force", False)
+
+        _execute_range_cloud_run_job(start_date, end_date, force)
+        return f"fetch_range:{start_date}:{end_date}"
 
     @task
     def submit_bronze_batch(target_date: str, **context) -> str:
@@ -253,13 +337,16 @@ with DAG(
         return _submit_and_wait("build_silver_update_deltas.py", target_date, "bzp-deltas")
 
     # ------------------------------------------------------------------
-    # Wiring: dynamic task mapping over the date list
+    # Wiring:
+    #   fetch_range (single task, full date window)
+    #     → bronze / silver / deltas (dynamic task mapping, per date)
     # ------------------------------------------------------------------
     dates = generate_date_range()
+    fetch = fetch_range()
     bronze_results = submit_bronze_batch.expand(target_date=dates)
     silver_results = submit_silver_batch.expand(target_date=dates)
     deltas_results = submit_deltas_batch.expand(target_date=dates)
 
-    # Enforce per-date ordering: bronze → silver → deltas.
-    # Dynamic task mapping with dependencies preserves the index alignment.
-    bronze_results >> silver_results >> deltas_results
+    # All dates must be downloaded before any bronze batch starts.
+    # Within the Spark steps, per-date ordering is preserved by index alignment.
+    fetch >> bronze_results >> silver_results >> deltas_results

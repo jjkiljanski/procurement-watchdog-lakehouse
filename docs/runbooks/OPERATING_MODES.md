@@ -46,9 +46,12 @@ Recommended split:
 
 ### Phase A: API-bound ingest (retry-friendly)
 
-- Fetch many days to `bronze_raw` first.
+- Fetch many days to `bronze_raw` first using `fetch_bzp_range.py`.
 - This phase is network/API bound and must be decoupled from Spark transforms.
-- The BZP API has no published rate limit; use exponential backoff between requests.
+- The BZP API has no published rate limit; `fetch_bzp_range.py` uses exponential
+  backoff (via `src/procurement/fetch/bzp_api.py`) for all HTTP calls.
+- Dates with an existing `fetch` processed-date manifest matching the current
+  script hash are skipped automatically.
 
 ### Phase B: Spark-bound transforms (long-lived jobs)
 
@@ -62,7 +65,15 @@ Rationale:
 - Separating API ingest from Spark compute improves failure isolation and retry behavior.
 - On GCP, completing all downloads first avoids paying for Dataproc batches idling on HTTP calls.
 
-Local backfill command (single long-lived Spark session):
+Local backfill — Phase A (range download):
+
+```bash
+python scripts/pipeline/fetch_bzp_range.py 2025-10-01 2025-10-31
+```
+
+Skips dates that already have a matching `fetch` manifest.  Use `--force` to re-fetch all.
+
+Local backfill — Phase B (single long-lived Spark session):
 
 ```bash
 python scripts/pipeline/build_silver_backfill.py \
@@ -72,7 +83,7 @@ python scripts/pipeline/build_silver_backfill.py \
 
 `build_silver_backfill.py` is a local-only runner that keeps one SparkSession alive across all
 days, amortising JVM startup overhead.  On GCP, use the `bzp_backfill` Airflow DAG
-(`dags/backfill_dag.py`) which submits one independent Dataproc batch per date.
+(`dags/backfill_dag.py`) which handles both phases automatically.
 
 Restart safety:
 
@@ -82,6 +93,8 @@ Restart safety:
 
 GCP backfill restart safety (Airflow `bzp_backfill` DAG):
 
+- The `fetch_range` task executes `fetch_bzp_range.py` via Cloud Run Job.
+  It checks the `fetch` manifest per date and skips already-downloaded dates.
 - Each pipeline script writes a processed-date manifest to
   `gs://{LAKEHOUSE_BUCKET}/_processed/{layer}/{date}.json` on success.
 - The manifest contains the `script_hash` (SHA-256 of the entry-point script).
