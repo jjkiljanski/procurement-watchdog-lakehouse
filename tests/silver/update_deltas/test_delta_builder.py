@@ -3,22 +3,17 @@
 from __future__ import annotations
 
 import json
-import tempfile
-from pathlib import Path
 
-import pyarrow as pa
-import pyarrow.parquet as pq
 import pytest
+from pyspark.sql.types import ArrayType, BooleanType, StructType
 
 from procurement.silver.update_deltas.delta_builder import (
     _apply_parser,
     _build_col_type_map,
-    _build_schema,
+    _build_delta_spark_schema,
     _build_section_index,
     _extract_section_num,
-    _rows_to_table,
     build_update_deltas,
-    write_deltas,
 )
 
 
@@ -130,143 +125,96 @@ def test_build_section_index_derived_cols_expanded():
 
 
 # ---------------------------------------------------------------------------
-# _build_schema
+# _build_delta_spark_schema
 # ---------------------------------------------------------------------------
 
-def test_build_schema_contains_meta_fields():
+def test_build_delta_spark_schema_contains_meta_fields():
     from procurement.silver.section_pipeline.notice_schema_reader import load_all_profiles
     all_profiles = load_all_profiles()
     idx = _build_section_index(all_profiles)
     col_type_map = _build_col_type_map("ContractNotice", idx)
-    schema = _build_schema("ContractNotice", col_type_map)
-    field_names = [f.name for f in schema]
-    for meta in ["nun_objectId", "nun_section_3_2", "section_changes", "parse_errors"]:
+    schema = _build_delta_spark_schema(col_type_map)
+    field_names = [f.name for f in schema.fields]
+    for meta in ["publicationDateDay", "nun_objectId", "nun_section_3_2", "section_changes", "parse_errors"]:
         assert meta in field_names
 
 
-def test_build_schema_section_changes_type():
+def test_build_delta_spark_schema_section_changes_type():
     from procurement.silver.section_pipeline.notice_schema_reader import load_all_profiles
     all_profiles = load_all_profiles()
     idx = _build_section_index(all_profiles)
     col_type_map = _build_col_type_map("ContractNotice", idx)
-    schema = _build_schema("ContractNotice", col_type_map)
-    sc_field = next(f for f in schema if f.name == "section_changes")
-    assert pa.types.is_list(sc_field.type)
-    assert pa.types.is_struct(sc_field.type.value_type)
+    schema = _build_delta_spark_schema(col_type_map)
+    sc_field = schema["section_changes"]
+    assert isinstance(sc_field.dataType, ArrayType)
+    assert isinstance(sc_field.dataType.elementType, StructType)
 
 
-def test_build_schema_tak_nie_col_is_bool():
-    """Any column backed by parse_tak_nie should be pa.bool_() in the schema."""
+def test_build_delta_spark_schema_tak_nie_col_is_bool():
+    """Any column backed by parse_tak_nie should be BooleanType in the schema."""
     from procurement.silver.section_pipeline.notice_schema_reader import load_all_profiles
     all_profiles = load_all_profiles()
     idx = _build_section_index(all_profiles)
-    # Find a notice type that has a parse_tak_nie column
     for nt, type_idx in idx.items():
         for entries in type_idx.values():
             for col_name, fn_name in entries:
                 if fn_name == "parse_tak_nie":
                     col_type_map = _build_col_type_map(nt, idx)
-                    schema = _build_schema(nt, col_type_map)
-                    field = next((f for f in schema if f.name == col_name), None)
-                    assert field is not None
-                    assert field.type == pa.bool_(), (
-                        f"{nt}.{col_name}: expected bool, got {field.type}"
+                    schema = _build_delta_spark_schema(col_type_map)
+                    field = schema[col_name]
+                    assert isinstance(field.dataType, BooleanType), (
+                        f"{nt}.{col_name}: expected BooleanType, got {field.dataType}"
                     )
                     return  # one case is enough
 
 
 # ---------------------------------------------------------------------------
-# build_update_deltas — unit test with fixture parquet data
+# build_update_deltas — pure Python tests (no file I/O, no Spark)
 # ---------------------------------------------------------------------------
 
-def _write_parquet(path: Path, schema: pa.Schema, rows: list[dict]) -> None:
-    path.mkdir(parents=True, exist_ok=True)
-    arrays = [pa.array([r.get(f.name) for r in rows], type=f.type) for f in schema]
-    table = pa.table({f.name: arr for f, arr in zip(schema, arrays)}, schema=schema)
-    pq.write_table(table, str(path / "part-0.parquet"))
+def _make_section_index():
+    from procurement.silver.section_pipeline.notice_schema_reader import load_all_profiles
+    return _build_section_index(load_all_profiles())
 
 
-def _make_fixture_silver(tmp_path: Path, target_date: str) -> None:
-    """Write minimal fixture silver data for one NUN that changes a ContractNotice."""
-    nun_root = tmp_path / "notice_type_tables" / "noticeType=NoticeUpdateNotice"
-    date_part = f"publicationDateDay={target_date}"
+def _make_bzp_index():
+    return {"2025/BZP 00099999": ("CN-001", "ContractNotice", "2025-01-15")}
 
-    # --- NUN core ---
-    core_schema = pa.schema([
-        pa.field("objectId", pa.string()),
-        pa.field("section_3_2", pa.string()),
-        pa.field("section_3_3", pa.string()),
-    ])
-    _write_parquet(
-        nun_root / "data_model=core" / date_part,
-        core_schema,
-        [{"objectId": "NUN-001", "section_3_2": "2025/BZP 00099999", "section_3_3": "01"}],
+
+def test_build_update_deltas_basic():
+    section_index = _make_section_index()
+    core_rows = [{"objectId": "NUN-001", "section_3_2": "2025/BZP 00099999", "section_3_3": "01"}]
+    part_rows = [{"objectId": "NUN-001", "part_ordinal": 0, "section_3_4": "SEKCJA II - OPIS"}]
+    part_part_rows = [
+        {
+            "objectId": "NUN-001", "part_ordinal": 0, "part_part_ordinal": 0,
+            "section_3_4_1_label": "2.5.  Numer ogłoszenia",
+            "section_3_4_1_before": "2025/BZP 00099999/01",
+            "section_3_4_1_after": "2025/BZP 00099999/02",
+        },
+        {
+            "objectId": "NUN-001", "part_ordinal": 0, "part_part_ordinal": 1,
+            "section_3_4_1_label": "SEKCJA BEZ NUMERU - nie mapowalna",
+            "section_3_4_1_before": "stare",
+            "section_3_4_1_after": "nowe",
+        },
+    ]
+
+    result = build_update_deltas(
+        target_date="2025-04-25",
+        core_rows=core_rows,
+        part_rows=part_rows,
+        part_part_rows=part_part_rows,
+        section_index=section_index,
+        bzp_index=_make_bzp_index(),
     )
-
-    # --- NUN part (section groups) ---
-    part_schema = pa.schema([
-        pa.field("objectId", pa.string()),
-        pa.field("part_ordinal", pa.int64()),
-        pa.field("section_3_4", pa.string()),
-    ])
-    _write_parquet(
-        nun_root / "data_model=part" / date_part,
-        part_schema,
-        [{"objectId": "NUN-001", "part_ordinal": 0, "section_3_4": "SEKCJA II - OPIS"}],
-    )
-
-    # --- NUN part_part (individual change items) ---
-    pp_schema = pa.schema([
-        pa.field("objectId", pa.string()),
-        pa.field("part_ordinal", pa.int64()),
-        pa.field("part_part_ordinal", pa.int64()),
-        pa.field("section_3_4_1_label", pa.string()),
-        pa.field("section_3_4_1_before", pa.string()),
-        pa.field("section_3_4_1_after", pa.string()),
-    ])
-    _write_parquet(
-        nun_root / "data_model=part_part" / date_part,
-        pp_schema,
-        [
-            {
-                "objectId": "NUN-001", "part_ordinal": 0, "part_part_ordinal": 0,
-                "section_3_4_1_label": "2.5.  Numer ogłoszenia",
-                "section_3_4_1_before": "2025/BZP 00099999/01",
-                "section_3_4_1_after": "2025/BZP 00099999/02",
-            },
-            {
-                "objectId": "NUN-001", "part_ordinal": 0, "part_part_ordinal": 1,
-                "section_3_4_1_label": "SEKCJA BEZ NUMERU - nie mapowalna",
-                "section_3_4_1_before": "stare",
-                "section_3_4_1_after": "nowe",
-            },
-        ],
-    )
-
-    # --- common_envelope ---
-    env_schema = pa.schema([
-        pa.field("bzpNumber", pa.string()),
-        pa.field("objectId", pa.string()),
-        pa.field("noticeType", pa.string()),
-    ])
-    _write_parquet(
-        tmp_path / "common_envelope" / f"publicationDateDay=2025-01-15",
-        env_schema,
-        [{"bzpNumber": "2025/BZP 00099999", "objectId": "CN-001", "noticeType": "ContractNotice"}],
-    )
-
-
-def test_build_update_deltas_basic(tmp_path):
-    target_date = "2025-04-25"
-    _make_fixture_silver(tmp_path, target_date)
-
-    result = build_update_deltas(target_date=target_date, silver_dir=tmp_path)
 
     assert "ContractNotice" in result
     rows = result["ContractNotice"]
     assert len(rows) == 1
     row = rows[0]
 
+    assert row["publicationDateDay"] == "2025-04-25"
     assert row["nun_objectId"] == "NUN-001"
     assert row["target_objectId"] == "CN-001"
     assert row["target_publicationDateDay"] == "2025-01-15"
@@ -283,77 +231,52 @@ def test_build_update_deltas_basic(tmp_path):
     assert row.get("parse_errors") is None or "section_2_5" not in (row.get("parse_errors") or "")
 
 
-def test_build_update_deltas_no_nun_data(tmp_path):
-    """When there is no NUN data for the date, build returns empty dict."""
-    result = build_update_deltas(target_date="2025-04-25", silver_dir=tmp_path)
-    assert result == {}
-
-
-def test_build_update_deltas_unresolvable_bzp(tmp_path):
-    """NUN rows whose section_3_2 is not in the envelope produce no delta rows."""
-    target_date = "2025-04-25"
-    nun_root = tmp_path / "notice_type_tables" / "noticeType=NoticeUpdateNotice"
-    date_part = f"publicationDateDay={target_date}"
-    core_schema = pa.schema([
-        pa.field("objectId", pa.string()),
-        pa.field("section_3_2", pa.string()),
-        pa.field("section_3_3", pa.string()),
-    ])
-    _write_parquet(
-        nun_root / "data_model=core" / date_part,
-        core_schema,
-        [{"objectId": "NUN-X", "section_3_2": "2025/BZP 99999999", "section_3_3": "01"}],
-    )
-    # common_envelope exists but does NOT have the above BZP number
-    env_schema = pa.schema([
-        pa.field("bzpNumber", pa.string()),
-        pa.field("objectId", pa.string()),
-        pa.field("noticeType", pa.string()),
-    ])
-    _write_parquet(
-        tmp_path / "common_envelope" / "publicationDateDay=2025-03-01",
-        env_schema,
-        [{"bzpNumber": "2025/BZP 00000001", "objectId": "CN-X", "noticeType": "ContractNotice"}],
-    )
-    result = build_update_deltas(target_date=target_date, silver_dir=tmp_path)
-    assert result == {}
-
-
-# ---------------------------------------------------------------------------
-# write_deltas — round-trip test
-# ---------------------------------------------------------------------------
-
-def test_write_deltas_round_trip(tmp_path):
-    from procurement.silver.section_pipeline.notice_schema_reader import load_all_profiles
-    target_date = "2025-04-25"
-    _make_fixture_silver(tmp_path, target_date)
-
-    all_profiles = load_all_profiles()
-    section_index = _build_section_index(all_profiles)
-    deltas_by_type = build_update_deltas(target_date=target_date, silver_dir=tmp_path)
-
-    write_deltas(
-        target_date=target_date,
-        deltas_by_type=deltas_by_type,
-        silver_dir=tmp_path,
+def test_build_update_deltas_no_nun_data():
+    """When core_rows is empty, build returns empty dict."""
+    section_index = _make_section_index()
+    result = build_update_deltas(
+        target_date="2025-04-25",
+        core_rows=[],
+        part_rows=[],
+        part_part_rows=[],
         section_index=section_index,
+        bzp_index={},
+    )
+    assert result == {}
+
+
+def test_build_update_deltas_unresolvable_bzp():
+    """NUN rows whose section_3_2 is not in the index produce no delta rows."""
+    section_index = _make_section_index()
+    core_rows = [{"objectId": "NUN-X", "section_3_2": "2025/BZP 99999999", "section_3_3": "01"}]
+    # BZP index does NOT contain the above number
+    bzp_index = {"2025/BZP 00000001": ("CN-X", "ContractNotice", "2025-03-01")}
+
+    result = build_update_deltas(
+        target_date="2025-04-25",
+        core_rows=core_rows,
+        part_rows=[],
+        part_part_rows=[],
+        section_index=section_index,
+        bzp_index=bzp_index,
+    )
+    assert result == {}
+
+
+def test_build_update_deltas_includes_publication_date_day():
+    """Every delta row must include publicationDateDay = target_date."""
+    section_index = _make_section_index()
+    core_rows = [{"objectId": "NUN-001", "section_3_2": "2025/BZP 00099999", "section_3_3": "01"}]
+
+    result = build_update_deltas(
+        target_date="2025-06-15",
+        core_rows=core_rows,
+        part_rows=[],
+        part_part_rows=[],
+        section_index=section_index,
+        bzp_index=_make_bzp_index(),
     )
 
-    out_path = (
-        tmp_path / "notice_update_deltas"
-        / "noticeType=ContractNotice"
-        / f"publicationDateDay={target_date}"
-        / "part-0.parquet"
-    )
-    assert out_path.exists()
-
-    import pyarrow.dataset as ds
-    table = ds.dataset(str(out_path.parent), format="parquet").to_table()
-    assert table.num_rows == 1
-    assert "nun_objectId" in table.schema.names
-    assert "section_changes" in table.schema.names
-    assert "parse_errors" in table.schema.names
-
-    row = table.to_pylist()[0]
-    assert row["nun_objectId"] == "NUN-001"
-    assert len(row["section_changes"]) == 2
+    rows = result.get("ContractNotice", [])
+    assert len(rows) == 1
+    assert rows[0]["publicationDateDay"] == "2025-06-15"

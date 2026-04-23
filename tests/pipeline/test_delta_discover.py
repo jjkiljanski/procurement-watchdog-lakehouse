@@ -1,6 +1,7 @@
 """Tests for _discover_nun_days() in scripts/pipeline/build_silver_update_deltas.py.
 
-Covers both local filesystem and GCS paths (GCS mocked via sys.modules).
+The function now uses Spark SQL against the Iceberg catalog; tests use a mocked
+SparkSession so no JVM is required.
 """
 
 from __future__ import annotations
@@ -8,7 +9,7 @@ from __future__ import annotations
 import importlib
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call
 
 import pytest
 
@@ -24,7 +25,6 @@ def _load_deltas_module():
     )
     mod = importlib.util.module_from_spec(spec)
     sys.modules.setdefault("procurement.logging", MagicMock())
-    # Stub heavy silver imports that aren't needed for this function
     sys.modules.setdefault(
         "procurement.silver.section_pipeline.notice_schema_reader", MagicMock()
     )
@@ -35,120 +35,64 @@ def _load_deltas_module():
     return mod
 
 
-_NUN_CORE = "notice_type_tables/noticeType=NoticeUpdateNotice/data_model=core"
+def _make_spark(dates: list[str], table_exists: bool = True):
+    """Return a mock SparkSession whose sql() returns the given dates."""
+    spark = MagicMock()
 
+    def describe_side_effect(sql: str):
+        if sql.startswith("DESCRIBE TABLE"):
+            if not table_exists:
+                raise Exception("table not found")
+            return MagicMock()
+        # SELECT DISTINCT query
+        rows = [MagicMock(publicationDateDay=d) for d in dates]
+        result_df = MagicMock()
+        result_df.collect.return_value = rows
+        return result_df
 
-def _gcs_sys_modules():
-    mock_gcs = MagicMock()
-    mock_client = MagicMock()
-    mock_gcs.Client.return_value = mock_client
-
-    mock_google_cloud = MagicMock()
-    mock_google_cloud.storage = mock_gcs
-
-    mock_google = MagicMock()
-    mock_google.cloud = mock_google_cloud
-
-    return {
-        "google": mock_google,
-        "google.cloud": mock_google_cloud,
-        "google.cloud.storage": mock_gcs,
-    }, mock_gcs, mock_client
+    spark.sql.side_effect = describe_side_effect
+    return spark
 
 
 # ---------------------------------------------------------------------------
-# _discover_nun_days — local
+# _discover_nun_days
 # ---------------------------------------------------------------------------
 
-class TestDiscoverNunDaysLocal:
+class TestDiscoverNunDays:
     @pytest.fixture(autouse=True)
     def module(self):
         self.mod = _load_deltas_module()
 
-    def _make_core_dir(self, silver_dir: Path, date: str) -> None:
-        d = silver_dir / _NUN_CORE / f"publicationDateDay={date}"
-        d.mkdir(parents=True, exist_ok=True)
-
-    def test_returns_empty_when_no_nun_data(self, tmp_path: Path):
-        result = self.mod._discover_nun_days(str(tmp_path), None)
+    def test_returns_empty_when_table_does_not_exist(self):
+        spark = _make_spark([], table_exists=False)
+        result = self.mod._discover_nun_days(spark, None)
         assert result == []
 
-    def test_returns_sorted_dates(self, tmp_path: Path):
-        for d in ["2025-10-03", "2025-10-01", "2025-10-02"]:
-            self._make_core_dir(tmp_path, d)
-        result = self.mod._discover_nun_days(str(tmp_path), None)
+    def test_returns_sorted_dates(self):
+        spark = _make_spark(["2025-10-03", "2025-10-01", "2025-10-02"])
+        result = self.mod._discover_nun_days(spark, None)
         assert result == ["2025-10-01", "2025-10-02", "2025-10-03"]
 
-    def test_year_filter_applied(self, tmp_path: Path):
-        self._make_core_dir(tmp_path, "2025-10-01")
-        self._make_core_dir(tmp_path, "2024-10-01")
-        result = self.mod._discover_nun_days(str(tmp_path), "2025")
-        assert result == ["2025-10-01"]
-
-    def test_year_filter_none_returns_all(self, tmp_path: Path):
-        self._make_core_dir(tmp_path, "2025-10-01")
-        self._make_core_dir(tmp_path, "2024-10-01")
-        result = self.mod._discover_nun_days(str(tmp_path), None)
-        assert len(result) == 2
-
-    def test_non_partition_dirs_ignored(self, tmp_path: Path):
-        self._make_core_dir(tmp_path, "2025-10-01")
-        # Add a directory that doesn't match the partition naming convention
-        (tmp_path / _NUN_CORE / "metadata").mkdir(parents=True, exist_ok=True)
-        result = self.mod._discover_nun_days(str(tmp_path), None)
-        assert result == ["2025-10-01"]
-
-
-# ---------------------------------------------------------------------------
-# _discover_nun_days — GCS
-# ---------------------------------------------------------------------------
-
-class TestDiscoverNunDaysGcs:
-    @pytest.fixture(autouse=True)
-    def module(self):
-        self.mod = _load_deltas_module()
-
-    def test_returns_dates_from_gcs_prefixes(self):
-        modules, mock_gcs, mock_client = _gcs_sys_modules()
-
-        blobs_iter = MagicMock()
-        blobs_iter.__iter__ = MagicMock(return_value=iter([]))
-        blobs_iter.prefixes = [
-            "silver/notice_type_tables/noticeType=NoticeUpdateNotice/data_model=core/publicationDateDay=2025-10-01/",
-            "silver/notice_type_tables/noticeType=NoticeUpdateNotice/data_model=core/publicationDateDay=2025-10-02/",
+    def test_year_filter_included_in_sql(self):
+        spark = _make_spark(["2025-10-01"])
+        self.mod._discover_nun_days(spark, "2025")
+        # The second sql() call (SELECT) should include a LIKE filter
+        select_calls = [
+            str(c) for c in spark.sql.call_args_list
+            if "SELECT" in str(c)
         ]
-        mock_client.list_blobs.return_value = blobs_iter
+        assert any("2025%" in c for c in select_calls)
 
-        with patch.dict(sys.modules, modules):
-            result = self.mod._discover_nun_days("gs://my-bucket/silver", None)
-
-        assert result == ["2025-10-01", "2025-10-02"]
-
-    def test_gcs_year_filter(self):
-        modules, mock_gcs, mock_client = _gcs_sys_modules()
-
-        blobs_iter = MagicMock()
-        blobs_iter.__iter__ = MagicMock(return_value=iter([]))
-        blobs_iter.prefixes = [
-            "silver/core/publicationDateDay=2025-10-01/",
-            "silver/core/publicationDateDay=2024-10-01/",
+    def test_no_year_filter_no_where_clause(self):
+        spark = _make_spark(["2025-10-01", "2024-05-10"])
+        self.mod._discover_nun_days(spark, None)
+        select_calls = [
+            str(c) for c in spark.sql.call_args_list
+            if "SELECT" in str(c)
         ]
-        mock_client.list_blobs.return_value = blobs_iter
+        assert any("LIKE" not in c for c in select_calls)
 
-        with patch.dict(sys.modules, modules):
-            result = self.mod._discover_nun_days("gs://my-bucket/silver", "2025")
-
-        assert result == ["2025-10-01"]
-
-    def test_returns_empty_when_no_prefixes(self):
-        modules, mock_gcs, mock_client = _gcs_sys_modules()
-
-        blobs_iter = MagicMock()
-        blobs_iter.__iter__ = MagicMock(return_value=iter([]))
-        blobs_iter.prefixes = []
-        mock_client.list_blobs.return_value = blobs_iter
-
-        with patch.dict(sys.modules, modules):
-            result = self.mod._discover_nun_days("gs://my-bucket/silver", None)
-
+    def test_returns_empty_when_no_rows(self):
+        spark = _make_spark([])
+        result = self.mod._discover_nun_days(spark, None)
         assert result == []

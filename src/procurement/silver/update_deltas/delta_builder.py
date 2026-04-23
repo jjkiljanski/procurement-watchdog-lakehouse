@@ -22,9 +22,17 @@ For each day's NoticeUpdateNotice rows the builder:
    - NUN metadata columns: ``nun_objectId``, ``nun_section_3_2``,
      ``nun_section_3_3``, ``target_objectId``, ``target_publicationDateDay``.
 
-Output path:
-    <silver_dir>/notice_update_deltas/
-        noticeType=<OriginalType>/publicationDateDay=<NUN_day>/
+I/O uses Apache Iceberg (HadoopCatalog, catalog name ``silver``):
+
+Reads:
+  silver.notice_type_tables.notice_update_notice__core
+  silver.notice_type_tables.notice_update_notice__part
+  silver.notice_type_tables.notice_update_notice__part_part
+  silver.common.common_envelope  (year-scoped)
+
+Writes:
+  silver.notice_update_deltas.{target_notice_type_snake_case}
+  Partitioned by publicationDateDay (= NUN publication date).
 """
 
 from __future__ import annotations
@@ -32,19 +40,26 @@ from __future__ import annotations
 import json
 import logging
 import re
-import shutil
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import pyarrow as pa
-import pyarrow.dataset as ds
-import pyarrow.parquet as pq
+from pyspark.sql.types import (
+    ArrayType,
+    BooleanType,
+    DoubleType,
+    LongType,
+    StringType,
+    StructField,
+    StructType,
+)
 
 from procurement.silver.section_pipeline.notice_schema_reader import (
     load_all_profiles,
     section_derived_cols,
 )
 from procurement.silver.section_pipeline.parser_registry import COMMON_PARSERS
+
+if TYPE_CHECKING:
+    from pyspark.sql import SparkSession
 
 log = logging.getLogger(__name__)
 
@@ -54,33 +69,35 @@ log = logging.getLogger(__name__)
 
 _SECTION_NUM_RE = re.compile(r"^(\d+(?:\.\d+)*)")
 
-# Maps parser function name → pyarrow output type.
+# Maps parser function name → PySpark output type.
 # Functions not listed here produce plain strings.
-_FN_TO_PA_TYPE: dict[str, pa.DataType] = {
-    "parse_tak_nie": pa.bool_(),
-    "parse_pln_value": pa.float64(),
-    "parse_criterion_weight": pa.int64(),
-    "parse_int_from_text": pa.int64(),
-    "parse_duration_days_from_range": pa.int64(),
-    "parse_cpv_codes": pa.list_(pa.string()),
-    "parse_list_from_newlines": pa.list_(pa.string()),
+_FN_TO_SPARK_TYPE: dict[str, Any] = {
+    "parse_tak_nie": BooleanType(),
+    "parse_pln_value": DoubleType(),
+    "parse_criterion_weight": LongType(),
+    "parse_int_from_text": LongType(),
+    "parse_duration_days_from_range": LongType(),
+    "parse_cpv_codes": ArrayType(StringType()),
+    "parse_list_from_newlines": ArrayType(StringType()),
 }
 
-_CHANGE_STRUCT = pa.struct([
-    pa.field("section_prefix", pa.string()),
-    pa.field("label", pa.string()),
-    pa.field("before", pa.string()),
-    pa.field("after", pa.string()),
+_CHANGE_STRUCT_SPARK = StructType([
+    StructField("section_prefix", StringType(), True),
+    StructField("label", StringType(), True),
+    StructField("before", StringType(), True),
+    StructField("after", StringType(), True),
 ])
 
-_NUN_META_FIELDS: list[pa.Field] = [
-    pa.field("nun_objectId", pa.string()),
-    pa.field("nun_section_3_2", pa.string()),
-    pa.field("nun_section_3_3", pa.string()),
-    pa.field("target_objectId", pa.string()),
-    pa.field("target_publicationDateDay", pa.string()),
-    pa.field("section_changes", pa.list_(_CHANGE_STRUCT)),
-    pa.field("parse_errors", pa.string()),  # JSON {col_name: error}
+_NUN_META_FIELDS_SPARK: list[StructField] = [
+    # publicationDateDay = the NUN publication date; used as the Iceberg partition column.
+    StructField("publicationDateDay", StringType(), False),
+    StructField("nun_objectId", StringType(), True),
+    StructField("nun_section_3_2", StringType(), True),
+    StructField("nun_section_3_3", StringType(), True),
+    StructField("target_objectId", StringType(), True),
+    StructField("target_publicationDateDay", StringType(), True),
+    StructField("section_changes", ArrayType(_CHANGE_STRUCT_SPARK), True),
+    StructField("parse_errors", StringType(), True),  # JSON {col_name: error}
 ]
 
 
@@ -88,10 +105,10 @@ _NUN_META_FIELDS: list[pa.Field] = [
 # Schema / index building
 # ---------------------------------------------------------------------------
 
-def _pa_type_for_fn(fn_name: str | None) -> pa.DataType:
+def _spark_type_for_fn(fn_name: str | None) -> Any:
     if fn_name is None:
-        return pa.string()
-    return _FN_TO_PA_TYPE.get(fn_name, pa.string())
+        return StringType()
+    return _FN_TO_SPARK_TYPE.get(fn_name, StringType())
 
 
 def _build_section_index(
@@ -134,22 +151,22 @@ def _build_section_index(
 def _build_col_type_map(
     notice_type: str,
     section_index: dict[str, dict[str, list[tuple[str, str | None]]]],
-) -> dict[str, pa.DataType]:
-    """Return ``{col_name: pa_type}`` for all core columns of a notice type."""
-    col_types: dict[str, pa.DataType] = {}
+) -> dict[str, Any]:
+    """Return ``{col_name: SparkDataType}`` for all core columns of a notice type."""
+    col_types: dict[str, Any] = {}
     for entries in section_index.get(notice_type, {}).values():
         for col_name, fn_name in entries:
             if col_name not in col_types:
-                col_types[col_name] = _pa_type_for_fn(fn_name)
+                col_types[col_name] = _spark_type_for_fn(fn_name)
     return col_types
 
 
-def _build_schema(notice_type: str, col_type_map: dict[str, pa.DataType]) -> pa.Schema:
-    """Build the pyarrow schema for a delta table (NUN metadata + typed target cols)."""
-    fields = list(_NUN_META_FIELDS)
-    for col_name, pa_type in col_type_map.items():
-        fields.append(pa.field(col_name, pa_type, nullable=True))
-    return pa.schema(fields)
+def _build_delta_spark_schema(col_type_map: dict[str, Any]) -> StructType:
+    """Build the Spark StructType for a delta table (NUN metadata + typed target cols)."""
+    fields = list(_NUN_META_FIELDS_SPARK)
+    for col_name, spark_type in col_type_map.items():
+        fields.append(StructField(col_name, spark_type, True))
+    return StructType(fields)
 
 
 # ---------------------------------------------------------------------------
@@ -189,42 +206,56 @@ def _extract_section_num(label: str | None) -> str | None:
 
 
 # ---------------------------------------------------------------------------
-# Data loading helpers
+# Iceberg helpers
 # ---------------------------------------------------------------------------
 
-def _load_table(path: Path, columns: list[str] | None = None) -> list[dict]:
-    """Read a parquet partition into a list of row dicts."""
-    if not path.exists():
-        return []
+def _nt_to_snake(notice_type: str) -> str:
+    """Convert CamelCase notice type to snake_case table name component."""
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", notice_type).lower()
+
+
+def _iceberg_table_exists(spark: "SparkSession", full_table_name: str) -> bool:
     try:
-        dataset = ds.dataset(str(path), format="parquet")
-        return dataset.to_table(columns=columns).to_pylist()
-    except Exception as exc:
-        log.warning("Failed to read parquet at %s: %s", path, exc)
-        return []
+        spark.sql(f"DESCRIBE TABLE {full_table_name}")
+        return True
+    except Exception:
+        return False
 
 
-def _load_nun_tables(
-    silver_dir: Path, target_date: str
+# ---------------------------------------------------------------------------
+# Data loading helpers (Spark / Iceberg)
+# ---------------------------------------------------------------------------
+
+def load_nun_rows(
+    spark: "SparkSession",
+    target_date: str,
 ) -> tuple[list[dict], list[dict], list[dict]]:
-    """Load NUN core, part, and part_part rows for *target_date*.
+    """Load NUN core, part, and part_part rows for *target_date* from Iceberg.
 
     Returns ``(core_rows, part_rows, part_part_rows)``.
+    Returns empty lists if the Iceberg tables do not yet exist.
     """
-    nun_dir = silver_dir / "notice_type_tables" / "noticeType=NoticeUpdateNotice"
-    date_suffix = f"publicationDateDay={target_date}"
 
-    core = _load_table(
-        nun_dir / "data_model=core" / date_suffix,
-        columns=["objectId", "section_3_2", "section_3_3"],
+    def _query(table: str, columns: list[str]) -> list[dict]:
+        if not _iceberg_table_exists(spark, table):
+            return []
+        cols = ", ".join(columns)
+        df = spark.sql(
+            f"SELECT {cols} FROM {table} WHERE publicationDateDay = '{target_date}'"
+        )
+        return [row.asDict() for row in df.collect()]
+
+    core = _query(
+        "silver.notice_type_tables.notice_update_notice__core",
+        ["objectId", "section_3_2", "section_3_3"],
     )
-    part = _load_table(
-        nun_dir / "data_model=part" / date_suffix,
-        columns=["objectId", "part_ordinal", "section_3_4"],
+    part = _query(
+        "silver.notice_type_tables.notice_update_notice__part",
+        ["objectId", "part_ordinal", "section_3_4"],
     )
-    part_part = _load_table(
-        nun_dir / "data_model=part_part" / date_suffix,
-        columns=[
+    part_part = _query(
+        "silver.notice_type_tables.notice_update_notice__part_part",
+        [
             "objectId", "part_ordinal", "part_part_ordinal",
             "section_3_4_1_label", "section_3_4_1_before", "section_3_4_1_after",
         ],
@@ -232,70 +263,67 @@ def _load_nun_tables(
     return core, part, part_part
 
 
-def _load_bzp_index(
-    silver_dir: Path, years: set[str]
+def load_bzp_index(
+    spark: "SparkSession",
+    years: set[str],
 ) -> dict[str, tuple[str, str, str]]:
-    """Load ``bzpNumber → (objectId, noticeType, publicationDateDay)`` from common_envelope.
+    """Load ``bzpNumber → (objectId, noticeType, publicationDateDay)`` from Iceberg common_envelope.
 
-    Only partitions whose ``publicationDateDay`` starts with a year in *years* are read,
+    Only rows whose ``publicationDateDay`` starts with a year in *years* are read,
     avoiding a full-history scan.  When the same BZP number appears more than once
-    (re-published corrections), the first occurrence (chronologically) is kept.
+    (re-published corrections), the earliest occurrence (chronologically) is kept.
     """
-    envelope_dir = silver_dir / "common_envelope"
-    if not envelope_dir.exists():
-        log.warning("common_envelope not found at %s — cannot resolve target notice types", envelope_dir)
+    if not years:
         return {}
 
+    year_filter = " OR ".join(
+        f"publicationDateDay LIKE '{y}%'" for y in sorted(years)
+    )
+    df = spark.sql(
+        f"SELECT bzpNumber, objectId, noticeType, publicationDateDay "
+        f"FROM silver.common.common_envelope "
+        f"WHERE {year_filter} "
+        f"ORDER BY publicationDateDay ASC"
+    )
+
     result: dict[str, tuple[str, str, str]] = {}
-    partitions_read = 0
-    for part_dir in sorted(envelope_dir.iterdir()):
-        if not part_dir.is_dir():
-            continue
-        day = part_dir.name.replace("publicationDateDay=", "")
-        if not any(day.startswith(y) for y in years):
-            continue
-        rows = _load_table(part_dir, columns=["bzpNumber", "objectId", "noticeType"])
-        for row in rows:
-            bzp = row.get("bzpNumber")
-            if bzp and bzp not in result:
-                result[bzp] = (
-                    row.get("objectId") or "",
-                    row.get("noticeType") or "",
-                    day,
-                )
-        partitions_read += 1
+    rows_read = 0
+    for row in df.collect():
+        bzp = row["bzpNumber"]
+        if bzp and bzp not in result:
+            result[bzp] = (
+                row["objectId"] or "",
+                row["noticeType"] or "",
+                row["publicationDateDay"] or "",
+            )
+        rows_read += 1
 
     log.info(
-        "BZP index: %d entries from %d envelope partition(s) (year filter: %s)",
-        len(result), partitions_read, sorted(years),
+        "BZP index: %d entries from %d envelope rows (year filter: %s)",
+        len(result), rows_read, sorted(years),
     )
     return result
 
 
 # ---------------------------------------------------------------------------
-# Delta building
+# Delta building (pure Python — no I/O)
 # ---------------------------------------------------------------------------
 
 def build_update_deltas(
     target_date: str,
-    silver_dir: Path,
-    bzp_index: dict[str, tuple[str, str, str]] | None = None,
+    core_rows: list[dict],
+    part_rows: list[dict],
+    part_part_rows: list[dict],
+    section_index: dict[str, dict[str, list[tuple[str, str | None]]]],
+    bzp_index: dict[str, tuple[str, str, str]],
 ) -> dict[str, list[dict]]:
-    """Build delta records from NUN silver data for *target_date*.
+    """Build delta records from pre-loaded NUN data for *target_date*.
 
     Returns ``{target_noticeType: [row_dict, ...]}``.  Row dicts use plain
-    Python values (including ``None``); the caller is responsible for writing
-    them to parquet with the correct schema.
-
-    *bzp_index* may be pre-built by the caller (via ``_load_bzp_index``) and
-    shared across multiple days to avoid reloading the full envelope each time.
-    When omitted it is built automatically from the years referenced in NUN data.
+    Python values (including ``None``); the caller writes them to Iceberg via
+    ``write_deltas()``.  Each row includes ``publicationDateDay = target_date``
+    as the Iceberg partition value.
     """
-    all_profiles = load_all_profiles()
-    section_index = _build_section_index(all_profiles)
-
-    # --- Load NUN tables for the target day ---
-    core_rows, part_rows, part_part_rows = _load_nun_tables(silver_dir, target_date)
     if not core_rows:
         log.info("No NoticeUpdateNotice data for %s", target_date)
         return {}
@@ -320,19 +348,6 @@ def build_update_deltas(
     # Sort each group by (part_ordinal, part_part_ordinal) once
     for rows in part_part_by_oid.values():
         rows.sort(key=lambda r: (int(r.get("part_ordinal") or 0), int(r.get("part_part_ordinal") or 0)))
-
-    # --- Build or reuse BZP index ---
-    if bzp_index is None:
-        target_bzps = {r.get("section_3_2") for r in core_rows if r.get("section_3_2")}
-        years: set[str] = set()
-        for bzp in target_bzps:
-            m = re.match(r"^(\d{4})/", bzp or "")
-            if m:
-                years.add(m.group(1))
-        if not years:
-            log.warning("Could not extract any year from section_3_2 values — aborting")
-            return {}
-        bzp_index = _load_bzp_index(silver_dir, years)
 
     # --- Build delta rows ---
     deltas_by_type: dict[str, list[dict]] = {}
@@ -401,6 +416,7 @@ def build_update_deltas(
 
         stats["resolved"] += 1
         delta_row: dict[str, Any] = {
+            "publicationDateDay": target_date,
             "nun_objectId": nun_oid,
             "nun_section_3_2": target_bzp,
             "nun_section_3_3": target_version,
@@ -424,62 +440,41 @@ def build_update_deltas(
 
 
 # ---------------------------------------------------------------------------
-# Writing output
+# Writing output (Spark / Iceberg)
 # ---------------------------------------------------------------------------
 
-def _rows_to_table(
-    rows: list[dict], schema: pa.Schema
-) -> pa.Table:
-    """Convert a list of row dicts to a pyarrow Table conforming to *schema*."""
-    columns: dict[str, list] = {field.name: [] for field in schema}
-    for row in rows:
-        for field in schema:
-            columns[field.name].append(row.get(field.name))
-
-    arrays: list[pa.Array] = []
-    for field in schema:
-        col_data = columns[field.name]
-        try:
-            arrays.append(pa.array(col_data, type=field.type))
-        except (pa.ArrowInvalid, pa.ArrowTypeError) as exc:
-            # Graceful fallback: cast the column to string rather than losing data.
-            log.warning(
-                "Type cast failed for field '%s' (%s) — falling back to string: %s",
-                field.name, field.type, exc,
-            )
-            str_data = [str(v) if v is not None else None for v in col_data]
-            arrays.append(pa.array(str_data, type=pa.string()).cast(pa.string()))
-
-    return pa.table(dict(zip([f.name for f in schema], arrays)), schema=schema)
-
-
 def write_deltas(
+    spark: "SparkSession",
     target_date: str,
     deltas_by_type: dict[str, list[dict]],
-    silver_dir: Path,
     section_index: dict[str, dict[str, list[tuple[str, str | None]]]],
 ) -> None:
-    """Write delta records to ``silver/notice_update_deltas/`` partitioned by noticeType and day.
+    """Write delta records to Iceberg ``silver.notice_update_deltas.{notice_type}``.
 
-    Overwrites any existing output for *(target_date, noticeType)* pairs present in
-    *deltas_by_type*.  Notice types with no deltas for this day are untouched.
+    Partitioned by ``publicationDateDay``.  Overwrites only the target day's
+    partition for each notice type present in *deltas_by_type*; other types
+    and other days are untouched.
     """
-    out_root = silver_dir / "notice_update_deltas"
+    spark.sql("CREATE NAMESPACE IF NOT EXISTS silver.notice_update_deltas")
 
     for notice_type, rows in deltas_by_type.items():
-        out_dir = out_root / f"noticeType={notice_type}" / f"publicationDateDay={target_date}"
-        # Overwrite: remove previous run's output for this (type, day) before writing
-        if out_dir.exists():
-            shutil.rmtree(out_dir)
-        out_dir.mkdir(parents=True, exist_ok=True)
+        if not rows:
+            continue
 
         col_type_map = _build_col_type_map(notice_type, section_index)
-        schema = _build_schema(notice_type, col_type_map)
-        table = _rows_to_table(rows, schema)
+        spark_schema = _build_delta_spark_schema(col_type_map)
 
-        out_path = out_dir / f"part-0.parquet"
-        pq.write_table(table, str(out_path), compression="snappy")
+        nt_snake = _nt_to_snake(notice_type)
+        full_table = f"silver.notice_update_deltas.{nt_snake}"
+
+        df = spark.createDataFrame(rows, spark_schema)
+
+        if not _iceberg_table_exists(spark, full_table):
+            df.writeTo(full_table).partitionedBy("publicationDateDay").create()
+        else:
+            df.writeTo(full_table).overwritePartitions()
+
         log.info(
             "Wrote %d delta rows for %s/%s → %s",
-            len(rows), notice_type, target_date, out_path,
+            len(rows), notice_type, target_date, full_table,
         )

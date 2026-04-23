@@ -8,29 +8,22 @@ the complete raw change list (section_prefix, label, before, after) verbatim.
 Parse failures are recorded in a ``parse_errors`` JSON column rather than
 typed column values.
 
-Reads:
-  <silver-dir>/notice_type_tables/noticeType=NoticeUpdateNotice/data_model=core/...
-  <silver-dir>/notice_type_tables/noticeType=NoticeUpdateNotice/data_model=part/...
-  <silver-dir>/notice_type_tables/noticeType=NoticeUpdateNotice/data_model=part_part/...
-  <silver-dir>/common_envelope/  (year-scoped)
+Reads from Apache Iceberg (catalog ``silver``):
+  silver.notice_type_tables.notice_update_notice__core
+  silver.notice_type_tables.notice_update_notice__part
+  silver.notice_type_tables.notice_update_notice__part_part
+  silver.common.common_envelope  (year-scoped)
 
-Writes:
-  <silver-dir>/notice_update_deltas/noticeType=<OriginalType>/publicationDateDay=<D>/
-
-Path resolution
----------------
-``silver-dir`` defaults to the runtime-resolved path:
-
-- **local** (``RUNTIME_ENV=local``): ``{LOCAL_DATA_ROOT}/silver/``
-- **GCP**   (``RUNTIME_ENV=gcp``):  ``gs://{LAKEHOUSE_BUCKET}/silver/``
+Writes to Apache Iceberg:
+  silver.notice_update_deltas.{target_notice_type_snake_case}
+  Partitioned by publicationDateDay (= NUN publication date).
 
 Usage:
   # Single day
   python scripts/pipeline/build_silver_update_deltas.py 2025-04-25
-  python scripts/pipeline/build_silver_update_deltas.py 2025-04-25 --silver-dir gs://my-bucket/silver
 
   # Full year backfill (builds BZP index once, reuses across all days)
-  python scripts/pipeline/build_silver_update_deltas.py --all --silver-dir gs://my-bucket/silver
+  python scripts/pipeline/build_silver_update_deltas.py --all
   python scripts/pipeline/build_silver_update_deltas.py --all --year 2025
 """
 
@@ -38,12 +31,17 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
+import re
 import sys
 import time
 from pathlib import Path
 
 _src = str(Path(__file__).resolve().parent.parent.parent / "src")
 sys.path.insert(0, _src)
+os.environ["PYTHONPATH"] = _src + os.pathsep + os.environ.get("PYTHONPATH", "")
+os.environ["PYSPARK_PYTHON"] = sys.executable
+os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
 
 from procurement.logging import setup_logging
 from procurement.manifests import write_processed_manifest
@@ -52,8 +50,9 @@ from procurement.runtime import get_runtime
 from procurement.silver.section_pipeline.notice_schema_reader import load_all_profiles
 from procurement.silver.update_deltas.delta_builder import (
     _build_section_index,
-    _load_bzp_index,
     build_update_deltas,
+    load_bzp_index,
+    load_nun_rows,
     write_deltas,
 )
 
@@ -73,77 +72,64 @@ def _parse_args() -> argparse.Namespace:
         help="Filter to a specific year when using --all (e.g. 2025)",
     )
     parser.add_argument(
-        "--silver-dir",
-        default=None,
-        help=(
-            "Silver layer root directory.  Defaults to the runtime-resolved 'silver' path."
-        ),
+        "--spark-master",
+        default=os.environ.get("SPARK_MASTER"),
+        help="Spark master string (e.g. local[*]).  Defaults to SPARK_MASTER env var.",
     )
     return parser.parse_args()
 
 
-def _discover_nun_days(silver_dir: str, year: str | None) -> list[str]:
-    """Return sorted list of dates that have NUN core data.
-
-    Works for both local paths and GCS URIs.
-    """
-    core_subpath = "notice_type_tables/noticeType=NoticeUpdateNotice/data_model=core"
-
-    if silver_dir.startswith("gs://"):
-        from google.cloud import storage as gcs
-
-        without_scheme = silver_dir[5:]
-        bucket_name, _, prefix = without_scheme.partition("/")
-        core_prefix = f"{prefix.rstrip('/')}/{core_subpath}/" if prefix else f"{core_subpath}/"
-
-        client = gcs.Client()
-        blobs = client.list_blobs(bucket_name, prefix=core_prefix, delimiter="/")
-        _ = list(blobs)
-        days = []
-        for p in blobs.prefixes:
-            dir_name = p.rstrip("/").split("/")[-1]
-            if dir_name.startswith("publicationDateDay="):
-                day = dir_name.replace("publicationDateDay=", "")
-                if year is None or day.startswith(year):
-                    days.append(day)
-        return sorted(days)
-
-    # Local filesystem
-    core_dir = Path(silver_dir) / core_subpath
-    if not core_dir.exists():
+def _discover_nun_days(spark, year: str | None) -> list[str]:
+    """Return sorted list of dates that have NUN core data in Iceberg."""
+    table = "silver.notice_type_tables.notice_update_notice__core"
+    try:
+        spark.sql(f"DESCRIBE TABLE {table}")
+    except Exception:
         return []
-    return sorted(
-        p.name.replace("publicationDateDay=", "")
-        for p in core_dir.iterdir()
-        if p.is_dir()
-        and p.name.startswith("publicationDateDay=")
-        and (year is None or p.name.startswith(f"publicationDateDay={year}"))
-    )
+    if year:
+        df = spark.sql(
+            f"SELECT DISTINCT publicationDateDay FROM {table} "
+            f"WHERE publicationDateDay LIKE '{year}%'"
+        )
+    else:
+        df = spark.sql(f"SELECT DISTINCT publicationDateDay FROM {table}")
+    return sorted(row.publicationDateDay for row in df.collect())
 
 
 def _run_day(
+    spark,
     target_date: str,
-    silver_dir: str,
     section_index: dict,
-    bzp_index: dict,
+    bzp_index: dict | None,
 ) -> None:
-    # delta_builder still uses Path internally for local runs; pass as Path
-    # for local, str for GCS (delta_builder will need updating for GCS — see
-    # TODO in src/procurement/silver/update_deltas/delta_builder.py).
-    silver_path = Path(silver_dir) if not silver_dir.startswith("gs://") else silver_dir
+    core_rows, part_rows, part_part_rows = load_nun_rows(spark, target_date)
+    if not core_rows:
+        log.info("No NUN data for %s — nothing to do", target_date)
+        return
+
+    actual_bzp_index = bzp_index
+    if actual_bzp_index is None:
+        target_bzps = {r.get("section_3_2") for r in core_rows if r.get("section_3_2")}
+        years: set[str] = set()
+        for bzp in target_bzps:
+            m = re.match(r"^(\d{4})/", bzp or "")
+            if m:
+                years.add(m.group(1))
+        if not years:
+            log.warning("Could not extract any year from section_3_2 values — aborting")
+            return
+        actual_bzp_index = load_bzp_index(spark, years)
 
     deltas_by_type = build_update_deltas(
         target_date=target_date,
-        silver_dir=silver_path,
-        bzp_index=bzp_index,
+        core_rows=core_rows,
+        part_rows=part_rows,
+        part_part_rows=part_part_rows,
+        section_index=section_index,
+        bzp_index=actual_bzp_index,
     )
     if deltas_by_type:
-        write_deltas(
-            target_date=target_date,
-            deltas_by_type=deltas_by_type,
-            silver_dir=silver_path,
-            section_index=section_index,
-        )
+        write_deltas(spark, target_date, deltas_by_type, section_index)
     else:
         log.info("No delta rows produced for %s — nothing written", target_date)
 
@@ -152,53 +138,62 @@ def main() -> None:
     args = _parse_args()
 
     rt = get_runtime()
-    silver_dir = args.silver_dir or rt.storage.resolve("silver")
 
-    log.info("build_silver_update_deltas started: silver_dir=%s", silver_dir)
-    t0 = time.perf_counter()
+    extra: dict[str, str] = {}
+    if args.spark_master:
+        extra["spark.master"] = args.spark_master
 
-    all_profiles = load_all_profiles()
-    section_index = _build_section_index(all_profiles)
+    spark = rt.spark.get_session("bzp-silver-deltas", **extra)
+    try:
+        log.info("build_silver_update_deltas started")
+        t0 = time.perf_counter()
 
-    if args.all:
-        year = args.year
-        days = _discover_nun_days(silver_dir, year)
-        if not days:
-            log.info("No NUN days found under %s (year filter: %s)", silver_dir, year)
-            return
-        log.info("Processing %d NUN days (year filter: %s)", len(days), year or "none")
+        all_profiles = load_all_profiles()
+        section_index = _build_section_index(all_profiles)
 
-        # Build BZP index once for all years present in the data.
-        years = {d[:4] for d in days}
-        log.info("Building BZP index for years: %s", sorted(years))
-        silver_path = Path(silver_dir) if not silver_dir.startswith("gs://") else silver_dir
-        bzp_index = _load_bzp_index(silver_path, years)
+        if args.all:
+            year = args.year
+            days = _discover_nun_days(spark, year)
+            if not days:
+                log.info("No NUN days found (year filter: %s)", year)
+                return
+            log.info("Processing %d NUN days (year filter: %s)", len(days), year or "none")
 
-        _script_hash = sha256_file(Path(__file__))
-        for i, day in enumerate(days, 1):
-            t_day = time.perf_counter()
-            _run_day(day, silver_dir, section_index, bzp_index)
+            years = {d[:4] for d in days}
+            log.info("Building BZP index for years: %s", sorted(years))
+            bzp_index = load_bzp_index(spark, years)
+
+            script_hash = sha256_file(Path(__file__))
+            for i, day in enumerate(days, 1):
+                t_day = time.perf_counter()
+                _run_day(spark, day, section_index, bzp_index)
+                write_processed_manifest(
+                    layer="deltas",
+                    target_date=day,
+                    script_hash=script_hash,
+                    storage=rt.storage,
+                )
+                log.info(
+                    "Day %d/%d (%s) done in %.1fs",
+                    i, len(days), day, time.perf_counter() - t_day,
+                )
+
+        else:
+            target_date = args.target_date
+            log.info("Processing single day: %s", target_date)
+            _run_day(spark, target_date, section_index, bzp_index=None)
             write_processed_manifest(
                 layer="deltas",
-                target_date=day,
-                script_hash=_script_hash,
+                target_date=target_date,
+                script_hash=sha256_file(Path(__file__)),
                 storage=rt.storage,
             )
-            log.info("Day %d/%d (%s) done in %.1fs", i, len(days), day, time.perf_counter() - t_day)
 
-    else:
-        target_date = args.target_date
-        log.info("Processing single day: %s", target_date)
-        _run_day(target_date, silver_dir, section_index, bzp_index=None)
-        write_processed_manifest(
-            layer="deltas",
-            target_date=target_date,
-            script_hash=sha256_file(Path(__file__)),
-            storage=rt.storage,
-        )
+        elapsed = time.perf_counter() - t0
+        log.info("build_silver_update_deltas finished: elapsed=%.1fs", elapsed)
 
-    elapsed = time.perf_counter() - t0
-    log.info("build_silver_update_deltas finished: elapsed=%.1fs", elapsed)
+    finally:
+        spark.stop()
 
 
 if __name__ == "__main__":

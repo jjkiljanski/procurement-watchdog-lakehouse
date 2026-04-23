@@ -160,7 +160,7 @@ See `docs/cloud_architecture.md` for the full setup guide.
 | `silver.notice_type_tables.{type}__{model}` | Per-notice-type section tables, partitioned by `publicationDateDay` |
 | `silver.common.common_envelope` | Lightweight structured fields common to all notice types |
 | `silver.common.quarantine` | Rows excluded from section tables due to parse errors |
-| `{root}/silver/notice_update_deltas/noticeType=*/` | Change-delta Parquet (still Parquet) |
+| `silver.notice_update_deltas.{target_notice_type}` | Change-delta Iceberg tables, partitioned by `publicationDateDay` |
 
 On GCP, `{root}` = `gs://{LAKEHOUSE_BUCKET}`.
 The Iceberg warehouse is at `data/iceberg/` locally and `gs://{LAKEHOUSE_BUCKET}/iceberg/` on GCP.

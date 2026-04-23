@@ -27,7 +27,7 @@ For shared tables:
   ``{BQ_DATASET}.common_envelope``
   ``{BQ_DATASET}.quarantine``
 
-For notice_update_deltas (if present):
+For notice_update_deltas Iceberg tables (one per original notice type):
   ``{BQ_DATASET}.notice_update_deltas__{notice_type_snake_case}``
 
 Prerequisites
@@ -260,35 +260,20 @@ def _run_iceberg_setup(args, rt, bq_client) -> tuple[int, int]:
             log.error("Failed to create %s: %s", table_name, exc)
             skipped += 1
 
-    # ── notice_update_deltas (still Parquet; Iceberg migration TBD) ─────────
-    log.info("Discovering notice_update_deltas (Parquet)…")
-    from google.cloud import storage as gcs
-
-    silver_uri = rt.storage.resolve("silver")
-    silver_prefix = silver_uri.replace(f"gs://{bucket_name}/", "").rstrip("/")
-    deltas_prefix = f"{silver_prefix}/notice_update_deltas/"
-
-    gcs_client = gcs.Client()
-    delta_blobs = gcs_client.list_blobs(bucket_name, prefix=deltas_prefix, delimiter="/")
-    _ = list(delta_blobs)
-    for nt_prefix in delta_blobs.prefixes:
-        nt_value = nt_prefix.rstrip("/").split("/")[-1].replace("noticeType=", "")
-        nt_snake = re.sub(r"(?<!^)(?=[A-Z])", "_", nt_value).lower()
-        table_name = f"notice_update_deltas__{nt_snake}"
-        table_uri = f"gs://{bucket_name}/{nt_prefix.rstrip('/')}"
-        dataset_ref = bq_client.dataset(dataset)
+    # ── notice_update_deltas (Iceberg) ─────────────────────────────────────
+    log.info("Discovering Iceberg notice_update_deltas…")
+    delta_tables = _list_iceberg_tables(iceberg_uri, "notice_update_deltas")
+    if not delta_tables:
+        log.info("No Iceberg tables found under %s/notice_update_deltas/ — skipping.", iceberg_uri)
+    for table_name, metadata_uri in delta_tables:
+        bq_table_name = f"notice_update_deltas__{table_name}"
         try:
-            _create_external_table(
-                client=bq_client,
-                dataset_ref=dataset_ref,
-                table_name=table_name,
-                gcs_uri=table_uri,
-                hive_partition_columns=["publicationDateDay"],
-                dry_run=args.dry_run,
+            _create_iceberg_external_table(
+                bq_client, project, dataset, bq_table_name, metadata_uri, args.dry_run
             )
             created += 1
         except Exception as exc:
-            log.error("Failed to create %s: %s", table_name, exc)
+            log.error("Failed to create %s: %s", bq_table_name, exc)
             skipped += 1
 
     return created, skipped

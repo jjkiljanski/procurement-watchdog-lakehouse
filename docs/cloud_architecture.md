@@ -312,11 +312,16 @@ iceberg/
   common/
     common_envelope/                ← silver.common.common_envelope
     quarantine/                     ← silver.common.quarantine
+  notice_update_deltas/
+    contract_notice/                ← silver.notice_update_deltas.contract_notice
+    tender_result_notice/
+    …                               (one table per original notice type that was updated)
 ```
 
 Section tables are partitioned by `publicationDateDay`.
 `quarantine` is partitioned by `(publicationDateDay, notice_type)`.
 `common_envelope` is partitioned by `publicationDateDay`.
+Delta tables are partitioned by `publicationDateDay` (= NUN publication date).
 
 ### ACID write semantics
 
@@ -325,6 +330,7 @@ Section tables are partitioned by `publicationDateDay`.
 | Section tables | `overwritePartitions()` | Replaces only the target day's partition; safe per notice-type batch |
 | Quarantine | `overwritePartitions()` | Partitioned by (day, type) — each concurrent batch owns a distinct partition |
 | Common envelope | `append()` + pre-delete | Day partition is deleted before the ThreadPoolExecutor starts; each batch appends safely via Iceberg ACID commits |
+| Delta tables | `overwritePartitions()` | One table per target notice type; replaces only the target NUN day's partition |
 
 File-based day locks (`_locks/silver_day=*/`) are no longer needed.
 
