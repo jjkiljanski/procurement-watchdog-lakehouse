@@ -27,7 +27,6 @@ os.environ["PYSPARK_PYTHON"] = sys.executable
 os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
 
 from procurement.logging import setup_logging
-from procurement.manifests import write_processed_manifest
 from procurement.obs import sha256_file
 from procurement.runtime import get_runtime
 from procurement.silver.pipeline_orchestrator import CoreRunConfig, run_silver_day_core
@@ -115,6 +114,7 @@ def main() -> None:
 
     spark = rt.spark.get_session("bzp-silver-day", **extra)
     try:
+        script_hash = sha256_file(Path(__file__))
         cfg = CoreRunConfig(
             target_date=target_date,
             bronze_dir=bronze_dir,
@@ -136,16 +136,13 @@ def main() -> None:
             args_dict=vars(args),
             script_paths=[Path(__file__).resolve()],
             obs_dir=rt.storage.obs_path(),
+            storage=rt.storage,
+            script_hash=script_hash,
         )
     finally:
         spark.stop()
-
-    write_processed_manifest(
-        layer="silver",
-        target_date=target_date,
-        script_hash=sha256_file(Path(__file__)),
-        storage=rt.storage,
-    )
+    # Per-(date, notice_type) manifests are written inside run_silver_day_core()
+    # after each notice-type batch succeeds — no additional manifest write needed.
 
 
 if __name__ == "__main__":

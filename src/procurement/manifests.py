@@ -1,28 +1,41 @@
 """Processed-date manifests for idempotent pipeline steps.
 
 Each pipeline script writes a small JSON marker after successfully completing
-a target date.  The backfill DAG reads these markers before submitting a
+a target date.  The backfill workflow reads these markers before submitting a
 Dataproc batch and skips the batch when the stored ``script_hash`` matches
 the hash of the currently deployed script.
 
-Manifest path (logical, relative to storage root)::
+Manifest paths (logical, relative to storage root)
+---------------------------------------------------
+Bronze / deltas  (per-day, notice-type-agnostic)::
 
     _processed/{layer}/{target_date}.json
 
-Content::
+Silver  (per-notice-type, per-day — written inside run_silver_*_core() after
+each notice-type batch succeeds)::
+
+    _processed/silver/{target_date}/{notice_type}.json
+
+The ``notice_type`` parameter controls which path is used.  Passing
+``notice_type=None`` (the default) uses the legacy per-day path, which is
+still correct for bronze and deltas.
+
+Manifest content::
 
     {
-        "layer":        "bronze",
+        "layer":        "silver",
         "target_date":  "2025-10-01",
+        "notice_type":  "ContractNotice",   # null for bronze/deltas
         "script_hash":  "<sha256-hex of entry-point .py file>",
         "completed_at": "2025-10-02T03:12:45.123456Z"
     }
 
-Write side (pipeline scripts)::
+Write side::
 
     from procurement.manifests import write_processed_manifest
     from procurement.obs import sha256_file
 
+    # Bronze / deltas — per-day
     write_processed_manifest(
         layer="bronze",
         target_date=target_date,
@@ -30,12 +43,25 @@ Write side (pipeline scripts)::
         storage=rt.storage,
     )
 
-Read side (Airflow backfill DAG or any skip-check code)::
+    # Silver — per (date, notice_type)
+    write_processed_manifest(
+        layer="silver",
+        target_date=target_date,
+        script_hash=sha256_file(Path(__file__)),
+        storage=rt.storage,
+        notice_type="ContractNotice",
+    )
+
+Read side::
 
     from procurement.manifests import is_already_processed
 
     if is_already_processed("bronze", target_date, current_hash, storage):
-        return  # nothing to do
+        return  # skip bronze for this day
+
+    if is_already_processed("silver", target_date, current_hash, storage,
+                            notice_type="ContractNotice"):
+        return  # skip this (date, notice_type) pair
 
 The ``is_already_processed`` check returns ``False`` when the manifest is
 absent or when the stored hash does not match ``current_hash`` — both cases
@@ -56,9 +82,12 @@ if TYPE_CHECKING:
 # ---------------------------------------------------------------------------
 
 _PATH_TMPL = "_processed/{layer}/{target_date}.json"
+_PATH_NT_TMPL = "_processed/{layer}/{target_date}/{notice_type}.json"
 
 
-def _manifest_path(layer: str, target_date: str) -> str:
+def _manifest_path(layer: str, target_date: str, notice_type: str | None = None) -> str:
+    if notice_type is not None:
+        return _PATH_NT_TMPL.format(layer=layer, target_date=target_date, notice_type=notice_type)
     return _PATH_TMPL.format(layer=layer, target_date=target_date)
 
 
@@ -71,6 +100,7 @@ def write_processed_manifest(
     target_date: str,
     script_hash: str,
     storage: "StorageProvider",
+    notice_type: str | None = None,
 ) -> None:
     """Write (or overwrite) the processed manifest for *layer* + *target_date*.
 
@@ -88,14 +118,21 @@ def write_processed_manifest(
     storage:
         Runtime storage provider — handles both local paths and GCS URIs
         transparently.
+    notice_type:
+        When set, write a per-(date, notice_type) manifest under
+        ``_processed/{layer}/{date}/{notice_type}.json``.  Used by silver
+        processing so individual (date, notice_type) pairs can be skipped on
+        re-runs without reprocessing the whole day.  ``None`` (default) writes
+        the legacy per-day path used by bronze and deltas.
     """
     from procurement.obs import now_utc_iso
 
     storage.write_json(
-        _manifest_path(layer, target_date),
+        _manifest_path(layer, target_date, notice_type),
         {
             "layer": layer,
             "target_date": target_date,
+            "notice_type": notice_type,
             "script_hash": script_hash,
             "completed_at": now_utc_iso(),
         },
@@ -107,6 +144,7 @@ def is_already_processed(
     target_date: str,
     current_script_hash: str,
     storage: "StorageProvider",
+    notice_type: str | None = None,
 ) -> bool:
     """Return ``True`` if *layer*/*target_date* was processed with *current_script_hash*.
 
@@ -126,8 +164,29 @@ def is_already_processed(
         SHA-256 hex digest of the current entry-point script.
     storage:
         Runtime storage provider.
+    notice_type:
+        When set, checks the per-(date, notice_type) manifest path.  Must match
+        the value used when ``write_processed_manifest`` was called.
     """
-    data = storage.read_json(_manifest_path(layer, target_date))
+    data = storage.read_json(_manifest_path(layer, target_date, notice_type))
     if not data:
         return False
     return data.get("script_hash") == current_script_hash
+
+
+def all_notice_types_processed(
+    target_date: str,
+    current_script_hash: str,
+    notice_types: "list[str]",
+    storage: "StorageProvider",
+) -> bool:
+    """Return ``True`` only when every notice type in *notice_types* has a
+    matching silver manifest for *target_date*.
+
+    Used by the backfill workflow to skip a date that was fully processed in a
+    prior run.
+    """
+    return all(
+        is_already_processed("silver", target_date, current_script_hash, storage, nt)
+        for nt in notice_types
+    )

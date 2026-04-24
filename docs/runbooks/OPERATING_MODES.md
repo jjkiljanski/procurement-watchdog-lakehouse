@@ -35,8 +35,8 @@ Or use the convenience wrapper:
 python scripts/ops/run_transforms_for_day.py D  # runs bronze → silver → deltas
 ```
 
-On GCP this is handled automatically by the `bzp_daily` Airflow DAG
-(`dags/daily_dag.py`).  See `docs/cloud_architecture.md`.
+On GCP this is handled automatically by the `bzp-daily` Cloud Workflow
+(`workflows/daily.yaml`).  See `docs/cloud_architecture.md`.
 
 ## Mode 2: Massive Backfill / Historical Load
 
@@ -76,34 +76,36 @@ Skips dates that already have a matching `fetch` manifest.  Use `--force` to re-
 Local backfill — Phase B (single long-lived Spark session):
 
 ```bash
-python scripts/pipeline/build_silver_backfill.py \
+python scripts/pipeline/build_bronze_range.py \
+  --start-date 2025-10-01 \
+  --end-date 2025-10-31
+
+python scripts/pipeline/build_silver_range.py \
+  --start-date 2025-10-01 \
+  --end-date 2025-10-31
+
+python scripts/pipeline/build_silver_update_deltas.py \
   --start-date 2025-10-01 \
   --end-date 2025-10-31
 ```
 
-`build_silver_backfill.py` is a local-only runner that keeps one SparkSession alive across all
-days, amortising JVM startup overhead.  On GCP, use the `bzp_backfill` Airflow DAG
-(`dags/backfill_dag.py`) which handles both phases automatically.
+The range scripts keep one SparkSession alive across all dates per stage,
+amortising JVM startup overhead.  Per-(date, notice_type) manifests are written
+after each batch so interrupted runs resume from where they left off.
 
-Restart safety:
+GCP backfill restart safety (`bzp-backfill` Cloud Workflow):
 
-- `build_silver_backfill.py` writes an explicit state index
-  (`{silver_dir}/_state/silver_backfill_<start>_<end>.json` by default).
-- Only days marked `completed` in state are skipped on resume.
-
-GCP backfill restart safety (Airflow `bzp_backfill` DAG):
-
-- The `fetch_range` task executes `fetch_bzp_range.py` via Cloud Run Job.
+- The fetch step executes `fetch_bzp_range.py` via the `bzp-downloader` Cloud Run Job.
   It checks the `fetch` manifest per date and skips already-downloaded dates.
-- Each pipeline script writes a processed-date manifest to
-  `gs://{LAKEHOUSE_BUCKET}/_processed/{layer}/{date}.json` on success.
+- Each range script writes per-(date, notice_type) manifests to
+  `gs://{LAKEHOUSE_BUCKET}/_processed/{layer}/{date}/{notice_type}.json` on success.
 - The manifest contains the `script_hash` (SHA-256 of the entry-point script).
-- Before submitting each Dataproc batch, the DAG compares the manifest hash
-  against the current deployed script.  Matching hash → batch is skipped.
-- Use `force=true` when triggering the DAG to reprocess all dates regardless
-  of manifest state (e.g. after deploying updated scripts).
+  Re-running with the same script version skips already-processed batches.
+- Pass `force="true"` when triggering the workflow to reprocess all dates
+  regardless of manifest state (e.g. after deploying updated scripts).
 
-On GCP, triggered manually via the Airflow UI.  See `docs/cloud_architecture.md`.
+On GCP, triggered manually via `gcloud workflows run bzp-backfill`.
+See `docs/cloud_architecture.md`.
 
 ## Observability
 

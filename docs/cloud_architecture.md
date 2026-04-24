@@ -15,7 +15,7 @@ variable:
 | `RUNTIME_ENV` | Compute | Storage | Orchestration |
 |---|---|---|---|
 | `local` (default) | Local Python / Spark in-process | Local filesystem under `data/` | Run scripts manually or via `scripts/ops/` |
-| `gcp` | Dataproc Serverless (Spark batches) | GCS (bronze, silver) + BigQuery (external tables over silver) | Cloud Composer (managed Apache Airflow) |
+| `gcp` | Dataproc Serverless (Spark batches) | GCS (bronze, silver) + BigQuery (external tables over silver) | Cloud Scheduler + Cloud Workflows |
 
 Switching modes requires **only environment variables** — no code changes.
 
@@ -24,12 +24,16 @@ Switching modes requires **only environment variables** — no code changes.
 ## GCP Architecture
 
 ```
-                 BZP API
-                    │
-                    ▼
+   Cloud Scheduler (03:00 UTC)
+         │
+         ▼
+   Cloud Workflows (bzp-daily / bzp-backfill)
+         │
+         │ step 1: Cloud Run Job
+         ▼
          ┌─────────────────────┐
          │  Cloud Run Job      │  Dockerfile.downloader
-         │  (fetch_bzp_...)    │  triggered by Airflow daily DAG
+         │  (bzp-downloader)   │  fetch BZP API data
          └──────────┬──────────┘
                     │ writes JSON
                     ▼
@@ -37,23 +41,25 @@ Switching modes requires **only environment variables** — no code changes.
          │  GCS bucket         │
          │  /bronze_raw/       │  bzp_YYYY-MM-DD.json
          └──────────┬──────────┘
-                    │
+                    │ step 2: Dataproc Serverless batch
                     ▼
          ┌─────────────────────┐
          │  Dataproc Serverless│  Dockerfile.spark
-         │  build_bronze.py    │  → /bronze/notices/noticeType=*/publicationDateDay=*/
+         │  build_bronze[_range│  → /bronze/notices/noticeType=*/publicationDateDay=*/
+         │    ].py             │
          └──────────┬──────────┘
-                    │
+                    │ step 3
                     ▼
          ┌─────────────────────┐
          │  Dataproc Serverless│
-         │  build_silver_day   │  → /iceberg/notice_type_tables/ + /iceberg/common/
-         └──────────┬──────────┘     (Apache Iceberg HadoopCatalog)
-                    │
+         │  build_silver_[day/ │  → /iceberg/notice_type_tables/ + /iceberg/common/
+         │    range].py        │    (Apache Iceberg HadoopCatalog)
+         └──────────┬──────────┘
+                    │ step 4
                     ▼
          ┌─────────────────────┐
          │  Dataproc Serverless│
-         │  build_silver_      │  → /silver/notice_update_deltas/  (Parquet)
+         │  build_silver_      │  → /iceberg/notice_update_deltas/
          │  update_deltas.py   │
          └──────────┬──────────┘
                     │
@@ -64,9 +70,8 @@ Switching modes requires **only environment variables** — no code changes.
          │  over silver        │  queryable via SQL from BigQuery + dbt
          └─────────────────────┘
 
-   Cloud Composer (Airflow) orchestrates all steps
-   dags/daily_dag.py   — 03:00 UTC daily
-   dags/backfill_dag.py — manual trigger
+   workflows/daily.yaml    — bzp-daily   (Cloud Workflows, triggered by Cloud Scheduler)
+   workflows/backfill.yaml — bzp-backfill (Cloud Workflows, manual trigger)
 ```
 
 ---
@@ -117,14 +122,17 @@ No pipeline script changes are needed.
 |---|---|---|
 | **GCS bucket** | bronze_raw, bronze, silver, Iceberg warehouse, job scripts | Terraform |
 | **Dataproc Serverless** | Run PySpark batches without cluster management | Terraform (VPC, SA, quotas) |
-| **Cloud Composer** | Managed Apache Airflow for DAG orchestration | Terraform |
+| **Cloud Workflows** | Pipeline orchestration (daily + backfill) | `gcloud workflows deploy` (CI/CD) |
+| **Cloud Scheduler** | Triggers `bzp-daily` workflow at 03:00 UTC | `gcloud scheduler jobs create` (one-time) |
 | **Cloud Run** | Downloader job (fetch BZP API data) | Terraform |
 | **Artifact Registry** | Docker image registry for Dataproc + Cloud Run | Terraform |
 | **BigQuery** | External Iceberg tables over silver | Terraform (dataset) + `setup_bq_external_tables.py --format iceberg` (tables) |
 | **Cloud IAM** | Service accounts + roles | Terraform |
 
-The Terraform repo provisions all of the above.  This repo owns only the
-application code and DAG definitions.
+The Terraform repo provisions all of the above except Cloud Workflows (deployed
+by CI/CD via `gcloud workflows deploy`) and Cloud Scheduler (created once
+manually per the setup steps below).  This repo owns the application code and
+workflow definitions.
 
 ---
 
@@ -135,7 +143,6 @@ The separate Terraform repo must provision:
 - GCS bucket (`{project}-lakehouse`) with standard storage class
 - BigQuery dataset (`procurement_silver`) in the same region
 - Dataproc Serverless API enabled + VPC/subnet configured
-- Cloud Composer environment (Airflow 2.x) with GCS DAG bucket
 - Cloud Run service account with `roles/storage.objectAdmin` on the GCS bucket
 - Dataproc service account with:
     - `roles/dataproc.worker`
@@ -143,6 +150,10 @@ The separate Terraform repo must provision:
     - `roles/bigquery.dataEditor` (on the BigQuery dataset)
 - Artifact Registry repository for Docker images
 - Cloud Run Job resource for the downloader
+- Workflows service account with:
+    - `roles/run.invoker` (to trigger the Cloud Run downloader job)
+    - `roles/dataproc.editor` (to submit Serverless batches)
+    - `roles/logging.logWriter` (for `sys.log` calls in workflows)
 
 ---
 
@@ -198,25 +209,34 @@ changes (new columns, new data-model splits).  BQ automatically resolves
 the latest Iceberg snapshot — no further DDL updates are needed for
 day-to-day data changes.
 
-### 6. Sync DAGs to Cloud Composer
+### 6. Deploy Cloud Workflows
 
 ```bash
-gcloud composer environments storage dags import \
-  --environment your-composer-env \
+export WORKFLOWS_SA=workflows-sa@${GCP_PROJECT}.iam.gserviceaccount.com
+
+gcloud workflows deploy bzp-daily \
+  --source workflows/daily.yaml \
   --location ${DATAPROC_REGION} \
-  --source dags/
+  --service-account ${WORKFLOWS_SA}
+
+gcloud workflows deploy bzp-backfill \
+  --source workflows/backfill.yaml \
+  --location ${DATAPROC_REGION} \
+  --service-account ${WORKFLOWS_SA}
 ```
 
-Set Airflow Variables (see `dags/daily_dag.py` docstring for the full list):
+### 7. Create the Cloud Scheduler trigger (one-time)
+
+This replaces the Cloud Composer schedule.  Run once; CI/CD keeps the
+workflow source up to date but does not recreate this job.
 
 ```bash
-gcloud composer environments run your-composer-env \
-  --location ${DATAPROC_REGION} variables set -- \
-  gcp_project ${GCP_PROJECT} \
-  dataproc_region ${DATAPROC_REGION} \
-  lakehouse_bucket ${LAKEHOUSE_BUCKET} \
-  dataproc_container_image ${IMAGE} \
-  jobs_gcs_prefix gs://${LAKEHOUSE_BUCKET}/jobs
+gcloud scheduler jobs create http bzp-daily-trigger \
+  --schedule "0 3 * * *" \
+  --uri "https://workflowexecutions.googleapis.com/v1/projects/${GCP_PROJECT}/locations/${DATAPROC_REGION}/workflows/bzp-daily/executions" \
+  --message-body "{\"argument\":\"{\\\"project\\\":\\\"${GCP_PROJECT}\\\",\\\"region\\\":\\\"${DATAPROC_REGION}\\\",\\\"bucket\\\":\\\"${LAKEHOUSE_BUCKET}\\\",\\\"container_image\\\":\\\"${IMAGE}\\\",\\\"subnet\\\":\\\"default\\\",\\\"jobs_prefix\\\":\\\"gs://${LAKEHOUSE_BUCKET}/jobs\\\",\\\"downloader_job_name\\\":\\\"bzp-downloader\\\"}\"}" \
+  --oauth-service-account-email ${WORKFLOWS_SA} \
+  --time-zone "UTC"
 ```
 
 ---
@@ -225,49 +245,64 @@ gcloud composer environments run your-composer-env \
 
 ### Daily (automated)
 
-The `bzp_daily` DAG runs at 03:00 UTC every day.  It processes the previous
-calendar day through download → bronze → silver → deltas.  No manual
-intervention needed.
+The `bzp-daily` Cloud Workflow runs at 03:00 UTC every day (triggered by Cloud
+Scheduler).  It computes `yesterday = now - 86400s` and processes that date
+through download → bronze → silver → deltas.  No manual intervention needed.
 
 ### Backfill (manual)
 
-Trigger the `bzp_backfill` DAG from the Airflow UI:
+Trigger the `bzp-backfill` Cloud Workflow with `gcloud workflows run`:
 
-1. Open the DAG in the Composer UI
-2. Click **Trigger DAG w/ config**
-3. Set params: `start_date`, `end_date`, optionally `force: true`
+```bash
+gcloud workflows run bzp-backfill \
+  --location ${DATAPROC_REGION} \
+  --data '{
+    "project": "'${GCP_PROJECT}'",
+    "region": "'${DATAPROC_REGION}'",
+    "bucket": "'${LAKEHOUSE_BUCKET}'",
+    "container_image": "'${IMAGE}'",
+    "jobs_prefix": "gs://'${LAKEHOUSE_BUCKET}'/jobs",
+    "start_date": "2025-01-01",
+    "end_date": "2025-12-31",
+    "force": "false"
+  }'
+```
 
-The DAG runs the full four-step pipeline for the given date range:
+The backfill workflow submits exactly **3 Dataproc batches** for the entire range
+(one per pipeline stage: bronze, silver, deltas), not N_days × 3 batches.
+Range scripts (`build_bronze_range.py`, `build_silver_range.py`,
+`build_silver_update_deltas.py --start-date … --end-date …`) process all dates
+in a single Spark session per stage, eliminating per-day cold-start overhead.
 
 ```
-fetch_range (single task)
+fetch (Cloud Run Job, full range)
   ↓
-bronze[0..N]  →  silver[0..N]  →  deltas[0..N]   (dynamic task mapping, per date)
+build_bronze_range.py   (1 Dataproc batch, all dates)
+  ↓
+build_silver_range.py   (1 Dataproc batch, all dates — loops over notice types)
+  ↓
+build_silver_update_deltas.py --start-date … --end-date …   (1 Dataproc batch)
 ```
 
-**Step 1 — fetch_range** executes the `bzp-downloader` Cloud Run Job with
-`DOWNLOADER_COMMAND_TEMPLATE=python scripts/pipeline/fetch_bzp_range.py`,
-`START_DATE`, and `END_DATE` env var overrides.  `fetch_bzp_range.py` iterates
-over the date window and, for each date, checks the `fetch` processed-date
-manifest — skipping dates already downloaded with the same script version.
-All bronze_raw downloads complete before any Dataproc batch is submitted.
+**Hash-based skipping**: the range scripts check per-(date, notice_type) manifests
+at `gs://{LAKEHOUSE_BUCKET}/_processed/{layer}/{date}/{notice_type}.json` before
+processing each batch.  Pass `force=true` to the workflow to reprocess all dates
+regardless of manifest state (e.g. after deploying a new script version).
 
-**Steps 2–4 — bronze / silver / deltas** submit one Dataproc Serverless batch
-per date.  Each task performs the same hash-based skip check before submitting.
+**Workflow runtime arguments**:
 
-**Hash-based skipping**: before submitting each batch, the DAG reads the
-processed-date manifest at `gs://{LAKEHOUSE_BUCKET}/_processed/{layer}/{date}.json`
-and compares the stored `script_hash` against the SHA-256 of the currently
-deployed script on GCS.  If they match and `force=False`, the batch is skipped.
-Set `force=true` to reprocess all dates regardless of manifest state (e.g.
-after deploying a new script version).
-
-**Required Airflow Variables** (in addition to the daily DAG set):
-
-| Variable | Purpose | Default |
-|---|---|---|
-| `downloader_job_name` | Cloud Run Job name for the range downloader | `bzp-downloader` |
-| `cloud_run_region` | Region for Cloud Run Job execution | falls back to `dataproc_region` |
+| Argument | Required | Default | Description |
+|---|---|---|---|
+| `project` | yes | — | GCP project ID |
+| `region` | yes | — | Dataproc Serverless + Cloud Run region |
+| `bucket` | yes | — | GCS bucket name (no `gs://` prefix) |
+| `container_image` | yes | — | Dataproc container image URI |
+| `jobs_prefix` | yes | — | GCS prefix for pipeline scripts |
+| `start_date` | yes (backfill) | — | First date YYYY-MM-DD (inclusive) |
+| `end_date` | yes (backfill) | — | Last date YYYY-MM-DD (inclusive) |
+| `force` | no | `"false"` | `"true"` to reprocess all dates |
+| `subnet` | no | `"default"` | VPC subnet short name |
+| `downloader_job_name` | no | `"bzp-downloader"` | Cloud Run Job name |
 
 ---
 
@@ -362,15 +397,20 @@ first version of the pipeline is stable and running.
 #   1. Build and push Dockerfile.spark to Artifact Registry
 #   2. Build and push Dockerfile.downloader to Artifact Registry
 #   3. Upload scripts/pipeline/*.py to gs://{LAKEHOUSE_BUCKET}/jobs/
-#   4. Sync dags/ to the Cloud Composer DAG bucket
+#   4. Deploy Cloud Workflows: gcloud workflows deploy bzp-daily + bzp-backfill
 #   5. Run scripts/ops/setup_bq_external_tables.py to refresh BQ table schemas
 #
 # Required GitHub secrets:
 #   GCP_PROJECT, LAKEHOUSE_BUCKET, DATAPROC_REGION,
-#   WORKLOAD_IDENTITY_PROVIDER (for keyless auth via Workload Identity Federation)
+#   WORKLOAD_IDENTITY_PROVIDER (for keyless auth via Workload Identity Federation),
+#   WORKFLOWS_SA (service account email for Cloud Workflows execution)
 ```
 
 See `.github/workflows/deploy.yml` for the stub file.
+
+Note: The Cloud Scheduler job (step 7 of setup) is created once manually and
+does not need to be re-created on each deploy — it always points at the latest
+version of the deployed `bzp-daily` workflow.
 
 ---
 

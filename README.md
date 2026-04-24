@@ -1,6 +1,6 @@
 # Procurement Watchdog Lakehouse
 
-Production-grade lakehouse for Polish public procurement transparency — Spark, Apache Iceberg, GCS/BigQuery, Cloud Composer, 900+ tests.
+Production-grade lakehouse for Polish public procurement transparency — Spark, Apache Iceberg, GCS/BigQuery, Cloud Scheduler + Cloud Workflows, 900+ tests.
 
 Ingests the full Polish public procurement bulletin (BZP/eZamówienia API) daily, transforms it through a Bronze → Silver medallion pipeline, and exposes clean analytical datasets via BigQuery external tables. Business-facing logic lives in a companion dbt repo:
 [procurement-watchdog-analytics](https://github.com/jjkiljanski/procurement-watchdog-analytics)
@@ -31,7 +31,7 @@ BigQuery external Iceberg tables  ←  setup_bq_external_tables.py --format iceb
 dbt analytics (separate repo)
 ```
 
-Cloud Composer (Airflow) orchestrates the full pipeline.
+Cloud Scheduler + Cloud Workflows orchestrate the full pipeline.
 Both a **daily incremental** mode (cron, yesterday's data) and a **date-range backfill**
 mode (manual trigger, full date window) are supported.
 
@@ -51,7 +51,7 @@ batch writes across notice types.
 **Runtime abstraction.** A thin provider layer (`src/procurement/runtime/`) swaps
 `local` and `gcp` via a single env var — no pipeline script changes needed.
 Local runs use the filesystem and in-process Spark; GCP runs use GCS, Dataproc
-Serverless, BigQuery, and Cloud Composer.
+Serverless, BigQuery, and Cloud Workflows.
 
 **Profile-driven HTML parsing.** BZP notices embed procurement data in structured HTML.
 Section profiles (`notice_types/*_sections_profile.json`) drive a generic extractor
@@ -77,8 +77,8 @@ Tests run without Spark (mock/stub where needed) for fast CI.
 
 | Pipeline mode | Trigger | What it does |
 |---|---|---|
-| **Daily** | 03:00 UTC cron (`bzp_daily` DAG) | Download yesterday → bronze → silver → deltas |
-| **Backfill** | Manual (`bzp_backfill` DAG) | Full date range, per-day hash-based skip checks |
+| **Daily** | 03:00 UTC cron (`bzp-daily` Cloud Workflow) | Download yesterday → bronze → silver → deltas |
+| **Backfill** | Manual (`bzp-backfill` Cloud Workflow) | Full date range, per-(date, notice_type) hash-based skip checks |
 
 ---
 
@@ -131,12 +131,16 @@ docker push ${DATAPROC_CONTAINER_IMAGE}
 # 3. Upload pipeline scripts to GCS
 gsutil -m cp scripts/pipeline/*.py gs://${LAKEHOUSE_BUCKET}/jobs/
 
-# 4. Create BigQuery external Iceberg tables
-python scripts/ops/setup_bq_external_tables.py --format iceberg
+# 4. Deploy Cloud Workflows
+gcloud workflows deploy bzp-daily \
+  --source workflows/daily.yaml --location ${DATAPROC_REGION} \
+  --service-account ${WORKFLOWS_SA}
+gcloud workflows deploy bzp-backfill \
+  --source workflows/backfill.yaml --location ${DATAPROC_REGION} \
+  --service-account ${WORKFLOWS_SA}
 
-# 5. Sync DAGs to Cloud Composer
-gcloud composer environments storage dags import \
-  --environment your-composer-env --location ${DATAPROC_REGION} --source dags/
+# 5. Create BigQuery external Iceberg tables
+python scripts/ops/setup_bq_external_tables.py --format iceberg
 ```
 
 See `docs/cloud_architecture.md` for the full setup guide.
@@ -173,12 +177,15 @@ The Iceberg warehouse is at `data/iceberg/` locally and `gs://{LAKEHOUSE_BUCKET}
 |---|---|
 | `scripts/pipeline/fetch_bzp_yesterday.py` | Fetch daily API payloads to bronze_raw |
 | `scripts/pipeline/fetch_bzp_range.py` | Fetch a date range (backfill phase A) |
-| `scripts/pipeline/build_bronze.py` | Validate + write canonical Bronze Parquet |
+| `scripts/pipeline/build_bronze.py` | Validate + write canonical Bronze Parquet (single day) |
+| `scripts/pipeline/build_bronze_range.py` | Bronze Parquet for a date range (one Spark session) |
 | `scripts/pipeline/build_silver_day.py` | Silver Iceberg write for a single day |
-| `scripts/pipeline/build_silver_backfill.py` | Silver backfill with resumable state |
-| `scripts/pipeline/build_silver_update_deltas.py` | NoticeUpdateNotice change deltas |
+| `scripts/pipeline/build_silver_range.py` | Silver Iceberg write for a date range (one Spark session per notice type) |
+| `scripts/pipeline/build_silver_update_deltas.py` | NoticeUpdateNotice change deltas (single day or range) |
 | `scripts/pipeline/build_obs.py` | Observability snapshot + dashboard |
 | `scripts/ops/setup_bq_external_tables.py` | Create/replace BigQuery external tables |
+| `scripts/ops/run_day_pipeline.py` | Fetch → bronze → silver → deltas for one day (with timing) |
+| `scripts/ops/run_backfill.py` | Full backfill pipeline for a date range (with timing) |
 | `scripts/ops/run_transforms_for_day.py` | Bronze → silver → deltas convenience wrapper |
 
 ---
@@ -193,12 +200,12 @@ The Iceberg warehouse is at `data/iceberg/` locally and `gs://{LAKEHOUSE_BUCKET}
 
 ---
 
-## Airflow DAGs
+## Cloud Workflows (GCP Orchestration)
 
-| DAG | Trigger | Purpose |
+| Workflow | Trigger | Purpose |
 |---|---|---|
-| `dags/daily_dag.py` | 03:00 UTC cron | Full daily pipeline for yesterday |
-| `dags/backfill_dag.py` | Manual | Date-range backfill with hash-based skip logic |
+| `workflows/daily.yaml` | 03:00 UTC Cloud Scheduler | Full daily pipeline for yesterday |
+| `workflows/backfill.yaml` | Manual (`gcloud workflows run`) | Date-range backfill — 3 Dataproc batches total |
 
 ---
 
@@ -207,6 +214,7 @@ The Iceberg warehouse is at `data/iceberg/` locally and `gs://{LAKEHOUSE_BUCKET}
 | Doc | Contents |
 |---|---|
 | `docs/cloud_architecture.md` | GCP deployment, runtime abstraction, Apache Iceberg section, setup steps |
+| `docs/dataproc_tuning.md` | **Dataproc Serverless resource settings** — memory, executors, cost tips |
 | `docs/iceberg.md` | Iceberg catalog config, migration rationale, BQ integration options |
 | `docs/observability.md` | Pipeline run metadata, DQ metrics, local Parquet vs BigQuery backends |
 | `docs/runbooks/OPERATING_MODES.md` | Daily and backfill operating runbook |
@@ -239,7 +247,7 @@ apps/
 scripts/
   pipeline/       — core pipeline entry points (Dataproc batch scripts)
   ops/            — orchestration helpers, setup scripts
-dags/             — Airflow DAGs (synced to Cloud Composer)
+workflows/        — Cloud Workflows definitions (daily + backfill)
 config/           — environment variable templates
 docs/             — architecture + runbook documentation
 tests/            — pytest suite (900+ tests)

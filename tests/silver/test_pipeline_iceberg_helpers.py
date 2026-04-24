@@ -18,6 +18,7 @@ sys.path.insert(0, str(_repo / "src"))
 from procurement.silver.pipeline_orchestrator import (
     _iceberg_notice_type_table_name,
     _discover_bronze_partitions,
+    _discover_notice_types_for_range,
 )
 
 
@@ -116,3 +117,87 @@ class TestDiscoverBronzePartitionsLocal:
         root = tmp_path / "does_not_exist"
         result = _discover_bronze_partitions(str(root), "2025-10-01")
         assert result == []
+
+
+# ---------------------------------------------------------------------------
+# _discover_notice_types_for_range (local filesystem)
+# ---------------------------------------------------------------------------
+
+class TestDiscoverNoticeTypesForRange:
+    def _make_nt_dir(self, root: Path, notice_type: str) -> Path:
+        p = root / f"noticeType={notice_type}"
+        p.mkdir(parents=True, exist_ok=True)
+        return p
+
+    def test_returns_single_notice_type(self, tmp_path: Path):
+        root = tmp_path / "bronze" / "notices"
+        self._make_nt_dir(root, "ContractNotice")
+        result = _discover_notice_types_for_range(str(root))
+        assert len(result) == 1
+        nt, path = result[0]
+        assert nt == "ContractNotice"
+        assert "noticeType=ContractNotice" in path
+
+    def test_returns_all_notice_types(self, tmp_path: Path):
+        root = tmp_path / "bronze" / "notices"
+        self._make_nt_dir(root, "ContractNotice")
+        self._make_nt_dir(root, "TenderResultNotice")
+        self._make_nt_dir(root, "ContractPerformingNotice")
+        result = _discover_notice_types_for_range(str(root))
+        assert len(result) == 3
+        types = {nt for nt, _ in result}
+        assert types == {"ContractNotice", "TenderResultNotice", "ContractPerformingNotice"}
+
+    def test_null_token_maps_to_none(self, tmp_path: Path):
+        root = tmp_path / "bronze" / "notices"
+        self._make_nt_dir(root, "__NULL__")
+        result = _discover_notice_types_for_range(str(root))
+        assert len(result) == 1
+        nt, _ = result[0]
+        assert nt is None
+
+    def test_hive_default_partition_maps_to_none(self, tmp_path: Path):
+        root = tmp_path / "bronze" / "notices"
+        self._make_nt_dir(root, "__HIVE_DEFAULT_PARTITION__")
+        result = _discover_notice_types_for_range(str(root))
+        assert len(result) == 1
+        nt, _ = result[0]
+        assert nt is None
+
+    def test_empty_root_returns_empty_list(self, tmp_path: Path):
+        root = tmp_path / "bronze" / "notices"
+        root.mkdir(parents=True)
+        result = _discover_notice_types_for_range(str(root))
+        assert result == []
+
+    def test_nonexistent_root_returns_empty_list(self, tmp_path: Path):
+        root = tmp_path / "does_not_exist"
+        result = _discover_notice_types_for_range(str(root))
+        assert result == []
+
+    def test_ignores_non_directory_entries(self, tmp_path: Path):
+        root = tmp_path / "bronze" / "notices"
+        root.mkdir(parents=True)
+        (root / "noticeType=ContractNotice").mkdir()
+        (root / "_metadata").write_bytes(b"")  # file, not a partition dir
+        result = _discover_notice_types_for_range(str(root))
+        types = [nt for nt, _ in result]
+        assert types == ["ContractNotice"]
+
+    def test_result_is_sorted(self, tmp_path: Path):
+        root = tmp_path / "bronze" / "notices"
+        self._make_nt_dir(root, "TenderResultNotice")
+        self._make_nt_dir(root, "ContractNotice")
+        self._make_nt_dir(root, "ContractPerformingNotice")
+        result = _discover_notice_types_for_range(str(root))
+        types = [nt for nt, _ in result]
+        assert types == sorted(t for t in types if t is not None) or types == sorted(
+            (t or "" for t in types)
+        )
+
+    def test_path_points_to_notice_type_directory(self, tmp_path: Path):
+        root = tmp_path / "bronze" / "notices"
+        self._make_nt_dir(root, "ContractNotice")
+        result = _discover_notice_types_for_range(str(root))
+        _, path = result[0]
+        assert Path(path).is_dir()

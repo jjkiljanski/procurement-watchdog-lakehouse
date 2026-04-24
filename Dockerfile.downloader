@@ -7,7 +7,7 @@
 # LOCAL_DATA_ROOT (local).  See config/runtime_gcp.env.example.
 #
 # In the GCP daily pipeline this container is triggered as a Cloud Run Job by
-# the Airflow daily DAG (dags/daily_dag.py) before the Dataproc Spark batches.
+# the bzp-daily Cloud Workflow (workflows/daily.yaml) before the Dataproc Spark batches.
 #
 # Build:
 #   docker build -t procurement-downloader -f Dockerfile.downloader .

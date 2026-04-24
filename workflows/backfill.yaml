@@ -1,0 +1,231 @@
+# Backfill BZP pipeline — Cloud Workflows definition
+# ====================================================
+# Replaces dags/backfill_dag.py (Cloud Composer / Airflow).
+#
+# Triggered manually (gcloud workflows run) or by Cloud Scheduler for
+# scheduled backfills.
+#
+# Key improvement over the Airflow backfill DAG: instead of N_days × 3
+# Dataproc batches (one per stage per date), this workflow submits exactly
+# 3 Dataproc batches for the whole range — one per pipeline stage.  Each
+# batch uses a range-aware script that processes all dates in a single Spark
+# session, eliminating per-day cold-start overhead.
+#
+# Pipeline stages:
+#   1. fetch    — Cloud Run Job: fetch_bzp_range.py  (single job for whole range)
+#   2. bronze   — Dataproc batch: build_bronze_range.py  (one session, all dates)
+#   3. silver   — Dataproc batch: build_silver_range.py  (one plan per notice type)
+#   4. deltas   — Dataproc batch: build_silver_update_deltas.py --start-date … --end-date …
+#
+# Runtime arguments:
+#   project            — GCP project ID
+#   region             — Dataproc Serverless + Cloud Run region
+#   bucket             — GCS bucket name (no gs:// prefix)
+#   container_image    — Dataproc container image URI
+#   subnet             — VPC subnet short name (default: default)
+#   jobs_prefix        — GCS prefix where pipeline scripts are stored
+#   start_date         — First date YYYY-MM-DD (inclusive)
+#   end_date           — Last date YYYY-MM-DD (inclusive)
+#   force              — "true" to reprocess dates even if manifests match
+#   downloader_job_name — Cloud Run Job name (default: bzp-downloader)
+#
+# Deployment:
+#   gcloud workflows deploy bzp-backfill \
+#     --source workflows/backfill.yaml \
+#     --location $REGION \
+#     --service-account $WORKFLOWS_SA
+#
+# Manual trigger example:
+#   gcloud workflows run bzp-backfill \
+#     --location $REGION \
+#     --data '{"project":"...","region":"...","bucket":"...","container_image":"...","jobs_prefix":"gs://.../jobs","start_date":"2025-01-01","end_date":"2025-12-31","force":"false"}'
+
+main:
+  params: [args]
+  steps:
+    - init:
+        assign:
+          - project: ${args.project}
+          - region: ${args.region}
+          - bucket: ${args.bucket}
+          - container_image: ${args.container_image}
+          - subnet: ${default(map.get(args, "subnet"), "default")}
+          - jobs_prefix: ${args.jobs_prefix}
+          - start_date: ${args.start_date}
+          - end_date: ${args.end_date}
+          - force: ${default(map.get(args, "force"), "false")}
+          - downloader_job_name: ${default(map.get(args, "downloader_job_name"), "bzp-downloader")}
+          - jar_uris: ["file:///opt/iceberg-spark-runtime.jar"]
+          - dataproc_base_url: ${"https://dataproc.googleapis.com/v1/projects/" + project + "/locations/" + region}
+          - cloud_run_base_url: ${"https://run.googleapis.com/v2/projects/" + project + "/locations/" + region}
+          - range_tag: ${text.replace_all(start_date, "-", "") + "-" + text.replace_all(end_date, "-", "")}
+
+    - log_start:
+        call: sys.log
+        args:
+          text: ${"Backfill starting for range " + start_date + ".." + end_date + " (force=" + force + ")"}
+          severity: INFO
+
+    - fetch:
+        call: run_cloud_run_job
+        args:
+          cloud_run_base_url: ${cloud_run_base_url}
+          job_name: ${downloader_job_name}
+          env_vars:
+            - name: START_DATE
+              value: ${start_date}
+            - name: END_DATE
+              value: ${end_date}
+            - name: FORCE_FETCH
+              value: ${force}
+        result: fetch_result
+
+    - bronze:
+        call: submit_dataproc_batch
+        args:
+          dataproc_base_url: ${dataproc_base_url}
+          batch_id: ${"bzp-bronze-range-" + range_tag}
+          script_uri: ${jobs_prefix + "/build_bronze_range.py"}
+          script_args:
+            - "--start-date"
+            - ${start_date}
+            - "--end-date"
+            - ${end_date}
+            - ${if(force == "true", "--force", "")}
+          container_image: ${container_image}
+          subnet: ${subnet}
+          jar_uris: ${jar_uris}
+        result: bronze_result
+
+    - silver:
+        call: submit_dataproc_batch
+        args:
+          dataproc_base_url: ${dataproc_base_url}
+          batch_id: ${"bzp-silver-range-" + range_tag}
+          script_uri: ${jobs_prefix + "/build_silver_range.py"}
+          script_args:
+            - "--start-date"
+            - ${start_date}
+            - "--end-date"
+            - ${end_date}
+            - ${if(force == "true", "--force", "")}
+          container_image: ${container_image}
+          subnet: ${subnet}
+          jar_uris: ${jar_uris}
+        result: silver_result
+
+    - deltas:
+        call: submit_dataproc_batch
+        args:
+          dataproc_base_url: ${dataproc_base_url}
+          batch_id: ${"bzp-deltas-range-" + range_tag}
+          script_uri: ${jobs_prefix + "/build_silver_update_deltas.py"}
+          script_args:
+            - "--start-date"
+            - ${start_date}
+            - "--end-date"
+            - ${end_date}
+          container_image: ${container_image}
+          subnet: ${subnet}
+          jar_uris: ${jar_uris}
+        result: deltas_result
+
+    - done:
+        call: sys.log
+        args:
+          text: ${"Backfill done for range " + start_date + ".." + end_date}
+          severity: INFO
+        next: return_result
+
+    - return_result:
+        return:
+          start_date: ${start_date}
+          end_date: ${end_date}
+          bronze_state: ${bronze_result.state}
+          silver_state: ${silver_result.state}
+          deltas_state: ${deltas_result.state}
+
+
+# ---------------------------------------------------------------------------
+# Subworkflows (identical to daily.yaml — keep in sync or extract to a
+# shared library workflow when the GCP project has one configured)
+# ---------------------------------------------------------------------------
+
+run_cloud_run_job:
+  params: [cloud_run_base_url, job_name, env_vars]
+  steps:
+    - submit:
+        call: http.post
+        args:
+          url: ${cloud_run_base_url + "/jobs/" + job_name + ":run"}
+          auth:
+            type: OAuth2
+          body:
+            overrides:
+              containerOverrides:
+                - env: ${env_vars}
+        result: op
+
+    - poll_sleep:
+        call: sys.sleep
+        args:
+          seconds: 30
+
+    - poll_op:
+        call: http.get
+        args:
+          url: ${"https://run.googleapis.com/v2/" + op.body.name}
+          auth:
+            type: OAuth2
+        result: op_status
+
+    - check_op:
+        switch:
+          - condition: ${op_status.body.done == true and "error" in op_status.body}
+            raise: ${"Cloud Run job " + job_name + " failed: " + op_status.body.error.message}
+          - condition: ${op_status.body.done == true}
+            return: ${op_status.body}
+        next: poll_sleep
+
+
+submit_dataproc_batch:
+  params: [dataproc_base_url, batch_id, script_uri, script_args, container_image, subnet, jar_uris]
+  steps:
+    - create:
+        call: http.post
+        args:
+          url: ${dataproc_base_url + "/batches?batchId=" + batch_id}
+          auth:
+            type: OAuth2
+          body:
+            pysparkBatch:
+              mainPythonFileUri: ${script_uri}
+              args: ${script_args}
+              jarFileUris: ${jar_uris}
+            runtimeConfig:
+              containerImage: ${container_image}
+            environmentConfig:
+              executionConfig:
+                subnetworkUri: ${subnet}
+        result: create_result
+
+    - poll_sleep:
+        call: sys.sleep
+        args:
+          seconds: 60
+
+    - get_batch:
+        call: http.get
+        args:
+          url: ${dataproc_base_url + "/batches/" + batch_id}
+          auth:
+            type: OAuth2
+        result: batch_status
+
+    - check_batch:
+        switch:
+          - condition: ${batch_status.body.state == "SUCCEEDED"}
+            return: ${batch_status.body}
+          - condition: ${batch_status.body.state == "FAILED" or batch_status.body.state == "CANCELLED" or batch_status.body.state == "CANCELLING"}
+            raise: ${"Dataproc batch " + batch_id + " in state " + batch_status.body.state}
+        next: poll_sleep

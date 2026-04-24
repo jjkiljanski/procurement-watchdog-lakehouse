@@ -10,8 +10,10 @@
 #   2. Build and push Dockerfile.spark to Artifact Registry
 #   3. Build and push Dockerfile.downloader to Artifact Registry
 #   4. Upload scripts/pipeline/*.py to gs://{LAKEHOUSE_BUCKET}/jobs/
-#   5. Sync dags/ to the Cloud Composer DAG bucket
+#   5. Deploy Cloud Workflows (daily.yaml + backfill.yaml)
 #   6. Run scripts/ops/setup_bq_external_tables.py to refresh BQ external table schemas
+#
+# Orchestration: Cloud Scheduler + Cloud Workflows (NOT Cloud Composer).
 #
 # Required GitHub secrets (configure in repo Settings → Secrets):
 #   GCP_PROJECT                  — GCP project ID
@@ -20,7 +22,7 @@
 #   ARTIFACT_REGISTRY_REPO       — e.g. europe-west1-docker.pkg.dev/project/spark
 #   WORKLOAD_IDENTITY_PROVIDER   — Workload Identity pool provider resource name
 #   SERVICE_ACCOUNT              — SA email used for CI/CD
-#   COMPOSER_ENV_NAME            — Cloud Composer environment name
+#   WORKFLOWS_SA                 — Service account email for Cloud Workflows execution
 #
 # Reference: https://cloud.google.com/blog/products/identity-security/enabling-keyless-authentication-from-github-actions
 
@@ -67,12 +69,19 @@
 #         run: |
 #           gsutil -m cp scripts/pipeline/*.py gs://${{ secrets.LAKEHOUSE_BUCKET }}/jobs/
 #
-#       - name: Sync DAGs to Cloud Composer
+#       - name: Deploy daily Cloud Workflow
 #         run: |
-#           gcloud composer environments storage dags import \
-#             --environment ${{ secrets.COMPOSER_ENV_NAME }} \
+#           gcloud workflows deploy bzp-daily \
+#             --source workflows/daily.yaml \
 #             --location ${{ secrets.DATAPROC_REGION }} \
-#             --source dags/
+#             --service-account ${{ secrets.WORKFLOWS_SA }}
+#
+#       - name: Deploy backfill Cloud Workflow
+#         run: |
+#           gcloud workflows deploy bzp-backfill \
+#             --source workflows/backfill.yaml \
+#             --location ${{ secrets.DATAPROC_REGION }} \
+#             --service-account ${{ secrets.WORKFLOWS_SA }}
 #
 #       - name: Refresh BQ external tables
 #         env:

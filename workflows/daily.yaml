@@ -1,0 +1,209 @@
+# Daily BZP pipeline — Cloud Workflows definition
+# ================================================
+# Replaces dags/daily_dag.py (Cloud Composer / Airflow).
+#
+# Triggered by Cloud Scheduler at 03:00 UTC every day.
+# Processes the *previous* calendar day (yesterday) through the full pipeline:
+#
+#   1. download  — Cloud Run Job fetches BZP API data → GCS bronze_raw
+#   2. bronze    — Dataproc Serverless batch: build_bronze.py   (per-day)
+#   3. silver    — Dataproc Serverless batch: build_silver_day.py (per-day)
+#   4. deltas    — Dataproc Serverless batch: build_silver_update_deltas.py (per-day)
+#
+# Runtime arguments (passed by Cloud Scheduler as the workflow body):
+#   project            — GCP project ID
+#   region             — Dataproc Serverless + Cloud Run region (e.g. europe-west1)
+#   bucket             — GCS bucket name (no gs:// prefix)
+#   container_image    — Dataproc container image URI from Artifact Registry
+#   subnet             — VPC subnet short name (default: default)
+#   jobs_prefix        — GCS prefix where pipeline scripts are stored
+#                        (e.g. gs://my-bucket/jobs)
+#   downloader_job_name — Cloud Run Job name for the daily downloader
+#                         (default: bzp-downloader)
+#
+# Deployment
+# ----------
+#   gcloud workflows deploy bzp-daily \
+#     --source workflows/daily.yaml \
+#     --location $REGION \
+#     --service-account $WORKFLOWS_SA
+#
+# Cloud Scheduler job (create once):
+#   gcloud scheduler jobs create http bzp-daily-trigger \
+#     --schedule "0 3 * * *" \
+#     --uri "https://workflowexecutions.googleapis.com/v1/projects/$PROJECT/locations/$REGION/workflows/bzp-daily/executions" \
+#     --message-body '{"argument":"{\"project\":\"$PROJECT\",\"region\":\"$REGION\",\"bucket\":\"$BUCKET\",\"container_image\":\"$IMAGE\",\"subnet\":\"default\",\"jobs_prefix\":\"gs://$BUCKET/jobs\",\"downloader_job_name\":\"bzp-downloader\"}"}' \
+#     --oauth-service-account-email $SCHEDULER_SA \
+#     --time-zone "UTC"
+
+main:
+  params: [args]
+  steps:
+    - init:
+        assign:
+          - project: ${args.project}
+          - region: ${args.region}
+          - bucket: ${args.bucket}
+          - container_image: ${args.container_image}
+          - subnet: ${default(map.get(args, "subnet"), "default")}
+          - jobs_prefix: ${args.jobs_prefix}
+          - downloader_job_name: ${default(map.get(args, "downloader_job_name"), "bzp-downloader")}
+          - jar_uris: ["file:///opt/iceberg-spark-runtime.jar"]
+          - dataproc_base_url: ${"https://dataproc.googleapis.com/v1/projects/" + project + "/locations/" + region}
+          - cloud_run_base_url: ${"https://run.googleapis.com/v2/projects/" + project + "/locations/" + region}
+
+    - compute_target_date:
+        assign:
+          # yesterday in YYYY-MM-DD format
+          - yesterday_ts: ${sys.now() - 86400}
+          - target_date: ${text.substring(time.format(yesterday_ts), 0, 10)}
+
+    - log_start:
+        call: sys.log
+        args:
+          text: ${"Daily pipeline starting for " + target_date}
+          severity: INFO
+
+    - download:
+        call: run_cloud_run_job
+        args:
+          cloud_run_base_url: ${cloud_run_base_url}
+          job_name: ${downloader_job_name}
+          env_vars:
+            - name: TARGET_DATE
+              value: ${target_date}
+        result: download_result
+
+    - bronze:
+        call: submit_dataproc_batch
+        args:
+          dataproc_base_url: ${dataproc_base_url}
+          batch_id: ${"bzp-bronze-" + text.replace_all(target_date, "-", "")}
+          script_uri: ${jobs_prefix + "/build_bronze.py"}
+          script_args: [${target_date}]
+          container_image: ${container_image}
+          subnet: ${subnet}
+          jar_uris: ${jar_uris}
+        result: bronze_result
+
+    - silver:
+        call: submit_dataproc_batch
+        args:
+          dataproc_base_url: ${dataproc_base_url}
+          batch_id: ${"bzp-silver-" + text.replace_all(target_date, "-", "")}
+          script_uri: ${jobs_prefix + "/build_silver_day.py"}
+          script_args: [${target_date}]
+          container_image: ${container_image}
+          subnet: ${subnet}
+          jar_uris: ${jar_uris}
+        result: silver_result
+
+    - deltas:
+        call: submit_dataproc_batch
+        args:
+          dataproc_base_url: ${dataproc_base_url}
+          batch_id: ${"bzp-deltas-" + text.replace_all(target_date, "-", "")}
+          script_uri: ${jobs_prefix + "/build_silver_update_deltas.py"}
+          script_args: [${target_date}]
+          container_image: ${container_image}
+          subnet: ${subnet}
+          jar_uris: ${jar_uris}
+        result: deltas_result
+
+    - done:
+        call: sys.log
+        args:
+          text: ${"Daily pipeline done for " + target_date}
+          severity: INFO
+        next: return_result
+
+    - return_result:
+        return:
+          target_date: ${target_date}
+          bronze_state: ${bronze_result.state}
+          silver_state: ${silver_result.state}
+          deltas_state: ${deltas_result.state}
+
+
+# ---------------------------------------------------------------------------
+# Subworkflows
+# ---------------------------------------------------------------------------
+
+run_cloud_run_job:
+  params: [cloud_run_base_url, job_name, env_vars]
+  steps:
+    - submit:
+        call: http.post
+        args:
+          url: ${cloud_run_base_url + "/jobs/" + job_name + ":run"}
+          auth:
+            type: OAuth2
+          body:
+            overrides:
+              containerOverrides:
+                - env: ${env_vars}
+        result: op
+
+    - poll_sleep:
+        call: sys.sleep
+        args:
+          seconds: 30
+
+    - poll_op:
+        call: http.get
+        args:
+          url: ${"https://run.googleapis.com/v2/" + op.body.name}
+          auth:
+            type: OAuth2
+        result: op_status
+
+    - check_op:
+        switch:
+          - condition: ${op_status.body.done == true and "error" in op_status.body}
+            raise: ${"Cloud Run job " + job_name + " failed: " + op_status.body.error.message}
+          - condition: ${op_status.body.done == true}
+            return: ${op_status.body}
+        next: poll_sleep
+
+
+submit_dataproc_batch:
+  params: [dataproc_base_url, batch_id, script_uri, script_args, container_image, subnet, jar_uris]
+  steps:
+    - create:
+        call: http.post
+        args:
+          url: ${dataproc_base_url + "/batches?batchId=" + batch_id}
+          auth:
+            type: OAuth2
+          body:
+            pysparkBatch:
+              mainPythonFileUri: ${script_uri}
+              args: ${script_args}
+              jarFileUris: ${jar_uris}
+            runtimeConfig:
+              containerImage: ${container_image}
+            environmentConfig:
+              executionConfig:
+                subnetworkUri: ${subnet}
+        result: create_result
+
+    - poll_sleep:
+        call: sys.sleep
+        args:
+          seconds: 60
+
+    - get_batch:
+        call: http.get
+        args:
+          url: ${dataproc_base_url + "/batches/" + batch_id}
+          auth:
+            type: OAuth2
+        result: batch_status
+
+    - check_batch:
+        switch:
+          - condition: ${batch_status.body.state == "SUCCEEDED"}
+            return: ${batch_status.body}
+          - condition: ${batch_status.body.state == "FAILED" or batch_status.body.state == "CANCELLED" or batch_status.body.state == "CANCELLING"}
+            raise: ${"Dataproc batch " + batch_id + " in state " + batch_status.body.state}
+        next: poll_sleep
