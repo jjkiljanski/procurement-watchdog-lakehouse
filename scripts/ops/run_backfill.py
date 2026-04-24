@@ -115,8 +115,9 @@ def main() -> None:
                     "--start-date", args.start_date, "--end-date", args.end_date] + force_flag),
         ("silver", [py, str(PIPELINE_DIR / "build_silver_range.py"),
                     "--start-date", args.start_date, "--end-date", args.end_date] + silver_extra),
+        # deltas always overwrite their date partition — --force is not applicable
         ("deltas", [py, str(PIPELINE_DIR / "build_silver_update_deltas.py"),
-                    "--start-date", args.start_date, "--end-date", args.end_date] + force_flag),
+                    "--start-date", args.start_date, "--end-date", args.end_date]),
     ]
 
     total_start = time.perf_counter()
