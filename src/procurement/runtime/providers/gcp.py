@@ -195,12 +195,23 @@ class DataprocServerlessLauncher(SparkLauncher):
         self._service_account = service_account
         self._extra_config = extra_config or {}
 
+    def _require_spark_env(self) -> None:
+        """Raise early with a clear message if Spark-specific vars are absent."""
+        missing = [v for v in ("DATAPROC_REGION", "DATAPROC_CONTAINER_IMAGE") if not os.environ.get(v, "").strip()]
+        if missing:
+            raise EnvironmentError(
+                f"Missing required Spark environment variable(s): {missing}. "
+                "These are needed for Dataproc Serverless jobs but are not required "
+                "for storage-only workloads (e.g. the downloader Cloud Run Job)."
+            )
+
     def get_session(self, app_name: str, **extra_config: str):
         """Return a SparkSession configured for GCS + Iceberg on GCS.
 
         When running inside a Dataproc batch, the GCS connector is already
         on the classpath; we just need to set the Iceberg catalog config.
         """
+        self._require_spark_env()
         from pyspark.sql import SparkSession
 
         warehouse = f"gs://{self._bucket}/iceberg"
@@ -251,6 +262,7 @@ class DataprocServerlessLauncher(SparkLauncher):
         method for richer retry/monitoring.  This method is provided for
         direct programmatic use (e.g. testing, one-off backfill scripts).
         """
+        self._require_spark_env()
         import re
         import time
 
@@ -344,12 +356,19 @@ def _require_env(name: str) -> str:
 
 
 def build_gcp_runtime() -> RuntimeConfig:
-    """Construct a :class:`RuntimeConfig` for Google Cloud Platform."""
+    """Construct a :class:`RuntimeConfig` for Google Cloud Platform.
+
+    ``LAKEHOUSE_BUCKET`` and ``GCP_PROJECT`` are required for all GCP roles.
+    Spark-specific vars (``DATAPROC_REGION``, ``DATAPROC_CONTAINER_IMAGE``,
+    etc.) are only validated when the Spark launcher is actually invoked, so
+    storage-only workloads (e.g. the Cloud Run downloader job) don't need them.
+    """
     bucket = _require_env("LAKEHOUSE_BUCKET")
     project = _require_env("GCP_PROJECT")
-    region = _require_env("DATAPROC_REGION")
-    container_image = _require_env("DATAPROC_CONTAINER_IMAGE")
 
+    # Spark vars — read now but validated lazily inside the launcher.
+    region = os.environ.get("DATAPROC_REGION", "").strip()
+    container_image = os.environ.get("DATAPROC_CONTAINER_IMAGE", "").strip()
     subnet = os.environ.get("DATAPROC_SUBNET", "default")
     service_account = os.environ.get("DATAPROC_SERVICE_ACCOUNT") or None
 
