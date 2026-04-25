@@ -2,11 +2,11 @@
 # ======================================
 # Used as the custom container image for Dataproc Serverless Spark batches.
 #
-# The Dataproc Serverless base requirement is:
-#   - Debian/Ubuntu base
-#   - Java 11 or 17 on PATH
-#   - Python 3.11+ on PATH as `python3`
+# Dataproc Serverless injects its own Java (Temurin 17) and Spark at runtime.
+# This image provides: Python deps, application code, Iceberg JAR, tini, spark user.
 #   - No ENTRYPOINT / CMD — Dataproc injects the PySpark driver command.
+#   - tini must be at /usr/bin/tini — required by Dataproc's entrypoint.sh.
+#   - spark user (uid 1099) must exist — Dataproc startup runs as this user.
 #
 # Build and push:
 #   docker build -f Dockerfile.spark \
@@ -20,20 +20,18 @@
 FROM python:3.12-slim
 
 # ---- System deps ----
+# tini: required by Dataproc Serverless entrypoint.sh as a minimal init process.
+# Dataproc injects its own Java at runtime (JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64)
+# so we don't install Java here.
+# spark user (uid 1099): Dataproc startup scripts run as this user — pre-create
+# so mkdir /home/spark doesn't fail with Permission denied.
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        openjdk-21-jre-headless \
+        tini \
         curl \
-    && rm -rf /var/lib/apt/lists/*
-
-ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
-ENV PATH="${JAVA_HOME}/bin:${PATH}"
-
-# Dataproc Serverless runs startup scripts as the 'spark' user (uid 1099).
-# Pre-create the user and home directory so the startup doesn't fail with
-# "Permission denied" trying to mkdir /home/spark.
-RUN groupadd -g 1099 spark && \
-    useradd -u 1099 -g 1099 -m -d /home/spark -s /bin/bash spark
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd -g 1099 spark \
+    && useradd -u 1099 -g 1099 -m -d /home/spark -s /bin/bash spark
 
 # ---- Python deps ----
 WORKDIR /app
