@@ -202,7 +202,7 @@ submit_dataproc_batch:
             environmentConfig:
               executionConfig:
                 subnetworkUri: ${subnet}
-                environmentVariables:
+                envVars:
                   RUNTIME_ENV: gcp
                   LAKEHOUSE_BUCKET: ${bucket}
                   GCP_PROJECT: ${project}
