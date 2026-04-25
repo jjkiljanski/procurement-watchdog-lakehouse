@@ -40,6 +40,40 @@ import os
 
 from procurement.runtime.base import RuntimeConfig
 
+# Spark conf key → env var name.
+# Dataproc Serverless blocks spark.kubernetes.driverEnv.*, so we pass config
+# as spark.procurement.* properties and copy them into os.environ here so the
+# rest of the runtime code can use os.environ as normal.
+_SPARK_CONF_TO_ENV: dict[str, str] = {
+    "spark.procurement.runtime_env": "RUNTIME_ENV",
+    "spark.procurement.lakehouse_bucket": "LAKEHOUSE_BUCKET",
+    "spark.procurement.gcp_project": "GCP_PROJECT",
+    "spark.procurement.dataproc_region": "DATAPROC_REGION",
+    "spark.procurement.bq_obs_dataset": "BQ_OBS_DATASET",
+}
+
+
+def _bootstrap_from_spark_conf() -> None:
+    """Copy spark.procurement.* Spark conf properties into os.environ.
+
+    No-op when pyspark is not importable (Cloud Run Job, local dev).
+    Only sets a variable if it is not already present in the environment,
+    so explicit env vars always win.
+    """
+    try:
+        from pyspark import SparkConf
+        conf = SparkConf()
+    except Exception:
+        return
+    for spark_key, env_key in _SPARK_CONF_TO_ENV.items():
+        if not os.environ.get(env_key):
+            try:
+                val = conf.get(spark_key)
+                if val:
+                    os.environ[env_key] = val
+            except Exception:
+                pass
+
 
 def get_runtime() -> RuntimeConfig:
     """Build and return the :class:`RuntimeConfig` for the current environment.
@@ -47,6 +81,7 @@ def get_runtime() -> RuntimeConfig:
     The result is **not** cached — callers that need a stable reference should
     store the returned object themselves.
     """
+    _bootstrap_from_spark_conf()
     env = os.environ.get("RUNTIME_ENV", "local").strip().lower()
 
     if env == "local":

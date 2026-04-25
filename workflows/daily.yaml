@@ -194,6 +194,11 @@ submit_dataproc_batch:
             runtimeConfig:
               containerImage: ${container_image}
               properties:
+                spark.procurement.runtime_env: gcp
+                spark.procurement.lakehouse_bucket: ${bucket}
+                spark.procurement.gcp_project: ${project}
+                spark.procurement.dataproc_region: ${region}
+                spark.procurement.bq_obs_dataset: ${bq_obs_dataset}
                 spark.executorEnv.RUNTIME_ENV: gcp
                 spark.executorEnv.LAKEHOUSE_BUCKET: ${bucket}
                 spark.executorEnv.GCP_PROJECT: ${project}
@@ -202,12 +207,6 @@ submit_dataproc_batch:
             environmentConfig:
               executionConfig:
                 subnetworkUri: ${subnet}
-                envVars:
-                  RUNTIME_ENV: gcp
-                  LAKEHOUSE_BUCKET: ${bucket}
-                  GCP_PROJECT: ${project}
-                  DATAPROC_REGION: ${region}
-                  BQ_OBS_DATASET: ${bq_obs_dataset}
         result: create_result
 
     - poll_sleep:
