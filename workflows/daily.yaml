@@ -44,7 +44,7 @@ main:
           - project: ${args.project}
           - region: ${args.region}
           - bucket: ${args.bucket}
-          - container_image: ${args.container_image}
+          - container_image: ${default(map.get(args, "container_image"), "")}
           - subnet: ${default(map.get(args, "subnet"), "default")}
           - jobs_prefix: ${args.jobs_prefix}
           - downloader_job_name: ${default(map.get(args, "downloader_job_name"), "bzp-downloader")}
@@ -54,6 +54,11 @@ main:
           - jar_uris: ["file:///opt/iceberg-spark-runtime.jar"]
           - dataproc_base_url: ${"https://dataproc.googleapis.com/v1/projects/" + project + "/locations/" + region}
           - cloud_run_base_url: ${"https://run.googleapis.com/v2/projects/" + project + "/locations/" + region}
+
+    - guard_image:
+        switch:
+          - condition: ${container_image == ""}
+            raise: '"container_image arg is required. Pass it in --data or update the Cloud Scheduler body: gcloud scheduler jobs update http bzp-daily-trigger --location=REGION --message-body ..."'
 
     - compute_target_date:
         assign:
