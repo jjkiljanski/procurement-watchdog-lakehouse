@@ -71,6 +71,8 @@ _SPARK_CONF_PATHS = [
 ]
 
 
+# Run immediately at import time so the flags are consumed before any script's
+# argparse runs (scripts import get_runtime at module level, before main()).
 def _bootstrap_from_argv() -> None:
     """Extract gcp env flags from sys.argv and set os.environ.
 
@@ -98,6 +100,9 @@ def _bootstrap_from_argv() -> None:
 
     if applied:
         sys.argv[1:] = remaining
+
+
+_bootstrap_from_argv()
 
 
 def _bootstrap_from_spark_conf() -> None:
