@@ -47,7 +47,9 @@ from pathlib import Path
 
 import requests
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
+_src = str(Path(__file__).resolve().parent.parent.parent / "src")
+_SRC_PKG = Path(_src) / "procurement"
+sys.path.insert(0, _src)
 
 from procurement.fetch.bzp_api import (
     NOTICE_TYPES,
@@ -57,7 +59,7 @@ from procurement.fetch.bzp_api import (
 )
 from procurement.logging import setup_logging
 from procurement.manifests import is_already_processed, write_processed_manifest
-from procurement.obs import git_commit_sha, now_utc_iso, sha256_file, write_pipeline_run
+from procurement.obs import git_commit_sha, now_utc_iso, sha256_paths, write_pipeline_run
 from procurement.runtime import get_runtime
 
 setup_logging()
@@ -174,7 +176,7 @@ def main() -> None:
 
     rt = get_runtime()
     output_dir_str = args.output_dir or rt.storage.resolve("bronze_raw")
-    script_hash = sha256_file(Path(__file__))
+    script_hash = sha256_paths(Path(__file__), _SRC_PKG / "fetch")
 
     total_days = (end - start).days + 1
     log.info(

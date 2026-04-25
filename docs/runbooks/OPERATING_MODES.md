@@ -99,8 +99,12 @@ GCP backfill restart safety (`bzp-backfill` Cloud Workflow):
   It checks the `fetch` manifest per date and skips already-downloaded dates.
 - Each range script writes per-(date, notice_type) manifests to
   `gs://{LAKEHOUSE_BUCKET}/_processed/{layer}/{date}/{notice_type}.json` on success.
-- The manifest contains the `script_hash` (SHA-256 of the entry-point script).
-  Re-running with the same script version skips already-processed batches.
+- The manifest contains a `script_hash` computed by `sha256_paths()` over the
+  entry-point script **and** its stage-specific source package
+  (`src/procurement/fetch/`, `bronze/`, or `silver/`).  A change to any
+  `.py` file in the relevant package invalidates manifests for that stage
+  only — unrelated stages are unaffected.  The hash is computed once at
+  process start and reused for all per-date manifest comparisons in that run.
 - Pass `force="true"` when triggering the workflow to reprocess all dates
   regardless of manifest state (e.g. after deploying updated scripts).
 

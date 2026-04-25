@@ -3,7 +3,7 @@
 All canonical implementations live in procurement.obs.
 """
 
-from procurement.obs import atomic_write_json, git_commit_sha, now_utc_iso, sha256_file
+from procurement.obs import atomic_write_json, git_commit_sha, now_utc_iso, sha256_file, sha256_paths
 
 
 def script_hashes(paths: list) -> dict:
@@ -17,4 +17,5 @@ __all__ = [
     "now_utc_iso",
     "script_hashes",
     "sha256_file",
+    "sha256_paths",
 ]

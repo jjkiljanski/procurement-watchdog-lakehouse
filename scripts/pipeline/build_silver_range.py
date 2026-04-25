@@ -30,13 +30,14 @@ from datetime import date, timedelta
 from pathlib import Path
 
 _src = str(Path(__file__).resolve().parent.parent.parent / "src")
+_SRC_PKG = Path(_src) / "procurement"
 sys.path.insert(0, _src)
 os.environ["PYTHONPATH"] = _src + os.pathsep + os.environ.get("PYTHONPATH", "")
 os.environ["PYSPARK_PYTHON"] = sys.executable
 os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
 
 from procurement.logging import setup_logging
-from procurement.obs import sha256_file
+from procurement.obs import sha256_paths
 from procurement.runtime import get_runtime
 from procurement.silver.pipeline_orchestrator import run_silver_range_core
 
@@ -115,7 +116,7 @@ def main() -> None:
     bronze_dir = args.bronze_dir or rt.storage.resolve("bronze")
     silver_dir = args.silver_dir or rt.storage.resolve("silver")
     obs_dir = rt.storage.obs_path()
-    script_hash = sha256_file(Path(__file__))
+    script_hash = sha256_paths(Path(__file__), _SRC_PKG / "silver")
 
     extra: dict[str, str] = {}
     if args.spark_master:

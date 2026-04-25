@@ -29,6 +29,7 @@ from pathlib import Path
 
 _repo = Path(__file__).resolve().parent.parent.parent
 _src = str(_repo / "src")
+_SRC_PKG = Path(_src) / "procurement"
 _scripts_pipeline = str(_repo / "scripts" / "pipeline")
 sys.path.insert(0, _src)
 sys.path.insert(0, _scripts_pipeline)
@@ -39,7 +40,7 @@ import build_bronze as _bb  # noqa: E402
 
 from procurement.logging import setup_logging
 from procurement.manifests import is_already_processed, write_processed_manifest
-from procurement.obs import now_utc_iso, sha256_file, write_dq_metrics, write_pipeline_run
+from procurement.obs import now_utc_iso, sha256_paths, write_dq_metrics, write_pipeline_run
 from procurement.runtime import get_runtime
 
 setup_logging()
@@ -202,7 +203,7 @@ def main() -> None:
     bronze_raw_dir = args.bronze_raw_dir or rt.storage.resolve("bronze_raw")
     bronze_dir = args.bronze_dir or rt.storage.resolve("bronze")
     obs_dir = rt.storage.obs_path()
-    script_hash = sha256_file(Path(__file__))
+    script_hash = sha256_paths(Path(__file__), _SRC_PKG / "bronze")
 
     extra: dict[str, str] = {}
     if args.spark_master:

@@ -41,6 +41,7 @@ import time
 from pathlib import Path
 
 _src = str(Path(__file__).resolve().parent.parent.parent / "src")
+_SRC_PKG = Path(_src) / "procurement"
 sys.path.insert(0, _src)
 os.environ["PYTHONPATH"] = _src + os.pathsep + os.environ.get("PYTHONPATH", "")
 os.environ["PYSPARK_PYTHON"] = sys.executable
@@ -48,7 +49,7 @@ os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
 
 from procurement.logging import setup_logging
 from procurement.manifests import write_processed_manifest
-from procurement.obs import sha256_file
+from procurement.obs import sha256_paths
 from procurement.runtime import get_runtime
 from procurement.silver.section_pipeline.notice_schema_reader import load_all_profiles
 from procurement.silver.update_deltas.delta_builder import (
@@ -180,7 +181,7 @@ def main() -> None:
         all_profiles = load_all_profiles()
         section_index = _build_section_index(all_profiles)
 
-        script_hash = sha256_file(Path(__file__))
+        script_hash = sha256_paths(Path(__file__), _SRC_PKG / "silver")
 
         if args.all or (args.start_date and args.end_date):
             if args.start_date and args.end_date:

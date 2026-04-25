@@ -17,7 +17,7 @@ The caller switches backends by passing ``obs_dir``:
 - Pass ``None``  → BigQuery when ``RUNTIME_ENV=gcp``, otherwise a no-op.
 
 Utilities:
-    now_utc_iso, atomic_write_json, sha256_file, git_commit_sha
+    now_utc_iso, atomic_write_json, sha256_file, sha256_paths, git_commit_sha
 """
 
 from __future__ import annotations
@@ -52,6 +52,29 @@ def sha256_file(path: Path) -> str:
     with path.open("rb") as f:
         for chunk in iter(lambda: f.read(1024 * 1024), b""):
             h.update(chunk)
+    return h.hexdigest()
+
+
+def sha256_paths(*items: Path) -> str:
+    """SHA-256 of a set of files and/or directories.
+
+    Files are hashed directly.  Directories are walked recursively — only
+    ``.py`` files are included.  Paths are sorted before hashing so the
+    result is deterministic regardless of filesystem enumeration order.
+
+    Use this instead of ``sha256_file`` in pipeline scripts so that changes
+    to supporting library code (not just the entry-point script) invalidate
+    the processed-date manifest and trigger a rerun.
+    """
+    h = hashlib.sha256()
+    collected: list[Path] = []
+    for item in items:
+        if item.is_dir():
+            collected.extend(item.rglob("*.py"))
+        elif item.exists():
+            collected.append(item)
+    for fp in sorted(set(collected)):
+        h.update(fp.read_bytes())
     return h.hexdigest()
 
 

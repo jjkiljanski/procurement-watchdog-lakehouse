@@ -40,11 +40,12 @@ from pathlib import Path
 
 # Allow imports from project root / src
 _src = str(Path(__file__).resolve().parent.parent.parent / "src")
+_SRC_PKG = Path(_src) / "procurement"
 sys.path.insert(0, _src)
 os.environ["PYTHONPATH"] = _src + os.pathsep + os.environ.get("PYTHONPATH", "")
 
 from procurement.bronze.models import BzpNoticeBronze, notice_record_hash
-from procurement.obs import git_commit_sha, now_utc_iso, sha256_file, write_dq_metrics, write_pipeline_run
+from procurement.obs import git_commit_sha, now_utc_iso, sha256_paths, write_dq_metrics, write_pipeline_run
 from procurement.logging import setup_logging
 from procurement.manifests import write_processed_manifest
 from procurement.runtime import get_runtime
@@ -313,6 +314,7 @@ def main() -> None:
     rt = get_runtime()
     bronze_raw_dir = args.bronze_raw_dir or rt.storage.resolve("bronze_raw")
     bronze_dir = args.bronze_dir or rt.storage.resolve("bronze")
+    script_hash = sha256_paths(Path(__file__), _SRC_PKG / "bronze")
 
     input_files = _candidate_input_files(bronze_raw_dir, target_date)
 
@@ -412,7 +414,7 @@ def main() -> None:
         status="ok" if wrote_notices else "empty",
         counts=counts,
         git_commit=git_commit_sha(),
-        script_hash=sha256_file(Path(__file__)),
+        script_hash=script_hash,
         obs_dir=obs_dir,
     )
     if len(deduped_records) > 0:
@@ -444,7 +446,7 @@ def main() -> None:
     write_processed_manifest(
         layer="bronze",
         target_date=target_date,
-        script_hash=sha256_file(Path(__file__)),
+        script_hash=script_hash,
         storage=rt.storage,
     )
     log.info("Written processed manifest: layer=bronze date=%s", target_date)
