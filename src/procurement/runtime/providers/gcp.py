@@ -210,8 +210,9 @@ class DataprocServerlessLauncher(SparkLauncher):
 
         When running inside a Dataproc batch, the GCS connector is already
         on the classpath; we just need to set the Iceberg catalog config.
+        DATAPROC_REGION / DATAPROC_CONTAINER_IMAGE are not needed here —
+        those are only required when submitting a new batch via submit_batch().
         """
-        self._require_spark_env()
         from pyspark.sql import SparkSession
 
         warehouse = f"gs://{self._bucket}/iceberg"
