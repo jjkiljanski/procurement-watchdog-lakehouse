@@ -173,7 +173,7 @@ run_cloud_run_job:
     - check_op:
         switch:
           - condition: ${op_status.body.done == true and "error" in op_status.body}
-            raise: ${"Cloud Run job " + job_name + " failed: " + op_status.body.error.message}
+            raise: '${"Cloud Run job " + job_name + " failed: " + op_status.body.error.message}'
           - condition: ${op_status.body.done == true}
             return: ${op_status.body}
         next: poll_sleep
@@ -230,5 +230,5 @@ submit_dataproc_batch:
           - condition: ${batch_status.body.state == "SUCCEEDED"}
             return: ${batch_status.body}
           - condition: ${batch_status.body.state == "FAILED" or batch_status.body.state == "CANCELLED" or batch_status.body.state == "CANCELLING"}
-            raise: ${"Dataproc batch " + batch_id + " in state " + batch_status.body.state}
+            raise: '${"Dataproc batch " + batch_id + " in state " + batch_status.body.state}'
         next: poll_sleep
