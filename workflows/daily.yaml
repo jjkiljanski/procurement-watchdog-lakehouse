@@ -232,6 +232,7 @@ submit_dataproc_batch:
                 spark.executorEnv.GCP_PROJECT: ${project}
                 spark.executorEnv.DATAPROC_REGION: ${region}
                 spark.executorEnv.BQ_OBS_DATASET: ${bq_obs_dataset}
+                spark.executor.instances: "2"
             environmentConfig:
               executionConfig:
                 serviceAccount: ${pipeline_sa}
