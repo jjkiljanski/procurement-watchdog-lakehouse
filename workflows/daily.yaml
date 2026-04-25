@@ -50,6 +50,7 @@ main:
           - downloader_job_name: ${default(map.get(args, "downloader_job_name"), "bzp-downloader")}
           - bq_obs_dataset: ${default(map.get(args, "bq_obs_dataset"), "procurement_obs")}
           - pipeline_sa: ${args.pipeline_sa}
+          - run_suffix: ${string(int(sys.now()))}
           - jar_uris: ["file:///opt/iceberg-spark-runtime.jar"]
           - dataproc_base_url: ${"https://dataproc.googleapis.com/v1/projects/" + project + "/locations/" + region}
           - cloud_run_base_url: ${"https://run.googleapis.com/v2/projects/" + project + "/locations/" + region}
@@ -78,7 +79,7 @@ main:
         call: submit_dataproc_batch
         args:
           dataproc_base_url: ${dataproc_base_url}
-          batch_id: ${"bzp-bronze-" + text.replace_all(target_date, "-", "")}
+          batch_id: ${"bzp-bronze-" + text.replace_all(target_date, "-", "") + "-" + run_suffix}
           script_uri: ${jobs_prefix + "/build_bronze.py"}
           script_args: [${target_date}]
           container_image: ${container_image}
@@ -95,7 +96,7 @@ main:
         call: submit_dataproc_batch
         args:
           dataproc_base_url: ${dataproc_base_url}
-          batch_id: ${"bzp-silver-" + text.replace_all(target_date, "-", "")}
+          batch_id: ${"bzp-silver-" + text.replace_all(target_date, "-", "") + "-" + run_suffix}
           script_uri: ${jobs_prefix + "/build_silver_day.py"}
           script_args: [${target_date}]
           container_image: ${container_image}
@@ -112,7 +113,7 @@ main:
         call: submit_dataproc_batch
         args:
           dataproc_base_url: ${dataproc_base_url}
-          batch_id: ${"bzp-deltas-" + text.replace_all(target_date, "-", "")}
+          batch_id: ${"bzp-deltas-" + text.replace_all(target_date, "-", "") + "-" + run_suffix}
           script_uri: ${jobs_prefix + "/build_silver_update_deltas.py"}
           script_args: [${target_date}]
           container_image: ${container_image}
