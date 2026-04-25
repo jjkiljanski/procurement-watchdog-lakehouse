@@ -53,26 +53,98 @@ _SPARK_CONF_TO_ENV: dict[str, str] = {
 }
 
 
+# CLI flag → env var name.
+# The workflow passes these as extra script_args so the driver sets them in
+# os.environ before SparkContext (and thus the JVM) is available.
+_ARGV_TO_ENV: dict[str, str] = {
+    "--runtime-env": "RUNTIME_ENV",
+    "--lakehouse-bucket": "LAKEHOUSE_BUCKET",
+    "--gcp-project": "GCP_PROJECT",
+    "--dataproc-region": "DATAPROC_REGION",
+    "--bq-obs-dataset": "BQ_OBS_DATASET",
+}
+
+_SPARK_CONF_PATHS = [
+    "/etc/spark/conf/spark-defaults.conf",
+    "/usr/lib/spark/conf/spark-defaults.conf",
+    "/usr/local/spark/conf/spark-defaults.conf",
+]
+
+
+def _bootstrap_from_argv() -> None:
+    """Extract gcp env flags from sys.argv and set os.environ.
+
+    Recognises ``--runtime-env=X``, ``--lakehouse-bucket=X``, etc.  Consumes
+    those flags from ``sys.argv`` so the calling script's argparse doesn't see
+    them as unrecognised arguments.  Only sets a variable when it is not
+    already present in the environment, so explicit env vars always win.
+    """
+    import argparse
+    import sys
+
+    parser = argparse.ArgumentParser(add_help=False)
+    for flag in _ARGV_TO_ENV:
+        parser.add_argument(flag, default=None)
+
+    namespace, remaining = parser.parse_known_args(sys.argv[1:])
+
+    applied = False
+    for flag, env_key in _ARGV_TO_ENV.items():
+        attr = flag.lstrip("-").replace("-", "_")
+        val = getattr(namespace, attr, None)
+        if val and not os.environ.get(env_key):
+            os.environ[env_key] = val
+            applied = True
+
+    if applied:
+        sys.argv[1:] = remaining
+
+
 def _bootstrap_from_spark_conf() -> None:
     """Copy spark.procurement.* Spark conf properties into os.environ.
 
-    No-op when pyspark is not importable (Cloud Run Job, local dev).
+    Reads spark-defaults.conf directly as text — no JVM required, so this
+    works before SparkContext is initialized. Falls back to pyspark.SparkConf
+    as a secondary attempt (only works after SparkContext exists).
+
     Only sets a variable if it is not already present in the environment,
     so explicit env vars always win.
     """
+    import pathlib
+
+    props: dict[str, str] = {}
+    for path_str in _SPARK_CONF_PATHS:
+        try:
+            text = pathlib.Path(path_str).read_text()
+            for line in text.splitlines():
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                parts = line.split(None, 1)
+                if len(parts) == 2:
+                    props[parts[0]] = parts[1]
+        except OSError:
+            pass
+
+    # Secondary fallback: pyspark SparkConf (only works after SparkContext).
     try:
         from pyspark import SparkConf
         conf = SparkConf()
-    except Exception:
-        return
-    for spark_key, env_key in _SPARK_CONF_TO_ENV.items():
-        if not os.environ.get(env_key):
+        for spark_key in _SPARK_CONF_TO_ENV:
             try:
-                val = conf.get(spark_key)
+                val = conf.get(spark_key, "")
                 if val:
-                    os.environ[env_key] = val
+                    props.setdefault(spark_key, val)
             except Exception:
                 pass
+    except Exception:
+        pass
+
+    for spark_key, env_key in _SPARK_CONF_TO_ENV.items():
+        if not os.environ.get(env_key):
+            val = props.get(spark_key, "").strip()
+            if val:
+                os.environ[env_key] = val
 
 
 def get_runtime() -> RuntimeConfig:
@@ -81,6 +153,7 @@ def get_runtime() -> RuntimeConfig:
     The result is **not** cached — callers that need a stable reference should
     store the returned object themselves.
     """
+    _bootstrap_from_argv()
     _bootstrap_from_spark_conf()
     env = os.environ.get("RUNTIME_ENV", "local").strip().lower()
 
