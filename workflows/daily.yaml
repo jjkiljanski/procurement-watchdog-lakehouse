@@ -55,9 +55,7 @@ main:
 
     - compute_target_date:
         assign:
-          # yesterday in YYYY-MM-DD format
-          - yesterday_ts: ${sys.now() - 86400}
-          - target_date: ${text.substring(time.format(yesterday_ts), 0, 10)}
+          - target_date: ${default(map.get(args, "target_date"), text.substring(time.format(sys.now() - 86400), 0, 10))}
 
     - log_start:
         call: sys.log
