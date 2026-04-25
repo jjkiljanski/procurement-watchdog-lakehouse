@@ -48,6 +48,7 @@ main:
           - subnet: ${default(map.get(args, "subnet"), "default")}
           - jobs_prefix: ${args.jobs_prefix}
           - downloader_job_name: ${default(map.get(args, "downloader_job_name"), "bzp-downloader")}
+          - bq_obs_dataset: ${default(map.get(args, "bq_obs_dataset"), "procurement_obs")}
           - jar_uris: ["file:///opt/iceberg-spark-runtime.jar"]
           - dataproc_base_url: ${"https://dataproc.googleapis.com/v1/projects/" + project + "/locations/" + region}
           - cloud_run_base_url: ${"https://run.googleapis.com/v2/projects/" + project + "/locations/" + region}
@@ -84,6 +85,10 @@ main:
           container_image: ${container_image}
           subnet: ${subnet}
           jar_uris: ${jar_uris}
+          project: ${project}
+          region: ${region}
+          bucket: ${bucket}
+          bq_obs_dataset: ${bq_obs_dataset}
         result: bronze_result
 
     - silver:
@@ -96,6 +101,10 @@ main:
           container_image: ${container_image}
           subnet: ${subnet}
           jar_uris: ${jar_uris}
+          project: ${project}
+          region: ${region}
+          bucket: ${bucket}
+          bq_obs_dataset: ${bq_obs_dataset}
         result: silver_result
 
     - deltas:
@@ -108,6 +117,10 @@ main:
           container_image: ${container_image}
           subnet: ${subnet}
           jar_uris: ${jar_uris}
+          project: ${project}
+          region: ${region}
+          bucket: ${bucket}
+          bq_obs_dataset: ${bq_obs_dataset}
         result: deltas_result
 
     - done:
@@ -167,7 +180,7 @@ run_cloud_run_job:
 
 
 submit_dataproc_batch:
-  params: [dataproc_base_url, batch_id, script_uri, script_args, container_image, subnet, jar_uris]
+  params: [dataproc_base_url, batch_id, script_uri, script_args, container_image, subnet, jar_uris, project, region, bucket, bq_obs_dataset]
   steps:
     - create:
         call: http.post
@@ -182,9 +195,21 @@ submit_dataproc_batch:
               jarFileUris: ${jar_uris}
             runtimeConfig:
               containerImage: ${container_image}
+              properties:
+                spark.executorEnv.RUNTIME_ENV: gcp
+                spark.executorEnv.LAKEHOUSE_BUCKET: ${bucket}
+                spark.executorEnv.GCP_PROJECT: ${project}
+                spark.executorEnv.DATAPROC_REGION: ${region}
+                spark.executorEnv.BQ_OBS_DATASET: ${bq_obs_dataset}
             environmentConfig:
               executionConfig:
                 subnetworkUri: ${subnet}
+                environmentVariables:
+                  RUNTIME_ENV: gcp
+                  LAKEHOUSE_BUCKET: ${bucket}
+                  GCP_PROJECT: ${project}
+                  DATAPROC_REGION: ${region}
+                  BQ_OBS_DATASET: ${bq_obs_dataset}
         result: create_result
 
     - poll_sleep:
