@@ -49,6 +49,7 @@ main:
           - jobs_prefix: ${args.jobs_prefix}
           - downloader_job_name: ${default(map.get(args, "downloader_job_name"), "bzp-downloader")}
           - bq_obs_dataset: ${default(map.get(args, "bq_obs_dataset"), "procurement_obs")}
+          - pipeline_sa: ${args.pipeline_sa}
           - jar_uris: ["file:///opt/iceberg-spark-runtime.jar"]
           - dataproc_base_url: ${"https://dataproc.googleapis.com/v1/projects/" + project + "/locations/" + region}
           - cloud_run_base_url: ${"https://run.googleapis.com/v2/projects/" + project + "/locations/" + region}
@@ -87,6 +88,7 @@ main:
           region: ${region}
           bucket: ${bucket}
           bq_obs_dataset: ${bq_obs_dataset}
+          pipeline_sa: ${pipeline_sa}
         result: bronze_result
 
     - silver:
@@ -103,6 +105,7 @@ main:
           region: ${region}
           bucket: ${bucket}
           bq_obs_dataset: ${bq_obs_dataset}
+          pipeline_sa: ${pipeline_sa}
         result: silver_result
 
     - deltas:
@@ -119,6 +122,7 @@ main:
           region: ${region}
           bucket: ${bucket}
           bq_obs_dataset: ${bq_obs_dataset}
+          pipeline_sa: ${pipeline_sa}
         result: deltas_result
 
     - done:
@@ -178,7 +182,7 @@ run_cloud_run_job:
 
 
 submit_dataproc_batch:
-  params: [dataproc_base_url, batch_id, script_uri, script_args, container_image, subnet, jar_uris, project, region, bucket, bq_obs_dataset]
+  params: [dataproc_base_url, batch_id, script_uri, script_args, container_image, subnet, jar_uris, project, region, bucket, bq_obs_dataset, pipeline_sa]
   steps:
     - create:
         call: http.post
@@ -206,6 +210,7 @@ submit_dataproc_batch:
                 spark.executorEnv.BQ_OBS_DATASET: ${bq_obs_dataset}
             environmentConfig:
               executionConfig:
+                serviceAccount: ${pipeline_sa}
                 subnetworkUri: ${subnet}
         result: create_result
 
