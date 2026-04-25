@@ -14,8 +14,6 @@
 #     -t <REGION>-docker.pkg.dev/<PROJECT>/spark/procurement-spark:<TAG> .
 #   docker push <REGION>-docker.pkg.dev/<PROJECT>/spark/procurement-spark:<TAG>
 #
-# Set DATAPROC_CONTAINER_IMAGE in config/runtime_gcp.env.example to the pushed URI.
-#
 # TODO (CI/CD): automate build + push on merge to main.
 #   See .github/workflows/deploy.yml for the planned workflow stub.
 
@@ -31,6 +29,12 @@ RUN apt-get update && \
 ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
+# Dataproc Serverless runs startup scripts as the 'spark' user (uid 1099).
+# Pre-create the user and home directory so the startup doesn't fail with
+# "Permission denied" trying to mkdir /home/spark.
+RUN groupadd -g 1099 spark && \
+    useradd -u 1099 -g 1099 -m -d /home/spark -s /bin/bash spark
+
 # ---- Python deps ----
 WORKDIR /app
 
@@ -43,30 +47,19 @@ COPY src/ src/
 RUN pip install --no-cache-dir ".[gcp]"
 
 # ---- Iceberg Spark runtime JAR ----
-# Required for Iceberg SQL extensions and catalog operations.
-# Dataproc Serverless picks this up via jar_file_uris in the batch config
-# (see src/procurement/runtime/providers/gcp.py).
-# SPARK_EXTRA_CLASSPATH makes it available when running Spark locally inside
-# this container.
+# Referenced via jarFileUris in the batch config so Dataproc adds it to the
+# Spark classpath on both driver and executors.
 RUN curl -fL -o /opt/iceberg-spark-runtime.jar \
     https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-runtime-3.5_2.12/1.5.2/iceberg-spark-runtime-3.5_2.12-1.5.2.jar
-ENV SPARK_EXTRA_CLASSPATH=/opt/iceberg-spark-runtime.jar
 
 # ---- Application code ----
 COPY scripts/ scripts/
 COPY apps/ apps/
 COPY refs/ refs/
 
-# Ensures /app/src is importable whether the package was pip-installed or
-# mounted as a volume (dev mode).
 ENV PYTHONPATH=/app/src
 
-# ---- Git SHA for lineage tracking ----
-# Injected at build time by CI; falls back gracefully in obs.py.
 ARG GIT_SHA=unknown
 ENV GIT_COMMIT=${GIT_SHA}
 
 # No ENTRYPOINT — Dataproc Serverless injects the PySpark driver command.
-# For local testing of the container:
-#   docker run --rm -e RUNTIME_ENV=local -v $(pwd)/data:/app/data \
-#     procurement-spark python scripts/pipeline/build_bronze.py 2025-10-01
