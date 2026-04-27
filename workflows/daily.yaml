@@ -198,9 +198,9 @@ run_cloud_run_job:
 
     - check_op:
         switch:
-          - condition: ${op_status.body.done == true and "error" in op_status.body}
+          - condition: ${default(map.get(op_status.body, "done"), false) == true and "error" in op_status.body}
             raise: '${"Cloud Run job " + job_name + " failed: " + op_status.body.error.message}'
-          - condition: ${op_status.body.done == true}
+          - condition: ${default(map.get(op_status.body, "done"), false) == true}
             return: ${op_status.body}
         next: poll_sleep
 
@@ -233,6 +233,7 @@ submit_dataproc_batch:
                 spark.executorEnv.DATAPROC_REGION: ${region}
                 spark.executorEnv.BQ_OBS_DATASET: ${bq_obs_dataset}
                 spark.executor.instances: "2"
+                spark.executorEnv.PYTHONPATH: /usr/local/lib/python3.12/site-packages:/app/src
             environmentConfig:
               executionConfig:
                 serviceAccount: ${pipeline_sa}

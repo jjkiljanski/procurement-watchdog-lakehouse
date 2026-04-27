@@ -38,7 +38,7 @@
 # Manual trigger example:
 #   gcloud workflows run bzp-backfill \
 #     --location $REGION \
-#     --data '{"project":"...","region":"...","bucket":"...","container_image":"...","jobs_prefix":"gs://.../jobs","start_date":"2025-01-01","end_date":"2025-12-31","force":"false"}'
+#     --data '{"project":"...","region":"...","bucket":"...","container_image":"...","jobs_prefix":"gs://.../jobs","pipeline_sa":"...@....iam.gserviceaccount.com","start_date":"2025-01-01","end_date":"2025-12-31","force":"false"}'
 
 main:
   params: [args]
@@ -55,6 +55,7 @@ main:
           - end_date: ${args.end_date}
           - force: ${default(map.get(args, "force"), "false")}
           - downloader_job_name: ${default(map.get(args, "downloader_job_name"), "bzp-downloader")}
+          - pipeline_sa: ${args.pipeline_sa}
           - jar_uris: ["file:///opt/iceberg-spark-runtime.jar"]
           - dataproc_base_url: ${"https://dataproc.googleapis.com/v1/projects/" + project + "/locations/" + region}
           - cloud_run_base_url: ${"https://run.googleapis.com/v2/projects/" + project + "/locations/" + region}
@@ -78,6 +79,8 @@ main:
               value: ${end_date}
             - name: FORCE_FETCH
               value: ${force}
+            - name: DOWNLOADER_COMMAND_TEMPLATE
+              value: python scripts/pipeline/fetch_bzp_range.py
         result: fetch_result
 
     - bronze:
@@ -95,6 +98,9 @@ main:
           container_image: ${container_image}
           subnet: ${subnet}
           jar_uris: ${jar_uris}
+          pipeline_sa: ${pipeline_sa}
+          python_file_uris:
+            - ${jobs_prefix + "/build_bronze.py"}
         result: bronze_result
 
     - silver:
@@ -112,6 +118,7 @@ main:
           container_image: ${container_image}
           subnet: ${subnet}
           jar_uris: ${jar_uris}
+          pipeline_sa: ${pipeline_sa}
         result: silver_result
 
     - deltas:
@@ -128,6 +135,7 @@ main:
           container_image: ${container_image}
           subnet: ${subnet}
           jar_uris: ${jar_uris}
+          pipeline_sa: ${pipeline_sa}
         result: deltas_result
 
     - done:
@@ -181,15 +189,15 @@ run_cloud_run_job:
 
     - check_op:
         switch:
-          - condition: ${op_status.body.done == true and "error" in op_status.body}
-            raise: ${"Cloud Run job " + job_name + " failed: " + op_status.body.error.message}
-          - condition: ${op_status.body.done == true}
+          - condition: ${default(map.get(op_status.body, "done"), false) == true and "error" in op_status.body}
+            raise: '${"Cloud Run job " + job_name + " failed: " + op_status.body.error.message}'
+          - condition: ${default(map.get(op_status.body, "done"), false) == true}
             return: ${op_status.body}
         next: poll_sleep
 
 
 submit_dataproc_batch:
-  params: [dataproc_base_url, batch_id, script_uri, script_args, container_image, subnet, jar_uris]
+  params: [dataproc_base_url, batch_id, script_uri, script_args, container_image, subnet, jar_uris, pipeline_sa, python_file_uris: []]
   steps:
     - create:
         call: http.post
@@ -202,10 +210,14 @@ submit_dataproc_batch:
               mainPythonFileUri: ${script_uri}
               args: ${script_args}
               jarFileUris: ${jar_uris}
+              pythonFileUris: ${python_file_uris}
             runtimeConfig:
               containerImage: ${container_image}
+              properties:
+                spark.executorEnv.PYTHONPATH: /usr/local/lib/python3.12/site-packages:/app/src
             environmentConfig:
               executionConfig:
+                serviceAccount: ${pipeline_sa}
                 subnetworkUri: ${subnet}
         result: create_result
 
@@ -227,5 +239,5 @@ submit_dataproc_batch:
           - condition: ${batch_status.body.state == "SUCCEEDED"}
             return: ${batch_status.body}
           - condition: ${batch_status.body.state == "FAILED" or batch_status.body.state == "CANCELLED" or batch_status.body.state == "CANCELLING"}
-            raise: ${"Dataproc batch " + batch_id + " in state " + batch_status.body.state}
+            raise: '${"Dataproc batch " + batch_id + " in state " + batch_status.body.state}'
         next: poll_sleep
