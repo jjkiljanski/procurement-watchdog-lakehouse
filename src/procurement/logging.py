@@ -12,7 +12,7 @@ from pathlib import Path
 #   jsonPayload.stage="bronze"
 #   jsonPayload.stage="silver" AND jsonPayload.date="2025-10-01"
 #   jsonPayload.stage="fetch" AND jsonPayload.status="skipped"
-_STRUCTURED_FIELDS = ("stage", "date", "notice_type", "status", "elapsed_s")
+_STRUCTURED_FIELDS = ("stage", "date", "notice_type", "status", "elapsed_s", "runtime")
 
 
 class JsonFormatter(logging.Formatter):

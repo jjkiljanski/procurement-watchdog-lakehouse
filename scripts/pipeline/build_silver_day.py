@@ -115,8 +115,9 @@ def main() -> None:
         extra["spark.master"] = args.spark_master
 
     log.info(
-        "build_silver_day started: date=%s", target_date,
-        extra={"date": target_date, "status": "started"},
+        "build_silver_day started: date=%s runtime=%s bronze_dir=%s silver_dir=%s",
+        target_date, rt.env, bronze_dir, silver_dir,
+        extra={"date": target_date, "status": "started", "runtime": rt.env},
     )
     spark = rt.spark.get_session("bzp-silver-day", **extra)
     try:

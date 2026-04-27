@@ -317,8 +317,9 @@ def main() -> None:
     script_hash = sha256_paths(Path(__file__), _SRC_PKG / "bronze")
 
     log.info(
-        "build_bronze started: date=%s", target_date,
-        extra={"date": target_date, "status": "started"},
+        "build_bronze started: date=%s runtime=%s bronze_raw_dir=%s bronze_dir=%s",
+        target_date, rt.env, bronze_raw_dir, bronze_dir,
+        extra={"date": target_date, "status": "started", "runtime": rt.env},
     )
 
     input_files = _candidate_input_files(bronze_raw_dir, target_date)

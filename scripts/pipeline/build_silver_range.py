@@ -123,8 +123,9 @@ def main() -> None:
         extra["spark.master"] = args.spark_master
 
     log.info(
-        "Silver range: %s..%s (force=%s)",
-        args.start_date, args.end_date, args.force,
+        "Silver range: %s..%s (force=%s) runtime=%s bronze_dir=%s silver_dir=%s",
+        args.start_date, args.end_date, args.force, rt.env, bronze_dir, silver_dir,
+        extra={"runtime": rt.env},
     )
 
     spark = rt.spark.get_session("bzp-silver-range", **extra)

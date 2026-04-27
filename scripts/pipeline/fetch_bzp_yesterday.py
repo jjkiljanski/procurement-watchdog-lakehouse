@@ -77,8 +77,9 @@ def main() -> None:
     date_to = f"{target_date.isoformat()}T23:59:59"
 
     log.info(
-        "fetch_bzp_yesterday started: date=%s", target_date.isoformat(),
-        extra={"date": target_date.isoformat(), "status": "started"},
+        "fetch_bzp_yesterday started: date=%s runtime=%s output_dir=%s",
+        target_date.isoformat(), rt.env, output_dir_str,
+        extra={"date": target_date.isoformat(), "status": "started", "runtime": rt.env},
     )
     session = requests.Session()
     session.headers["Accept"] = "application/json"

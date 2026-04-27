@@ -181,8 +181,9 @@ def main() -> None:
 
     total_days = (end - start).days + 1
     log.info(
-        "fetch_bzp_range started: %s → %s (%d days), output_dir=%s",
-        start.isoformat(), end.isoformat(), total_days, output_dir_str,
+        "fetch_bzp_range started: %s → %s (%d days) runtime=%s output_dir=%s",
+        start.isoformat(), end.isoformat(), total_days, rt.env, output_dir_str,
+        extra={"runtime": rt.env},
     )
 
     session = requests.Session()
