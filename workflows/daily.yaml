@@ -274,7 +274,7 @@ submit_dataproc_batch:
 
     - check_quota_retry:
         switch:
-          - condition: ${text.match_all(state_msg, ".*[Qq]uota.*") and attempt < max_attempts}
+          - condition: ${len(text.find_all(text.to_lower(state_msg), "quota")) > 0 and attempt < max_attempts}
             next: retry_wait
         next: raise_error
 
