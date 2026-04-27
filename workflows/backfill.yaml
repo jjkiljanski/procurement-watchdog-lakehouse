@@ -23,6 +23,7 @@
 #   bucket             — GCS bucket name (no gs:// prefix)
 #   container_image    — Dataproc container image URI
 #   subnet             — VPC subnet short name (default: default)
+#   jobs_prefix        — GCS prefix where pipeline scripts are stored
 #   start_date         — First date YYYY-MM-DD (inclusive)
 #   end_date           — Last date YYYY-MM-DD (inclusive)
 #   force              — "true" to reprocess dates even if manifests match
@@ -37,7 +38,7 @@
 # Manual trigger example:
 #   gcloud workflows run bzp-backfill \
 #     --location $REGION \
-#     --data '{"project":"...","region":"...","bucket":"...","container_image":"...","pipeline_sa":"...@....iam.gserviceaccount.com","start_date":"2025-01-01","end_date":"2025-12-31","force":"false"}'
+#     --data '{"project":"...","region":"...","bucket":"...","container_image":"...","jobs_prefix":"gs://.../jobs","pipeline_sa":"...@....iam.gserviceaccount.com","start_date":"2025-01-01","end_date":"2025-12-31","force":"false"}'
 
 main:
   params: [args]
@@ -49,6 +50,7 @@ main:
           - bucket: ${args.bucket}
           - container_image: ${args.container_image}
           - subnet: ${default(map.get(args, "subnet"), "default")}
+          - jobs_prefix: ${args.jobs_prefix}
           - start_date: ${args.start_date}
           - end_date: ${args.end_date}
           - force: ${default(map.get(args, "force"), "false")}
@@ -92,7 +94,7 @@ main:
         args:
           dataproc_base_url: ${dataproc_base_url}
           batch_id: ${"bzp-bronze-range-" + range_tag + "-" + run_suffix}
-          script_uri: file:///app/scripts/pipeline/build_bronze_range.py
+          script_uri: ${jobs_prefix + "/build_bronze_range.py"}
           script_args: ${range_args}
           container_image: ${container_image}
           subnet: ${subnet}
@@ -102,6 +104,8 @@ main:
           region: ${region}
           bucket: ${bucket}
           bq_obs_dataset: ${bq_obs_dataset}
+          python_file_uris:
+            - ${jobs_prefix + "/build_bronze.py"}
         result: bronze_result
 
     - silver:
@@ -109,7 +113,7 @@ main:
         args:
           dataproc_base_url: ${dataproc_base_url}
           batch_id: ${"bzp-silver-range-" + range_tag + "-" + run_suffix}
-          script_uri: file:///app/scripts/pipeline/build_silver_range.py
+          script_uri: ${jobs_prefix + "/build_silver_range.py"}
           script_args: ${range_args}
           container_image: ${container_image}
           subnet: ${subnet}
@@ -119,6 +123,7 @@ main:
           region: ${region}
           bucket: ${bucket}
           bq_obs_dataset: ${bq_obs_dataset}
+          python_file_uris: []
         result: silver_result
 
     - deltas:
@@ -126,7 +131,7 @@ main:
         args:
           dataproc_base_url: ${dataproc_base_url}
           batch_id: ${"bzp-deltas-range-" + range_tag + "-" + run_suffix}
-          script_uri: file:///app/scripts/pipeline/build_silver_update_deltas.py
+          script_uri: ${jobs_prefix + "/build_silver_update_deltas.py"}
           script_args:
             - "--start-date"
             - ${start_date}
@@ -140,6 +145,7 @@ main:
           region: ${region}
           bucket: ${bucket}
           bq_obs_dataset: ${bq_obs_dataset}
+          python_file_uris: []
         result: deltas_result
 
     - done:
@@ -201,7 +207,7 @@ run_cloud_run_job:
 
 
 submit_dataproc_batch:
-  params: [dataproc_base_url, batch_id, script_uri, script_args, container_image, subnet, jar_uris, pipeline_sa, project, region, bucket, bq_obs_dataset]
+  params: [dataproc_base_url, batch_id, script_uri, script_args, container_image, subnet, jar_uris, pipeline_sa, project, region, bucket, bq_obs_dataset, python_file_uris]
   steps:
     - create:
         call: http.post
@@ -214,6 +220,7 @@ submit_dataproc_batch:
               mainPythonFileUri: ${script_uri}
               args: ${script_args}
               jarFileUris: ${jar_uris}
+              pythonFileUris: ${python_file_uris}
             runtimeConfig:
               containerImage: ${container_image}
               properties:

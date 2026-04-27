@@ -16,6 +16,8 @@
 #   bucket             — GCS bucket name (no gs:// prefix)
 #   container_image    — Dataproc container image URI from Artifact Registry
 #   subnet             — VPC subnet short name (default: default)
+#   jobs_prefix        — GCS prefix where pipeline scripts are stored
+#                        (e.g. gs://my-bucket/jobs)
 #   downloader_job_name — Cloud Run Job name for the daily downloader
 #                         (default: bzp-downloader)
 #
@@ -30,7 +32,7 @@
 #   gcloud scheduler jobs create http bzp-daily-trigger \
 #     --schedule "0 3 * * *" \
 #     --uri "https://workflowexecutions.googleapis.com/v1/projects/$PROJECT/locations/$REGION/workflows/bzp-daily/executions" \
-#     --message-body '{"argument":"{\"project\":\"$PROJECT\",\"region\":\"$REGION\",\"bucket\":\"$BUCKET\",\"container_image\":\"$IMAGE\",\"subnet\":\"default\",\"downloader_job_name\":\"bzp-downloader\"}"}' \
+#     --message-body '{"argument":"{\"project\":\"$PROJECT\",\"region\":\"$REGION\",\"bucket\":\"$BUCKET\",\"container_image\":\"$IMAGE\",\"subnet\":\"default\",\"jobs_prefix\":\"gs://$BUCKET/jobs\",\"downloader_job_name\":\"bzp-downloader\"}"}' \
 #     --oauth-service-account-email $SCHEDULER_SA \
 #     --time-zone "UTC"
 
@@ -44,6 +46,7 @@ main:
           - bucket: ${args.bucket}
           - container_image: ${default(map.get(args, "container_image"), "")}
           - subnet: ${default(map.get(args, "subnet"), "default")}
+          - jobs_prefix: ${args.jobs_prefix}
           - downloader_job_name: ${default(map.get(args, "downloader_job_name"), "bzp-downloader")}
           - bq_obs_dataset: ${default(map.get(args, "bq_obs_dataset"), "procurement_obs")}
           - pipeline_sa: ${args.pipeline_sa}
@@ -82,7 +85,7 @@ main:
         args:
           dataproc_base_url: ${dataproc_base_url}
           batch_id: ${"bzp-bronze-" + text.replace_all(target_date, "-", "") + "-" + run_suffix}
-          script_uri: file:///app/scripts/pipeline/build_bronze.py
+          script_uri: ${jobs_prefix + "/build_bronze.py"}
           script_args:
             - ${target_date}
             - "--runtime-env=gcp"
@@ -105,7 +108,7 @@ main:
         args:
           dataproc_base_url: ${dataproc_base_url}
           batch_id: ${"bzp-silver-" + text.replace_all(target_date, "-", "") + "-" + run_suffix}
-          script_uri: file:///app/scripts/pipeline/build_silver_day.py
+          script_uri: ${jobs_prefix + "/build_silver_day.py"}
           script_args:
             - ${target_date}
             - "--runtime-env=gcp"
@@ -128,7 +131,7 @@ main:
         args:
           dataproc_base_url: ${dataproc_base_url}
           batch_id: ${"bzp-deltas-" + text.replace_all(target_date, "-", "") + "-" + run_suffix}
-          script_uri: file:///app/scripts/pipeline/build_silver_update_deltas.py
+          script_uri: ${jobs_prefix + "/build_silver_update_deltas.py"}
           script_args:
             - ${target_date}
             - "--runtime-env=gcp"
