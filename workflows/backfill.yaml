@@ -60,6 +60,7 @@ main:
           - dataproc_base_url: ${"https://dataproc.googleapis.com/v1/projects/" + project + "/locations/" + region}
           - cloud_run_base_url: ${"https://run.googleapis.com/v2/projects/" + project + "/locations/" + region}
           - range_tag: ${text.replace_all(start_date, "-", "") + "-" + text.replace_all(end_date, "-", "")}
+          - run_suffix: ${string(int(sys.now()))}
 
     - log_start:
         call: sys.log
@@ -87,7 +88,7 @@ main:
         call: submit_dataproc_batch
         args:
           dataproc_base_url: ${dataproc_base_url}
-          batch_id: ${"bzp-bronze-range-" + range_tag}
+          batch_id: ${"bzp-bronze-range-" + range_tag + "-" + run_suffix}
           script_uri: ${jobs_prefix + "/build_bronze_range.py"}
           script_args:
             - "--start-date"
@@ -107,7 +108,7 @@ main:
         call: submit_dataproc_batch
         args:
           dataproc_base_url: ${dataproc_base_url}
-          batch_id: ${"bzp-silver-range-" + range_tag}
+          batch_id: ${"bzp-silver-range-" + range_tag + "-" + run_suffix}
           script_uri: ${jobs_prefix + "/build_silver_range.py"}
           script_args:
             - "--start-date"
@@ -126,7 +127,7 @@ main:
         call: submit_dataproc_batch
         args:
           dataproc_base_url: ${dataproc_base_url}
-          batch_id: ${"bzp-deltas-range-" + range_tag}
+          batch_id: ${"bzp-deltas-range-" + range_tag + "-" + run_suffix}
           script_uri: ${jobs_prefix + "/build_silver_update_deltas.py"}
           script_args:
             - "--start-date"
