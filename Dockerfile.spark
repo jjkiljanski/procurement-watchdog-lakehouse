@@ -51,7 +51,8 @@ RUN curl -fL -o /opt/iceberg-spark-runtime.jar \
     https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-runtime-3.5_2.12/1.5.2/iceberg-spark-runtime-3.5_2.12-1.5.2.jar
 
 # ---- Application code ----
-COPY scripts/ scripts/
+# scripts/ are intentionally excluded: Spark scripts are the mainPythonFileUri
+# uploaded to GCS (gs://<bucket>/jobs/) and fetched by Dataproc at runtime.
 COPY apps/ apps/
 COPY refs/ refs/
 
