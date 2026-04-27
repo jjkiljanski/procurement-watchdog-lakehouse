@@ -119,6 +119,7 @@ main:
           subnet: ${subnet}
           jar_uris: ${jar_uris}
           pipeline_sa: ${pipeline_sa}
+          python_file_uris: []
         result: silver_result
 
     - deltas:
@@ -136,6 +137,7 @@ main:
           subnet: ${subnet}
           jar_uris: ${jar_uris}
           pipeline_sa: ${pipeline_sa}
+          python_file_uris: []
         result: deltas_result
 
     - done:
@@ -197,7 +199,7 @@ run_cloud_run_job:
 
 
 submit_dataproc_batch:
-  params: [dataproc_base_url, batch_id, script_uri, script_args, container_image, subnet, jar_uris, pipeline_sa, python_file_uris: []]
+  params: [dataproc_base_url, batch_id, script_uri, script_args, container_image, subnet, jar_uris, pipeline_sa, python_file_uris]
   steps:
     - create:
         call: http.post
