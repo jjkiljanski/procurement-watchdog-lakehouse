@@ -211,6 +211,7 @@ def main() -> None:
     log.info(
         "fetch_bzp_range finished: fetched=%d skipped=%d total=%d",
         fetched, skipped, total_days,
+        extra={"status": "ok"},
     )
 
 

@@ -197,15 +197,15 @@ def _process_date(
 def main() -> None:
     args = _parse_args()
     dates = _date_range(args.start_date, args.end_date)
+
+    rt = get_runtime()
+    bronze_raw_dir = args.bronze_raw_dir or rt.storage.resolve("bronze_raw")
+    bronze_dir = args.bronze_dir or rt.storage.resolve("bronze")
     log.info(
         "Bronze range: %s..%s (%d dates, force=%s) runtime=%s bronze_raw_dir=%s bronze_dir=%s",
         args.start_date, args.end_date, len(dates), args.force, rt.env, bronze_raw_dir, bronze_dir,
         extra={"runtime": rt.env},
     )
-
-    rt = get_runtime()
-    bronze_raw_dir = args.bronze_raw_dir or rt.storage.resolve("bronze_raw")
-    bronze_dir = args.bronze_dir or rt.storage.resolve("bronze")
     obs_dir = rt.storage.obs_path()
     script_hash = sha256_paths(Path(__file__), _SRC_PKG / "bronze")
 
