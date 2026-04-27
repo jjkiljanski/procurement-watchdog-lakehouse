@@ -47,7 +47,7 @@ os.environ["PYTHONPATH"] = _src + os.pathsep + os.environ.get("PYTHONPATH", "")
 os.environ["PYSPARK_PYTHON"] = sys.executable
 os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
 
-from procurement.logging import setup_logging
+from procurement.logging import get_stage_logger, setup_logging
 from procurement.manifests import write_processed_manifest
 from procurement.obs import sha256_paths
 from procurement.runtime import get_runtime
@@ -61,7 +61,7 @@ from procurement.silver.update_deltas.delta_builder import (
 )
 
 setup_logging()
-log = logging.getLogger(__name__)
+log = get_stage_logger(__name__, "deltas")
 
 
 def _parse_args() -> argparse.Namespace:
@@ -134,7 +134,10 @@ def _run_day(
 ) -> None:
     core_rows, part_rows, part_part_rows = load_nun_rows(spark, target_date)
     if not core_rows:
-        log.info("No NUN data for %s — nothing to do", target_date)
+        log.info(
+            "No NUN data for %s — nothing to do", target_date,
+            extra={"date": target_date, "status": "skipped"},
+        )
         return
 
     actual_bzp_index = bzp_index
@@ -214,17 +217,25 @@ def main() -> None:
                     log.info(
                         "Day %d/%d (%s) done in %.1fs",
                         i, len(days), day, time.perf_counter() - t_day,
+                        extra={"date": day, "status": "ok"},
                     )
 
         else:
             target_date = args.target_date
-            log.info("Processing single day: %s", target_date)
+            log.info(
+                "build_silver_update_deltas started: date=%s", target_date,
+                extra={"date": target_date, "status": "started"},
+            )
             _run_day(spark, target_date, section_index, bzp_index=None)
             write_processed_manifest(
                 layer="deltas",
                 target_date=target_date,
                 script_hash=script_hash,
                 storage=rt.storage,
+            )
+            log.info(
+                "build_silver_update_deltas done: date=%s", target_date,
+                extra={"date": target_date, "status": "ok"},
             )
 
         elapsed = time.perf_counter() - t0

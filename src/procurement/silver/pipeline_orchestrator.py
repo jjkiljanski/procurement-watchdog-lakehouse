@@ -46,6 +46,7 @@ if TYPE_CHECKING:
     from pyspark.sql import DataFrame, SparkSession
     from procurement.runtime.base import StorageProvider
 
+from procurement.logging import get_stage_logger
 from procurement.obs import git_commit_sha, now_utc_iso, sha256_file, write_dq_metrics, write_pipeline_run, write_quarantine_summary
 from procurement.silver.notice_schemas import (
     normalized_notice_type_token,
@@ -59,7 +60,7 @@ from procurement.silver.section_pipeline.notice_schema_reader import load_all_pr
 from procurement.silver.section_pipeline.final_schema_validator import apply_pydantic_validation, validate_section_models
 from procurement.silver.section_pipeline.spark_table_builder import apply_column_parsers, build_section_tables, detect_section_parse_error_quarantine, detect_unknown_section_quarantine, make_html_sections_udf, prebuild_all_parser_udfs
 
-log = logging.getLogger(__name__)
+log = get_stage_logger(__name__, "silver")
 
 
 HEAVY_HTML_NOTICE_TYPES = {
@@ -668,6 +669,7 @@ def run_silver_day_core(
             log.info(
                 "Wrote section table noticeType=%s model=%s -> %s (%.1fs)",
                 _nt, model, full_table, time.perf_counter() - _wt,
+                extra={"notice_type": _nt},
             )
 
         result = _run_batch_core(
@@ -693,6 +695,7 @@ def run_silver_day_core(
             notice_token,
             result["rows"],
             time.perf_counter() - batch_t0,
+            extra={"notice_type": notice_token, "date": target_date, "status": "ok"},
         )
 
         # Write per-(date, notice_type) manifest so individual batches can be

@@ -38,13 +38,13 @@ os.environ["PYTHONPATH"] = _src + os.pathsep + os.environ.get("PYTHONPATH", "")
 # build_bronze helpers (same directory — import as a module via sys.path)
 import build_bronze as _bb  # noqa: E402
 
-from procurement.logging import setup_logging
+from procurement.logging import get_stage_logger, setup_logging
 from procurement.manifests import is_already_processed, write_processed_manifest
 from procurement.obs import now_utc_iso, sha256_paths, write_dq_metrics, write_pipeline_run
 from procurement.runtime import get_runtime
 
 setup_logging()
-log = logging.getLogger(__name__)
+log = get_stage_logger(__name__, "bronze")
 
 
 def _date_range(start: str, end: str) -> list[str]:
@@ -139,7 +139,10 @@ def _process_date(
             bronze_notices_uri
         )
         wrote_notices = True
-        log.info("Date %s: wrote %d rows to Bronze Parquet", target_date, len(valid_rows))
+        log.info(
+            "Date %s: wrote %d rows to Bronze Parquet", target_date, len(valid_rows),
+            extra={"date": target_date, "status": "ok"},
+        )
     else:
         log.warning("Date %s: no valid records after dedup/validation", target_date)
 
@@ -218,7 +221,10 @@ def main() -> None:
             if not args.force and is_already_processed(
                 "bronze", target_date, script_hash, rt.storage
             ):
-                log.info("Skipping bronze for %s — manifest matches current script", target_date)
+                log.info(
+                    "Skipping bronze for %s — manifest matches current script", target_date,
+                    extra={"date": target_date, "status": "skipped"},
+                )
                 skipped += 1
                 continue
 

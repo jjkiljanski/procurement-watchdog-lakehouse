@@ -216,6 +216,7 @@ The Iceberg warehouse is at `data/iceberg/` locally and `gs://{LAKEHOUSE_BUCKET}
 | `docs/cloud_architecture.md` | GCP deployment, runtime abstraction, Apache Iceberg section, setup steps |
 | `docs/dataproc_tuning.md` | **Dataproc Serverless resource settings** — memory, executors, cost tips |
 | `docs/iceberg.md` | Iceberg catalog config, migration rationale, BQ integration options |
+| `docs/logging.md` | Structured JSON logging, GCP Cloud Logging filter queries, per-stage coverage |
 | `docs/observability.md` | Pipeline run metadata, DQ metrics, local Parquet vs BigQuery backends |
 | `docs/runbooks/OPERATING_MODES.md` | Daily and backfill operating runbook |
 | `docs/runbooks/LOCAL_WINDOWS_DOCKER.md` | Windows/WSL2 Docker performance tips |

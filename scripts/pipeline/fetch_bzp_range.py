@@ -57,13 +57,13 @@ from procurement.fetch.bzp_api import (
     filter_and_dedup_daily,
     write_output,
 )
-from procurement.logging import setup_logging
+from procurement.logging import get_stage_logger, setup_logging
 from procurement.manifests import is_already_processed, write_processed_manifest
 from procurement.obs import git_commit_sha, now_utc_iso, sha256_paths, write_pipeline_run
 from procurement.runtime import get_runtime
 
 setup_logging()
-log = logging.getLogger(__name__)
+log = get_stage_logger(__name__, "fetch")
 
 
 def _parse_args() -> argparse.Namespace:
@@ -138,6 +138,7 @@ def _fetch_one_day(
     log.info(
         "[%s] Kept: %d (dropped by day: %d, dropped duplicates: %d)",
         date_str, len(filtered_notices), dropped_by_day, dropped_duplicates,
+        extra={"date": date_str, "status": "ok"},
     )
 
     write_output(output_dir_str, f"bzp_{date_str}.json", filtered_notices)
@@ -192,10 +193,16 @@ def main() -> None:
     while d <= end:
         date_str = d.isoformat()
         if not args.force and is_already_processed("fetch", date_str, script_hash, rt.storage):
-            log.info("[%s] Skipping — manifest hash matches current script", date_str)
+            log.info(
+                "[%s] Skipping — manifest hash matches current script", date_str,
+                extra={"date": date_str, "status": "skipped"},
+            )
             skipped += 1
         else:
-            log.info("[%s] Fetching (%d/%d)", date_str, fetched + skipped + 1, total_days)
+            log.info(
+                "[%s] Fetching (%d/%d)", date_str, fetched + skipped + 1, total_days,
+                extra={"date": date_str, "status": "started"},
+            )
             _fetch_one_day(d, output_dir_str, session, rt, script_hash)
             fetched += 1
         d += timedelta(days=1)

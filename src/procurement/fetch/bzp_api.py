@@ -17,7 +17,9 @@ from pathlib import Path
 
 import requests
 
-log = logging.getLogger(__name__)
+from procurement.logging import get_stage_logger
+
+log = get_stage_logger(__name__, "fetch")
 
 BASE_URL = "https://ezamowienia.gov.pl/mo-board/api/v1/notice"
 
@@ -174,6 +176,8 @@ def filter_and_dedup_daily(
 def write_output(output_dir_str: str, filename: str, data: list[dict]) -> None:
     """Write JSON output to either a local path or a GCS URI."""
     serialised = json.dumps(data, ensure_ascii=False, indent=2)
+    encoded = serialised.encode("utf-8")
+    size_kb = len(encoded) / 1024
 
     if output_dir_str.startswith("gs://"):
         from google.cloud import storage as gcs
@@ -184,12 +188,15 @@ def write_output(output_dir_str: str, filename: str, data: list[dict]) -> None:
 
         client = gcs.Client()
         client.bucket(bucket_name).blob(blob_name).upload_from_string(
-            serialised.encode("utf-8"),
+            encoded,
             content_type="application/json",
         )
-        log.info("Saved to %s/%s", output_dir_str, filename)
+        log.info(
+            "Saved %d records (%.1f KB) to gs://%s/%s",
+            len(data), size_kb, bucket_name, blob_name,
+        )
     else:
         out_path = Path(output_dir_str)
         out_path.mkdir(parents=True, exist_ok=True)
         (out_path / filename).write_text(serialised, encoding="utf-8")
-        log.info("Saved to %s", out_path / filename)
+        log.info("Saved %d records (%.1f KB) to %s", len(data), size_kb, out_path / filename)

@@ -46,7 +46,7 @@ os.environ["PYTHONPATH"] = _src + os.pathsep + os.environ.get("PYTHONPATH", "")
 
 from procurement.bronze.models import BzpNoticeBronze, notice_record_hash
 from procurement.obs import git_commit_sha, now_utc_iso, sha256_paths, write_dq_metrics, write_pipeline_run
-from procurement.logging import setup_logging
+from procurement.logging import get_stage_logger, setup_logging
 from procurement.manifests import write_processed_manifest
 from procurement.runtime import get_runtime
 from pydantic import ValidationError
@@ -59,7 +59,7 @@ from pyspark.sql.types import (
 )
 
 setup_logging()
-log = logging.getLogger(__name__)
+log = get_stage_logger(__name__, "bronze")
 
 BRONZE_SPARK_SCHEMA = StructType(
     [
@@ -316,6 +316,11 @@ def main() -> None:
     bronze_dir = args.bronze_dir or rt.storage.resolve("bronze")
     script_hash = sha256_paths(Path(__file__), _SRC_PKG / "bronze")
 
+    log.info(
+        "build_bronze started: date=%s", target_date,
+        extra={"date": target_date, "status": "started"},
+    )
+
     input_files = _candidate_input_files(bronze_raw_dir, target_date)
 
     if not input_files:
@@ -435,12 +440,14 @@ def main() -> None:
         )
 
     log.info(
-        "Summary: total=%d  after_dedup=%d  valid=%d  invalid=%d  dropped_seen=%d",
+        "build_bronze done: date=%s total=%d after_dedup=%d valid=%d invalid=%d dropped_seen=%d",
+        target_date,
         len(raw_records),
         len(deduped_records),
         len(valid),
         len(errors),
         dedup_stats["dropped_duplicates_seen_index_other_day"],
+        extra={"date": target_date, "status": "ok" if wrote_notices else "empty"},
     )
 
     write_processed_manifest(

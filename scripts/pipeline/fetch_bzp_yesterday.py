@@ -41,13 +41,13 @@ from procurement.fetch.bzp_api import (
     filter_and_dedup_daily,
     write_output,
 )
-from procurement.logging import setup_logging
+from procurement.logging import get_stage_logger, setup_logging
 from procurement.manifests import write_processed_manifest
 from procurement.obs import git_commit_sha, now_utc_iso, sha256_paths, write_pipeline_run
 from procurement.runtime import get_runtime
 
 setup_logging()
-log = logging.getLogger(__name__)
+log = get_stage_logger(__name__, "fetch")
 
 
 def _parse_args() -> argparse.Namespace:
@@ -76,7 +76,10 @@ def main() -> None:
     date_from = f"{target_date.isoformat()}T00:00:00"
     date_to = f"{target_date.isoformat()}T23:59:59"
 
-    log.info("Fetching BZP notices for %s", target_date.isoformat())
+    log.info(
+        "fetch_bzp_yesterday started: date=%s", target_date.isoformat(),
+        extra={"date": target_date.isoformat(), "status": "started"},
+    )
     session = requests.Session()
     session.headers["Accept"] = "application/json"
 
@@ -97,7 +100,11 @@ def main() -> None:
     )
     log.info("Dropped notices with mismatched publicationDate day: %d", dropped_by_day)
     log.info("Dropped duplicate notices by objectId: %d", dropped_duplicates)
-    log.info("Total notices kept for %s: %d", target_date.isoformat(), len(filtered_notices))
+    log.info(
+        "fetch_bzp_yesterday done: date=%s kept=%d dropped_by_day=%d dropped_dup=%d",
+        target_date.isoformat(), len(filtered_notices), dropped_by_day, dropped_duplicates,
+        extra={"date": target_date.isoformat(), "status": "ok"},
+    )
 
     write_output(output_dir_str, f"bzp_{target_date.isoformat()}.json", filtered_notices)
 
@@ -120,7 +127,10 @@ def main() -> None:
         obs_dir=obs_dir,
     )
     if obs_dir:
-        log.info("Wrote fetch obs pipeline_run for %s", target_date.isoformat())
+        log.info(
+            "Wrote fetch obs pipeline_run for %s", target_date.isoformat(),
+            extra={"date": target_date.isoformat()},
+        )
     else:
         log.info("Obs write skipped (obs_path=None for runtime env=%s)", rt.env)
 

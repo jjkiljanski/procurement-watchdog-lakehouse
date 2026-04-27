@@ -36,13 +36,13 @@ os.environ["PYTHONPATH"] = _src + os.pathsep + os.environ.get("PYTHONPATH", "")
 os.environ["PYSPARK_PYTHON"] = sys.executable
 os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
 
-from procurement.logging import setup_logging
+from procurement.logging import get_stage_logger, setup_logging
 from procurement.obs import sha256_paths
 from procurement.runtime import get_runtime
 from procurement.silver.pipeline_orchestrator import run_silver_range_core
 
 setup_logging()
-log = logging.getLogger(__name__)
+log = get_stage_logger(__name__, "silver")
 
 
 def _date_range(start: str, end: str) -> list[str]:

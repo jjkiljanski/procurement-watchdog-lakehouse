@@ -27,12 +27,13 @@ os.environ["PYTHONPATH"] = _src + os.pathsep + os.environ.get("PYTHONPATH", "")
 os.environ["PYSPARK_PYTHON"] = sys.executable
 os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
 
-from procurement.logging import setup_logging
+from procurement.logging import get_stage_logger, setup_logging
 from procurement.obs import sha256_paths
 from procurement.runtime import get_runtime
 from procurement.silver.pipeline_orchestrator import CoreRunConfig, run_silver_day_core
 
 setup_logging()
+log = get_stage_logger(__name__, "silver")
 
 
 def _parse_args() -> argparse.Namespace:
@@ -113,6 +114,10 @@ def main() -> None:
     if args.spark_master:
         extra["spark.master"] = args.spark_master
 
+    log.info(
+        "build_silver_day started: date=%s", target_date,
+        extra={"date": target_date, "status": "started"},
+    )
     spark = rt.spark.get_session("bzp-silver-day", **extra)
     try:
         script_hash = sha256_paths(Path(__file__), _SRC_PKG / "silver")
@@ -142,6 +147,10 @@ def main() -> None:
         )
     finally:
         spark.stop()
+    log.info(
+        "build_silver_day done: date=%s", target_date,
+        extra={"date": target_date, "status": "ok"},
+    )
     # Per-(date, notice_type) manifests are written inside run_silver_day_core()
     # after each notice-type batch succeeds — no additional manifest write needed.
 
