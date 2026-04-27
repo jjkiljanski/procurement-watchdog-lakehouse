@@ -68,6 +68,10 @@ main:
           text: ${"Backfill starting for range " + start_date + ".." + end_date + " (force=" + force + ")"}
           severity: INFO
 
+    - build_range_args:
+        assign:
+          - range_args: ${if(force == "true", ["--start-date", start_date, "--end-date", end_date, "--force"], ["--start-date", start_date, "--end-date", end_date])}
+
     - fetch:
         call: run_cloud_run_job
         args:
@@ -90,12 +94,7 @@ main:
           dataproc_base_url: ${dataproc_base_url}
           batch_id: ${"bzp-bronze-range-" + range_tag + "-" + run_suffix}
           script_uri: ${jobs_prefix + "/build_bronze_range.py"}
-          script_args:
-            - "--start-date"
-            - ${start_date}
-            - "--end-date"
-            - ${end_date}
-            - ${if(force == "true", "--force", "")}
+          script_args: ${range_args}
           container_image: ${container_image}
           subnet: ${subnet}
           jar_uris: ${jar_uris}
@@ -110,12 +109,7 @@ main:
           dataproc_base_url: ${dataproc_base_url}
           batch_id: ${"bzp-silver-range-" + range_tag + "-" + run_suffix}
           script_uri: ${jobs_prefix + "/build_silver_range.py"}
-          script_args:
-            - "--start-date"
-            - ${start_date}
-            - "--end-date"
-            - ${end_date}
-            - ${if(force == "true", "--force", "")}
+          script_args: ${range_args}
           container_image: ${container_image}
           subnet: ${subnet}
           jar_uris: ${jar_uris}
