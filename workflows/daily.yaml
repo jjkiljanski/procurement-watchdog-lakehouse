@@ -208,10 +208,17 @@ run_cloud_run_job:
 submit_dataproc_batch:
   params: [dataproc_base_url, batch_id, script_uri, script_args, container_image, subnet, jar_uris, project, region, bucket, bq_obs_dataset, pipeline_sa]
   steps:
+    - init_retry:
+        assign:
+          - attempt: 0
+          - max_attempts: 3
+          - retry_delay_s: 180
+          - current_batch_id: ${batch_id}
+
     - create:
         call: http.post
         args:
-          url: ${dataproc_base_url + "/batches?batchId=" + batch_id}
+          url: ${dataproc_base_url + "/batches?batchId=" + current_batch_id}
           auth:
             type: OAuth2
           body:
@@ -248,7 +255,7 @@ submit_dataproc_batch:
     - get_batch:
         call: http.get
         args:
-          url: ${dataproc_base_url + "/batches/" + batch_id}
+          url: ${dataproc_base_url + "/batches/" + current_batch_id}
           auth:
             type: OAuth2
         result: batch_status
@@ -258,5 +265,29 @@ submit_dataproc_batch:
           - condition: ${batch_status.body.state == "SUCCEEDED"}
             return: ${batch_status.body}
           - condition: ${batch_status.body.state == "FAILED" or batch_status.body.state == "CANCELLED" or batch_status.body.state == "CANCELLING"}
-            raise: '${"Dataproc batch " + batch_id + " in state " + batch_status.body.state}'
+            next: handle_failure
         next: poll_sleep
+
+    - handle_failure:
+        assign:
+          - state_msg: ${default(map.get(batch_status.body, "stateMessage"), "")}
+
+    - check_quota_retry:
+        switch:
+          - condition: ${text.match_all(state_msg, ".*[Qq]uota.*") and attempt < max_attempts}
+            next: retry_wait
+        next: raise_error
+
+    - retry_wait:
+        call: sys.sleep
+        args:
+          seconds: ${retry_delay_s}
+
+    - next_attempt:
+        assign:
+          - attempt: ${attempt + 1}
+          - current_batch_id: ${batch_id + "-r" + string(attempt)}
+        next: create
+
+    - raise_error:
+        raise: '${"Dataproc batch " + current_batch_id + " in state " + batch_status.body.state + ": " + state_msg}'
