@@ -108,6 +108,10 @@ class TestJsonFormatterStructuredFields:
         entry = _parse(_make_record(extra={"elapsed_s": 1.23}))
         assert entry["elapsed_s"] == pytest.approx(1.23)
 
+    def test_runtime_present_when_set(self):
+        entry = _parse(_make_record(extra={"runtime": "gcp"}))
+        assert entry["runtime"] == "gcp"
+
     def test_multiple_structured_fields(self):
         entry = _parse(_make_record(extra={"stage": "fetch", "date": "2025-10-01", "status": "skipped"}))
         assert entry["stage"] == "fetch"
@@ -116,7 +120,7 @@ class TestJsonFormatterStructuredFields:
 
     def test_structured_fields_absent_when_not_set(self):
         entry = _parse(_make_record())
-        for field in ("stage", "date", "notice_type", "status", "elapsed_s"):
+        for field in ("stage", "date", "notice_type", "status", "elapsed_s", "runtime"):
             assert field not in entry, f"unexpected field {field!r} in output"
 
     def test_none_values_not_emitted(self):

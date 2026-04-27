@@ -90,6 +90,7 @@ class TestMainManifestSkipping:
     def _run_main(self, tmp_path: Path, start: str, end: str, force: bool = False):
         """Run main() with mocked runtime, API calls, and manifest checks."""
         mock_rt = MagicMock()
+        mock_rt.env = "local"
         mock_rt.storage.resolve.return_value = str(tmp_path / "bronze_raw")
         mock_rt.storage.obs_path.return_value = None
 
@@ -134,6 +135,7 @@ class TestMainManifestSkipping:
 
     def test_skips_already_processed_dates(self, tmp_path: Path):
         mock_rt = MagicMock()
+        mock_rt.env = "local"
         mock_rt.storage.resolve.return_value = str(tmp_path / "bronze_raw")
         mock_rt.storage.obs_path.return_value = None
 
@@ -170,6 +172,7 @@ class TestMainManifestSkipping:
 
     def test_force_bypasses_manifest_check(self, tmp_path: Path):
         mock_rt = MagicMock()
+        mock_rt.env = "local"
         mock_rt.storage.resolve.return_value = str(tmp_path / "bronze_raw")
         mock_rt.storage.obs_path.return_value = None
 
