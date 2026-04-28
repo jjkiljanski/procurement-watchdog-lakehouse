@@ -21,7 +21,11 @@ import sys
 
 
 def _gcloud(*args: str) -> str:
-    result = subprocess.run(["gcloud", *args], capture_output=True, text=True)
+    result = subprocess.run(
+        ["gcloud", *args],
+        capture_output=True, text=True,
+        shell=(sys.platform == "win32"),  # gcloud is a .cmd file on Windows
+    )
     if result.returncode != 0:
         print(result.stderr, file=sys.stderr)
         sys.exit(result.returncode)
