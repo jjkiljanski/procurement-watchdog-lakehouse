@@ -9,7 +9,7 @@ from __future__ import annotations
 import importlib
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock
 
 import pytest
 

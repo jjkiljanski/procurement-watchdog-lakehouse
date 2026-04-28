@@ -14,7 +14,6 @@ from pathlib import Path
 import numpy as np
 import pyarrow.dataset as ds
 
-
 DEFAULT_OUT_ROOT = Path(r"E:\git_projects\procurement-watchdog-lakehouse\data\sample_parquets")
 
 

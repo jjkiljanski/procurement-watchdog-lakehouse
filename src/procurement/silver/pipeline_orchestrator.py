@@ -30,7 +30,6 @@ The only caller-supplied difference is ``write_section_fn``:
 from __future__ import annotations
 
 import json
-import logging
 import os
 import re
 import sys
@@ -44,21 +43,39 @@ from typing import TYPE_CHECKING, Any, Callable
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame, SparkSession
+
     from procurement.runtime.base import StorageProvider
 
 from procurement.logging import get_stage_logger
-from procurement.obs import git_commit_sha, now_utc_iso, sha256_file, write_dq_metrics, write_pipeline_run, write_quarantine_summary
-from procurement.silver.notice_schemas import (
-    normalized_notice_type_token,
+from procurement.obs import (
+    git_commit_sha,
+    now_utc_iso,
+    sha256_file,
+    write_dq_metrics,
+    write_pipeline_run,
+    write_quarantine_summary,
 )
 from procurement.silver.common_envelope import (
     ENVELOPE_COLUMNS,
     build_envelope_df,
     validate_envelope_schema,
 )
+from procurement.silver.notice_schemas import (
+    normalized_notice_type_token,
+)
+from procurement.silver.section_pipeline.final_schema_validator import (
+    apply_pydantic_validation,
+    validate_section_models,
+)
 from procurement.silver.section_pipeline.notice_schema_reader import load_all_profiles
-from procurement.silver.section_pipeline.final_schema_validator import apply_pydantic_validation, validate_section_models
-from procurement.silver.section_pipeline.spark_table_builder import apply_column_parsers, build_section_tables, detect_section_parse_error_quarantine, detect_unknown_section_quarantine, make_html_sections_udf, prebuild_all_parser_udfs
+from procurement.silver.section_pipeline.spark_table_builder import (
+    apply_column_parsers,
+    build_section_tables,
+    detect_section_parse_error_quarantine,
+    detect_unknown_section_quarantine,
+    make_html_sections_udf,
+    prebuild_all_parser_udfs,
+)
 
 log = get_stage_logger(__name__, "silver")
 
@@ -899,7 +916,9 @@ def run_silver_range_core(
             and script_hash is not None
             and notice_type is not None
         ):
-            from datetime import date as _date, timedelta as _td
+            from datetime import date as _date
+            from datetime import timedelta as _td
+
             from procurement.manifests import is_already_processed as _iap
             _start = _date.fromisoformat(start_date)
             _end = _date.fromisoformat(end_date)
@@ -972,7 +991,9 @@ def run_silver_range_core(
 
         # Write per-(date, notice_type) manifest for every date in range.
         if storage is not None and script_hash is not None and notice_type is not None:
-            from datetime import date as _date, timedelta as _td
+            from datetime import date as _date
+            from datetime import timedelta as _td
+
             from procurement.manifests import write_processed_manifest as _wpm
             _d = _date.fromisoformat(start_date)
             _end_d = _date.fromisoformat(end_date)

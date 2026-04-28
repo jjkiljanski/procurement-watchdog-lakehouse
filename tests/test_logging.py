@@ -24,7 +24,6 @@ sys.path.insert(0, str(_repo / "src"))
 
 from procurement.logging import JsonFormatter, get_stage_logger, setup_logging
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -227,7 +226,7 @@ class TestSetupLogging:
         logging.getLogger("setup_test").info("written to file")
         assert log_file.exists()
         lines = log_file.read_text(encoding="utf-8").strip().splitlines()
-        assert any("written to file" in l for l in lines)
+        assert any("written to file" in line for line in lines)
 
     def test_idempotent_on_repeated_calls(self):
         setup_logging()

@@ -11,6 +11,8 @@ import pytest
 # Allow imports from src/
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
 
+from pydantic import ValidationError
+
 from procurement.bronze.models import (
     NOTICE_TYPES,
     BzpNoticeBronze,
@@ -19,7 +21,6 @@ from procurement.bronze.models import (
     notice_record_hash,
     to_bronze_output,
 )
-from pydantic import ValidationError
 
 FIXTURES = Path(__file__).resolve().parent.parent / "fixtures"
 

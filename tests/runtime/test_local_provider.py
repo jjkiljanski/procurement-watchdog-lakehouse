@@ -5,10 +5,7 @@ All tests use tmp_path — no network, no external deps.
 
 from __future__ import annotations
 
-import json
 import sys
-import threading
-import time
 from pathlib import Path
 
 import pytest
@@ -20,7 +17,6 @@ from procurement.runtime.providers.local import (
     LocalStorageProvider,
     build_local_runtime,
 )
-
 
 # ---------------------------------------------------------------------------
 # LocalStorageProvider — path resolution
@@ -155,7 +151,6 @@ class TestLocalStorageProviderLock:
         assert not lock_dir.exists()
 
     def test_second_lock_raises_while_first_held(self, tmp_path: Path):
-        s = LocalStorageProvider(tmp_path)
         lock_dir = tmp_path / "_locks" / "day-lock"
         lock_dir.mkdir(parents=True)
         with pytest.raises(TimeoutError):

@@ -8,7 +8,6 @@ from pathlib import Path
 import pyarrow.dataset as ds
 from bs4 import BeautifulSoup, NavigableString, Tag
 
-
 DEFAULT_BRONZE_NOTICES_DIR = Path(r"E:\git_projects\procurement-watchdog-api-exploration\data\bronze\notices")
 DEFAULT_OUT_JSON = Path("data/sample_parquets/competition_notice_section_3_4_1_values_2025.json")
 

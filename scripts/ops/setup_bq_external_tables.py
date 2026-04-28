@@ -225,12 +225,10 @@ def _create_iceberg_external_table(
 
 def _run_iceberg_setup(args, rt, bq_client) -> tuple[int, int]:
     """Create BQ external Iceberg tables for all silver Iceberg tables."""
-    import re
 
     iceberg_uri = rt.storage.resolve("iceberg")
     log.info("Iceberg warehouse GCS URI: %s", iceberg_uri)
 
-    bucket_name = iceberg_uri.replace("gs://", "").split("/")[0]
     project = bq_client.project
     dataset = args.bq_dataset
     created = 0

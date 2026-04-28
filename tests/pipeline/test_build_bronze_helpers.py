@@ -19,7 +19,6 @@ sys.path.insert(0, str(_repo / "src"))
 sys.path.insert(0, str(_repo))
 
 import importlib
-import types
 
 
 def _load_bronze_module():

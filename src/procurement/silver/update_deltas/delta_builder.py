@@ -53,7 +53,6 @@ from pyspark.sql.types import (
 )
 
 from procurement.silver.section_pipeline.notice_schema_reader import (
-    load_all_profiles,
     section_derived_cols,
 )
 from procurement.silver.section_pipeline.parser_registry import COMMON_PARSERS

@@ -8,8 +8,12 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from bs4 import BeautifulSoup
+
+if TYPE_CHECKING:
+    from bs4 import Tag
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent / "src"))
 
@@ -24,7 +28,6 @@ from procurement.silver.section_pipeline.raw_section_extractor import (
     section_number_key,
     section_to_field_name,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers

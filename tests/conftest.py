@@ -18,8 +18,9 @@ def spark():
     mismatch, missing Java, or Windows environment restrictions).
     """
     try:
-        import pyspark  # noqa: F401
         import subprocess
+
+        import pyspark  # noqa: F401
         result = subprocess.run(["java", "-version"], capture_output=True, timeout=5)
         if result.returncode != 0:
             pytest.skip("Java not available")

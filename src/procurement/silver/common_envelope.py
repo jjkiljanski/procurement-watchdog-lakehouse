@@ -17,7 +17,10 @@ validate_envelope_schema  Driver-side column-presence check; warns on drift.
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from pyspark.sql import DataFrame
 
 from pydantic import BaseModel
 

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import json
-
 import pytest
 from pyspark.sql.types import ArrayType, BooleanType, StructType
 
@@ -15,7 +13,6 @@ from procurement.silver.update_deltas.delta_builder import (
     _extract_section_num,
     build_update_deltas,
 )
-
 
 # ---------------------------------------------------------------------------
 # _extract_section_num

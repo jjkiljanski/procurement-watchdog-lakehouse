@@ -21,7 +21,6 @@ Usage
 from __future__ import annotations
 
 import argparse
-import logging
 import os
 import sys
 from datetime import date, timedelta
@@ -106,6 +105,7 @@ def _process_date(
     range or continue.
     """
     from pyspark.sql.functions import col, to_date
+
     from procurement.bronze.models import notice_record_hash
 
     input_files = _bb._candidate_input_files(bronze_raw_dir, target_date)

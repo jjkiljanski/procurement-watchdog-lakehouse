@@ -10,9 +10,9 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
 
 
-from procurement.runtime.config import get_runtime
 from procurement.runtime.base import RuntimeConfig
-from procurement.runtime.providers.local import LocalStorageProvider, LocalStateBackend
+from procurement.runtime.config import get_runtime
+from procurement.runtime.providers.local import LocalStateBackend, LocalStorageProvider
 
 
 class TestGetRuntimeLocal:

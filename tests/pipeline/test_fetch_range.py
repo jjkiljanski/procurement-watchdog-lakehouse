@@ -10,11 +10,10 @@ Covers:
 from __future__ import annotations
 
 import importlib
-import os
 import sys
 from datetime import date
 from pathlib import Path
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -138,8 +137,6 @@ class TestMainManifestSkipping:
         mock_rt.env = "local"
         mock_rt.storage.resolve.return_value = str(tmp_path / "bronze_raw")
         mock_rt.storage.obs_path.return_value = None
-
-        call_log = []
 
         def _is_processed(layer, date_str, hash_, storage):
             # Only 2025-10-02 is already processed

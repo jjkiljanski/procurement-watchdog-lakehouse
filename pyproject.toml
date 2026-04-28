@@ -43,3 +43,9 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]   # pycodestyle errors/warnings + pyflakes + isort
 ignore = ["E501"]                # line length handled by formatter, not linter
+
+[tool.ruff.lint.per-file-ignores]
+# Scripts and tests insert src/ into sys.path before importing — E402 is intentional.
+"scripts/**" = ["E402"]
+"tests/**" = ["E402"]
+"apps/**" = ["E402"]

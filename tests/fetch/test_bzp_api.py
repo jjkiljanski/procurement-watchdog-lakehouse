@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
@@ -21,12 +21,11 @@ _repo = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(_repo / "src"))
 
 from procurement.fetch.bzp_api import (
-    filter_and_dedup_daily,
     fetch_with_backoff,
+    filter_and_dedup_daily,
     same_day,
     write_output,
 )
-
 
 # ---------------------------------------------------------------------------
 # same_day

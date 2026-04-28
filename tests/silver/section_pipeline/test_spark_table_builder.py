@@ -21,7 +21,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent / "src"))
 
-from pyspark.sql.types import BooleanType, StringType, StructField, StructType
+from pyspark.sql.types import StringType, StructField, StructType
 
 from procurement.silver.section_pipeline.spark_table_builder import (
     apply_column_parsers,
@@ -450,11 +450,9 @@ class TestDetectUnknownSectionQuarantine:
     """detect_unknown_section_quarantine — quarantines rows with unknown sections."""
 
     def test_none_sections_df_returns_none(self):
-        from procurement.silver.section_pipeline.spark_table_builder import detect_unknown_section_quarantine
         assert detect_unknown_section_quarantine(None, "ContractNotice") is None
 
     def test_none_notice_type_returns_none(self, spark):
-        from procurement.silver.section_pipeline.spark_table_builder import detect_unknown_section_quarantine
         from pyspark.sql.types import StringType, StructField, StructType
         df = spark.createDataFrame(
             [("obj1", "2025-01-01", '{"core": {}, "_unknown_sections": ["9.9"]}')],
@@ -467,7 +465,6 @@ class TestDetectUnknownSectionQuarantine:
         assert detect_unknown_section_quarantine(df, None) is None
 
     def test_no_unknown_sections_returns_empty_df(self, spark):
-        from procurement.silver.section_pipeline.spark_table_builder import detect_unknown_section_quarantine
         from pyspark.sql.types import StringType, StructField, StructType
         df = spark.createDataFrame(
             [("obj1", "2025-01-01", '{"core": {"section_1_1": "alpha"}}')],
@@ -482,7 +479,6 @@ class TestDetectUnknownSectionQuarantine:
         assert result.count() == 0
 
     def test_unknown_section_row_quarantined(self, spark):
-        from procurement.silver.section_pipeline.spark_table_builder import detect_unknown_section_quarantine
         from pyspark.sql.types import StringType, StructField, StructType
         df = spark.createDataFrame(
             [("obj1", "2025-01-01", '{"core": {}, "_unknown_sections": ["9.9", "8.8"]}')],
@@ -504,7 +500,6 @@ class TestDetectUnknownSectionQuarantine:
         assert any("unknown section: 8.8" in e for e in errors)
 
     def test_only_rows_with_unknown_sections_quarantined(self, spark):
-        from procurement.silver.section_pipeline.spark_table_builder import detect_unknown_section_quarantine
         from pyspark.sql.types import StringType, StructField, StructType
         df = spark.createDataFrame(
             [

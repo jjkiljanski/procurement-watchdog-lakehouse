@@ -57,13 +57,11 @@ from __future__ import annotations
 
 import json
 import os
-import sys
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Generator
 
 from procurement.runtime.base import RuntimeConfig, SparkLauncher, StateBackend, StorageProvider
-
 
 # ---------------------------------------------------------------------------
 # GCSStorageProvider
@@ -196,8 +194,11 @@ class DataprocServerlessLauncher(SparkLauncher):
         self._extra_config = extra_config or {}
 
     def _require_spark_env(self) -> None:
-        """Raise early with a clear message if Spark-specific vars are absent."""
-        missing = [v for v in ("DATAPROC_REGION", "DATAPROC_CONTAINER_IMAGE") if not os.environ.get(v, "").strip()]
+        """Raise early with a clear message if Spark-specific config is absent."""
+        missing = [name for name, val in [
+            ("DATAPROC_REGION", self._region),
+            ("DATAPROC_CONTAINER_IMAGE", self._container_image),
+        ] if not val.strip()]
         if missing:
             raise EnvironmentError(
                 f"Missing required Spark environment variable(s): {missing}. "

@@ -10,17 +10,14 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import pytest
-
 _repo = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(_repo / "src"))
 
 from procurement.silver.pipeline_orchestrator import (
-    _iceberg_notice_type_table_name,
     _discover_bronze_partitions,
     _discover_notice_types_for_range,
+    _iceberg_notice_type_table_name,
 )
-
 
 # ---------------------------------------------------------------------------
 # _iceberg_notice_type_table_name

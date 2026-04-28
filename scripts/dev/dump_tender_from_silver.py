@@ -16,7 +16,6 @@ from typing import Any
 
 import pyarrow.dataset as ds
 
-
 DEFAULT_SILVER_DIR = Path(r"E:\git_projects\procurement-watchdog-api-exploration\data\silver")
 DEFAULT_OUTPUT_DIR = Path(r"E:\git_projects\procurement-watchdog-lakehouse\data\raw\sample_tenders")
 

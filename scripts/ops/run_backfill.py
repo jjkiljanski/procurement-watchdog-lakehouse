@@ -29,7 +29,7 @@ import argparse
 import subprocess
 import sys
 import time
-from datetime import date, timedelta
+from datetime import date
 from pathlib import Path
 
 PIPELINE_DIR = Path(__file__).resolve().parent.parent / "pipeline"

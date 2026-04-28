@@ -14,16 +14,12 @@ import sys
 from pathlib import Path
 from types import SimpleNamespace
 
-import pytest
-
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent / "src"))
 
 from procurement.silver.section_pipeline.final_schema_validator import (
     _PIPELINE_COLS,
-    validate_section_models,
-)
-from procurement.silver.section_pipeline.final_schema_validator import (
     get_pydantic_model_class,
+    validate_section_models,
 )
 
 _VALIDATOR_LOGGER = "procurement.silver.section_pipeline.final_schema_validator"

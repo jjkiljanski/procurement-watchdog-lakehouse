@@ -30,7 +30,6 @@ from typing import Any, Generator
 
 from procurement.runtime.base import RuntimeConfig, SparkLauncher, StateBackend, StorageProvider
 
-
 # ---------------------------------------------------------------------------
 # LocalStorageProvider
 # ---------------------------------------------------------------------------

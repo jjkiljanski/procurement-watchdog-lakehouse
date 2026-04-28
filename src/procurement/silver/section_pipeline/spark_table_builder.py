@@ -24,12 +24,20 @@ import logging
 import threading
 
 from pyspark.sql import DataFrame
-from pyspark.sql.functions import col, expr, from_json, get_json_object, lit, posexplode, size, when
+from pyspark.sql.functions import (
+    col,
+    expr,
+    from_json,
+    get_json_object,
+    lit,
+    posexplode,
+    size,
+    udf,
+    when,
+)
 from pyspark.sql.types import ArrayType, StringType, StructField, StructType
-from pyspark.sql.functions import udf
 from pyspark.storagelevel import StorageLevel
 
-from procurement.silver.section_pipeline.parser_registry import get_computed_entry, get_parser_entry
 from procurement.silver.section_pipeline.notice_schema_reader import (
     model_core_col_names,
     model_sub_infos,
@@ -39,6 +47,7 @@ from procurement.silver.section_pipeline.notice_schema_reader import (
     section_parsers,
     top_level_models,
 )
+from procurement.silver.section_pipeline.parser_registry import get_computed_entry, get_parser_entry
 
 log = logging.getLogger(__name__)
 
@@ -76,7 +85,9 @@ def make_html_sections_udf(all_profiles: dict):
         # Subsequent calls skip all imports and JSON parsing entirely.
         if "_profiles" not in _cache:
             import json as _json
+
             from bs4 import BeautifulSoup as _BeautifulSoup
+
             from procurement.silver.section_pipeline.raw_section_extractor import (
                 build_notice_sections_model as _build,
             )
@@ -356,8 +367,8 @@ def detect_section_parse_error_quarantine(
     if sections_df is None or notice_type is None:
         return None
 
-    from pyspark.sql.types import ArrayType, StringType
     from pyspark.sql.functions import from_json
+    from pyspark.sql.types import ArrayType, StringType
 
     _errors_schema = ArrayType(StringType())
     df_with_errors = sections_df.withColumn(

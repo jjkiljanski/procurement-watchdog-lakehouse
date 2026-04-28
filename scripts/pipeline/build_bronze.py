@@ -32,7 +32,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import logging
 import os
 import sys
 from datetime import date, timedelta
@@ -44,11 +43,6 @@ _SRC_PKG = Path(_src) / "procurement"
 sys.path.insert(0, _src)
 os.environ["PYTHONPATH"] = _src + os.pathsep + os.environ.get("PYTHONPATH", "")
 
-from procurement.bronze.models import BzpNoticeBronze, notice_record_hash
-from procurement.obs import git_commit_sha, now_utc_iso, sha256_paths, write_dq_metrics, write_pipeline_run
-from procurement.logging import get_stage_logger, setup_logging
-from procurement.manifests import write_processed_manifest
-from procurement.runtime import get_runtime
 from pydantic import ValidationError
 from pyspark.sql.types import (
     ArrayType,
@@ -57,6 +51,18 @@ from pyspark.sql.types import (
     StructField,
     StructType,
 )
+
+from procurement.bronze.models import BzpNoticeBronze, notice_record_hash
+from procurement.logging import get_stage_logger, setup_logging
+from procurement.manifests import write_processed_manifest
+from procurement.obs import (
+    git_commit_sha,
+    now_utc_iso,
+    sha256_paths,
+    write_dq_metrics,
+    write_pipeline_run,
+)
+from procurement.runtime import get_runtime
 
 setup_logging()
 log = get_stage_logger(__name__, "bronze")
@@ -203,12 +209,6 @@ def _deduplicate_via_spark(
     """
     from pyspark.sql import functions as F
 
-    unique_ids = {
-        str(r.get("objectId")).strip()
-        for r in records
-        if r.get("objectId") is not None and str(r.get("objectId")).strip()
-    }
-
     ids_seen_other_day: set[str] = set()
     try:
         existing = (
@@ -336,7 +336,6 @@ def main() -> None:
     raw_records = _load_raw_records(input_files)
     log.info("Loaded %d raw records", len(raw_records))
 
-    from pyspark.sql import SparkSession
     from pyspark.sql.functions import col, to_date
 
     extra: dict[str, str] = {}

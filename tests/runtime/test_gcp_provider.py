@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -171,7 +171,7 @@ class TestGCSStateBackend:
         blob = mock_client.bucket.return_value.blob.return_value
         blob.download_as_text.return_value = '{"status": "ok"}'
 
-        from procurement.runtime.providers.gcp import GCSStorageProvider, GCSStateBackend
+        from procurement.runtime.providers.gcp import GCSStateBackend, GCSStorageProvider
         storage = GCSStorageProvider("my-bucket")
         backend = GCSStateBackend(storage)
         data = backend.load("backfill_run")
@@ -182,7 +182,7 @@ class TestGCSStateBackend:
         blob = mock_client.bucket.return_value.blob.return_value
         blob.download_as_text.side_effect = _NotFound("gone")
 
-        from procurement.runtime.providers.gcp import GCSStorageProvider, GCSStateBackend
+        from procurement.runtime.providers.gcp import GCSStateBackend, GCSStorageProvider
         storage = GCSStorageProvider("my-bucket")
         backend = GCSStateBackend(storage)
         assert backend.load("missing_key") == {}
@@ -190,7 +190,7 @@ class TestGCSStateBackend:
     def test_save_writes_to_correct_path(self, gcs_mocks):
         mock_gcs, mock_client = gcs_mocks
 
-        from procurement.runtime.providers.gcp import GCSStorageProvider, GCSStateBackend
+        from procurement.runtime.providers.gcp import GCSStateBackend, GCSStorageProvider
         storage = GCSStorageProvider("my-bucket")
         backend = GCSStateBackend(storage)
         backend.save("backfill_run", {"dates": ["2025-10-01"]})
@@ -213,8 +213,8 @@ class TestBuildGcpRuntime:
 
     def test_returns_runtime_config(self, monkeypatch: pytest.MonkeyPatch, gcs_mocks):
         self._set_all(monkeypatch)
-        from procurement.runtime.providers.gcp import build_gcp_runtime
         from procurement.runtime.base import RuntimeConfig
+        from procurement.runtime.providers.gcp import build_gcp_runtime
         assert isinstance(build_gcp_runtime(), RuntimeConfig)
 
     def test_env_is_gcp(self, monkeypatch: pytest.MonkeyPatch, gcs_mocks):
@@ -223,7 +223,10 @@ class TestBuildGcpRuntime:
         assert build_gcp_runtime().env == "gcp"
 
     @pytest.mark.parametrize("missing_var", [
-        "LAKEHOUSE_BUCKET", "GCP_PROJECT", "DATAPROC_REGION", "DATAPROC_CONTAINER_IMAGE"
+        "LAKEHOUSE_BUCKET", "GCP_PROJECT",
+        # DATAPROC_REGION and DATAPROC_CONTAINER_IMAGE are validated lazily in
+        # submit_batch(), not eagerly in build_gcp_runtime(), so that
+        # storage-only workloads (e.g. the downloader) don't require them.
     ])
     def test_missing_required_env_raises(
         self, missing_var: str, monkeypatch: pytest.MonkeyPatch, gcs_mocks

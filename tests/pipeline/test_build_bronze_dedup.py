@@ -7,7 +7,6 @@ or Java is unavailable (same pattern as the rest of the Tier 5 suite).
 from __future__ import annotations
 
 import importlib
-import json
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock

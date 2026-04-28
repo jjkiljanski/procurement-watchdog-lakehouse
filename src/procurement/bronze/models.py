@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-from typing import Literal
 
 from pydantic import BaseModel, field_validator
 

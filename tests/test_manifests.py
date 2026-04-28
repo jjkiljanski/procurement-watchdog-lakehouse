@@ -10,8 +10,6 @@ import json
 import sys
 from pathlib import Path
 
-import pytest
-
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from procurement.manifests import (
@@ -21,7 +19,6 @@ from procurement.manifests import (
     write_processed_manifest,
 )
 from procurement.runtime.providers.local import LocalStorageProvider
-
 
 # ---------------------------------------------------------------------------
 # Helpers

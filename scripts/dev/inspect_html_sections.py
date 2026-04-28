@@ -1,12 +1,10 @@
 """
 Script to inspect HTML sections in BZP notices stored as Parquet files.
 """
-import sys
-import os
 import re
-import pyarrow.parquet as pq
-import pyarrow.dataset as ds
 from pathlib import Path
+
+import pyarrow.parquet as pq
 
 BRONZE_ROOT = Path("E:/git_projects/procurement-watchdog-api-exploration/data/bronze/notices")
 
@@ -163,7 +161,7 @@ else:
                 print(f"  Content: {r['after_text'][:200]}")
                 # Check for '0' in content
                 if '0' in r['after_text'][:50]:
-                    print(f"  *** CONTAINS '0' near start ***")
+                    print("  *** CONTAINS '0' near start ***")
                 print()
 
 # ============================================================

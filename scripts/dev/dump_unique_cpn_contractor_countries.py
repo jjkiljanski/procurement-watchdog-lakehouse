@@ -16,7 +16,6 @@ from typing import Iterable
 
 import pyarrow.dataset as ds
 
-
 DEFAULT_SILVER_DIR = Path(r"E:\git_projects\procurement-watchdog-api-exploration\data\silver")
 DEFAULT_OUT_JSON = Path(
     r"E:\git_projects\procurement-watchdog-lakehouse\data\sample_parquets\cpn_contractor_countries_437_unique.json"

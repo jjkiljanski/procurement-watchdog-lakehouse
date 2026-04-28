@@ -140,6 +140,7 @@ def _make_pydantic_validator_fn(model_class):
         if json_str is None:
             return []
         import json as _json
+
         from pydantic import ValidationError as _VE
 
         try:
@@ -180,7 +181,6 @@ def apply_pydantic_validation(
     -------
     ``(valid_tables, quarantine_df, persisted_dfs)``
     """
-    from pyspark.sql import DataFrame
     from pyspark.sql.functions import col, lit, size, struct, to_json, udf
     from pyspark.sql.types import ArrayType, StringType
 
