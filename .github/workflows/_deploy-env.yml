@@ -1,0 +1,230 @@
+################################################################################
+# Reusable deployment workflow — one environment at a time
+#
+# Called by deploy.yml for both dev and prod. All environment-specific values
+# are passed as inputs; the steps themselves are identical.
+################################################################################
+
+name: Deploy (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "dev or prod"
+        type: string
+        required: true
+      gcp_project:
+        description: "GCP project ID"
+        type: string
+        required: true
+      region:
+        description: "GCP region (e.g. europe-central2)"
+        type: string
+        required: true
+      backfill_start_date:
+        description: "Backfill start date YYYY-MM-DD (inclusive)"
+        type: string
+        required: true
+      run_backfill:
+        description: "Whether to trigger the backfill workflow"
+        type: boolean
+        required: true
+    secrets:
+      wif_provider:
+        description: "Workload Identity Federation provider resource name"
+        required: true
+      ci_service_account:
+        description: "CI service account email"
+        required: true
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write   # required for WIF token exchange
+
+    env:
+      GCP_PROJECT: ${{ inputs.gcp_project }}
+      REGION: ${{ inputs.region }}
+      NAMING_PREFIX: procwatch
+      # Derived from project ID and naming convention — must match Terraform.
+      BUCKET: ${{ inputs.gcp_project }}-lakehouse
+      AR_REPO: ${{ inputs.region }}-docker.pkg.dev/${{ inputs.gcp_project }}/spark
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ------------------------------------------------------------------ #
+      # Auth
+      # ------------------------------------------------------------------ #
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.wif_provider }}
+          service_account: ${{ secrets.ci_service_account }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ inputs.region }}-docker.pkg.dev --quiet
+
+      # ------------------------------------------------------------------ #
+      # Build & push images
+      # ------------------------------------------------------------------ #
+
+      - name: Build and push Spark image
+        run: |
+          GIT_SHA=$(git rev-parse --short HEAD)
+          SPARK_IMAGE="${AR_REPO}/procurement-spark:${GIT_SHA}"
+          docker build \
+            -f Dockerfile.spark \
+            --build-arg GIT_SHA="${GIT_SHA}" \
+            -t "${SPARK_IMAGE}" \
+            .
+          docker push "${SPARK_IMAGE}"
+          echo "SPARK_IMAGE=${SPARK_IMAGE}" >> "$GITHUB_ENV"
+          echo "GIT_SHA=${GIT_SHA}"         >> "$GITHUB_ENV"
+
+      - name: Build and push Downloader image
+        run: |
+          DOWNLOADER_IMAGE="${AR_REPO}/procurement-downloader:${GIT_SHA}"
+          docker build \
+            -f Dockerfile.downloader \
+            --build-arg GIT_SHA="${GIT_SHA}" \
+            -t "${DOWNLOADER_IMAGE}" \
+            .
+          docker push "${DOWNLOADER_IMAGE}"
+          echo "DOWNLOADER_IMAGE=${DOWNLOADER_IMAGE}" >> "$GITHUB_ENV"
+
+      # ------------------------------------------------------------------ #
+      # Deploy pipeline artifacts
+      # ------------------------------------------------------------------ #
+
+      - name: Upload pipeline scripts to GCS
+        run: |
+          gsutil -m cp scripts/pipeline/*.py "gs://${BUCKET}/jobs/"
+
+      - name: Deploy daily Cloud Workflow
+        run: |
+          gcloud workflows deploy bzp-daily \
+            --source workflows/daily.yaml \
+            --location "${REGION}" \
+            --service-account "${NAMING_PREFIX}-orchestrator@${GCP_PROJECT}.iam.gserviceaccount.com" \
+            --project "${GCP_PROJECT}"
+
+      - name: Deploy backfill Cloud Workflow
+        run: |
+          gcloud workflows deploy bzp-backfill \
+            --source workflows/backfill.yaml \
+            --location "${REGION}" \
+            --service-account "${NAMING_PREFIX}-orchestrator@${GCP_PROJECT}.iam.gserviceaccount.com" \
+            --project "${GCP_PROJECT}"
+
+      # ------------------------------------------------------------------ #
+      # Update live infrastructure with the new image
+      # ------------------------------------------------------------------ #
+
+      - name: Update Cloud Run downloader job image
+        run: |
+          gcloud run jobs update bzp-downloader \
+            --image "${DOWNLOADER_IMAGE}" \
+            --region "${REGION}" \
+            --project "${GCP_PROJECT}"
+
+      - name: Update Cloud Scheduler container image
+        run: |
+          python3 - <<'EOF'
+          import json, subprocess
+
+          project = "${{ inputs.gcp_project }}"
+          region  = "${{ inputs.region }}"
+          prefix  = "procwatch"
+          bucket  = f"{project}-lakehouse"
+
+          args = {
+              "project":             project,
+              "region":              region,
+              "bucket":              bucket,
+              "container_image":     "${{ env.SPARK_IMAGE }}",
+              "subnet":              f"projects/{project}/regions/{region}/subnetworks/{prefix}-dataproc",
+              "jobs_prefix":         f"gs://{bucket}/jobs",
+              "downloader_job_name": "bzp-downloader",
+              "pipeline_sa":         f"{prefix}-pipeline@{project}.iam.gserviceaccount.com",
+              "bq_obs_dataset":      "procurement_obs",
+          }
+
+          body = json.dumps({"argument": json.dumps(args)})
+
+          subprocess.run([
+              "gcloud", "scheduler", "jobs", "update", "http", "bzp-daily-trigger",
+              f"--location={region}",
+              f"--project={project}",
+              f"--message-body={body}",
+          ], check=True)
+          EOF
+
+      # ------------------------------------------------------------------ #
+      # BigQuery external tables
+      # ------------------------------------------------------------------ #
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install Python dependencies
+        run: pip install ".[gcp]"
+
+      - name: Refresh BQ external tables
+        env:
+          RUNTIME_ENV: gcp
+          LAKEHOUSE_BUCKET: ${{ env.BUCKET }}
+          GCP_PROJECT: ${{ inputs.gcp_project }}
+          DATAPROC_REGION: ${{ inputs.region }}
+          DATAPROC_CONTAINER_IMAGE: ${{ env.SPARK_IMAGE }}
+        run: python scripts/ops/setup_bq_external_tables.py
+
+      # ------------------------------------------------------------------ #
+      # Backfill (release tags only)
+      # ------------------------------------------------------------------ #
+
+      - name: Trigger backfill workflow
+        if: inputs.run_backfill
+        run: |
+          python3 - <<'EOF'
+          import datetime, json, subprocess
+
+          project = "${{ inputs.gcp_project }}"
+          region  = "${{ inputs.region }}"
+          prefix  = "procwatch"
+          bucket  = f"{project}-lakehouse"
+          end_date = (datetime.date.today() - datetime.timedelta(days=1)).isoformat()
+
+          args = {
+              "project":             project,
+              "region":              region,
+              "bucket":              bucket,
+              "container_image":     "${{ env.SPARK_IMAGE }}",
+              "subnet":              f"projects/{project}/regions/{region}/subnetworks/{prefix}-dataproc",
+              "jobs_prefix":         f"gs://{bucket}/jobs",
+              "start_date":          "${{ inputs.backfill_start_date }}",
+              "end_date":            end_date,
+              "force":               "false",
+              "downloader_job_name": "bzp-downloader",
+              "pipeline_sa":         f"{prefix}-pipeline@{project}.iam.gserviceaccount.com",
+              "bq_obs_dataset":      "procurement_obs",
+          }
+
+          subprocess.run([
+              "gcloud", "workflows", "run", "bzp-backfill",
+              f"--location={region}",
+              f"--project={project}",
+              f"--data={json.dumps(args)}",
+          ], check=True)
+          EOF

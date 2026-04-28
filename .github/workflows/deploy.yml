@@ -1,95 +1,85 @@
-# GCP deployment workflow — STUB, NOT YET ACTIVE
-# ================================================
-# TODO: activate this workflow once the first version of the pipeline is
-# running and validated on GCP.
+################################################################################
+# CI/CD — lint, test, and deploy
 #
-# Trigger: push to main branch.
+# Triggers:
+#   push to main        → lint + test + deploy to dev (no backfill)
+#   push of tag v*      → lint + test + deploy to dev (with backfill)
+#                                     + deploy to prod (with backfill)
 #
-# Steps (all TODO — not yet implemented):
-#   1. Authenticate to GCP via Workload Identity Federation (keyless — no SA key stored in GitHub)
-#   2. Build and push Dockerfile.spark to Artifact Registry
-#   3. Build and push Dockerfile.downloader to Artifact Registry
-#   4. Upload scripts/pipeline/*.py to gs://{LAKEHOUSE_BUCKET}/jobs/
-#   5. Deploy Cloud Workflows (daily.yaml + backfill.yaml)
-#   6. Run scripts/ops/setup_bq_external_tables.py to refresh BQ external table schemas
+# Environment values (gcp_project, region, backfill_start_date) are inlined
+# here because they are static configuration. They must match the corresponding
+# tfvars files in procurement-watchdog-gcp-platform.
 #
-# Orchestration: Cloud Scheduler + Cloud Workflows (NOT Cloud Composer).
-#
-# Required GitHub secrets (configure in repo Settings → Secrets):
-#   GCP_PROJECT                  — GCP project ID
-#   LAKEHOUSE_BUCKET             — GCS bucket name (no gs:// prefix)
-#   DATAPROC_REGION              — e.g. europe-west1
-#   ARTIFACT_REGISTRY_REPO       — e.g. europe-west1-docker.pkg.dev/project/spark
-#   WORKLOAD_IDENTITY_PROVIDER   — Workload Identity pool provider resource name
-#   SERVICE_ACCOUNT              — SA email used for CI/CD
-#   WORKFLOWS_SA                 — Service account email for Cloud Workflows execution
-#
-# Reference: https://cloud.google.com/blog/products/identity-security/enabling-keyless-authentication-from-github-actions
+# Required GitHub secrets (Settings → Secrets and variables → Actions):
+#   DEV_WIF_PROVIDER           ← terraform output wif_provider  (in envs/dev)
+#   DEV_CI_SERVICE_ACCOUNT     ← terraform output ci_service_account (in envs/dev)
+#   PROD_WIF_PROVIDER          ← terraform output wif_provider  (in envs/prod)
+#   PROD_CI_SERVICE_ACCOUNT    ← terraform output ci_service_account (in envs/prod)
+################################################################################
 
-# name: Deploy to GCP
-#
-# on:
-#   push:
-#     branches: [main]
-#
-# jobs:
-#   deploy:
-#     runs-on: ubuntu-latest
-#     permissions:
-#       contents: read
-#       id-token: write    # required for Workload Identity Federation
-#
-#     steps:
-#       - uses: actions/checkout@v4
-#
-#       - id: auth
-#         uses: google-github-actions/auth@v2
-#         with:
-#           workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
-#           service_account: ${{ secrets.SERVICE_ACCOUNT }}
-#
-#       - uses: google-github-actions/setup-gcloud@v2
-#
-#       - name: Build and push Spark image
-#         run: |
-#           GIT_SHA=$(git rev-parse --short HEAD)
-#           IMAGE=${{ secrets.ARTIFACT_REGISTRY_REPO }}/procurement-spark:${GIT_SHA}
-#           docker build -f Dockerfile.spark --build-arg GIT_SHA=${GIT_SHA} -t ${IMAGE} .
-#           docker push ${IMAGE}
-#           echo "SPARK_IMAGE=${IMAGE}" >> $GITHUB_ENV
-#
-#       - name: Build and push Downloader image
-#         run: |
-#           GIT_SHA=$(git rev-parse --short HEAD)
-#           IMAGE_DL=${{ secrets.ARTIFACT_REGISTRY_REPO }}/procurement-downloader:${GIT_SHA}
-#           docker build -f Dockerfile.downloader --build-arg GIT_SHA=${GIT_SHA} -t ${IMAGE_DL} .
-#           docker push ${IMAGE_DL}
-#
-#       - name: Upload pipeline scripts to GCS
-#         run: |
-#           gsutil -m cp scripts/pipeline/*.py gs://${{ secrets.LAKEHOUSE_BUCKET }}/jobs/
-#
-#       - name: Deploy daily Cloud Workflow
-#         run: |
-#           gcloud workflows deploy bzp-daily \
-#             --source workflows/daily.yaml \
-#             --location ${{ secrets.DATAPROC_REGION }} \
-#             --service-account ${{ secrets.WORKFLOWS_SA }}
-#
-#       - name: Deploy backfill Cloud Workflow
-#         run: |
-#           gcloud workflows deploy bzp-backfill \
-#             --source workflows/backfill.yaml \
-#             --location ${{ secrets.DATAPROC_REGION }} \
-#             --service-account ${{ secrets.WORKFLOWS_SA }}
-#
-#       - name: Refresh BQ external tables
-#         env:
-#           RUNTIME_ENV: gcp
-#           LAKEHOUSE_BUCKET: ${{ secrets.LAKEHOUSE_BUCKET }}
-#           GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
-#           DATAPROC_REGION: ${{ secrets.DATAPROC_REGION }}
-#           DATAPROC_CONTAINER_IMAGE: ${{ env.SPARK_IMAGE }}
-#         run: |
-#           pip install ".[gcp]"
-#           python scripts/ops/setup_bq_external_tables.py
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+
+jobs:
+  # ------------------------------------------------------------------ #
+  # Lint and test — always, before any deploy
+  # ------------------------------------------------------------------ #
+  lint-test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dev dependencies
+        run: pip install ".[dev]" ruff
+
+      - name: Lint with ruff
+        run: ruff check .
+
+      - name: Run tests
+        run: pytest
+
+  # ------------------------------------------------------------------ #
+  # Deploy to dev — every push to main or tag
+  # ------------------------------------------------------------------ #
+  deploy-dev:
+    name: Deploy → dev
+    needs: lint-test
+    uses: ./.github/workflows/_deploy-env.yml
+    with:
+      environment: dev
+      gcp_project: procwatch-dev
+      region: europe-central2
+      backfill_start_date: "2024-01-01"   # must match envs/dev/dev.tfvars
+      run_backfill: ${{ startsWith(github.ref, 'refs/tags/v') }}
+    secrets:
+      wif_provider: ${{ secrets.DEV_WIF_PROVIDER }}
+      ci_service_account: ${{ secrets.DEV_CI_SERVICE_ACCOUNT }}
+
+  # ------------------------------------------------------------------ #
+  # Deploy to prod — release tags only, after dev succeeds
+  # ------------------------------------------------------------------ #
+  deploy-prod:
+    name: Deploy → prod
+    needs: deploy-dev
+    if: startsWith(github.ref, 'refs/tags/v')
+    uses: ./.github/workflows/_deploy-env.yml
+    with:
+      environment: prod
+      gcp_project: procwatch-prod
+      region: europe-central2
+      backfill_start_date: "2023-01-01"   # must match envs/prod/prod.tfvars
+      run_backfill: true
+    secrets:
+      wif_provider: ${{ secrets.PROD_WIF_PROVIDER }}
+      ci_service_account: ${{ secrets.PROD_CI_SERVICE_ACCOUNT }}

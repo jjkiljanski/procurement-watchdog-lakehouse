@@ -35,3 +35,11 @@ pythonpath = ["src"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]   # pycodestyle errors/warnings + pyflakes + isort
+ignore = ["E501"]                # line length handled by formatter, not linter
