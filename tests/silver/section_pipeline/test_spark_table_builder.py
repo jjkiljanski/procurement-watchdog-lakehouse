@@ -648,8 +648,9 @@ class TestApplyColumnParsers:
         )
         tables = {"core": df}
         result_tables, quarantine_df, _ = apply_column_parsers(tables, _CORE_PROFILE, "ContractNotice")
-        # _CORE_PROFILE has no parsers → same object returned, no quarantine
-        assert result_tables is tables
+        # _CORE_PROFILE has no parsers → core table still present, no quarantine
+        assert "core" in result_tables
+        assert result_tables["core"].count() == 1
         assert quarantine_df is None
 
     def test_empty_section_tables_returns_unchanged(self, spark):

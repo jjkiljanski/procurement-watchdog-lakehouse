@@ -7,10 +7,6 @@ import re
 import unicodedata
 from datetime import date, timedelta
 
-from bs4 import BeautifulSoup, Tag
-
-from procurement.silver.section_pipeline.raw_section_extractor import _span_value
-
 _PLN_NUM_RE = re.compile(r"([\d\s\xa0,.]+?)\s*(?:\xa0)?\s*(?:PLN|EUR|USD|GBP|CHF)?$")
 _CURRENCY_RE = re.compile(r"\b(PLN|EUR|USD|GBP|CHF)\b")
 
@@ -43,23 +39,6 @@ def _parse_pln_value(raw: str | None) -> float | None:
     except ValueError:
         raise ParseError(f"parse_pln_value: invalid number string {num_str!r} from {raw!r}")
 
-
-def _find_h3(soup: BeautifulSoup, field_num: str) -> Tag | None:
-    """Return the first h3 whose section number exactly matches field_num."""
-    for h3 in soup.find_all("h3"):
-        text = h3.get_text(separator=" ", strip=True)
-        m = re.search(r"(?<![\d.])(\d+\.\d+(?:\.\d+)?)\.?\)\s*", text)
-        if m and m.group(1) == field_num:
-            return h3
-    return None
-
-
-def _extract_currency(soup: BeautifulSoup, field_num: str) -> str:
-    """Extract currency code from a 'Kod waluty' field, default PLN."""
-    raw = _span_value(_find_h3(soup, field_num))
-    if raw and raw.strip() in ("PLN", "EUR", "USD", "GBP", "CHF"):
-        return raw.strip()
-    return "PLN"
 
 
 def _parse_tak_nie(raw: str | None) -> bool | None:
