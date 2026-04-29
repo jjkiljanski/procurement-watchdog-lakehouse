@@ -63,7 +63,7 @@ appends an error to a `parse_errors` array rather than failing the row.
 against Pydantic models.  Silver section outputs are checked by a second Pydantic
 contract layer that catches parser return-type bugs.
 
-**Test coverage.** 900+ pytest tests covering unit, integration, and smoke levels.
+**Test coverage.** 1000+ pytest tests covering unit, integration, and smoke levels.
 Tests run without Spark (mock/stub where needed) for fast CI.
 
 ---
@@ -204,7 +204,7 @@ The Iceberg warehouse is at `data/iceberg/` locally and `gs://{LAKEHOUSE_BUCKET}
 ## Testing
 
 ```bash
-pytest -q        # ~900 tests, no Spark required
+pytest -q        # ~1000 tests, no Spark required
 ```
 
 Tests cover unit (parsers, validators, helpers), integration (full pipeline steps with
