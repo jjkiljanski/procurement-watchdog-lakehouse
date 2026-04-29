@@ -56,7 +56,7 @@ jobs:
       AR_REPO: ${{ inputs.region }}-docker.pkg.dev/${{ inputs.gcp_project }}/spark
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # ------------------------------------------------------------------ #
       # Auth
@@ -173,7 +173,7 @@ jobs:
       # ------------------------------------------------------------------ #
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
