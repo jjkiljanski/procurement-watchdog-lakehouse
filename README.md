@@ -1,6 +1,6 @@
 # Procurement Watchdog Lakehouse
 
-Production-grade lakehouse for Polish public procurement transparency — Spark, Apache Iceberg, GCS/BigQuery, Cloud Scheduler + Cloud Workflows, 900+ tests.
+Production-grade lakehouse for Polish public procurement transparency — Spark, Apache Iceberg, GCS/BigQuery, Cloud Scheduler + Cloud Workflows, 1000+ tests.
 
 Ingests the full Polish public procurement bulletin (BZP/eZamówienia API) daily, transforms it through a Bronze → Silver medallion pipeline, and exposes clean analytical datasets via BigQuery external tables. Business-facing logic lives in a companion dbt repo:
 [procurement-watchdog-analytics](https://github.com/jjkiljanski/procurement-watchdog-analytics)
@@ -229,7 +229,7 @@ scripts/
 workflows/        — Cloud Workflows definitions (daily + backfill)
 config/           — environment variable templates
 docs/             — architecture + runbook documentation
-tests/            — pytest suite (900+ tests)
+tests/            — pytest suite (1000+ tests)
 ```
 
 ---
