@@ -88,9 +88,9 @@ In practice this case **should never fire** when all parsers are correctly imple
 
 ## Quarantine table location
 
-`data/silver/quarantine/noticeType=<TYPE>/`
+Apache Iceberg table at `iceberg/common/quarantine/` (locally: `data/iceberg/common/quarantine/`; GCP: `gs://{bucket}/iceberg/common/quarantine/`).
 
-Written as partitioned Parquet by `notice_type` and `publicationDateDay`.
+Partitioned by `(publicationDateDay, notice_type)`. Accessed via `silver.common.quarantine` in Spark.
 
 ## parse_errors column
 

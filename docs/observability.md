@@ -39,7 +39,7 @@ One row per layer run. Written by each pipeline step on completion.
 
 | column | type | description |
 |---|---|---|
-| `layer` | string | `fetch` / `bronze` / `silver` / `gold` |
+| `layer` | string | `fetch` / `bronze` / `silver` |
 | `target_date` | string | YYYY-MM-DD |
 | `run_id` | string | unique per run |
 | `started_at` | string | ISO 8601 UTC |
@@ -57,7 +57,7 @@ Tall-format (one row per metric). Written by each pipeline step + `build_obs.py`
 
 | column | type | description |
 |---|---|---|
-| `layer` | string | `bronze` / `silver` / `gold` |
+| `layer` | string | `bronze` / `silver` |
 | `target_date` | string | YYYY-MM-DD |
 | `notice_type` | string | notice type or `__all__` / `__obs_snapshot__` |
 | `metric_name` | string | e.g. `valid_rate`, `nonnull_caseId` |
@@ -85,20 +85,18 @@ One row per notice_type per day where quarantine rows were written. Written by s
 | `build_bronze.py` | `procurement.obs` | `pipeline_runs` (layer=bronze) + `dq_metrics` (valid_rate, dedup_rate) |
 | `build_silver.py` (legacy) | `procurement.obs` | `pipeline_runs` (layer=silver) + `dq_metrics` (envelope + per-batch) + `quarantine_summary` |
 | `pipeline_orchestrator.py` (backfill) | `procurement.obs` | same as silver |
-| `build_obs.py` | `procurement.obs` | `dq_metrics` (silver snapshot + gold stats) |
+| `build_obs.py` | `procurement.obs` | `dq_metrics` (silver snapshot) |
 
 ---
 
 ## Pipeline step: `build_obs.py`
 
-Runs as the last step in `run_pipeline.py` (replaces the old `build_run_stats.py`).
+Standalone script (`scripts/pipeline/build_obs.py`). Run manually after silver completes.
 
 1. Reads silver output for `target_date` → computes row counts, non-null rates, distinct
    counts → writes to `dq_metrics` with `notice_type=__obs_snapshot__`.
-2. Reads gold output for `target_date` → computes row counts per dataset → writes to
-   `dq_metrics` with `notice_type=<dataset_name>`.
-3. Reads obs tables (last 14 days) → renders a Markdown dashboard to stdout.
-4. Checks configured thresholds → exits non-zero on violation.
+2. Reads obs tables (last 14 days) → renders a Markdown dashboard to stdout.
+3. Checks configured thresholds → exits non-zero on violation.
 
 ---
 
@@ -120,7 +118,7 @@ The module also exports shared utilities: `now_utc_iso`, `atomic_write_json`, `s
 Structured JSON logging is configured in `src/procurement/logging.py`. All pipeline scripts
 call `setup_logging()` which emits one JSON object per line to stderr + optional file.
 
-Log files: `data/logs/pipeline_YYYY-MM-DD.log` (written by `run_pipeline.py`).
+In GCP mode, Cloud Logging captures structured logs from Dataproc and Cloud Run automatically.
 
 ---
 
@@ -139,11 +137,11 @@ Silver runs two DQ layers:
    - Case 3 — Pydantic contract violation → row excluded, written to quarantine; indicates a parser implementation bug
    - Case 4 — no registered profile for notice type → row excluded
 
-   Quarantine rows written to `data/silver/quarantine/noticeType=<TYPE>/`.
+   Quarantine rows written to the Iceberg table at `iceberg/common/quarantine/` (partitioned by `publicationDateDay` + `notice_type`).
 
    All silver section rows carry a `parse_errors: array<string>` column (null when clean).
 
-See `src/docs/runbooks/QUARANTINE.md` for full case descriptions and the `parse_errors` column contract.
+See `docs/runbooks/QUARANTINE.md` for full case descriptions and the `parse_errors` column contract.
 
 ---
 

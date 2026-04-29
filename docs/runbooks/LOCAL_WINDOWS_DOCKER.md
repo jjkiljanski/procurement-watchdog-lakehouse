@@ -8,7 +8,7 @@ for a typical production day (~2 100 notices across 10 notice types).
 
 - Docker Desktop installed and running (Linux containers mode).
 - WSL2 enabled. The `wsl.exe` command must work from PowerShell/Git Bash.
-- Docker image built or pulled: `procurement-lakehouse:latest`.
+- Docker image built: `docker build -f Dockerfile.spark -t procurement-spark:local .`
 - Bronze data available somewhere accessible from WSL2.
 
 ## Why run from WSL2, not Git Bash / PowerShell
@@ -60,7 +60,7 @@ docker run --rm \
   -v /mnt/e/git_projects/procurement-watchdog-lakehouse/refs:/app/refs:ro \
   -v ~/bench_bronze:/data/bronze:ro \
   -v ~/bench_silver:/data/silver \
-  procurement-lakehouse:latest \
+  procurement-spark:local \
   python scripts/pipeline/build_silver_day.py 2025-04-25 \
     --bronze-dir /data/bronze \
     --silver-dir /data/silver \
@@ -91,7 +91,7 @@ MSYS_NO_PATHCONV=1 docker run --rm \
   -v /e/git_projects/procurement-watchdog-lakehouse/refs:/app/refs:ro \
   -v /e/git_projects/procurement-watchdog-api-exploration/data/bronze:/data/bronze:ro \
   -v /e/git_projects/procurement-watchdog-api-exploration/data/silver:/data/silver \
-  procurement-lakehouse:latest \
+  procurement-spark:local \
   python scripts/pipeline/build_silver_day.py 2025-04-25 \
     --bronze-dir /data/bronze \
     --silver-dir /data/silver \

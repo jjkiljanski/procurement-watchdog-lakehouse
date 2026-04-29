@@ -123,16 +123,15 @@ No pipeline script changes are needed.
 | **GCS bucket** | bronze_raw, bronze, silver, Iceberg warehouse, job scripts | Terraform |
 | **Dataproc Serverless** | Run PySpark batches without cluster management | Terraform (VPC, SA, quotas) |
 | **Cloud Workflows** | Pipeline orchestration (daily + backfill) | `gcloud workflows deploy` (CI/CD) |
-| **Cloud Scheduler** | Triggers `bzp-daily` workflow at 03:00 UTC | `gcloud scheduler jobs create` (one-time) |
+| **Cloud Scheduler** | Triggers `bzp-daily` workflow at 03:00 UTC | Terraform |
 | **Cloud Run** | Downloader job (fetch BZP API data) | Terraform |
 | **Artifact Registry** | Docker image registry for Dataproc + Cloud Run | Terraform |
 | **BigQuery** | External Iceberg tables over silver | Terraform (dataset) + `setup_bq_external_tables.py --format iceberg` (tables) |
 | **Cloud IAM** | Service accounts + roles | Terraform |
 
-The Terraform repo provisions all of the above except Cloud Workflows (deployed
-by CI/CD via `gcloud workflows deploy`) and Cloud Scheduler (created once
-manually per the setup steps below).  This repo owns the application code and
-workflow definitions.
+The Terraform repo provisions all of the above. CI/CD (`_deploy-env.yml`)
+deploys Cloud Workflows and updates the Cloud Scheduler message body on each
+merge to `main`. This repo owns the application code and workflow definitions.
 
 ---
 
@@ -162,82 +161,26 @@ The separate Terraform repo must provision:
 ### 1. Provision infrastructure
 
 ```bash
-cd ../your-terraform-repo
+cd ../procurement-watchdog-gcp-platform/envs/dev   # or envs/prod
 terraform apply
 ```
 
-### 2. Build and push the Spark container
+Terraform creates all GCP resources: bucket, VPC, IAM service accounts, Artifact
+Registry repos, Cloud Run job, BigQuery datasets, Cloud Workflows, Cloud Scheduler
+job, and Workload Identity Federation for GitHub Actions.
 
-```bash
-GIT_SHA=$(git rev-parse --short HEAD)
-IMAGE=europe-west1-docker.pkg.dev/${GCP_PROJECT}/spark/procurement-spark:${GIT_SHA}
+### 2. Merge to `main` — CI/CD takes over
 
-docker build -f Dockerfile.spark --build-arg GIT_SHA=${GIT_SHA} -t ${IMAGE} .
-docker push ${IMAGE}
+After the first `terraform apply`, a push to `main` triggers `.github/workflows/deploy.yml`,
+which automatically:
 
-# Update the Airflow Variable or env file:
-# DATAPROC_CONTAINER_IMAGE=${IMAGE}
-```
+- Builds and pushes `Dockerfile.spark` and `Dockerfile.downloader` to Artifact Registry
+- Uploads `scripts/pipeline/*.py` to `gs://{LAKEHOUSE_BUCKET}/jobs/`
+- Deploys the `bzp-daily` and `bzp-backfill` Cloud Workflows
+- Updates the Cloud Scheduler message body with the new image URI
+- Refreshes BigQuery external Iceberg table definitions
 
-### 3. Build and push the downloader container
-
-```bash
-IMAGE_DL=europe-west1-docker.pkg.dev/${GCP_PROJECT}/spark/procurement-downloader:${GIT_SHA}
-docker build -f Dockerfile.downloader --build-arg GIT_SHA=${GIT_SHA} -t ${IMAGE_DL} .
-docker push ${IMAGE_DL}
-```
-
-### 4. Upload pipeline scripts to GCS
-
-```bash
-gsutil -m cp scripts/pipeline/*.py gs://${LAKEHOUSE_BUCKET}/jobs/
-```
-
-### 5. Create BigQuery external Iceberg tables
-
-```bash
-export RUNTIME_ENV=gcp
-export LAKEHOUSE_BUCKET=your-project-lakehouse
-export GCP_PROJECT=your-project-id
-export BQ_DATASET=procurement_silver
-
-python scripts/ops/setup_bq_external_tables.py --format iceberg
-```
-
-Re-run this script any time a new notice type appears or the silver schema
-changes (new columns, new data-model splits).  BQ automatically resolves
-the latest Iceberg snapshot — no further DDL updates are needed for
-day-to-day data changes.
-
-### 6. Deploy Cloud Workflows
-
-```bash
-export WORKFLOWS_SA=workflows-sa@${GCP_PROJECT}.iam.gserviceaccount.com
-
-gcloud workflows deploy bzp-daily \
-  --source workflows/daily.yaml \
-  --location ${DATAPROC_REGION} \
-  --service-account ${WORKFLOWS_SA}
-
-gcloud workflows deploy bzp-backfill \
-  --source workflows/backfill.yaml \
-  --location ${DATAPROC_REGION} \
-  --service-account ${WORKFLOWS_SA}
-```
-
-### 7. Create the Cloud Scheduler trigger (one-time)
-
-This replaces the Cloud Composer schedule.  Run once; CI/CD keeps the
-workflow source up to date but does not recreate this job.
-
-```bash
-gcloud scheduler jobs create http bzp-daily-trigger \
-  --schedule "0 3 * * *" \
-  --uri "https://workflowexecutions.googleapis.com/v1/projects/${GCP_PROJECT}/locations/${DATAPROC_REGION}/workflows/bzp-daily/executions" \
-  --message-body "{\"argument\":\"{\\\"project\\\":\\\"${GCP_PROJECT}\\\",\\\"region\\\":\\\"${DATAPROC_REGION}\\\",\\\"bucket\\\":\\\"${LAKEHOUSE_BUCKET}\\\",\\\"container_image\\\":\\\"${IMAGE}\\\",\\\"subnet\\\":\\\"default\\\",\\\"jobs_prefix\\\":\\\"gs://${LAKEHOUSE_BUCKET}/jobs\\\",\\\"downloader_job_name\\\":\\\"bzp-downloader\\\"}\"}" \
-  --oauth-service-account-email ${WORKFLOWS_SA} \
-  --time-zone "UTC"
-```
+No manual steps 2–7 are needed.
 
 ---
 
@@ -381,38 +324,10 @@ python scripts/ops/setup_bq_external_tables.py --format iceberg
 ```
 
 For BigLake Metastore integration (auto-discovery without re-running the
-setup script after schema changes), see `docs/iceberg.md` Option B.
+setup script after schema changes), see `docs/iceberg.md`.
 
 ---
 
-## CI/CD TODO
-
-The following automation is planned but not yet implemented.  Add it once the
-first version of the pipeline is stable and running.
-
-```yaml
-# .github/workflows/deploy.yml  (stub — not yet active)
-#
-# On merge to main:
-#   1. Build and push Dockerfile.spark to Artifact Registry
-#   2. Build and push Dockerfile.downloader to Artifact Registry
-#   3. Upload scripts/pipeline/*.py to gs://{LAKEHOUSE_BUCKET}/jobs/
-#   4. Deploy Cloud Workflows: gcloud workflows deploy bzp-daily + bzp-backfill
-#   5. Run scripts/ops/setup_bq_external_tables.py to refresh BQ table schemas
-#
-# Required GitHub secrets:
-#   GCP_PROJECT, LAKEHOUSE_BUCKET, DATAPROC_REGION,
-#   WORKLOAD_IDENTITY_PROVIDER (for keyless auth via Workload Identity Federation),
-#   WORKFLOWS_SA (service account email for Cloud Workflows execution)
-```
-
-See `.github/workflows/deploy.yml` for the stub file.
-
-Note: The Cloud Scheduler job (step 7 of setup) is created once manually and
-does not need to be re-created on each deploy — it always points at the latest
-version of the deployed `bzp-daily` workflow.
-
----
 
 ## Observability
 
