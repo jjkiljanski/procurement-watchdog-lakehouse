@@ -117,31 +117,10 @@ For Windows/WSL2 tips see `docs/runbooks/LOCAL_WINDOWS_DOCKER.md`.
 
 ## Quick Start — GCP
 
-```bash
-# 1. Configure environment
-cp config/runtime_gcp.env.example ~/.procurement-gcp.env
-# Edit with your project values, then:
-export $(grep -v '^#' ~/.procurement-gcp.env | xargs)
+GCP deployment is fully automated via CI/CD:
 
-# 2. Build and push containers
-GIT_SHA=$(git rev-parse --short HEAD)
-docker build -f Dockerfile.spark --build-arg GIT_SHA=$GIT_SHA -t ${DATAPROC_CONTAINER_IMAGE} .
-docker push ${DATAPROC_CONTAINER_IMAGE}
-
-# 3. Upload pipeline scripts to GCS
-gsutil -m cp scripts/pipeline/*.py gs://${LAKEHOUSE_BUCKET}/jobs/
-
-# 4. Deploy Cloud Workflows
-gcloud workflows deploy bzp-daily \
-  --source workflows/daily.yaml --location ${DATAPROC_REGION} \
-  --service-account ${WORKFLOWS_SA}
-gcloud workflows deploy bzp-backfill \
-  --source workflows/backfill.yaml --location ${DATAPROC_REGION} \
-  --service-account ${WORKFLOWS_SA}
-
-# 5. Create BigQuery external Iceberg tables
-python scripts/ops/setup_bq_external_tables.py --format iceberg
-```
+1. Run `terraform apply` in `procurement-watchdog-gcp-platform` to provision all GCP resources.
+2. Push to `main` — the deploy workflow builds and pushes both Docker images, uploads pipeline scripts to GCS, deploys Cloud Workflows, and refreshes BigQuery external tables automatically.
 
 See `docs/cloud_architecture.md` for the full setup guide.
 
@@ -194,7 +173,6 @@ The Iceberg warehouse is at `data/iceberg/` locally and `gs://{LAKEHOUSE_BUCKET}
 
 | Dockerfile | Used for |
 |---|---|
-| `Dockerfile` | Local dev runner |
 | `Dockerfile.spark` | Dataproc Serverless batches (bronze, silver, deltas) |
 | `Dockerfile.downloader` | Cloud Run Job (BZP API fetch) |
 
@@ -215,7 +193,7 @@ The Iceberg warehouse is at `data/iceberg/` locally and `gs://{LAKEHOUSE_BUCKET}
 |---|---|
 | `docs/cloud_architecture.md` | GCP deployment, runtime abstraction, Apache Iceberg section, setup steps |
 | `docs/dataproc_tuning.md` | **Dataproc Serverless resource settings** — memory, executors, cost tips |
-| `docs/iceberg.md` | Iceberg catalog config, migration rationale, BQ integration options |
+| `docs/iceberg.md` | Iceberg catalog config, write patterns, BQ integration |
 | `docs/logging.md` | Structured JSON logging, GCP Cloud Logging filter queries, per-stage coverage |
 | `docs/observability.md` | Pipeline run metadata, DQ metrics, local Parquet vs BigQuery backends |
 | `docs/runbooks/OPERATING_MODES.md` | Daily and backfill operating runbook |
