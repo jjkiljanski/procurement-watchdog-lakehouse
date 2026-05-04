@@ -41,15 +41,26 @@ One row per layer run. Written by each pipeline step on completion.
 |---|---|---|
 | `layer` | string | `fetch` / `bronze` / `silver` |
 | `target_date` | string | YYYY-MM-DD |
-| `run_id` | string | unique per run |
+| `run_id` | string | unique per run — format: `{layer}_{run_type}_{date_or_range}_{ts_ms}` (e.g. `bronze_daily_2025-10-01_1748000000000`, `silver_range_2025-01-01_2025-12-31_1748000000000`) |
 | `started_at` | string | ISO 8601 UTC |
 | `completed_at` | string | ISO 8601 UTC |
 | `status` | string | `ok` / `empty` / `failed` |
 | `git_commit` | string | short SHA from `$GIT_COMMIT` env var or `git rev-parse --short HEAD` |
 | `script_hash` | string | SHA-256 of the entry-point script file |
 | `written_at` | string | ISO 8601 UTC — when this row was written (see [Re-run semantics](#re-run-semantics)) |
-| `count_*` | int | layer-specific counts (e.g. `count_raw_total`, `count_valid_total`) |
+| `counts_json` | string | JSON object of layer-specific counts (e.g. `{"raw_total": 1234, "valid_total": 1230}`). **Note**: local Parquet backend expands counts into individual `count_{key}` columns; BigQuery backend uses this single `counts_json` column. |
 | `extra_json` | string | overflow JSON |
+
+**`run_id` naming convention**
+
+| Script | run_type | Example |
+|---|---|---|
+| `fetch_bzp_yesterday.py` | `fetch_daily` | `fetch_daily_2025-10-01_1748000000000` |
+| `fetch_bzp_range.py` (per date) | `fetch_range` | `fetch_range_2025-10-01_1748000000000` |
+| `build_bronze.py` | `bronze_daily` | `bronze_daily_2025-10-01_1748000000000` |
+| `build_bronze_range.py` (per date) | `bronze_range` | `bronze_range_2025-10-01_1748000000000` |
+| `run_silver_day_core` | `silver_daily` | `silver_daily_2025-10-01_1748000000000` |
+| `run_silver_range_core` (whole range) | `silver_range` | `silver_range_2025-01-01_2025-12-31_1748000000000` |
 
 ### `dq_metrics/`
 
@@ -59,10 +70,22 @@ Tall-format (one row per metric). Written by each pipeline step + `build_obs.py`
 |---|---|---|
 | `layer` | string | `bronze` / `silver` |
 | `target_date` | string | YYYY-MM-DD |
+| `run_id` | string | join key to `pipeline_runs`; `NULL` for `build_obs.py` snapshot rows |
 | `notice_type` | string | notice type or `__all__` / `__obs_snapshot__` |
-| `metric_name` | string | e.g. `valid_rate`, `nonnull_caseId` |
+| `metric_name` | string | e.g. `valid_rate`, `valid_count`, `nonnull_caseId` |
 | `metric_value` | float | |
 | `written_at` | string | ISO 8601 UTC |
+
+**Bronze metric names** (all written per `target_date`, `notice_type=__all__`):
+
+| metric_name | description |
+|---|---|
+| `raw_total` | total records in the raw JSON before deduplication |
+| `after_dedup_count` | records remaining after cross-day deduplication |
+| `valid_count` | records that passed Pydantic validation |
+| `invalid_count` | records that failed validation |
+| `valid_rate` | `valid_count / after_dedup_count` |
+| `dedup_cross_day_rate` | fraction of raw records dropped as cross-day duplicates |
 
 ### `quarantine_summary/`
 
@@ -157,16 +180,54 @@ replacing old ones. This is intentional:
 The `written_at` column is the dedup key. To get the latest run per `(layer, target_date)`:
 
 ```sql
--- DuckDB / any SQL with window functions
-SELECT * FROM pipeline_runs
+-- Latest pipeline_run per (layer, target_date) — BigQuery
+SELECT * FROM procurement_obs.pipeline_runs
 QUALIFY ROW_NUMBER() OVER (
     PARTITION BY layer, target_date
     ORDER BY written_at DESC
 ) = 1
 ```
 
-For `dq_metrics`: partition by `(layer, target_date, notice_type, metric_name)`.
 For `quarantine_summary`: partition by `(target_date, notice_type)`.
+
+`dq_metrics` carries a `run_id` column so it can be joined directly with `pipeline_runs`
+instead of approximating dedup via `written_at`. To get each day's latest metrics:
+
+```sql
+-- Latest dq_metrics per (layer, target_date, notice_type, metric_name) — BigQuery
+WITH latest_runs AS (
+    SELECT layer, target_date, run_id
+    FROM procurement_obs.pipeline_runs
+    QUALIFY ROW_NUMBER() OVER (
+        PARTITION BY layer, target_date
+        ORDER BY written_at DESC
+    ) = 1
+)
+SELECT m.*
+FROM procurement_obs.dq_metrics m
+JOIN latest_runs r USING (layer, target_date, run_id)
+```
+
+**Filtering by git commit.** `git_commit` is a SHA and is not chronologically sortable.
+The practical approach is to treat the most recent run (`written_at DESC`) as the current
+version — in normal operation the latest run always uses the latest deployed commit.
+To inspect metrics for a *specific* commit:
+
+```sql
+SELECT m.*
+FROM procurement_obs.dq_metrics m
+JOIN procurement_obs.pipeline_runs p USING (run_id)
+WHERE p.git_commit = 'abc1234'
+```
+
+To find which commit produced a given day's data:
+
+```sql
+SELECT DISTINCT p.git_commit, p.layer, p.target_date, p.written_at
+FROM procurement_obs.pipeline_runs p
+WHERE p.target_date = '2025-10-01'
+ORDER BY p.written_at DESC
+```
 
 ---
 

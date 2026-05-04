@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+import time
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -149,7 +150,7 @@ def _process_date(
     if errors:
         _bb._write_errors(bronze_dir, target_date, errors)
 
-    run_id = f"bronze_{target_date}_{os.getpid()}"
+    run_id = f"bronze_range_{target_date}_{int(time.time() * 1000)}"
     write_pipeline_run(
         layer="bronze",
         target_date=target_date,
@@ -175,13 +176,17 @@ def _process_date(
             target_date=target_date,
             notice_type=None,
             metrics={
-                "valid_rate": len(valid) / len(deduped_records),
+                "raw_total": len(raw_records),
+                "after_dedup_count": len(deduped_records),
+                "valid_count": len(valid),
                 "invalid_count": len(errors),
+                "valid_rate": len(valid) / len(deduped_records),
                 "dedup_cross_day_rate": (
                     dedup_stats["dropped_duplicates_seen_index_other_day"] / len(raw_records)
                     if raw_records else 0.0
                 ),
             },
+            run_id=run_id,
             obs_dir=obs_dir,
         )
 

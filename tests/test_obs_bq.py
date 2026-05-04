@@ -247,6 +247,39 @@ class TestWriteDqMetricsBq:
         _, rows = mock_bq_client.insert_rows_json.call_args[0]
         assert rows[0]["notice_type"] == "__all__"
 
+    def test_run_id_included_in_row_when_provided(
+        self, mock_bq_client: MagicMock, monkeypatch: pytest.MonkeyPatch
+    ):
+        _set_gcp_env(monkeypatch)
+
+        write_dq_metrics(
+            layer="bronze",
+            target_date="2025-10-01",
+            notice_type=None,
+            metrics={"valid_rate": 0.99},
+            run_id="bronze_daily_2025-10-01_1748000000000",
+            obs_dir=None,
+        )
+
+        _, rows = mock_bq_client.insert_rows_json.call_args[0]
+        assert rows[0]["run_id"] == "bronze_daily_2025-10-01_1748000000000"
+
+    def test_run_id_none_when_omitted(
+        self, mock_bq_client: MagicMock, monkeypatch: pytest.MonkeyPatch
+    ):
+        _set_gcp_env(monkeypatch)
+
+        write_dq_metrics(
+            layer="bronze",
+            target_date="2025-10-01",
+            notice_type=None,
+            metrics={"valid_rate": 0.99},
+            obs_dir=None,
+        )
+
+        _, rows = mock_bq_client.insert_rows_json.call_args[0]
+        assert rows[0]["run_id"] is None
+
     def test_empty_metrics_does_not_call_insert(
         self, mock_bq_client: MagicMock, monkeypatch: pytest.MonkeyPatch
     ):

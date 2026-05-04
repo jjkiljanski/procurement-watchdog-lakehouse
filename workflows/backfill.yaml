@@ -71,7 +71,9 @@ main:
 
     - build_range_args:
         assign:
-          - range_args: ${if(force == "true", ["--start-date", start_date, "--end-date", end_date, "--force"], ["--start-date", start_date, "--end-date", end_date])}
+          - gcp_flags: ${["--runtime-env=gcp", "--lakehouse-bucket=" + bucket, "--gcp-project=" + project, "--dataproc-region=" + region, "--bq-obs-dataset=" + bq_obs_dataset]}
+          - date_args: ${if(force == "true", ["--start-date", start_date, "--end-date", end_date, "--force"], ["--start-date", start_date, "--end-date", end_date])}
+          - range_args: ${list.concat(gcp_flags, date_args)}
 
     - fetch:
         call: run_cloud_run_job
@@ -132,11 +134,7 @@ main:
           dataproc_base_url: ${dataproc_base_url}
           batch_id: ${"bzp-deltas-range-" + range_tag + "-" + run_suffix}
           script_uri: ${jobs_prefix + "/build_silver_update_deltas.py"}
-          script_args:
-            - "--start-date"
-            - ${start_date}
-            - "--end-date"
-            - ${end_date}
+          script_args: ${range_args}
           container_image: ${container_image}
           subnet: ${subnet}
           jar_uris: ${jar_uris}

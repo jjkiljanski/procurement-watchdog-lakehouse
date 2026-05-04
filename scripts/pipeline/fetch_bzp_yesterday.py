@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+import time
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -112,7 +113,7 @@ def main() -> None:
     write_pipeline_run(
         layer="fetch",
         target_date=target_date.isoformat(),
-        run_id=f"fetch_{target_date.isoformat()}_{os.getpid()}",
+        run_id=f"fetch_daily_{target_date.isoformat()}_{int(time.time() * 1000)}",
         started_at=started_at,
         completed_at=now_utc_iso(),
         status="ok",

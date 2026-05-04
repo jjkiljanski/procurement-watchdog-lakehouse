@@ -563,7 +563,7 @@ def run_silver_day_core(
 
     target_date = cfg.target_date
     started_at = now_utc_iso()
-    run_id = f"{target_date}_{int(time.time() * 1000)}_{os.getpid()}_{uuid.uuid4().hex[:8]}"
+    run_id = f"silver_daily_{target_date}_{int(time.time() * 1000)}"
 
     bronze_notices_root = (
         cfg.bronze_dir.rstrip("/") + "/notices"
@@ -783,6 +783,7 @@ def run_silver_day_core(
             for k, v in (validation_metrics or {}).items()
             if isinstance(v, (int, float))
         },
+        run_id=run_id,
         obs_dir=obs_dir,
     )
     for batch in profile.get("batches", []):
@@ -794,6 +795,7 @@ def run_silver_day_core(
                 target_date=target_date,
                 notice_type=nt,
                 metrics={"input_rows": batch_rows},
+                run_id=run_id,
                 obs_dir=obs_dir,
             )
 
@@ -849,7 +851,7 @@ def run_silver_range_core(
     from pyspark.sql.functions import col, lit, to_date
 
     started_at = now_utc_iso()
-    run_id = f"range_{start_date}_{end_date}_{int(time.time() * 1000)}_{os.getpid()}"
+    run_id = f"silver_range_{start_date}_{end_date}_{int(time.time() * 1000)}"
 
     bronze_notices_root = (
         bronze_dir.rstrip("/") + "/notices"

@@ -136,6 +136,7 @@ _BQ_SCHEMAS: dict[str, str] = {
     "dq_metrics": """
         layer          STRING    NOT NULL,
         target_date    DATE      NOT NULL,
+        run_id         STRING,
         notice_type    STRING,
         metric_name    STRING    NOT NULL,
         metric_value   FLOAT64,
@@ -147,6 +148,14 @@ _BQ_SCHEMAS: dict[str, str] = {
         row_count      INT64,
         written_at     TIMESTAMP
     """,
+}
+
+# Columns added to existing tables after initial creation.
+# Applied idempotently by _ensure_bq_table via ALTER TABLE ADD COLUMN IF NOT EXISTS.
+_BQ_SCHEMA_EVOLUTIONS: dict[str, list[tuple[str, str]]] = {
+    "dq_metrics": [
+        ("run_id", "STRING"),
+    ],
 }
 
 # Cache of (project, dataset, table) combos known to exist, to avoid
@@ -194,6 +203,15 @@ def _ensure_bq_table(client: Any, project: str, dataset: str, table: str) -> Non
         client.query(
             f"CREATE TABLE IF NOT EXISTS `{table_ref}` ({schema_ddl})"
         ).result()
+
+    # Add any columns introduced after the table was first created.
+    for col_name, col_type in _BQ_SCHEMA_EVOLUTIONS.get(table, []):
+        try:
+            client.query(
+                f"ALTER TABLE `{table_ref}` ADD COLUMN IF NOT EXISTS {col_name} {col_type}"
+            ).result()
+        except Exception:
+            pass  # Non-fatal — old rows simply have NULL for the new column.
 
     _bq_tables_confirmed.add(cache_key)
 
@@ -294,18 +312,22 @@ def write_dq_metrics(
     target_date: str,
     notice_type: str | None,
     metrics: dict[str, float | int],
+    run_id: str | None = None,
     obs_dir: Path | None = None,
 ) -> None:
     """Append per-layer/notice_type data quality metrics as tall rows.
 
     Local: written to ``obs_dir/dq_metrics/dt=YYYY-MM-DD/``.
     GCP:   streamed to BigQuery ``dq_metrics`` table.
+
+    Pass ``run_id`` to enable joins with ``pipeline_runs``.
     """
     written_at = now_utc_iso()
     rows = [
         {
             "layer": layer,
             "target_date": target_date,
+            "run_id": run_id,
             "notice_type": notice_type or "__all__",
             "metric_name": k,
             "metric_value": float(v),

@@ -41,6 +41,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+import time
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -146,7 +147,7 @@ def _fetch_one_day(
     write_pipeline_run(
         layer="fetch",
         target_date=date_str,
-        run_id=f"fetch_range_{date_str}_{os.getpid()}",
+        run_id=f"fetch_range_{date_str}_{int(time.time() * 1000)}",
         started_at=started_at,
         completed_at=now_utc_iso(),
         status="ok",

@@ -165,6 +165,37 @@ class TestWriteDqMetricsLocal:
         df = pq.read_table(str(files[0])).to_pydict()
         assert df["notice_type"] == ["__all__"]
 
+    def test_run_id_stored_when_provided(self, tmp_path: Path):
+        import pyarrow.parquet as pq
+
+        obs_dir = tmp_path / "obs"
+        write_dq_metrics(
+            layer="bronze",
+            target_date="2025-10-01",
+            notice_type=None,
+            metrics={"valid_rate": 0.99},
+            run_id="bronze_daily_2025-10-01_1748000000000",
+            obs_dir=obs_dir,
+        )
+        files = _parquet_files(obs_dir, "dq_metrics", "2025-10-01")
+        df = pq.read_table(str(files[0])).to_pydict()
+        assert df["run_id"] == ["bronze_daily_2025-10-01_1748000000000"]
+
+    def test_run_id_none_when_omitted(self, tmp_path: Path):
+        import pyarrow.parquet as pq
+
+        obs_dir = tmp_path / "obs"
+        write_dq_metrics(
+            layer="bronze",
+            target_date="2025-10-01",
+            notice_type=None,
+            metrics={"valid_rate": 0.99},
+            obs_dir=obs_dir,
+        )
+        files = _parquet_files(obs_dir, "dq_metrics", "2025-10-01")
+        df = pq.read_table(str(files[0])).to_pydict()
+        assert df["run_id"] == [None]
+
     def test_empty_metrics_writes_nothing(self, tmp_path: Path):
         obs_dir = tmp_path / "obs"
         write_dq_metrics(
