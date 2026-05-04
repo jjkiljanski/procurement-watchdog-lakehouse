@@ -30,12 +30,10 @@ The only caller-supplied difference is ``write_section_fn``:
 from __future__ import annotations
 
 import json
-import os
 import re
 import sys
 import threading
 import time
-import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
