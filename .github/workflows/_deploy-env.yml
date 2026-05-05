@@ -107,7 +107,7 @@ jobs:
 
       - name: Upload pipeline scripts to GCS
         run: |
-          gsutil -m cp scripts/pipeline/*.py "gs://${BUCKET}/jobs/"
+          gsutil -m cp scripts/pipeline/*.py scripts/ops/setup_bq_external_tables.py "gs://${BUCKET}/jobs/"
 
       - name: Deploy daily Cloud Workflow
         run: |
@@ -190,7 +190,13 @@ jobs:
           DATAPROC_CONTAINER_IMAGE: ${{ env.SPARK_IMAGE }}
           BQ_DATASET: procurement_silver
           BQ_CONNECTION: ${{ inputs.gcp_project }}.EU.procwatch_iceberg
-        run: python scripts/ops/setup_bq_external_tables.py
+          ALLOW_EMPTY_BQ_REFRESH: ${{ inputs.run_backfill }}
+        run: |
+          if [ "${ALLOW_EMPTY_BQ_REFRESH}" = "true" ]; then
+            python scripts/ops/setup_bq_external_tables.py --allow-empty
+          else
+            python scripts/ops/setup_bq_external_tables.py
+          fi
 
       # ------------------------------------------------------------------ #
       # Backfill (release tags only)
@@ -221,10 +227,12 @@ jobs:
               "downloader_job_name": "bzp-downloader",
               "pipeline_sa":         f"{prefix}-pipeline@{project}.iam.gserviceaccount.com",
               "bq_obs_dataset":      "procurement_obs",
+              "bq_silver_dataset":   "procurement_silver",
+              "bq_connection":       f"{project}.EU.procwatch_iceberg",
           }
 
           subprocess.run([
-              "gcloud", "workflows", "run", "bzp-backfill",
+              "gcloud", "workflows", "execute", "bzp-backfill",
               f"--location={region}",
               f"--project={project}",
               f"--data={json.dumps(args)}",

@@ -57,6 +57,8 @@ main:
           - downloader_job_name: ${default(map.get(args, "downloader_job_name"), "bzp-downloader")}
           - pipeline_sa: ${args.pipeline_sa}
           - bq_obs_dataset: ${default(map.get(args, "bq_obs_dataset"), "procurement_obs")}
+          - bq_silver_dataset: ${default(map.get(args, "bq_silver_dataset"), "procurement_silver")}
+          - bq_connection: ${default(map.get(args, "bq_connection"), project + ".EU.procwatch_iceberg")}
           - jar_uris: ["file:///opt/iceberg-spark-runtime.jar"]
           - dataproc_base_url: ${"https://dataproc.googleapis.com/v1/projects/" + project + "/locations/" + region}
           - cloud_run_base_url: ${"https://run.googleapis.com/v2/projects/" + project + "/locations/" + region}
@@ -146,6 +148,24 @@ main:
           python_file_uris: []
         result: deltas_result
 
+    - refresh_bq_external_tables:
+        call: submit_dataproc_batch
+        args:
+          dataproc_base_url: ${dataproc_base_url}
+          batch_id: ${"bzp-bq-refresh-" + range_tag + "-" + run_suffix}
+          script_uri: ${jobs_prefix + "/setup_bq_external_tables.py"}
+          script_args: ${list.concat(gcp_flags, ["--bq-dataset", bq_silver_dataset, "--bq-connection", bq_connection])}
+          container_image: ${container_image}
+          subnet: ${subnet}
+          jar_uris: ${jar_uris}
+          pipeline_sa: ${pipeline_sa}
+          project: ${project}
+          region: ${region}
+          bucket: ${bucket}
+          bq_obs_dataset: ${bq_obs_dataset}
+          python_file_uris: []
+        result: bq_refresh_result
+
     - done:
         call: sys.log
         args:
@@ -160,6 +180,7 @@ main:
           bronze_state: ${bronze_result.state}
           silver_state: ${silver_result.state}
           deltas_state: ${deltas_result.state}
+          bq_refresh_state: ${bq_refresh_result.state}
 
 
 # ---------------------------------------------------------------------------
