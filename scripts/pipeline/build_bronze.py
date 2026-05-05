@@ -53,6 +53,7 @@ from pyspark.sql.types import (
     StructType,
 )
 
+from procurement.bronze.dedup import apply_dedup_filter
 from procurement.bronze.models import BzpNoticeBronze, notice_record_hash
 from procurement.logging import get_stage_logger, setup_logging
 from procurement.manifests import write_processed_manifest
@@ -199,61 +200,41 @@ def _deduplicate_via_spark(
     records: list[dict],
     target_date: str,
     bronze_notices_uri: str,
+    prebuilt_seen_ids: set[str] | None = None,
 ) -> tuple[list[dict], dict]:
     """Drop objectIds already present in a *different* day's Bronze partition.
 
-    Uses a Spark query against the existing Bronze Parquet.  If no Bronze data
-    exists yet (first run), all records pass through.
+    If *prebuilt_seen_ids* is supplied the Spark scan is skipped entirely and
+    the provided set is used directly.  The range script uses this to pay the
+    full-table scan cost only once per range run instead of once per date — see
+    ``build_bronze_range._collect_pre_range_object_ids`` and the running-set
+    pattern documented in ``docs/cloud_architecture.md``.
+
+    When *prebuilt_seen_ids* is ``None`` (single-date script), a Spark query
+    against the existing Bronze Parquet is issued.  If no Bronze data exists
+    yet the exception is swallowed and all records pass through.
 
     Same-day reruns are idempotent: the target partition is overwritten, so
     records whose first appearance was on *target_date* are always allowed.
     """
-    from pyspark.sql import functions as F
+    if prebuilt_seen_ids is not None:
+        ids_seen_other_day = prebuilt_seen_ids
+    else:
+        from pyspark.sql import functions as F
 
-    ids_seen_other_day: set[str] = set()
-    try:
-        existing = (
-            spark.read.parquet(bronze_notices_uri)
-            .filter(F.col("publicationDateDay") != target_date)
-            .select("objectId")
-            .distinct()
-        )
-        ids_seen_other_day = {row.objectId for row in existing.toLocalIterator()}
-    except Exception:
-        # No existing Bronze data yet — first run.
-        pass
+        ids_seen_other_day: set[str] = set()
+        try:
+            existing = (
+                spark.read.parquet(bronze_notices_uri)
+                .filter(F.col("publicationDateDay") != target_date)
+                .select("objectId")
+                .distinct()
+            )
+            ids_seen_other_day = {row.objectId for row in existing.toLocalIterator()}
+        except Exception:
+            pass
 
-    in_file_seen: set[str] = set()
-    filtered: list[dict] = []
-    dropped_in_file = 0
-    dropped_seen_other_day = 0
-
-    for rec in records:
-        object_id_raw = rec.get("objectId")
-        object_id = str(object_id_raw).strip() if object_id_raw is not None else ""
-
-        if not object_id:
-            filtered.append(rec)
-            continue
-
-        if object_id in in_file_seen:
-            dropped_in_file += 1
-            continue
-        in_file_seen.add(object_id)
-
-        if object_id in ids_seen_other_day:
-            dropped_seen_other_day += 1
-            continue
-
-        filtered.append(rec)
-
-    stats = {
-        "input_rows": len(records),
-        "output_rows": len(filtered),
-        "dropped_duplicates_in_input": dropped_in_file,
-        "dropped_duplicates_seen_index_other_day": dropped_seen_other_day,
-    }
-    return filtered, stats
+    return apply_dedup_filter(records, ids_seen_other_day)
 
 
 def validate_raw(raw_records: list[dict]) -> tuple[list[BzpNoticeBronze], list[dict]]:

@@ -47,6 +47,56 @@ setup_logging()
 log = get_stage_logger(__name__, "bronze")
 
 
+def _collect_pre_range_object_ids(spark, bronze_notices_uri: str, start_date: str) -> set[str]:
+    """Return all objectIds in bronze for dates strictly before *start_date*.
+
+    Called once before the date loop so the expensive full-table scan is paid
+    only once for the whole range run.  Uses partition pruning on
+    ``publicationDateDay`` to limit the scan.  Returns an empty set when no
+    bronze data exists yet.
+    """
+    from pyspark.sql import functions as F
+
+    try:
+        return {
+            row.objectId
+            for row in (
+                spark.read.parquet(bronze_notices_uri)
+                .filter(F.col("publicationDateDay") < start_date)
+                .select("objectId")
+                .distinct()
+                .toLocalIterator()
+            )
+        }
+    except Exception:
+        return set()
+
+
+def _collect_object_ids_for_date(spark, bronze_notices_uri: str, target_date: str) -> set[str]:
+    """Return all objectIds in bronze for exactly *target_date*.
+
+    Used when a date is skipped (manifest already matches) so that its
+    objectIds are still added to the running seen-set before the next date is
+    processed.  Partition pruning limits the scan to only the target date's
+    partitions.  Returns an empty set when no data exists for that date.
+    """
+    from pyspark.sql import functions as F
+
+    try:
+        return {
+            row.objectId
+            for row in (
+                spark.read.parquet(bronze_notices_uri)
+                .filter(F.col("publicationDateDay") == target_date)
+                .select("objectId")
+                .distinct()
+                .toLocalIterator()
+            )
+        }
+    except Exception:
+        return set()
+
+
 def _date_range(start: str, end: str) -> list[str]:
     """Return sorted list of ISO date strings from *start* to *end* inclusive."""
     s = date.fromisoformat(start)
@@ -98,12 +148,15 @@ def _process_date(
     obs_dir,
     script_hash: str,
     storage,
-) -> bool:
+    seen_ids: set[str],
+) -> tuple[bool, set[str]]:
     """Process one date within the shared Spark session.
 
-    Returns True if Bronze Parquet was written, False when no raw input exists.
-    Raises on unrecoverable errors so the caller can decide whether to abort the
-    range or continue.
+    Returns ``(wrote_notices, new_ids)`` where *new_ids* is the set of
+    objectIds written to bronze.  The caller should union *new_ids* into the
+    running seen-set before processing the next date.
+
+    Raises on unrecoverable errors so the caller can decide whether to abort.
     """
     from pyspark.sql.functions import col, to_date
 
@@ -112,7 +165,7 @@ def _process_date(
     input_files = _bb._candidate_input_files(bronze_raw_dir, target_date)
     if not input_files:
         log.warning("No Bronze-Raw input files found for %s — skipping", target_date)
-        return False
+        return False, set()
 
     raw_records = _bb._load_raw_records(input_files)
     log.info("Date %s: loaded %d raw records", target_date, len(raw_records))
@@ -121,7 +174,7 @@ def _process_date(
     bronze_notices_uri = f"{bronze_dir.rstrip('/')}/notices"
 
     deduped_records, dedup_stats = _bb._deduplicate_via_spark(
-        spark, raw_records, target_date, bronze_notices_uri
+        spark, raw_records, target_date, bronze_notices_uri, prebuilt_seen_ids=seen_ids
     )
 
     valid, errors = _bb.validate_raw(deduped_records)
@@ -131,6 +184,7 @@ def _process_date(
     ]
 
     wrote_notices = False
+    new_ids: set[str] = set()
     if valid_rows:
         df = spark.createDataFrame(valid_rows, schema=_bb.BRONZE_SPARK_SCHEMA).withColumn(
             "publicationDateDay", to_date(col("publicationDate")).cast("string")
@@ -140,6 +194,7 @@ def _process_date(
             bronze_notices_uri
         )
         wrote_notices = True
+        new_ids = {row["objectId"] for row in valid_rows if row.get("objectId")}
         log.info(
             "Date %s: wrote %d rows to Bronze Parquet", target_date, len(valid_rows),
             extra={"date": target_date, "status": "ok"},
@@ -196,7 +251,7 @@ def _process_date(
         script_hash=script_hash,
         storage=storage,
     )
-    return wrote_notices
+    return wrote_notices, new_ids
 
 
 def main() -> None:
@@ -218,8 +273,20 @@ def main() -> None:
     if args.spark_master:
         extra["spark.master"] = args.spark_master
 
+    bronze_notices_uri = f"{bronze_dir.rstrip('/')}/notices"
+
     spark = rt.spark.get_session("bzp-bronze-range", **extra)
     try:
+        # One scan to pre-load all objectIds from dates before this range.
+        # Subsequent per-date processing uses a running in-memory set instead
+        # of issuing a full-table scan on every date iteration.
+        log.info(
+            "Pre-computing bronze objectIds before %s (one-time scan)...", dates[0],
+            extra={"status": "started"},
+        )
+        seen_ids: set[str] = _collect_pre_range_object_ids(spark, bronze_notices_uri, dates[0])
+        log.info("Pre-range seen objectIds: %d", len(seen_ids))
+
         processed = 0
         skipped = 0
         failed_dates: list[str] = []
@@ -231,11 +298,15 @@ def main() -> None:
                     "Skipping bronze for %s — manifest matches current script", target_date,
                     extra={"date": target_date, "status": "skipped"},
                 )
+                # Collect this date's IDs so subsequent dates can still dedup
+                # against them without hitting the full bronze table.
+                skipped_ids = _collect_object_ids_for_date(spark, bronze_notices_uri, target_date)
+                seen_ids |= skipped_ids
                 skipped += 1
                 continue
 
             try:
-                _process_date(
+                _, new_ids = _process_date(
                     spark=spark,
                     target_date=target_date,
                     bronze_raw_dir=bronze_raw_dir,
@@ -243,7 +314,9 @@ def main() -> None:
                     obs_dir=obs_dir,
                     script_hash=script_hash,
                     storage=rt.storage,
+                    seen_ids=seen_ids,
                 )
+                seen_ids |= new_ids
                 processed += 1
             except Exception as exc:
                 log.error("Bronze failed for %s: %s", target_date, exc, exc_info=True)

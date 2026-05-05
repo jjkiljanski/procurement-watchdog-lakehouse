@@ -232,6 +232,35 @@ at `gs://{LAKEHOUSE_BUCKET}/_processed/{layer}/{date}/{notice_type}.json` before
 processing each batch.  Pass `force=true` to the workflow to reprocess all dates
 regardless of manifest state (e.g. after deploying a new script version).
 
+#### Bronze range cross-day deduplication
+
+The bronze layer deduplicates `objectId` values across days: if the same
+`objectId` was already ingested on a *different* day's partition, the record is
+dropped from the current day.  In `build_bronze.py` (single-date) this costs
+one full Spark scan per run.
+
+`build_bronze_range.py` uses a **running seen-set** to avoid repeating that
+scan on every date in the loop:
+
+1. **Pre-compute** — before the date loop, one Spark scan reads every
+   `objectId` from bronze for dates *before* `start_date` (`publicationDateDay
+   < start_date`).  Partition pruning limits I/O to only the relevant files.
+   The result is kept in a Python `set[str]` called `seen_ids`.
+
+2. **Per-date processing** — `seen_ids` is passed directly to
+   `_deduplicate_via_spark` as `prebuilt_seen_ids`, bypassing the Spark scan.
+   After writing, the new date's `objectId` values are added to `seen_ids`.
+
+3. **Skipped dates** — dates whose manifest already matches (no-op) still
+   contribute `objectId` values to `seen_ids` so that subsequent dates can
+   dedup against them.  A single partition-pruned scan
+   (`publicationDateDay == skipped_date`) collects those IDs at minimal cost.
+
+For a completely fresh backfill, step 1 returns an empty set and step 3 never
+fires, so the only Spark action before the first write is the pre-range scan
+(which is a no-op).  This reduces N full-table scans to at most 1 + skipped_count
+partition-pruned scans for the entire range.
+
 **Workflow runtime arguments**:
 
 | Argument | Required | Default | Description |
