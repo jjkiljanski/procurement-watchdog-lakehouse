@@ -85,8 +85,16 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Create BQ external tables over silver GCS data.")
     parser.add_argument(
         "--bq-dataset",
-        default=os.environ.get("BQ_DATASET", "silver"),
-        help="BigQuery dataset name (default: silver or BQ_DATASET env var)",
+        default=os.environ.get("BQ_DATASET", "procurement_silver"),
+        help="BigQuery dataset name (default: procurement_silver or BQ_DATASET env var)",
+    )
+    parser.add_argument(
+        "--bq-connection",
+        default=os.environ.get("BQ_CONNECTION"),
+        help=(
+            "BigQuery connection for Iceberg external tables, formatted as "
+            "PROJECT.LOCATION.CONNECTION_ID (default: BQ_CONNECTION env var)"
+        ),
     )
     parser.add_argument(
         "--format",
@@ -98,6 +106,12 @@ def _parse_args() -> argparse.Namespace:
         "--dry-run",
         action="store_true",
         help="Print the table definitions without executing them",
+    )
+    parser.add_argument(
+        "--allow-empty",
+        action="store_true",
+        default=os.environ.get("BQ_ALLOW_EMPTY", "").lower() in {"1", "true", "yes"},
+        help="Exit successfully if no source tables are discovered",
     )
     return parser.parse_args()
 
@@ -198,6 +212,21 @@ def _iceberg_dir_to_bq_table_name(iceberg_dir_name: str) -> str:
     return iceberg_dir_name
 
 
+def _latest_metadata_uri(client, bucket_name: str, table_prefix: str) -> str | None:
+    """Return the latest Iceberg metadata JSON URI for one table prefix."""
+
+    metadata_prefix = f"{table_prefix}metadata/"
+    metadata_blobs = [
+        blob
+        for blob in client.list_blobs(bucket_name, prefix=metadata_prefix)
+        if blob.name.endswith(".metadata.json")
+    ]
+    if not metadata_blobs:
+        return None
+    latest = sorted(metadata_blobs, key=lambda blob: blob.name)[-1]
+    return f"gs://{bucket_name}/{latest.name}"
+
+
 def _list_iceberg_tables(iceberg_warehouse_uri: str, namespace: str) -> list[tuple[str, str]]:
     """List Iceberg tables in *namespace* under the GCS warehouse.
 
@@ -218,8 +247,11 @@ def _list_iceberg_tables(iceberg_warehouse_uri: str, namespace: str) -> list[tup
     results = []
     for table_prefix in blobs.prefixes:
         table_name = table_prefix.rstrip("/").split("/")[-1]
-        metadata_glob = f"gs://{bucket_name}/{table_prefix}metadata/*.metadata.json"
-        results.append((table_name, metadata_glob))
+        metadata_uri = _latest_metadata_uri(client, bucket_name, table_prefix)
+        if metadata_uri:
+            results.append((table_name, metadata_uri))
+        else:
+            log.warning("Skipping %s: no Iceberg metadata JSON found", table_prefix)
     return results
 
 
@@ -229,12 +261,15 @@ def _create_iceberg_external_table(
     dataset: str,
     table_name: str,
     metadata_uri: str,
+    connection: str,
     dry_run: bool,
 ) -> None:
     """Create or replace a BigQuery external Iceberg table via SQL DDL."""
     table_id = f"`{project}.{dataset}.{table_name}`"
+    connection_id = f"`{connection}`"
     sql = (
         f"CREATE OR REPLACE EXTERNAL TABLE {table_id}\n"
+        f"WITH CONNECTION {connection_id}\n"
         f"OPTIONS (\n"
         f"  format = 'ICEBERG',\n"
         f"  uris = ['{metadata_uri}']\n"
@@ -249,6 +284,12 @@ def _create_iceberg_external_table(
 
 def _run_iceberg_setup(args, rt, bq_client) -> tuple[int, int]:
     """Create BQ external Iceberg tables for all silver Iceberg tables."""
+
+    if not args.bq_connection:
+        raise ValueError(
+            "Iceberg external tables require --bq-connection or BQ_CONNECTION "
+            "(for example: procwatch-dev.EU.procwatch_iceberg)."
+        )
 
     iceberg_uri = rt.storage.resolve("iceberg")
     log.info("Iceberg warehouse GCS URI: %s", iceberg_uri)
@@ -266,7 +307,15 @@ def _run_iceberg_setup(args, rt, bq_client) -> tuple[int, int]:
     for iceberg_name, metadata_uri in section_tables:
         bq_table_name = _iceberg_dir_to_bq_table_name(iceberg_name)
         try:
-            _create_iceberg_external_table(bq_client, project, dataset, bq_table_name, metadata_uri, args.dry_run)
+            _create_iceberg_external_table(
+                bq_client,
+                project,
+                dataset,
+                bq_table_name,
+                metadata_uri,
+                args.bq_connection,
+                args.dry_run,
+            )
             created += 1
         except Exception as exc:
             log.error("Failed to create %s: %s", bq_table_name, exc)
@@ -278,7 +327,15 @@ def _run_iceberg_setup(args, rt, bq_client) -> tuple[int, int]:
     for iceberg_name, metadata_uri in common_tables:
         bq_table_name = _iceberg_dir_to_bq_table_name(iceberg_name)
         try:
-            _create_iceberg_external_table(bq_client, project, dataset, bq_table_name, metadata_uri, args.dry_run)
+            _create_iceberg_external_table(
+                bq_client,
+                project,
+                dataset,
+                bq_table_name,
+                metadata_uri,
+                args.bq_connection,
+                args.dry_run,
+            )
             created += 1
         except Exception as exc:
             log.error("Failed to create %s: %s", bq_table_name, exc)
@@ -293,7 +350,13 @@ def _run_iceberg_setup(args, rt, bq_client) -> tuple[int, int]:
         bq_table_name = f"{iceberg_name}_delta"
         try:
             _create_iceberg_external_table(
-                bq_client, project, dataset, bq_table_name, metadata_uri, args.dry_run
+                bq_client,
+                project,
+                dataset,
+                bq_table_name,
+                metadata_uri,
+                args.bq_connection,
+                args.dry_run,
             )
             created += 1
         except Exception as exc:
@@ -398,7 +461,7 @@ def main() -> None:
 
     from google.cloud import bigquery
 
-    bq_client = bigquery.Client()
+    bq_client = bigquery.Client(project=os.environ.get("GCP_PROJECT") or None)
     log.info("BigQuery dataset: %s.%s", bq_client.project, args.bq_dataset)
     log.info("Format: %s", args.format)
 
@@ -414,6 +477,14 @@ def main() -> None:
         args.format,
         args.dry_run,
     )
+    if skipped:
+        raise SystemExit(f"Failed to create {skipped} BigQuery external table(s).")
+    if created == 0 and not args.allow_empty:
+        raise SystemExit(
+            "No BigQuery external tables were created. Check that silver Iceberg "
+            "metadata exists under the configured lakehouse bucket, or pass "
+            "--allow-empty for an intentional bootstrap run."
+        )
 
 
 if __name__ == "__main__":

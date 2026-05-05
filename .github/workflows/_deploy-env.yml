@@ -188,7 +188,8 @@ jobs:
           GCP_PROJECT: ${{ inputs.gcp_project }}
           DATAPROC_REGION: ${{ inputs.region }}
           DATAPROC_CONTAINER_IMAGE: ${{ env.SPARK_IMAGE }}
-          BQ_DATASET: silver
+          BQ_DATASET: procurement_silver
+          BQ_CONNECTION: ${{ inputs.gcp_project }}.EU.procwatch_iceberg
         run: python scripts/ops/setup_bq_external_tables.py
 
       # ------------------------------------------------------------------ #
