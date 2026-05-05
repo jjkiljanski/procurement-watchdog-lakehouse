@@ -21,14 +21,19 @@ Two formats are supported, selected via ``--format``:
 What is created (iceberg mode)
 -------------------------------
 For each table discovered under iceberg/notice_type_tables/:
-  ``{BQ_DATASET}.{table_name}``  (e.g. ``contract_notice__core``)
+  ``{BQ_DATASET}.{bq_table_name}``  (e.g. ``contract_notice_core``,
+  ``contract_notice_part``).  Iceberg directory names use double-underscore
+  separators (e.g. ``contract_notice__part_core``); these are normalised to
+  single-underscore names that match the analytics dbt sources, with the
+  ``part_core`` data-model suffix shortened to ``part``.
 
 For shared tables:
   ``{BQ_DATASET}.common_envelope``
   ``{BQ_DATASET}.quarantine``
 
 For notice_update_deltas Iceberg tables (one per original notice type):
-  ``{BQ_DATASET}.notice_update_deltas__{notice_type_snake_case}``
+  ``{BQ_DATASET}.{notice_type_snake_case}_delta``
+  (e.g. ``contract_notice_delta``)
 
 Prerequisites
 -------------
@@ -80,8 +85,8 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Create BQ external tables over silver GCS data.")
     parser.add_argument(
         "--bq-dataset",
-        default=os.environ.get("BQ_DATASET", "procurement_silver"),
-        help="BigQuery dataset name (default: procurement_silver or BQ_DATASET env var)",
+        default=os.environ.get("BQ_DATASET", "silver"),
+        help="BigQuery dataset name (default: silver or BQ_DATASET env var)",
     )
     parser.add_argument(
         "--format",
@@ -174,6 +179,25 @@ def _create_external_table(
 # ---------------------------------------------------------------------------
 
 
+def _iceberg_dir_to_bq_table_name(iceberg_dir_name: str) -> str:
+    """Convert an Iceberg directory name to a BigQuery-compatible table name.
+
+    Iceberg dirs use ``__`` as the separator between notice type and data model
+    (e.g. ``contract_notice__part_core``).  Analytics dbt sources expect
+    single-underscore names (e.g. ``contract_notice_part``).
+
+    The ``part_core`` data-model suffix is normalised to ``part`` to match the
+    analytics naming convention.  All other suffixes are left unchanged.
+    """
+    parts = iceberg_dir_name.split("__", 1)
+    if len(parts) == 2:
+        nt, dm = parts
+        if dm == "part_core":
+            dm = "part"
+        return f"{nt}_{dm}"
+    return iceberg_dir_name
+
+
 def _list_iceberg_tables(iceberg_warehouse_uri: str, namespace: str) -> list[tuple[str, str]]:
     """List Iceberg tables in *namespace* under the GCS warehouse.
 
@@ -239,23 +263,25 @@ def _run_iceberg_setup(args, rt, bq_client) -> tuple[int, int]:
     section_tables = _list_iceberg_tables(iceberg_uri, "notice_type_tables")
     if not section_tables:
         log.warning("No Iceberg tables found under %s/notice_type_tables/ — nothing to create.", iceberg_uri)
-    for table_name, metadata_uri in section_tables:
+    for iceberg_name, metadata_uri in section_tables:
+        bq_table_name = _iceberg_dir_to_bq_table_name(iceberg_name)
         try:
-            _create_iceberg_external_table(bq_client, project, dataset, table_name, metadata_uri, args.dry_run)
+            _create_iceberg_external_table(bq_client, project, dataset, bq_table_name, metadata_uri, args.dry_run)
             created += 1
         except Exception as exc:
-            log.error("Failed to create %s: %s", table_name, exc)
+            log.error("Failed to create %s: %s", bq_table_name, exc)
             skipped += 1
 
     # ── common tables (common_envelope, quarantine) ─────────────────────────
     log.info("Discovering Iceberg common tables…")
     common_tables = _list_iceberg_tables(iceberg_uri, "common")
-    for table_name, metadata_uri in common_tables:
+    for iceberg_name, metadata_uri in common_tables:
+        bq_table_name = _iceberg_dir_to_bq_table_name(iceberg_name)
         try:
-            _create_iceberg_external_table(bq_client, project, dataset, table_name, metadata_uri, args.dry_run)
+            _create_iceberg_external_table(bq_client, project, dataset, bq_table_name, metadata_uri, args.dry_run)
             created += 1
         except Exception as exc:
-            log.error("Failed to create %s: %s", table_name, exc)
+            log.error("Failed to create %s: %s", bq_table_name, exc)
             skipped += 1
 
     # ── notice_update_deltas (Iceberg) ─────────────────────────────────────
@@ -263,8 +289,8 @@ def _run_iceberg_setup(args, rt, bq_client) -> tuple[int, int]:
     delta_tables = _list_iceberg_tables(iceberg_uri, "notice_update_deltas")
     if not delta_tables:
         log.info("No Iceberg tables found under %s/notice_update_deltas/ — skipping.", iceberg_uri)
-    for table_name, metadata_uri in delta_tables:
-        bq_table_name = f"notice_update_deltas__{table_name}"
+    for iceberg_name, metadata_uri in delta_tables:
+        bq_table_name = f"{iceberg_name}_delta"
         try:
             _create_iceberg_external_table(
                 bq_client, project, dataset, bq_table_name, metadata_uri, args.dry_run

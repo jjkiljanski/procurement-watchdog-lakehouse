@@ -352,6 +352,20 @@ written.
 python scripts/ops/setup_bq_external_tables.py --format iceberg
 ```
 
+The script also runs automatically in CI/CD on every push to `main`
+(`.github/workflows/_deploy-env.yml`, "Refresh BQ external tables" step),
+which handles the case where a new silver notice type appears.
+
+**Table naming** — Iceberg directory names use double-underscore separators
+(`contract_notice__part_core`).  The script converts these to
+single-underscore names that match the analytics dbt sources
+(`contract_notice_part`).  The `part_core` data-model suffix is shortened to
+`part`.  Delta tables are named `{notice_type}_delta`
+(e.g. `contract_notice_delta`).
+
+**Default dataset** — the script targets the `silver` dataset (matching the
+analytics dbt sources) unless overridden via `--bq-dataset` or `BQ_DATASET`.
+
 For BigLake Metastore integration (auto-discovery without re-running the
 setup script after schema changes), see `docs/iceberg.md`.
 
