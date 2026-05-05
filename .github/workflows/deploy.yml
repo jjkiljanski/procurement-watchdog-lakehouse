@@ -67,7 +67,7 @@ jobs:
       gcp_project: procwatch-dev
       region: europe-central2
       backfill_start_date: "2024-01-01"   # must match envs/dev/dev.tfvars
-      run_backfill: ${{ startsWith(github.ref, 'refs/tags/v') }}
+      run_backfill: false
     secrets:
       wif_provider: ${{ secrets.DEV_WIF_PROVIDER }}
       ci_service_account: ${{ secrets.DEV_CI_SERVICE_ACCOUNT }}
