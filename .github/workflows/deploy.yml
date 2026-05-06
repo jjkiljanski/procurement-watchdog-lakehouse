@@ -87,7 +87,7 @@ jobs:
       environment: prod
       gcp_project: procwatch-prod
       region: europe-central2
-      backfill_start_date: "2020-01-01"   # must match envs/prod/prod.tfvars
+      backfill_start_date: "2021-01-03"   # The first real notice on the BZP platform appears on 2021-01-08
       run_backfill: true
     secrets:
       wif_provider: ${{ secrets.PROD_WIF_PROVIDER }}

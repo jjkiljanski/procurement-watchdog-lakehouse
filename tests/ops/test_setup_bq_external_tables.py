@@ -59,6 +59,43 @@ def test_latest_metadata_uri_selects_highest_metadata_json_name():
     assert result == "gs://bucket/iceberg/common/common_envelope/metadata/00003-c.metadata.json"
 
 
+def test_list_blobs_with_retry_recovers_after_transient_failure(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(mod.time, "sleep", lambda _: None)
+
+    client = MagicMock()
+    listed = [SimpleNamespace(name="iceberg/table/metadata/00001.metadata.json")]
+    client.list_blobs.side_effect = [TimeoutError("oidc timeout"), listed]
+
+    blobs, prefixes = mod._list_blobs_with_retry(
+        client,
+        "bucket",
+        prefix="iceberg/table/metadata/",
+    )
+
+    assert blobs == listed
+    assert prefixes == ()
+    assert client.list_blobs.call_count == 2
+
+
+def test_list_blobs_with_retry_preserves_prefixes(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(mod.time, "sleep", lambda _: None)
+
+    class BlobIterator(list):
+        prefixes = {"iceberg/notice_type_tables/contract_notice__core/"}
+
+    client = MagicMock()
+    client.list_blobs.return_value = BlobIterator()
+
+    _, prefixes = mod._list_blobs_with_retry(
+        client,
+        "bucket",
+        prefix="iceberg/notice_type_tables/",
+        delimiter="/",
+    )
+
+    assert prefixes == ("iceberg/notice_type_tables/contract_notice__core/",)
+
+
 def test_iceberg_setup_requires_connection():
     args = SimpleNamespace(bq_connection=None)
     rt = SimpleNamespace(storage=SimpleNamespace(resolve=lambda _: "gs://bucket/iceberg"))

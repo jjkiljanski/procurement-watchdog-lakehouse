@@ -70,6 +70,7 @@ import argparse
 import logging
 import os
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
@@ -79,6 +80,45 @@ from procurement.runtime import get_runtime
 
 setup_logging()
 log = logging.getLogger(__name__)
+
+
+def _list_blobs_with_retry(
+    client,
+    bucket_name: str,
+    *,
+    prefix: str,
+    delimiter: str | None = None,
+    attempts: int = 4,
+) -> tuple[list, tuple[str, ...]]:
+    """List GCS blobs and prefixes, retrying transient auth/network failures.
+
+    In GitHub Actions the first GCS request may need to refresh the WIF subject
+    token.  That refresh is outside the Storage client's normal request retry
+    loop, so a transient OIDC timeout can otherwise abort the whole deploy.
+    """
+    last_exc: Exception | None = None
+    for attempt in range(1, attempts + 1):
+        try:
+            blobs = client.list_blobs(bucket_name, prefix=prefix, delimiter=delimiter)
+            items = list(blobs)
+            prefixes = tuple(getattr(blobs, "prefixes", ()) or ())
+            return items, prefixes
+        except Exception as exc:
+            last_exc = exc
+            if attempt == attempts:
+                break
+            sleep_s = min(2 ** (attempt - 1), 10)
+            log.warning(
+                "GCS listing failed for gs://%s/%s (attempt %d/%d): %s; retrying in %ss",
+                bucket_name,
+                prefix,
+                attempt,
+                attempts,
+                exc,
+                sleep_s,
+            )
+            time.sleep(sleep_s)
+    raise last_exc
 
 
 def _parse_args() -> argparse.Namespace:
@@ -138,16 +178,14 @@ def _list_silver_tables(silver_uri: str, sub_path: str) -> list[tuple[str, str, 
     full_prefix = f"{prefix_base}/{sub_path}/"
 
     client = gcs.Client()
-    blobs = client.list_blobs(bucket_name, prefix=full_prefix, delimiter="/")
-    _ = list(blobs)
+    _, prefixes = _list_blobs_with_retry(client, bucket_name, prefix=full_prefix, delimiter="/")
 
     results = []
-    for nt_prefix in blobs.prefixes:
+    for nt_prefix in prefixes:
         # nt_prefix: silver/notice_type_tables/noticeType=ContractNotice/
         nt_value = nt_prefix.rstrip("/").split("/")[-1].replace("noticeType=", "")
-        nt_blobs = client.list_blobs(bucket_name, prefix=nt_prefix, delimiter="/")
-        _ = list(nt_blobs)
-        for dm_prefix in nt_blobs.prefixes:
+        _, nt_prefixes = _list_blobs_with_retry(client, bucket_name, prefix=nt_prefix, delimiter="/")
+        for dm_prefix in nt_prefixes:
             dm_value = dm_prefix.rstrip("/").split("/")[-1].replace("data_model=", "")
             table_uri = f"gs://{bucket_name}/{dm_prefix.rstrip('/')}"
             results.append((nt_value, dm_value, table_uri))
@@ -216,9 +254,10 @@ def _latest_metadata_uri(client, bucket_name: str, table_prefix: str) -> str | N
     """Return the latest Iceberg metadata JSON URI for one table prefix."""
 
     metadata_prefix = f"{table_prefix}metadata/"
+    blobs, _ = _list_blobs_with_retry(client, bucket_name, prefix=metadata_prefix)
     metadata_blobs = [
         blob
-        for blob in client.list_blobs(bucket_name, prefix=metadata_prefix)
+        for blob in blobs
         if blob.name.endswith(".metadata.json")
     ]
     if not metadata_blobs:
@@ -241,11 +280,10 @@ def _list_iceberg_tables(iceberg_warehouse_uri: str, namespace: str) -> list[tup
     ns_prefix = f"{warehouse_prefix}/{namespace}/"
 
     client = gcs.Client()
-    blobs = client.list_blobs(bucket_name, prefix=ns_prefix, delimiter="/")
-    _ = list(blobs)
+    _, prefixes = _list_blobs_with_retry(client, bucket_name, prefix=ns_prefix, delimiter="/")
 
     results = []
-    for table_prefix in blobs.prefixes:
+    for table_prefix in prefixes:
         table_name = table_prefix.rstrip("/").split("/")[-1]
         metadata_uri = _latest_metadata_uri(client, bucket_name, table_prefix)
         if metadata_uri:
@@ -423,9 +461,10 @@ def _run_parquet_setup(args, rt, bq_client) -> tuple[int, int]:
     deltas_prefix = f"{silver_prefix}/notice_update_deltas/"
 
     gcs_client = gcs.Client()
-    delta_blobs = gcs_client.list_blobs(bucket_name, prefix=deltas_prefix, delimiter="/")
-    _ = list(delta_blobs)
-    for nt_prefix in delta_blobs.prefixes:
+    _, delta_prefixes = _list_blobs_with_retry(
+        gcs_client, bucket_name, prefix=deltas_prefix, delimiter="/"
+    )
+    for nt_prefix in delta_prefixes:
         nt_value = nt_prefix.rstrip("/").split("/")[-1].replace("noticeType=", "")
         nt_snake = re.sub(r"(?<!^)(?=[A-Z])", "_", nt_value).lower()
         table_name = f"notice_update_deltas__{nt_snake}"
