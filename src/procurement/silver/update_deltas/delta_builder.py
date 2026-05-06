@@ -450,9 +450,10 @@ def write_deltas(
 ) -> None:
     """Write delta records to Iceberg ``silver.notice_update_deltas.{notice_type}``.
 
-    Partitioned by ``publicationDateDay``.  Overwrites only the target day's
-    partition for each notice type present in *deltas_by_type*; other types
-    and other days are untouched.
+    Partitioned by ``publicationDateDay``.  ``overwritePartitions()`` replaces
+    only the day partitions present in *deltas_by_type* for each notice type;
+    other types and other days are untouched.  *target_date* is only a log label
+    and may be a range label for chunked range backfills.
     """
     spark.sql("CREATE NAMESPACE IF NOT EXISTS silver.notice_update_deltas")
 

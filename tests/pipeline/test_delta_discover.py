@@ -96,3 +96,29 @@ class TestDiscoverNunDays:
         spark = _make_spark([])
         result = self.mod._discover_nun_days(spark, None)
         assert result == []
+
+
+class TestRangeHelpers:
+    @pytest.fixture(autouse=True)
+    def module(self):
+        self.mod = _load_deltas_module()
+
+    def test_chunked_zero_returns_one_full_chunk(self):
+        result = list(self.mod._chunked(["2025-01-01", "2025-01-02"], 0))
+        assert result == [["2025-01-01", "2025-01-02"]]
+
+    def test_chunked_splits_by_size(self):
+        result = list(
+            self.mod._chunked(
+                ["2025-01-01", "2025-01-02", "2025-01-03", "2025-01-04"],
+                3,
+            )
+        )
+        assert result == [
+            ["2025-01-01", "2025-01-02", "2025-01-03"],
+            ["2025-01-04"],
+        ]
+
+    def test_years_with_previous_adds_lookback_year(self):
+        result = self.mod._years_with_previous(["2023-01-01", "2026-05-04"])
+        assert result == {"2022", "2023", "2025", "2026"}

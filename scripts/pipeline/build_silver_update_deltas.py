@@ -37,6 +37,7 @@ import os
 import re
 import sys
 import time
+from collections.abc import Iterable
 from pathlib import Path
 
 _src = str(Path(__file__).resolve().parent.parent.parent / "src")
@@ -89,7 +90,40 @@ def _parse_args() -> argparse.Namespace:
         default=os.environ.get("SPARK_MASTER"),
         help="Spark master string (e.g. local[*]).  Defaults to SPARK_MASTER env var.",
     )
+    parser.add_argument(
+        "--chunk-days",
+        type=int,
+        default=0,
+        help=(
+            "For range/all mode, accumulate and write deltas in chunks of this many "
+            "NUN publication days. 0 means one chunk for the whole selected range."
+        ),
+    )
     return parser.parse_args()
+
+
+def _chunked(items: list[str], chunk_size: int) -> Iterable[list[str]]:
+    """Yield chunks from *items*.  ``chunk_size <= 0`` means one full chunk."""
+    if chunk_size <= 0:
+        if items:
+            yield items
+        return
+    for i in range(0, len(items), chunk_size):
+        yield items[i : i + chunk_size]
+
+
+def _years_with_previous(days: Iterable[str]) -> set[str]:
+    """Return selected years plus each previous year for cross-year BZP resolution."""
+    years = {int(d[:4]) for d in days}
+    if not years:
+        return set()
+    return {str(y) for year in sorted(years) for y in (year - 1, year)}
+
+
+def _merge_deltas(target: dict[str, list[dict]], source: dict[str, list[dict]]) -> None:
+    for notice_type, rows in source.items():
+        if rows:
+            target.setdefault(notice_type, []).extend(rows)
 
 
 def _discover_nun_days(
@@ -125,19 +159,19 @@ def _discover_nun_days(
     return sorted(row.publicationDateDay for row in df.collect())
 
 
-def _run_day(
+def _build_day_deltas(
     spark,
     target_date: str,
     section_index: dict,
     bzp_index: dict | None,
-) -> None:
+) -> dict[str, list[dict]]:
     core_rows, part_rows, part_part_rows = load_nun_rows(spark, target_date)
     if not core_rows:
         log.info(
             "No NUN data for %s — nothing to do", target_date,
             extra={"date": target_date, "status": "skipped"},
         )
-        return
+        return {}
 
     actual_bzp_index = bzp_index
     if actual_bzp_index is None:
@@ -149,10 +183,12 @@ def _run_day(
                 years.add(m.group(1))
         if not years:
             log.warning("Could not extract any year from section_3_2 values — aborting")
-            return
+            return {}
+        min_year = min(int(y) for y in years)
+        years.add(str(min_year - 1))
         actual_bzp_index = load_bzp_index(spark, years)
 
-    deltas_by_type = build_update_deltas(
+    return build_update_deltas(
         target_date=target_date,
         core_rows=core_rows,
         part_rows=part_rows,
@@ -160,6 +196,15 @@ def _run_day(
         section_index=section_index,
         bzp_index=actual_bzp_index,
     )
+
+
+def _run_day(
+    spark,
+    target_date: str,
+    section_index: dict,
+    bzp_index: dict | None,
+) -> None:
+    deltas_by_type = _build_day_deltas(spark, target_date, section_index, bzp_index)
     if deltas_by_type:
         write_deltas(spark, target_date, deltas_by_type, section_index)
     else:
@@ -200,23 +245,66 @@ def main() -> None:
             if not days:
                 log.info("No NUN days found — nothing to do")
             else:
-                years = {d[:4] for d in days}
-                log.info("Building BZP index for years: %s", sorted(years))
+                years = _years_with_previous(days)
+                log.info(
+                    "Building BZP index for years: %s (includes previous-year lookback)",
+                    sorted(years),
+                )
                 bzp_index = load_bzp_index(spark, years)
 
-                for i, day in enumerate(days, 1):
-                    t_day = time.perf_counter()
-                    _run_day(spark, day, section_index, bzp_index)
-                    write_processed_manifest(
-                        layer="deltas",
-                        target_date=day,
-                        script_hash=script_hash,
-                        storage=rt.storage,
-                    )
+                processed_count = 0
+                for chunk_idx, chunk_days in enumerate(_chunked(days, args.chunk_days), 1):
+                    t_chunk = time.perf_counter()
+                    chunk_label = f"{chunk_days[0]}..{chunk_days[-1]}"
+                    chunk_deltas: dict[str, list[dict]] = {}
                     log.info(
-                        "Day %d/%d (%s) done in %.1fs",
-                        i, len(days), day, time.perf_counter() - t_day,
-                        extra={"date": day, "status": "ok"},
+                        "Chunk %d started: %s (%d days)",
+                        chunk_idx,
+                        chunk_label,
+                        len(chunk_days),
+                    )
+                    for day in chunk_days:
+                        processed_count += 1
+                        t_day = time.perf_counter()
+                        day_deltas = _build_day_deltas(spark, day, section_index, bzp_index)
+                        _merge_deltas(chunk_deltas, day_deltas)
+                        log.info(
+                            "Day %d/%d (%s) built in %.1fs",
+                            processed_count,
+                            len(days),
+                            day,
+                            time.perf_counter() - t_day,
+                            extra={"date": day, "status": "built"},
+                        )
+
+                    rows_by_type = {
+                        notice_type: len(rows)
+                        for notice_type, rows in sorted(chunk_deltas.items())
+                    }
+                    if chunk_deltas:
+                        log.info(
+                            "Chunk %d writing %d rows across %d notice type(s): %s",
+                            chunk_idx,
+                            sum(rows_by_type.values()),
+                            len(rows_by_type),
+                            rows_by_type,
+                        )
+                        write_deltas(spark, chunk_label, chunk_deltas, section_index)
+                    else:
+                        log.info("Chunk %d produced no delta rows: %s", chunk_idx, chunk_label)
+
+                    for day in chunk_days:
+                        write_processed_manifest(
+                            layer="deltas",
+                            target_date=day,
+                            script_hash=script_hash,
+                            storage=rt.storage,
+                        )
+                    log.info(
+                        "Chunk %d done: %s elapsed=%.1fs",
+                        chunk_idx,
+                        chunk_label,
+                        time.perf_counter() - t_chunk,
                     )
 
         else:

@@ -136,7 +136,7 @@ main:
           dataproc_base_url: ${dataproc_base_url}
           batch_id: ${"bzp-deltas-range-" + range_tag + "-" + run_suffix}
           script_uri: ${jobs_prefix + "/build_silver_update_deltas.py"}
-          script_args: ${range_args}
+          script_args: ${list.concat(range_args, ["--chunk-days", "31"])}
           container_image: ${container_image}
           subnet: ${subnet}
           jar_uris: ${jar_uris}
