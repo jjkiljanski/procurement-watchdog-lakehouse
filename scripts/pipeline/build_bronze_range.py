@@ -147,6 +147,7 @@ def _process_date(
     bronze_dir: str,
     obs_dir,
     script_hash: str,
+    dependency_hashes: dict[str, str],
     storage,
     seen_ids: set[str],
 ) -> tuple[bool, set[str]]:
@@ -250,6 +251,7 @@ def _process_date(
         target_date=target_date,
         script_hash=script_hash,
         storage=storage,
+        dependency_hashes=dependency_hashes,
     )
     return wrote_notices, new_ids
 
@@ -268,6 +270,9 @@ def main() -> None:
     )
     obs_dir = rt.storage.obs_path()
     script_hash = sha256_paths(Path(__file__), _SRC_PKG / "bronze")
+    dependency_hashes = {
+        "fetch": sha256_paths(Path(__file__).with_name("fetch_bzp_range.py"), _SRC_PKG / "fetch")
+    }
 
     extra: dict[str, str] = {}
     if args.spark_master:
@@ -292,10 +297,14 @@ def main() -> None:
         failed_dates: list[str] = []
         for target_date in dates:
             if not args.force and is_already_processed(
-                "bronze", target_date, script_hash, rt.storage
+                "bronze",
+                target_date,
+                script_hash,
+                rt.storage,
+                dependency_hashes=dependency_hashes,
             ):
                 log.info(
-                    "Skipping bronze for %s — manifest matches current script", target_date,
+                    "Skipping bronze for %s — manifest and dependency hashes match", target_date,
                     extra={"date": target_date, "status": "skipped"},
                 )
                 # Collect this date's IDs so subsequent dates can still dedup
@@ -313,6 +322,7 @@ def main() -> None:
                     bronze_dir=bronze_dir,
                     obs_dir=obs_dir,
                     script_hash=script_hash,
+                    dependency_hashes=dependency_hashes,
                     storage=rt.storage,
                     seen_ids=seen_ids,
                 )

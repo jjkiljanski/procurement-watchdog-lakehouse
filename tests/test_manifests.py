@@ -72,7 +72,22 @@ class TestWriteProcessedManifest:
         assert data["layer"] == "silver"
         assert data["target_date"] == "2025-10-02"
         assert data["script_hash"] == "deadbeef"
+        assert data["dependency_hashes"] == {}
         assert "completed_at" in data
+
+    def test_manifest_stores_dependency_hashes(self, tmp_path: Path):
+        storage = _storage(tmp_path)
+        deps = {"fetch": "fetch_hash", "bronze": "bronze_hash"}
+        write_processed_manifest(
+            "silver",
+            "2025-10-02",
+            "silver_hash",
+            storage,
+            dependency_hashes=deps,
+        )
+
+        data = _read_manifest(tmp_path, "silver", "2025-10-02")
+        assert data["dependency_hashes"] == deps
 
     def test_completed_at_is_iso8601_utc(self, tmp_path: Path):
         storage = _storage(tmp_path)
@@ -134,6 +149,55 @@ class TestIsAlreadyProcessed:
         storage = _storage(tmp_path)
         write_processed_manifest("bronze", "2025-10-01", "old_hash", storage)
         assert not is_already_processed("bronze", "2025-10-01", "new_hash", storage)
+
+    def test_returns_true_when_dependency_hashes_match(self, tmp_path: Path):
+        storage = _storage(tmp_path)
+        deps = {"fetch": "fetch_hash"}
+        write_processed_manifest(
+            "bronze",
+            "2025-10-01",
+            "bronze_hash",
+            storage,
+            dependency_hashes=deps,
+        )
+
+        assert is_already_processed(
+            "bronze",
+            "2025-10-01",
+            "bronze_hash",
+            storage,
+            dependency_hashes=deps,
+        )
+
+    def test_returns_false_when_dependency_hashes_differ(self, tmp_path: Path):
+        storage = _storage(tmp_path)
+        write_processed_manifest(
+            "deltas",
+            "2025-10-01",
+            "delta_hash",
+            storage,
+            dependency_hashes={"silver": "old_hash"},
+        )
+
+        assert not is_already_processed(
+            "deltas",
+            "2025-10-01",
+            "delta_hash",
+            storage,
+            dependency_hashes={"silver": "new_hash"},
+        )
+
+    def test_dependency_check_invalidates_legacy_manifest(self, tmp_path: Path):
+        storage = _storage(tmp_path)
+        write_processed_manifest("deltas", "2025-10-01", "delta_hash", storage)
+
+        assert not is_already_processed(
+            "deltas",
+            "2025-10-01",
+            "delta_hash",
+            storage,
+            dependency_hashes={"silver": "silver_hash"},
+        )
 
     def test_layer_mismatch_returns_false(self, tmp_path: Path):
         storage = _storage(tmp_path)
@@ -275,6 +339,27 @@ class TestAllNoticeTypesProcessed:
         for nt in notice_types:
             write_processed_manifest("silver", "2025-10-01", "h", storage, notice_type=nt)
         assert all_notice_types_processed("2025-10-01", "h", notice_types, storage)
+
+    def test_returns_false_when_notice_type_dependency_hash_upgraded(self, tmp_path: Path):
+        storage = _storage(tmp_path)
+        notice_types = ["ContractNotice", "TenderResultNotice"]
+        for nt in notice_types:
+            write_processed_manifest(
+                "silver",
+                "2025-10-01",
+                "silver_hash",
+                storage,
+                notice_type=nt,
+                dependency_hashes={"bronze": "old_hash"},
+            )
+
+        assert not all_notice_types_processed(
+            "2025-10-01",
+            "silver_hash",
+            notice_types,
+            storage,
+            dependency_hashes={"bronze": "new_hash"},
+        )
 
     def test_returns_false_when_hash_upgraded(self, tmp_path: Path):
         storage = _storage(tmp_path)

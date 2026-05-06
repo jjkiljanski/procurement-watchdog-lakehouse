@@ -48,7 +48,7 @@ os.environ["PYSPARK_PYTHON"] = sys.executable
 os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
 
 from procurement.logging import get_stage_logger, setup_logging
-from procurement.manifests import write_processed_manifest
+from procurement.manifests import is_already_processed, write_processed_manifest
 from procurement.obs import sha256_paths
 from procurement.runtime import get_runtime
 from procurement.silver.section_pipeline.notice_schema_reader import load_all_profiles
@@ -99,6 +99,11 @@ def _parse_args() -> argparse.Namespace:
             "NUN publication days. 0 means one chunk for the whole selected range."
         ),
     )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Reprocess dates even when matching delta manifests exist.",
+    )
     return parser.parse_args()
 
 
@@ -124,6 +129,15 @@ def _merge_deltas(target: dict[str, list[dict]], source: dict[str, list[dict]]) 
     for notice_type, rows in source.items():
         if rows:
             target.setdefault(notice_type, []).extend(rows)
+
+
+def _range_dependency_hashes() -> dict[str, str]:
+    pipeline_dir = Path(__file__).resolve().parent
+    return {
+        "fetch": sha256_paths(pipeline_dir / "fetch_bzp_range.py", _SRC_PKG / "fetch"),
+        "bronze": sha256_paths(pipeline_dir / "build_bronze_range.py", _SRC_PKG / "bronze"),
+        "silver": sha256_paths(pipeline_dir / "build_silver_range.py", _SRC_PKG / "silver"),
+    }
 
 
 def _discover_nun_days(
@@ -229,6 +243,7 @@ def main() -> None:
         section_index = _build_section_index(all_profiles)
 
         script_hash = sha256_paths(Path(__file__), _SRC_PKG / "silver")
+        dependency_hashes = _range_dependency_hashes()
 
         if args.all or (args.start_date and args.end_date):
             if args.start_date and args.end_date:
@@ -245,7 +260,28 @@ def main() -> None:
             if not days:
                 log.info("No NUN days found — nothing to do")
             else:
-                years = _years_with_previous(days)
+                pending_days: list[str] = []
+                for day in days:
+                    if not args.force and is_already_processed(
+                        "deltas",
+                        day,
+                        script_hash,
+                        rt.storage,
+                        dependency_hashes=dependency_hashes,
+                    ):
+                        log.info(
+                            "Skipping deltas for %s — manifest and dependency hashes match",
+                            day,
+                            extra={"date": day, "status": "skipped"},
+                        )
+                    else:
+                        pending_days.append(day)
+
+                if not pending_days:
+                    log.info("All %d NUN days already have current delta manifests", len(days))
+                    return
+
+                years = _years_with_previous(pending_days)
                 log.info(
                     "Building BZP index for years: %s (includes previous-year lookback)",
                     sorted(years),
@@ -253,7 +289,7 @@ def main() -> None:
                 bzp_index = load_bzp_index(spark, years)
 
                 processed_count = 0
-                for chunk_idx, chunk_days in enumerate(_chunked(days, args.chunk_days), 1):
+                for chunk_idx, chunk_days in enumerate(_chunked(pending_days, args.chunk_days), 1):
                     t_chunk = time.perf_counter()
                     chunk_label = f"{chunk_days[0]}..{chunk_days[-1]}"
                     chunk_deltas: dict[str, list[dict]] = {}
@@ -271,7 +307,7 @@ def main() -> None:
                         log.info(
                             "Day %d/%d (%s) built in %.1fs",
                             processed_count,
-                            len(days),
+                            len(pending_days),
                             day,
                             time.perf_counter() - t_day,
                             extra={"date": day, "status": "built"},
@@ -299,6 +335,7 @@ def main() -> None:
                             target_date=day,
                             script_hash=script_hash,
                             storage=rt.storage,
+                            dependency_hashes=dependency_hashes,
                         )
                     log.info(
                         "Chunk %d done: %s elapsed=%.1fs",
@@ -313,13 +350,27 @@ def main() -> None:
                 "build_silver_update_deltas started: date=%s", target_date,
                 extra={"date": target_date, "status": "started"},
             )
-            _run_day(spark, target_date, section_index, bzp_index=None)
-            write_processed_manifest(
-                layer="deltas",
-                target_date=target_date,
-                script_hash=script_hash,
-                storage=rt.storage,
-            )
+            if not args.force and is_already_processed(
+                "deltas",
+                target_date,
+                script_hash,
+                rt.storage,
+                dependency_hashes=dependency_hashes,
+            ):
+                log.info(
+                    "Skipping deltas for %s — manifest and dependency hashes match",
+                    target_date,
+                    extra={"date": target_date, "status": "skipped"},
+                )
+            else:
+                _run_day(spark, target_date, section_index, bzp_index=None)
+                write_processed_manifest(
+                    layer="deltas",
+                    target_date=target_date,
+                    script_hash=script_hash,
+                    storage=rt.storage,
+                    dependency_hashes=dependency_hashes,
+                )
             log.info(
                 "build_silver_update_deltas done: date=%s", target_date,
                 extra={"date": target_date, "status": "ok"},

@@ -823,6 +823,7 @@ def run_silver_range_core(
     script_paths: "list[Path] | None" = None,
     storage: "StorageProvider | None" = None,
     script_hash: str | None = None,
+    dependency_hashes: dict[str, str] | None = None,
     force: bool = False,
 ) -> dict:
     """Build Silver for a date range — one Spark plan per notice type.
@@ -840,8 +841,10 @@ def run_silver_range_core(
 
     Per-(date, notice_type) manifests are written after each notice-type batch
     when *storage* and *script_hash* are supplied.  On re-runs only batches
-    whose manifest is absent or stale are reprocessed.  Pass ``force=True`` to
-    reprocess everything regardless of manifest state.
+    whose manifest is absent or stale are reprocessed.  Upstream
+    ``dependency_hashes`` are stored in the same manifest so Bronze/Fetch code
+    changes invalidate Silver outputs.  Pass ``force=True`` to reprocess
+    everything regardless of manifest state.
 
     Returns a summary dict with ``rows``, ``start_date``, ``end_date``, and
     ``batches`` (per-notice-type timing profiles).
@@ -925,7 +928,14 @@ def run_silver_range_core(
             _d = _start
             _all_done = True
             while _d <= _end:
-                if not _iap("silver", _d.isoformat(), script_hash, storage, notice_token):
+                if not _iap(
+                    "silver",
+                    _d.isoformat(),
+                    script_hash,
+                    storage,
+                    notice_token,
+                    dependency_hashes=dependency_hashes,
+                ):
                     _all_done = False
                     break
                 _d += _td(days=1)
@@ -1004,6 +1014,7 @@ def run_silver_range_core(
                     script_hash=script_hash,
                     storage=storage,
                     notice_type=notice_token,
+                    dependency_hashes=dependency_hashes,
                 )
                 _d += _td(days=1)
 

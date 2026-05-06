@@ -27,6 +27,9 @@ Manifest content::
         "target_date":  "2025-10-01",
         "notice_type":  "ContractNotice",   # null for bronze/deltas
         "script_hash":  "<sha256-hex of entry-point .py file>",
+        "dependency_hashes": {
+            "bronze": "<sha256-hex of upstream stage code>"
+        },
         "completed_at": "2025-10-02T03:12:45.123456Z"
     }
 
@@ -101,6 +104,7 @@ def write_processed_manifest(
     script_hash: str,
     storage: "StorageProvider",
     notice_type: str | None = None,
+    dependency_hashes: dict[str, str] | None = None,
 ) -> None:
     """Write (or overwrite) the processed manifest for *layer* + *target_date*.
 
@@ -124,6 +128,11 @@ def write_processed_manifest(
         processing so individual (date, notice_type) pairs can be skipped on
         re-runs without reprocessing the whole day.  ``None`` (default) writes
         the legacy per-day path used by bronze and deltas.
+    dependency_hashes:
+        Optional mapping of upstream stage names to the code hash that produced
+        this output.  A later ``is_already_processed`` call with a different
+        mapping returns ``False`` so downstream outputs are rebuilt after
+        upstream code changes.
     """
     from procurement.obs import now_utc_iso
 
@@ -134,6 +143,7 @@ def write_processed_manifest(
             "target_date": target_date,
             "notice_type": notice_type,
             "script_hash": script_hash,
+            "dependency_hashes": dependency_hashes or {},
             "completed_at": now_utc_iso(),
         },
     )
@@ -145,6 +155,7 @@ def is_already_processed(
     current_script_hash: str,
     storage: "StorageProvider",
     notice_type: str | None = None,
+    dependency_hashes: dict[str, str] | None = None,
 ) -> bool:
     """Return ``True`` if *layer*/*target_date* was processed with *current_script_hash*.
 
@@ -167,11 +178,18 @@ def is_already_processed(
     notice_type:
         When set, checks the per-(date, notice_type) manifest path.  Must match
         the value used when ``write_processed_manifest`` was called.
+    dependency_hashes:
+        Optional upstream stage hashes that must exactly match the manifest's
+        stored ``dependency_hashes`` mapping.
     """
     data = storage.read_json(_manifest_path(layer, target_date, notice_type))
     if not data:
         return False
-    return data.get("script_hash") == current_script_hash
+    if data.get("script_hash") != current_script_hash:
+        return False
+    if dependency_hashes is not None:
+        return data.get("dependency_hashes", {}) == dependency_hashes
+    return True
 
 
 def all_notice_types_processed(
@@ -179,6 +197,7 @@ def all_notice_types_processed(
     current_script_hash: str,
     notice_types: "list[str]",
     storage: "StorageProvider",
+    dependency_hashes: dict[str, str] | None = None,
 ) -> bool:
     """Return ``True`` only when every notice type in *notice_types* has a
     matching silver manifest for *target_date*.
@@ -187,6 +206,13 @@ def all_notice_types_processed(
     prior run.
     """
     return all(
-        is_already_processed("silver", target_date, current_script_hash, storage, nt)
+        is_already_processed(
+            "silver",
+            target_date,
+            current_script_hash,
+            storage,
+            nt,
+            dependency_hashes=dependency_hashes,
+        )
         for nt in notice_types
     )

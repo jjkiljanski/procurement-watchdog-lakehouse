@@ -116,6 +116,10 @@ def main() -> None:
     silver_dir = args.silver_dir or rt.storage.resolve("silver")
     obs_dir = rt.storage.obs_path()
     script_hash = sha256_paths(Path(__file__), _SRC_PKG / "silver")
+    dependency_hashes = {
+        "fetch": sha256_paths(Path(__file__).with_name("fetch_bzp_range.py"), _SRC_PKG / "fetch"),
+        "bronze": sha256_paths(Path(__file__).with_name("build_bronze_range.py"), _SRC_PKG / "bronze"),
+    }
 
     extra: dict[str, str] = {}
     if args.spark_master:
@@ -141,6 +145,7 @@ def main() -> None:
             script_paths=[Path(__file__).resolve()],
             storage=rt.storage,
             script_hash=script_hash,
+            dependency_hashes=dependency_hashes,
             force=args.force,
         )
         log.info(
