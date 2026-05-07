@@ -229,6 +229,7 @@ jobs:
               "bq_obs_dataset":      "procurement_obs",
               "bq_silver_dataset":   "procurement_silver",
               "bq_connection":       f"{project}.EU.procwatch_iceberg",
+              "dataproc_batch_ttl":   "86400s" if "${{ inputs.environment }}" == "prod" else "14400s",
           }
 
           subprocess.run([
