@@ -251,6 +251,58 @@ def _iceberg_ensure_shared_tables(spark: "SparkSession") -> None:
     log.info("Ensured Iceberg table: silver.common.common_envelope")
 
 
+def _iceberg_delete_range_if_exists(
+    spark: "SparkSession",
+    full_table_name: str,
+    start_date: str,
+    end_date: str,
+) -> None:
+    """Delete date partitions from an Iceberg table if it already exists."""
+    if not _iceberg_table_exists(spark, full_table_name):
+        return
+    spark.sql(
+        f"DELETE FROM {full_table_name} "
+        f"WHERE publicationDateDay >= '{start_date}' AND publicationDateDay <= '{end_date}'"
+    )
+
+
+def _iceberg_tables_in_namespace(spark: "SparkSession", namespace: str) -> list[str]:
+    """Return table names in an Iceberg namespace, or [] if it does not exist."""
+    try:
+        return [row.tableName for row in spark.sql(f"SHOW TABLES IN {namespace}").collect()]
+    except Exception:
+        return []
+
+
+def _predelete_notice_type_range(
+    spark: "SparkSession",
+    notice_token: str,
+    start_date: str,
+    end_date: str,
+) -> None:
+    """Delete all existing section-table partitions for one notice type/range."""
+    prefix = re.sub(r"(?<!^)(?=[A-Z])", "_", notice_token).lower() + "__"
+    table_names = [
+        name
+        for name in _iceberg_tables_in_namespace(spark, "silver.notice_type_tables")
+        if name.startswith(prefix)
+    ]
+    for table_name in table_names:
+        _iceberg_delete_range_if_exists(
+            spark,
+            f"silver.notice_type_tables.{table_name}",
+            start_date,
+            end_date,
+        )
+    log.info(
+        "Pre-deleted %d section table(s) for noticeType=%s range %s..%s",
+        len(table_names),
+        notice_token,
+        start_date,
+        end_date,
+    )
+
+
 def _iceberg_notice_type_table_name(notice_type_token: str, data_model: str) -> str:
     """Return the Iceberg table name for a section table.
 
@@ -873,13 +925,25 @@ def run_silver_range_core(
     # Pre-delete envelope for the full range so per-notice-type appends land in
     # a clean slot.  Iceberg ACID serialises concurrent commits.
     try:
-        spark.sql(
-            f"DELETE FROM silver.common.common_envelope "
-            f"WHERE publicationDateDay >= '{start_date}' AND publicationDateDay <= '{end_date}'"
+        _iceberg_delete_range_if_exists(
+            spark,
+            "silver.common.common_envelope",
+            start_date,
+            end_date,
         )
         log.info("Pre-deleted common_envelope partitions for %s..%s", start_date, end_date)
     except Exception as exc:
         log.debug("Envelope pre-delete skipped (table may not exist yet): %s", exc)
+    try:
+        _iceberg_delete_range_if_exists(
+            spark,
+            "silver.common.quarantine",
+            start_date,
+            end_date,
+        )
+        log.info("Pre-deleted quarantine partitions for %s..%s", start_date, end_date)
+    except Exception as exc:
+        log.debug("Quarantine pre-delete skipped (table may not exist yet): %s", exc)
 
     spark.conf.set("spark.sql.sources.partitionOverwriteMode", "dynamic")
 
@@ -945,6 +1009,8 @@ def run_silver_range_core(
                     notice_token, start_date, end_date,
                 )
                 continue
+
+        _predelete_notice_type_range(spark, notice_token, start_date, end_date)
 
         batch_t0 = time.perf_counter()
 

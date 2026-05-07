@@ -230,6 +230,53 @@ def _write_chunk(spark, prepared: list[_PreparedDate], bronze_notices_uri: str) 
     return True
 
 
+def _delete_bronze_date_partitions(
+    spark,
+    bronze_notices_uri: str,
+    target_dates: list[str],
+) -> None:
+    """Remove existing Bronze partition directories for reprocessed dates.
+
+    Parquet dynamic overwrite only replaces partitions present in the new
+    DataFrame. Pre-deleting the target date partitions avoids stale rows when a
+    notice type disappears or a date now produces no valid rows.
+    """
+    if not target_dates:
+        return
+
+    try:
+        jvm = spark._jvm
+        conf = spark._jsc.hadoopConfiguration()
+        root = jvm.org.apache.hadoop.fs.Path(bronze_notices_uri)
+        fs = root.getFileSystem(conf)
+        if not fs.exists(root):
+            return
+
+        deleted = 0
+        for status in fs.listStatus(root):
+            if not status.isDirectory():
+                continue
+            notice_type_path = status.getPath()
+            if not notice_type_path.getName().startswith("noticeType="):
+                continue
+            for target_date in target_dates:
+                date_path = jvm.org.apache.hadoop.fs.Path(
+                    notice_type_path,
+                    f"publicationDateDay={target_date}",
+                )
+                if fs.exists(date_path):
+                    fs.delete(date_path, True)
+                    deleted += 1
+        log.info(
+            "Pre-deleted %d Bronze date partition directories for %d reprocessed date(s)",
+            deleted,
+            len(target_dates),
+        )
+    except Exception as exc:
+        log.error("Could not pre-delete Bronze partitions before chunk write: %s", exc)
+        raise
+
+
 def _finalize_date(
     item: _PreparedDate,
     bronze_dir: str,
@@ -398,6 +445,11 @@ def main() -> None:
             if not prepared:
                 continue
 
+            _delete_bronze_date_partitions(
+                spark,
+                bronze_notices_uri,
+                [item.target_date for item in prepared],
+            )
             _write_chunk(spark, prepared, bronze_notices_uri)
             for item in prepared:
                 _finalize_date(

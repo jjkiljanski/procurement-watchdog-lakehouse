@@ -221,6 +221,35 @@ def _iceberg_table_exists(spark: "SparkSession", full_table_name: str) -> bool:
         return False
 
 
+def _iceberg_tables_in_namespace(spark: "SparkSession", namespace: str) -> list[str]:
+    try:
+        return [row.tableName for row in spark.sql(f"SHOW TABLES IN {namespace}").collect()]
+    except Exception:
+        return []
+
+
+def delete_delta_partitions(spark: "SparkSession", target_dates: list[str]) -> None:
+    """Delete existing delta partitions for dates that are being rebuilt."""
+    if not target_dates:
+        return
+
+    table_names = _iceberg_tables_in_namespace(spark, "silver.notice_update_deltas")
+    if not table_names:
+        return
+
+    dates_sql = ", ".join(f"'{day}'" for day in sorted(set(target_dates)))
+    for table_name in table_names:
+        spark.sql(
+            f"DELETE FROM silver.notice_update_deltas.{table_name} "
+            f"WHERE publicationDateDay IN ({dates_sql})"
+        )
+    log.info(
+        "Pre-deleted delta partitions for %d date(s) across %d table(s)",
+        len(set(target_dates)),
+        len(table_names),
+    )
+
+
 # ---------------------------------------------------------------------------
 # Data loading helpers (Spark / Iceberg)
 # ---------------------------------------------------------------------------

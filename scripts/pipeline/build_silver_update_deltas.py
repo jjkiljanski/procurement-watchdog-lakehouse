@@ -55,6 +55,7 @@ from procurement.silver.section_pipeline.notice_schema_reader import load_all_pr
 from procurement.silver.update_deltas.delta_builder import (
     _build_section_index,
     build_update_deltas,
+    delete_delta_partitions,
     load_bzp_index,
     load_nun_rows,
     write_deltas,
@@ -299,6 +300,7 @@ def main() -> None:
                         chunk_label,
                         len(chunk_days),
                     )
+                    delete_delta_partitions(spark, chunk_days)
                     for day in chunk_days:
                         processed_count += 1
                         t_day = time.perf_counter()
@@ -363,6 +365,7 @@ def main() -> None:
                     extra={"date": target_date, "status": "skipped"},
                 )
             else:
+                delete_delta_partitions(spark, [target_date])
                 _run_day(spark, target_date, section_index, bzp_index=None)
                 write_processed_manifest(
                     layer="deltas",
