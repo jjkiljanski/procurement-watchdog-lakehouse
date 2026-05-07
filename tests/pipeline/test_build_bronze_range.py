@@ -44,6 +44,10 @@ def _date_range(start: str, end: str) -> list[str]:
     return _get_mod()._date_range(start, end)
 
 
+def _chunks(items: list[str], size: int) -> list[list[str]]:
+    return _get_mod()._chunks(items, size)
+
+
 # ---------------------------------------------------------------------------
 # _date_range
 # ---------------------------------------------------------------------------
@@ -92,3 +96,15 @@ class TestDateRange:
     def test_year_boundary(self):
         result = _date_range("2024-12-30", "2025-01-02")
         assert result == ["2024-12-30", "2024-12-31", "2025-01-01", "2025-01-02"]
+
+
+class TestChunks:
+    def test_exact_multiple(self):
+        assert _chunks(["a", "b", "c", "d"], 2) == [["a", "b"], ["c", "d"]]
+
+    def test_partial_final_chunk(self):
+        assert _chunks(["a", "b", "c", "d", "e"], 2) == [["a", "b"], ["c", "d"], ["e"]]
+
+    def test_size_must_be_positive(self):
+        with pytest.raises(ValueError):
+            _chunks(["a"], 0)
